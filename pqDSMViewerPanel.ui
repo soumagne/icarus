@@ -1,0 +1,99 @@
+<ui version="4.0" >
+ <class>DSMViewerPanel</class>
+ <widget class="QDockWidget" name="DSMViewerPanel" >
+  <property name="geometry" >
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>312</width>
+    <height>454</height>
+   </rect>
+  </property>
+  <property name="windowTitle" >
+   <string>DSMViewerPanel</string>
+  </property>
+  <widget class="QWidget" name="dockWidgetContents" >
+   <property name="geometry" >
+    <rect>
+     <x>0</x>
+     <y>22</y>
+     <width>312</width>
+     <height>432</height>
+    </rect>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout" >
+    <item>
+     <widget class="QCheckBox" name="a1" >
+      <property name="text" >
+       <string>Unused</string>
+      </property>
+      <property name="checked" >
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="CreateDSM" >
+      <property name="text" >
+       <string>CreateDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="DestroyDSM" >
+      <property name="text" >
+       <string>DestroyDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="Query" >
+      <property name="text" >
+       <string>Query</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="TestDSM" >
+      <property name="text" >
+       <string>TestDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="pqTreeWidget" name="DSMContents" >
+      <property name="sizePolicy" >
+       <sizepolicy vsizetype="MinimumExpanding" hsizetype="Ignored" >
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize" >
+       <size>
+        <width>0</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="rootIsDecorated" >
+       <bool>false</bool>
+      </property>
+      <column>
+       <property name="text" >
+        <string>Contents</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>pqTreeWidget</class>
+   <extends>QTreeWidget</extends>
+   <header>pqTreeWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

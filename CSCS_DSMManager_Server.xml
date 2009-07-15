@@ -1,0 +1,21 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- DSM                                                              -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="icarus_helpers">
+    <Proxy name="DSMManager" class="vtkDSMManager">
+      
+      <Property name="CreateDSM"
+                command="CreateDSM">
+      </Property>      
+      <Property name="DestroyDSM"
+                command="DestroyDSM">
+      </Property>
+      
+    </Proxy>
+  </ProxyGroup>
+
+
+</ServerManagerConfiguration>
