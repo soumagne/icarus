@@ -10,14 +10,18 @@
 // VTK includes
 
 // ParaView Server Manager includes
+#include "vtkSMInputProperty.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMStringVectorProperty.h"
 #include "vtkSMArraySelectionDomain.h"
-#include "pqActiveServer.h"
+#include "vtkSMProxyProperty.h"
 
 // ParaView includes
+#include "pqActiveServer.h"
 #include "pqApplicationCore.h"
+#include "pqOutputPort.h"
+#include "pqPipelineSource.h"
 #include "pqPropertyLinks.h"
 #include "pqProxy.h"
 #include "pqServer.h"
@@ -27,6 +31,7 @@
 #include "pqSMAdaptor.h"
 #include "pqTreeWidgetCheckHelper.h"
 #include "pqTreeWidgetItemObject.h"
+//
 #include "ui_pqDSMViewerPanel.h"
 
 class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel {
@@ -49,6 +54,8 @@ public:
   bool ProxyCreated() { return this->DSMProxy!=NULL; }
   pqPropertyLinks            *Links;
   vtkSmartPointer<vtkSMProxy> DSMProxy;
+  vtkSmartPointer<vtkSMProxy> ActiveSourceProxy;
+  int                         ActiveSourcePort;
 };
 
 //----------------------------------------------------------------------------
@@ -97,15 +104,15 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
 
   this->connect(selection, 
                    SIGNAL(currentChanged(pqServerManagerModelItem*)), 
-                   this, SLOT(updateTrackee())
+                   this, SLOT(TrackSource())
                    );
 
   this->connect(smModel,
                    SIGNAL(sourceAdded(pqPipelineSource*)),
-                   this, SLOT(updateTrackee()));
+                   this, SLOT(TrackSource()));
   this->connect(smModel,
                    SIGNAL(sourceRemoved(pqPipelineSource*)),
-                   this, SLOT(updateTrackee()));
+                   this, SLOT(TrackSource()));
 
 }
 //----------------------------------------------------------------------------
@@ -157,65 +164,59 @@ void pqDSMViewerPanel::onDestroyDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onTestDSM()
 {
+  if (!this->UI->ActiveSourceProxy) {
+    return;
+  }
+  //
+  vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+  vtkSmartPointer<vtkSMSourceProxy> XdmfWriter = 
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter2"));
+
+  pqSMAdaptor::setElementProperty(
+    XdmfWriter->GetProperty("FileName"), 
+    "d:/test.xdmf"
+  );
+
+  pqSMAdaptor::setInputProperty(
+    XdmfWriter->GetProperty("Input"),
+    this->UI->ActiveSourceProxy, 
+    this->UI->ActiveSourcePort
+  );
+
+  XdmfWriter->UpdateVTKObjects();
+  XdmfWriter->UpdatePipeline();
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onQueryDSM()
 {
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::updateTrackee()
+void pqDSMViewerPanel::TrackSource()
 {
-  /*
-  //break stale connections between widgets and properties
-  this->Internals->Links.removeAllPropertyLinks();
-
-  //set to a default state
-  this->currentRep = NULL;
-  this->currentView = NULL;
-
-  //find the active  view
-  pqView* view = pqActiveView::instance().current();
-  pqRenderView* View = 
-    qobject_cast<pqRenderView*>(view);
-  if (!View)
-    {
-    this->setEnabled(false);
-    return;
-    }
-  this->currentView = View;
-  this->setEnabled(true);
-
-  //TODO: CHANGE UI somehow
-
   //find the active filter
   pqServerManagerModelItem *item =
     pqApplicationCore::instance()->getSelectionModel()->currentItem();
   if (item)
-    {
-    pqOutputPort* opPort = qobject_cast<pqOutputPort*>(item);
-    pqPipelineSource *source = opPort? opPort->getSource() : 
+  {
+    pqOutputPort* port = qobject_cast<pqOutputPort*>(item);
+    this->UI->ActiveSourcePort = port ? port->getPortNumber() : 0;
+    pqPipelineSource *source = port ? port->getSource() : 
       qobject_cast<pqPipelineSource*>(item);
     if (source)
-      {
-      pqDataRepresentation* Rep = 
-        source->getRepresentation(0, this->currentView);
-      if (Rep)
-        {
-        //we have a representation that we can connect to. do so now
-        this->connectToRepresentation(source, Rep);
-        }
-      else
-        {
-        //try later when there might be something to connect to
-        QObject::connect(source, 
-                         SIGNAL(visibilityChanged(pqPipelineSource*, 
-                                                  pqDataRepresentation*)),
-                         this, 
-                         SLOT(connectToRepr esentation(pqPipelineSource*,
-                                                      pqDataRepresentation*))
-                         );
-        }
-      }
+    {
+      this->UI->ActiveSourceProxy = source->getProxy();
+      this->UI->TextOutput->clear();
+      this->UI->TextOutput->insertPlainText(
+        this->UI->ActiveSourceProxy->GetVTKClassName()
+        );
     }
-    */
+    else {
+      this->UI->ActiveSourceProxy = NULL;
+      this->UI->TextOutput->clear();
+    }
+  }
+  else {
+    this->UI->ActiveSourceProxy = NULL;
+    this->UI->TextOutput->clear();
+  }
 }

@@ -27,7 +27,7 @@ public slots:
   void onDestroyDSM();
   void onTestDSM();
   void onQueryDSM();
-  void updateTrackee();
+  void TrackSource();
 
 
 private slots:
