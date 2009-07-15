@@ -94,16 +94,16 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   //keep self up to date whenever a new source becomes the active one
   pqServerManagerSelectionModel *selection =
       pqApplicationCore::instance()->getSelectionModel();
-  QObject::connect(selection, 
+
+  this->connect(selection, 
                    SIGNAL(currentChanged(pqServerManagerModelItem*)), 
                    this, SLOT(updateTrackee())
                    );
-  pqServerManagerModel * model =
-      pqApplicationCore::instance()->getServerManagerModel();
-  QObject::connect(model,
+
+  this->connect(smModel,
                    SIGNAL(sourceAdded(pqPipelineSource*)),
                    this, SLOT(updateTrackee()));
-  QObject::connect(model,
+  this->connect(smModel,
                    SIGNAL(sourceRemoved(pqPipelineSource*)),
                    this, SLOT(updateTrackee()));
 
@@ -165,6 +165,7 @@ void pqDSMViewerPanel::onQueryDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::updateTrackee()
 {
+  /*
   //break stale connections between widgets and properties
   this->Internals->Links.removeAllPropertyLinks();
 
@@ -210,10 +211,11 @@ void pqDSMViewerPanel::updateTrackee()
                          SIGNAL(visibilityChanged(pqPipelineSource*, 
                                                   pqDataRepresentation*)),
                          this, 
-                         SLOT(connectToRepresentation(pqPipelineSource*,
+                         SLOT(connectToRepr esentation(pqPipelineSource*,
                                                       pqDataRepresentation*))
                          );
         }
       }
     }
+    */
 }
