@@ -147,6 +147,11 @@ ENDIF(PARAVIEW_BUILD_QT_GUI)
 TARGET_LINK_LIBRARIES(CSCS_DSM_GUIPlugin CSCS_DSM_SMPlugin)
 
 #--------------------------------------------------
+# Testing
+#--------------------------------------------------
+ADD_SUBDIRECTORY(Testing)
+
+#--------------------------------------------------
 # Install
 #--------------------------------------------------
 SET(INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")
