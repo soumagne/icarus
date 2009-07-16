@@ -185,7 +185,7 @@ void pqDSMViewerPanel::onTestDSM()
   
   pqSMAdaptor::setElementProperty(
     XdmfWriter->GetProperty("FileName"),
-#ifndef ___WIN32
+#ifndef WIN32
     "/home/soumagne/test"
 #else
     "d:\test"
