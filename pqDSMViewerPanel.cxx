@@ -184,8 +184,12 @@ void pqDSMViewerPanel::onTestDSM()
   );
   
   pqSMAdaptor::setElementProperty(
-    XdmfWriter->GetProperty("FileName"), 
-    "test"
+    XdmfWriter->GetProperty("FileName"),
+#ifndef ___WIN32
+    "/home/soumagne/test"
+#else
+    "d:\test"
+#endif
   );
 
   pqSMAdaptor::setInputProperty(
