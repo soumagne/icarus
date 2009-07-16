@@ -32,18 +32,19 @@ ENDIF (ParaView_SOURCE_DIR)
 #--------------------------------------------------
 # Find and Use Boost
 #--------------------------------------------------
-   set(Boost_DEBUG ON)
-   set(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
-   set(BOOST_ROOT "C:/Program Files/Boost")
-   set(Boost_USE_STATIC_LIBS   ON)
-   set(Boost_USE_MULTITHREADED ON)
-   find_package(Boost 1.38.0 COMPONENTS thread) 
+set(Boost_DEBUG ON)
+set(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
+set(BOOST_ROOT "C:/Program Files/Boost")
+set(Boost_USE_STATIC_LIBS   ON)
+set(Boost_USE_MULTITHREADED ON)
+find_package(Boost 1.38.0 COMPONENTS thread) 
 
-   if(Boost_FOUND)
-      include_directories(${Boost_INCLUDE_DIRS})
-      MESSAGE(${Boost_INCLUDE_DIRS})
-      ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
-   endif()
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  MESSAGE(${Boost_INCLUDE_DIRS})
+  ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
+  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+endif()
 
 #--------------------------------------------------
 # Set project include directories 

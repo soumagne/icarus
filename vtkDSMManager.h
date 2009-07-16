@@ -84,7 +84,7 @@ protected:
   int            TimeStep;
   int            UpdatePiece;
   int            UpdateNumPieces;
-  int            LocalBufferSizeMBytes;
+  vtkTypeInt64   LocalBufferSizeMBytes;
 
 //BTX
   #ifdef HAVE_BOOST_THREADS

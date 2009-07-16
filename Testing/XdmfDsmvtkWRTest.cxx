@@ -37,6 +37,8 @@
 #include "vtkExtentTranslator.h"
 #include "vtkMPIController.h"
 
+#include "vtkMultiProcessController.h"
+#include "vtkDSMManager.h"
 #include "vtkXdmfReader.h"
 #include "vtkXdmfWriter2.h"
 
@@ -44,6 +46,8 @@
 // Win32 execution test
 // mpiexec -localonly -n 4 XdmfDsmvtkWRTest.exe D:\data\xdmf\other\cav_DSM_Test.xmf D:\test-dsm d:\test-disk
 //
+
+#define WRITE_DSM 1
 
 //----------------------------------------------------------------------------
 void
@@ -71,16 +75,13 @@ printReaderInfos(vtkXdmfReader *reader)
 }
 //----------------------------------------------------------------------------
 void
-MyMain(vtkMultiProcessController *controller, void *arg)
+MyMain(vtkMultiProcessController *con, void *arg)
 {
-  MPI_Comm XdmfComm;
-  int rank, size, last_rank;
-  XdmfDsmCommMpi *MyComm = new XdmfDsmCommMpi;
-
-#ifdef HAVE_PTHREADS
-  XdmfDsmBuffer *MyDsm = new XdmfDsmBuffer;
-  pthread_t thread1;
-#endif
+  vtkMPIController *controller = vtkMPIController::SafeDownCast(con);
+  vtkSmartPointer<vtkDSMManager> DSMManager = vtkSmartPointer<vtkDSMManager>::New();
+  DSMManager->SetController(controller);
+  DSMManager->SetLocalBufferSizeMBytes(128);
+  DSMManager->CreateDSM();
 
   char xdmfFileName_in[200], xdmfFileName_dsm[200], xdmfFileName_out[200];
   char ** argv = (char**) arg;
@@ -88,37 +89,14 @@ MyMain(vtkMultiProcessController *controller, void *arg)
   strcpy(xdmfFileName_dsm, argv[2]);
   strcpy(xdmfFileName_out, argv[3]);
 
-  MyComm->Init();
-  // New Communicator for Xdmf Transactions
-  MyComm->DupComm(MPI_COMM_WORLD);
-
-  rank = MyComm->GetId();
-  size = MyComm->GetTotalSize();
-  last_rank = size - 1;
-
-  cout << "Hello from " << rank << " of " << last_rank << endl;
-
+  int rank = controller->GetLocalProcessId();
+  int size = controller->GetNumberOfProcesses();
 #ifdef _WIN32
- if (rank==0) {
+  if (rank==0) {
     char ch;
     std::cin >> ch;
   }
   controller->Barrier();
-#endif
-
-#ifdef HAVE_PTHREADS
-  // Uniform Dsm : every node has a buffer of 1000000. Addresses are sequential
-  MyDsm->ConfigureUniform(MyComm, 2000000);
-
-  // Start another thread to handle DSM requests from other nodes
-  pthread_create(&thread1, NULL, &XdmfDsmBufferServiceThread, (void *) MyDsm);
-
-  // Wait for DSM to be ready
-  while (!MyDsm->GetThreadDsmReady())
-    {
-      // Spin
-    }
-  cout << "Service Ready on " << rank << endl;
 #endif
 
   WaitForAll(controller, rank, 1);
@@ -181,13 +159,13 @@ MyMain(vtkMultiProcessController *controller, void *arg)
   WaitForAll(controller, rank, 3);
 
   // Write back to Xdmf using XdmfWriter2 and put data into DSM
-#ifdef HAVE_PTHREADS
+  vtkSmartPointer<vtkXdmfWriter2> writer = vtkSmartPointer<vtkXdmfWriter2>::New();
+#ifdef WRITE_DSM
   cout << "*** Writing to DSM ***" << endl;
+  writer->SetDSMManager(DSMManager);
 #else
   cout << "*** Writing to disk ***" << endl;
 #endif
-  vtkSmartPointer<vtkXdmfWriter2> writer = vtkSmartPointer<vtkXdmfWriter2>::New();
-
 
   vtkstd::string dummy = vtkstd::string(xdmfFileName_dsm)+vtkstd::string(".xmf");
   if (vtksys::SystemTools::FileExists(dummy.c_str())) {
@@ -202,17 +180,16 @@ MyMain(vtkMultiProcessController *controller, void *arg)
     }
     else
       writer->SetInput(data);
-#ifdef HAVE_PTHREADS
-    writer->SetDsmBuffer(MyDsm);
-#endif
+
+
     writer->Write();
     WaitForAll(controller, rank, 4);
 
-#ifdef HAVE_PTHREADS
+
     // Create a new reader and test reading from DSM
     cout << "*** Reading from DSM ***" << endl;
     vtkSmartPointer<vtkXdmfReader> reader_test = vtkSmartPointer<vtkXdmfReader>::New();
-    reader_test->SetDsmBuffer(MyDsm);
+    reader_test->SetDsmBuffer(DSMManager->GetDSMHandle());
     strcat(xdmfFileName_dsm, ".xmf");
     reader_test->SetFileName(xdmfFileName_dsm);
     reader_test->UpdateInformation();
@@ -244,13 +221,11 @@ MyMain(vtkMultiProcessController *controller, void *arg)
     // Send done to DSM
     WaitForAll(controller, rank, 5);
 
-    if (rank == 0)
-    	MyDsm->SendDone();
-    pthread_join(thread1, NULL);
+//    if (rank == 0)
+//    	MyDsm->SendDone();
 
-    delete MyDsm;
-#endif
-    delete MyComm;
+
+
 }
 //----------------------------------------------------------------------------
 int

@@ -163,8 +163,8 @@ bool vtkDSMManager::CreateDSM()
   // Create Xdmf DSM communicator
   //
   XdmfDsmCommMpi *MyComm = new XdmfDsmCommMpi;
-  MyComm->Init();
   MyComm->DupComm(mpiComm);
+  MyComm->Init();
   int rank = MyComm->GetId();
   int size = MyComm->GetTotalSize();
   int last_rank = size - 1;
@@ -174,7 +174,7 @@ bool vtkDSMManager::CreateDSM()
   //
   this->DSMBuffer = new XdmfDsmBuffer();
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(MyComm, 2000000);//this->LocalBufferSizeMBytes*1024);
+  this->DSMBuffer->ConfigureUniform(MyComm, this->LocalBufferSizeMBytes*1024*1024);
 
   //
   // setup service thread

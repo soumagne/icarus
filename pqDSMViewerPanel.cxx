@@ -39,6 +39,8 @@ public:
   pqUI(pqDSMViewerPanel* p) : QObject(p)
   {
     this->Links = new pqPropertyLinks;
+    this->DSMInitialized   = 0;
+    this->ActiveSourcePort = 0;
   }
   //
   ~pqUI() {
@@ -53,6 +55,7 @@ public:
   //
   bool ProxyCreated() { return this->DSMProxy!=NULL; }
   pqPropertyLinks            *Links;
+  int                         DSMInitialized;
   vtkSmartPointer<vtkSMProxy> DSMProxy;
   vtkSmartPointer<vtkSMProxy> ActiveSourceProxy;
   int                         ActiveSourcePort;
@@ -133,6 +136,7 @@ void pqDSMViewerPanel::startRemovingServer(pqServer *server)
   if (this->UI->ProxyCreated()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
     this->UI->DSMProxy = NULL;
+    this->UI->DSMInitialized = 0;
   }
 }
 //----------------------------------------------------------------------------
@@ -152,6 +156,7 @@ void pqDSMViewerPanel::onCreateDSM()
 {
   if (this->UI->ProxyCreated()) {
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
+    this->UI->DSMInitialized = 1;
   }
 }
 //-----------------------------------------------------------------------------
@@ -159,6 +164,7 @@ void pqDSMViewerPanel::onDestroyDSM()
 {
   if (this->UI->ProxyCreated()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
+    this->UI->DSMInitialized = 0;
   }
 }
 //-----------------------------------------------------------------------------
@@ -188,7 +194,7 @@ void pqDSMViewerPanel::onTestDSM()
 #ifndef WIN32
     "/home/soumagne/test"
 #else
-    "d:\test"
+    "d:/test"
 #endif
   );
 
