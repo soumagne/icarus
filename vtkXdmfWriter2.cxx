@@ -393,8 +393,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
   vtkXDRDebug("BuildXdmfGrid");
   // Debug DSM info
 #ifdef VTK_USE_MPI
-  if (this->DSMManager) {
-    
+  if (this->DSMManager) {    
     XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
     long long tlength, length, start, end;
     tlength = dsmbuffer->GetTotalLength();
@@ -627,18 +626,19 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 	  this->SetBuildModeToHeavy();
 
 	  // Debug DSM info
-      #ifdef VTK_USE_MPI
+#ifdef VTK_USE_MPI
 	  if (this->DSMManager) {
-		  long long tlength, length, start, end;
-		  tlength = this->DSMManager->GetDSMHandle()->GetTotalLength();
-		  vtkXDRDebug("Total length of DSM: " << tlength);
-		  length = this->DSMManager->GetDSMHandle()->GetLength();
-		  vtkXDRDebug("Length of DSM per node: " << length);
-		  this->DSMManager->GetDSMHandle()->GetAddressRangeForId(this->UpdatePiece, &start, &end);
-		  vtkXDRDebug("DSM address range: " << start << "-->" << end);
+      XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
+      long long tlength, length, start, end;
+      tlength = dsmbuffer->GetTotalLength();
+      vtkXDRDebug("Total length of DSM: " << tlength);
+      length = dsmbuffer->GetLength();
+      vtkXDRDebug("Length of DSM per node: " << length);
+      dsmbuffer->GetAddressRangeForId(this->UpdatePiece, &start, &end);
+      vtkXDRDebug("DSM address range: " << start << "-->" << end);
 		  //this->DSMManager->DebugOn();
 	  }
-      #endif
+#endif
 
 	  //
 	  // File/DataGroup name
