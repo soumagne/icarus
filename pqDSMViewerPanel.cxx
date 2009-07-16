@@ -165,16 +165,27 @@ void pqDSMViewerPanel::onDestroyDSM()
 void pqDSMViewerPanel::onTestDSM()
 {
   if (!this->UI->ActiveSourceProxy) {
+    vtkGenericWarningMacro(<<"Nothing to Write");
     return;
   }
+  if (!this->UI->ProxyCreated()) {
+    vtkGenericWarningMacro(<<"Creating DSM before calling Test");
+    this->onCreateDSM();
+  }
+
   //
   vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
   vtkSmartPointer<vtkSMSourceProxy> XdmfWriter = 
     vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter2"));
 
+  pqSMAdaptor::setProxyProperty(
+    XdmfWriter->GetProperty("DSMManager"), 
+    this->UI->DSMProxy
+  );
+  
   pqSMAdaptor::setElementProperty(
     XdmfWriter->GetProperty("FileName"), 
-    "d:/test.xdmf"
+    "DSM://test.xdmf"
   );
 
   pqSMAdaptor::setInputProperty(

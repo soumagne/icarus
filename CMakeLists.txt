@@ -17,10 +17,16 @@ IF (ParaView_SOURCE_DIR)
     ${PARAVIEW_KWSYS_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
     ${MPI_INCLUDE_PATH}
+    ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
+    ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
   )
 ELSE (ParaView_SOURCE_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
+  INCLUDE_DIRECTORIES(
+    ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
+    ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
+  )
 ENDIF (ParaView_SOURCE_DIR)
 
 #--------------------------------------------------
@@ -74,6 +80,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter2.cxx
   SOURCES
 )
 

@@ -40,6 +40,21 @@
         command="SetFileName"
         number_of_elements="1">
       </StringVectorProperty>
+
+      <ProxyProperty name="DSMManager" 
+                     command="SetDSMManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers" 
+                 name="DSMManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
       <Hints>
         <Property name="Input" show="0"/>
         <Property name="FileName" show="0"/>

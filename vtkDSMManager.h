@@ -52,7 +52,9 @@ public:
 
   bool  CreateDSM();
   bool  DestroyDSM();
-  void *GetDSMHandle();
+//BTX
+  XdmfDsmBuffer *GetDSMHandle();
+//ETX
 
 //BTX
   #ifdef VTK_USE_MPI

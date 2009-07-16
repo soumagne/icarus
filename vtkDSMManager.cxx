@@ -111,9 +111,9 @@ bool vtkDSMManager::DestroyDSM()
   return true;
 }
 //----------------------------------------------------------------------------
-void *vtkDSMManager::GetDSMHandle()
+XdmfDsmBuffer *vtkDSMManager::GetDSMHandle()
 {
-  return NULL;
+  return DSMBuffer;
 }
 //----------------------------------------------------------------------------
 class DSMServiceThread 
