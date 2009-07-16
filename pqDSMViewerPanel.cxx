@@ -185,7 +185,7 @@ void pqDSMViewerPanel::onTestDSM()
   
   pqSMAdaptor::setElementProperty(
     XdmfWriter->GetProperty("FileName"), 
-    "DSM://test.xdmf"
+    "test"
   );
 
   pqSMAdaptor::setInputProperty(

@@ -174,7 +174,7 @@ bool vtkDSMManager::CreateDSM()
   //
   this->DSMBuffer = new XdmfDsmBuffer();
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(MyComm, this->LocalBufferSizeMBytes*1024);
+  this->DSMBuffer->ConfigureUniform(MyComm, 2000000);//this->LocalBufferSizeMBytes*1024);
 
   //
   // setup service thread
