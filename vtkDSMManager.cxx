@@ -106,8 +106,9 @@ vtkDSMManager::~vtkDSMManager()
 bool vtkDSMManager::DestroyDSM()
 {
 #ifdef VTK_USE_MPI
-  if(this->UpdatePiece == 0)
+  if(this->DSMBuffer && this->UpdatePiece == 0) {
     this->DSMBuffer->SendDone();
+  }
 #endif
 #ifdef HAVE_PTHREADS
   pthread_join(this->ServiceThread, NULL);

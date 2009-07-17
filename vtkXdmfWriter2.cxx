@@ -393,7 +393,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
   vtkXDRDebug("BuildXdmfGrid");
   // Debug DSM info
 #ifdef VTK_USE_MPI
-  if (this->DSMManager) {    
+  if (this->DSMManager && this->DSMManager->GetDSMHandle()) {    
     XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
     long long tlength, length, start, end;
     tlength = dsmbuffer->GetTotalLength();
@@ -627,7 +627,7 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 
 	  // Debug DSM info
 #ifdef VTK_USE_MPI
-	  if (this->DSMManager) {
+	  if (this->DSMManager && this->DSMManager->GetDSMHandle()) {
       XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
       long long tlength, length, start, end;
       tlength = dsmbuffer->GetTotalLength();

@@ -102,14 +102,14 @@ protected:
 //ETX
 
 
-  //BTX
+//BTX
     #ifdef VTK_USE_MPI
-  //ETX
+//ETX
       vtkMultiProcessController* Controller;
-  //BTX
+//BTX
       XdmfDsmCommMpi *DSMComm;
     #endif
-  //ETX
+//ETX
 
 private:
   vtkDSMManager(const vtkDSMManager&);  // Not implemented.
