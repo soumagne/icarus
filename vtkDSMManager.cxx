@@ -105,8 +105,12 @@ vtkDSMManager::~vtkDSMManager()
 //----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
 {
+  if (this->DSMComm) {
+    int rank = this->DSMComm->GetId();
+    vtkDebugMacro(<<"DSM destroyed on " << rank);
+  }
 #ifdef VTK_USE_MPI
-  if(this->DSMBuffer && this->UpdatePiece == 0) {
+  if (this->DSMBuffer && this->UpdatePiece == 0) {
     this->DSMBuffer->SendDone();
   }
 #endif
