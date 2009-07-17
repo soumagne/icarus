@@ -115,16 +115,25 @@ bool vtkDSMManager::DestroyDSM()
   }
 #endif
 #ifdef HAVE_PTHREADS
-  pthread_join(this->ServiceThread, NULL);
-  this->ServiceThread = NULL;
+  if (this->ServiceThread) {
+	  pthread_join(this->ServiceThread, NULL);
+	  this->ServiceThread = NULL;
+  }
 #elif HAVE_BOOST_THREADS
-  delete this->ServiceThread;
-  this->ServiceThread = NULL;
+  if (this->ServiceThread) {
+	  delete this->ServiceThread;
+	  this->ServiceThread = NULL;
+  }
 #endif
-  delete this->DSMComm;
-  this->DSMComm = NULL;
-  delete this->DSMBuffer;
-  this->DSMBuffer = NULL;
+
+  if (this->DSMComm) {
+	  delete this->DSMComm;
+	  this->DSMComm = NULL;
+  }
+  if (this->DSMBuffer) {
+	  delete this->DSMBuffer;
+	  this->DSMBuffer = NULL;
+  }
   return true;
 }
 //----------------------------------------------------------------------------

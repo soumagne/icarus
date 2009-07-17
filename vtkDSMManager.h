@@ -35,9 +35,7 @@
 #ifndef WIN32
   #define HAVE_PTHREADS
   #include <pthread.h>
-#endif
-
-#ifdef HAVE_BOOST_THREADS
+#elif HAVE_BOOST_THREADS
   #include <boost/thread/thread.hpp> // Boost Threads
 #endif
 

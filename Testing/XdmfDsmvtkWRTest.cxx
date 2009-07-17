@@ -217,15 +217,8 @@ MyMain(vtkMultiProcessController *con, void *arg)
     //	writer_test->SetInput(mboutdata);
     //}
 
-
-    // Send done to DSM
     WaitForAll(controller, rank, 5);
-
-//    if (rank == 0)
-//    	MyDsm->SendDone();
-
-
-
+    // Send done to DSM
 }
 //----------------------------------------------------------------------------
 int
