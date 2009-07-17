@@ -73,12 +73,15 @@ vtkDSMManager::vtkDSMManager()
   this->LocalBufferSizeMBytes    = 128;
   this->UpdatePiece              = 0;
   this->UpdateNumPieces          = 0;
-#ifdef HAVE_BOOST_THREADS
+#ifdef HAVE_PTHREADS
+  this->ServiceThread            = 0;
+#elif HAVE_BOOST_THREADS
   this->ServiceThread            = 0;
 #endif
   //
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
+  this->DSMComm = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   //
@@ -102,10 +105,19 @@ vtkDSMManager::~vtkDSMManager()
 //----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
 {
-#ifdef HAVE_BOOST_THREADS
+#ifdef VTK_USE_MPI
+  if(this->UpdatePiece == 0)
+    this->DSMBuffer->SendDone();
+#endif
+#ifdef HAVE_PTHREADS
+  pthread_join(this->ServiceThread, NULL);
+  this->ServiceThread = NULL;
+#elif HAVE_BOOST_THREADS
   delete this->ServiceThread;
   this->ServiceThread = NULL;
 #endif
+  delete this->DSMComm;
+  this->DSMComm = NULL;
   delete this->DSMBuffer;
   this->DSMBuffer = NULL;
   return true;
@@ -136,11 +148,6 @@ bool vtkDSMManager::CreateDSM()
     return true;
   }
 
-#ifdef HAVE_PTHREADS
-  pthread_t thread1;
-#elif HAVE_BOOST_THREADS
-#endif
-
   if (!this->GetController())
     {
     vtkErrorMacro(<<"No MPI Controller specified");
@@ -162,11 +169,11 @@ bool vtkDSMManager::CreateDSM()
   //
   // Create Xdmf DSM communicator
   //
-  XdmfDsmCommMpi *MyComm = new XdmfDsmCommMpi;
-  MyComm->DupComm(mpiComm);
-  MyComm->Init();
-  int rank = MyComm->GetId();
-  int size = MyComm->GetTotalSize();
+  this->DSMComm = new XdmfDsmCommMpi;
+  this->DSMComm->DupComm(mpiComm);
+  this->DSMComm->Init();
+  int rank = this->DSMComm->GetId();
+  int size = this->DSMComm->GetTotalSize();
   int last_rank = size - 1;
 
   //
@@ -174,14 +181,14 @@ bool vtkDSMManager::CreateDSM()
   //
   this->DSMBuffer = new XdmfDsmBuffer();
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(MyComm, this->LocalBufferSizeMBytes*1024*1024);
+  this->DSMBuffer->ConfigureUniform(this->DSMComm, this->LocalBufferSizeMBytes*1024*1024);
 
   //
   // setup service thread
   //
 #ifdef HAVE_PTHREADS
   // Start another thread to handle DSM requests from other nodes
-  pthread_create(&thread1, NULL, &XdmfDsmBufferServiceThread, (void *) this->DSMBuffer);
+  pthread_create(&this->ServiceThread, NULL, &XdmfDsmBufferServiceThread, (void *) this->DSMBuffer);
 #elif HAVE_BOOST_THREADS
     DSMServiceThread MyDSMServiceThread(this->DSMBuffer);
     this->ServiceThread = new boost::thread(MyDSMServiceThread);

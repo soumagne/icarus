@@ -30,6 +30,12 @@
 
 #include "XdmfDsm.h"         // Xdmf DSM objects
 #include "XdmfDsmBuffer.h"   // Xdmf DSM objects
+#include "XdmfDsmCommMpi.h"  // Xdmf DSM objects
+
+#ifndef WIN32
+  #define HAVE_PTHREADS
+  #include <pthread.h>
+#endif
 
 #ifdef HAVE_BOOST_THREADS
   #include <boost/thread/thread.hpp> // Boost Threads
@@ -87,9 +93,11 @@ protected:
   vtkTypeInt64   LocalBufferSizeMBytes;
 
 //BTX
-  #ifdef HAVE_BOOST_THREADS
+#ifdef HAVE_PTHREADS
+    pthread_t ServiceThread;
+#elif HAVE_BOOST_THREADS
     boost::thread *ServiceThread;
-  #endif
+#endif
     XdmfDsmBuffer *DSMBuffer;
 //ETX
 
@@ -99,6 +107,7 @@ protected:
   //ETX
       vtkMultiProcessController* Controller;
   //BTX
+      XdmfDsmCommMpi *DSMComm;
     #endif
   //ETX
 
