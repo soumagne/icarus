@@ -174,7 +174,7 @@ void pqDSMViewerPanel::onTestDSM()
     vtkGenericWarningMacro(<<"Nothing to Write");
     return;
   }
-  if (!this->UI->ProxyCreated()) {
+  if (!this->UI->DSMInitialized) {
     vtkGenericWarningMacro(<<"Creating DSM before calling Test");
     this->onCreateDSM();
   }
@@ -206,6 +206,8 @@ void pqDSMViewerPanel::onTestDSM()
 
   XdmfWriter->UpdateVTKObjects();
   XdmfWriter->UpdatePipeline();
+
+  this->UI->DSMProxy->InvokeCommand("H5Dump");
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onQueryDSM()

@@ -13,7 +13,10 @@
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
-      
+      <Property name="H5Dump"
+                command="H5Dump">
+      </Property>
+
     </Proxy>
 
     <!-- ================================================================= -->

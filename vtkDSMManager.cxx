@@ -38,6 +38,7 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 
 #include "XdmfDsmCommMpi.h"
 #include "XdmfDsmMsg.h"
+#include "XdmfDsmDump.h"
 
 typedef void* (*servicefn)(void *DsmObj) ;
 //----------------------------------------------------------------------------
@@ -216,6 +217,13 @@ bool vtkDSMManager::CreateDSM()
   return true;
 }
 //----------------------------------------------------------------------------
+void vtkDSMManager::H5Dump()
+{  
+  XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+  myDsmDump->SetDsmBuffer(this->DSMBuffer);
+  myDsmDump->Dump();
+  delete myDsmDump;
+}
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
