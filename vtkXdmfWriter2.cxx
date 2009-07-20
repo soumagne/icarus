@@ -388,7 +388,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
   XdmfTopology   *topology;
   XdmfGeometry   *geometry;
   XdmfArray      *xdmfarray;
-  XdmfHDF        *xdmfH5;
+  //XdmfHDF        *xdmfH5;
   //
   vtkXDRDebug("BuildXdmfGrid");
   // Debug DSM info
@@ -451,7 +451,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
     topology->SetBaseOffset(0);
     // GetConnectivity() will create an XdmfArray.
     xdmfarray = topology->GetConnectivity();
-    xdmfH5 = topology->GetH5();
+    //xdmfH5 = topology->GetH5();
     if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
     if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
       xdmfarray->SetBuildHeavy(XDMF_TRUE);
@@ -483,7 +483,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
     geometry->SetNumberOfPoints(NumberOfPoints);
     //
     xdmfarray = geometry->GetPoints();
-    xdmfH5 = geometry->GetH5();
+    //xdmfH5 = geometry->GetH5();
     if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
     if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
@@ -521,7 +521,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
     nodedata->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
     //
     xdmfarray = nodedata->GetValues();
-    xdmfH5 = nodedata->GetH5();
+    //xdmfH5 = nodedata->GetH5();
     if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
     if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
@@ -559,7 +559,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
     celldata->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_CELL);
     //
     xdmfarray = celldata->GetValues();
-    xdmfH5 = celldata->GetH5();
+    //xdmfH5 = celldata->GetH5();
     if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
     if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
