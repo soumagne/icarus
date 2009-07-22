@@ -696,8 +696,8 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 			  this->Controller->Barrier();
 		  }
           #endif
-		  xdmfH5[index_topo].Open2( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_topo].Write2( &xdmfarray[index_topo] );
+		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
+		  //xdmfH5[index_topo].WriteBlock( &xdmfarray[index_topo] );
 		  //xdmfH5[index_topo].Close();
 		  fd = xdmfH5[index_topo].GetFile();
 		  cwd = xdmfH5[index_topo].GetCwd();
@@ -706,7 +706,7 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_topo].SetFile(fd);
 		  xdmfH5[index_topo].SetCwd(cwd);
 		  xdmfH5[index_topo].SetAccessPlist(access_list);
-		  xdmfH5[index_topo].Open2( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
+		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
 	  }
 	  this->Controller->Barrier();
 
@@ -729,8 +729,8 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 	  xdmfH5[index_geom].SetFile(fd);
 	  xdmfH5[index_geom].SetCwd(cwd);
 	  xdmfH5[index_geom].SetAccessPlist(access_list);
-	  xdmfH5[index_geom].Open2( xdmfarray[index_geom].GetHeavyDataSetName(), "rw" );
-	  //xdmfH5[index_geom].Write2( &xdmfarray[index_geom] );
+	  xdmfH5[index_geom].OpenBlock( xdmfarray[index_geom].GetHeavyDataSetName(), "rw" );
+	  //xdmfH5[index_geom].WriteBlock( &xdmfarray[index_geom] );
 	  //xdmfH5[index_geom].Close();
 	  this->Controller->Barrier();
 
@@ -761,8 +761,8 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_point].SetFile(fd);
 		  xdmfH5[index_point].SetCwd(cwd);
 		  xdmfH5[index_point].SetAccessPlist(access_list);
-		  xdmfH5[index_point].Open2( xdmfarray[index_point].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_point].Write2( &xdmfarray[index_point] );
+		  xdmfH5[index_point].OpenBlock( xdmfarray[index_point].GetHeavyDataSetName(), "rw" );
+		  //xdmfH5[index_point].WriteBlock( &xdmfarray[index_point] );
 		  //xdmfH5[index_point].Close();
 		  this->Controller->Barrier();
 	  }
@@ -793,8 +793,8 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_cell].SetFile(fd);
 		  xdmfH5[index_cell].SetCwd(cwd);
 		  xdmfH5[index_cell].SetAccessPlist(access_list);
-		  xdmfH5[index_cell].Open2( xdmfarray[index_cell].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_cell].Write2( &xdmfarray[index_cell] );
+		  xdmfH5[index_cell].OpenBlock( xdmfarray[index_cell].GetHeavyDataSetName(), "rw" );
+		  //xdmfH5[index_cell].WriteBlock( &xdmfarray[index_cell] );
 		  //xdmfH5[index_cell].Close();
 		  this->Controller->Barrier();
 	  }
@@ -807,7 +807,7 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  int index = block*nb_arrays + i;
 		  if (xdmfarray[index].GetDummyArray() == XDMF_FALSE)
 			  vtkXDRDebug("Writing..." << xdmfarray[index].GetHeavyDataSetName());
-		  xdmfH5[index].Write2( &xdmfarray[index] );
+		  xdmfH5[index].WriteBlock( &xdmfarray[index] );
 	  }
   }
 
@@ -815,11 +815,11 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 	for (int i=0 ; i<nb_arrays ; i++) {
 		int index = block*nb_arrays + i;
 		vtkXDRDebug("Closing..." << xdmfarray[index].GetHeavyDataSetName());
-		xdmfH5[index].Close2();
+		xdmfH5[index].CloseBlock();
 	}
   }
 
-  xdmfH5[0].CloseFileOnly();
+  xdmfH5[0].CloseBlockFileOnly();
 
   delete[] xdmfarray;
   delete[] xdmfH5;
@@ -915,7 +915,7 @@ void vtkXdmfWriter2::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 
   // Using parallel mode, get XML blocks from each process and gather on node 0
 #ifdef VTK_USE_MPI
-  if (this->Controller) {
+  if (this->Controller && (this->UpdateNumPieces > 1)) {
     vtkXDRDebug("Gathering XML blocks");
     if (this->UpdatePiece != 0) {// Slave
 
@@ -1012,26 +1012,41 @@ void vtkXdmfWriter2::WriteData()
   int data_block;
 
   if (dsinput) {
-    if (dsinput->GetInformation()->Has(vtkDataObject::DATA_TIME_STEPS()))
-      current_time = dsinput->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0];
-    vtkXDRDebug("Current Time: " << current_time);
+    vtkXDRDebug("DataSet input !!!!!!!")
+    if (this->UpdateNumPieces > 1) {
+      // create multiblock
+      vtkXDRDebug("create mbdataset !!!!!!!")
+      mbinput = vtkMultiBlockDataSet::New();
+      mbinput->SetNumberOfBlocks(this->UpdateNumPieces);
+      for (int i = 0; i < this->UpdateNumPieces; i++) {
+        if (i == this->UpdatePiece)
+          mbinput->SetBlock(i, dsinput);
+        else
+          mbinput->SetBlock(i, NULL);
+      }
+    } else {
+      if (dsinput->GetInformation()->Has(vtkDataObject::DATA_TIME_STEPS()))
+        current_time = dsinput->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0];
+      vtkXDRDebug("Current Time: " << current_time);
 
-    this->BlockNum = 0;
-    bool StaticFlag = false;
-    vtkstd::string name = this->MakeGridName(dsinput, NULL);
-    if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) || this->TopologyConstant)
-      {
+      this->BlockNum = 0;
+      bool StaticFlag = false;
+      vtkstd::string name = this->MakeGridName(dsinput, NULL);
+      if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) || this->TopologyConstant)
+        {
         // if re-using static topology/geometry, then find the first dataset ...
         vtkstd::stringstream staticXPath;
         staticXPath << XpathPrefix << "/Grid[@Name=\"" << name.c_str() << "\"][1]";
         staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
         StaticFlag = true;
-      }
-    vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
-    this->SetBuildModeToAll();
-    timeStepDOM = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
+        }
+      vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
+      this->SetBuildModeToAll();
+      timeStepDOM = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
+    }
   }
-  else if (mbinput) {
+  if (mbinput) {
+    vtkXDRDebug("MBDataSet input !!!!!!!")
     if (mbinput->GetInformation()->Has(vtkDataObject::DATA_TIME_STEPS()))
       current_time = mbinput->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0];
     vtkXDRDebug("Current Time: " << current_time);
@@ -1045,63 +1060,63 @@ void vtkXdmfWriter2::WriteData()
     timeStepDOM = this->CreateEmptyCollection("vtkMultiBlock", "Spatial");
 
 #ifdef JB_DEBUG__
-//    OUTPUTTEXT("P(" << this->UpdatePiece << ") | ")
+    //    OUTPUTTEXT("P(" << this->UpdatePiece << ") | ")
     for (int i=0 ; i<this->UpdateNumPieces ; i++) {
       if (mbinput->GetBlock(i) != NULL) {
-    	  OUTPUTTEXT("BLOCK | ")
+        OUTPUTTEXT("BLOCK | ")
       }
       else {
-    	  OUTPUTTEXT("NULL | ")
+        OUTPUTTEXT("NULL | ")
       }
     }
 #endif
 
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem(), this->BlockNum++)
       {
-        vtkXDRDebug("Loop " << this->BlockNum);
-        const char *dsname = mbinput->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
-        dsinput = vtkUnstructuredGrid::SafeDownCast(iter->GetCurrentDataObject());
-        bool StaticFlag = false;
-        if (dsinput) {
-          vtkXDRDebug("I got the block number: " << this->BlockNum);
-          data_block = this->BlockNum;
-          vtkstd::string name = MakeGridName(dsinput, dsname);
-          if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED())
-              || this->TopologyConstant)
-            {
-              vtkstd::stringstream staticXPath;
-              staticXPath << XpathPrefix << "/Grid[@Name=\"vtkMultiBlock\"][1]" << "/Grid[@Name=\"" << name.c_str() << "\"]";
-              staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
-              XdmfXmlNode staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
-              StaticFlag = true;
-            }
-          vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
-          this->SetBuildModeToLight();
-          XdmfDOM *block = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
-          this->AddGridToCollection(timeStepDOM, block);
-          delete block;
-        }
+      vtkXDRDebug("Loop " << this->BlockNum);
+      const char *dsname = mbinput->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
+      dsinput = vtkUnstructuredGrid::SafeDownCast(iter->GetCurrentDataObject());
+      bool StaticFlag = false;
+      if (dsinput) {
+        vtkXDRDebug("I got the block number: " << this->BlockNum);
+        data_block = this->BlockNum;
+        vtkstd::string name = MakeGridName(dsinput, dsname);
+        if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED())
+            || this->TopologyConstant)
+          {
+          vtkstd::stringstream staticXPath;
+          staticXPath << XpathPrefix << "/Grid[@Name=\"vtkMultiBlock\"][1]" << "/Grid[@Name=\"" << name.c_str() << "\"]";
+          staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
+          XdmfXmlNode staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
+          StaticFlag = true;
+          }
+        vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
+        this->SetBuildModeToLight();
+        XdmfDOM *block = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
+        this->AddGridToCollection(timeStepDOM, block);
+        delete block;
+      }
       }
 
   }
-    if (timeStepDOM)
-      this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
+  if (timeStepDOM)
+    this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
 
 #ifdef VTK_USE_MPI
-    if (this->Controller)
-      this->Controller->Barrier();
+  if (this->Controller)
+    this->Controller->Barrier();
 #endif
-    if (mbinput) {
-      vtkXDRDebug("**********Heavy Building************");
-      XdmfXmlNode   domain = timeStepDOM->FindElement("Domain");
-      XdmfXmlNode     grid = timeStepDOM->FindElement("Grid", 0, domain);
-      XdmfXmlNode     grid_block = timeStepDOM->FindElement("Grid", 0, grid);
-      int nb_arrays = timeStepDOM->GetNumberOfChildren(grid_block);
-      this->BuildHeavyXdmfGrid(mbinput, data_block, nb_arrays);
-    }
+  if (mbinput) {
+    vtkXDRDebug("**********Heavy Building************");
+    XdmfXmlNode   domain = timeStepDOM->FindElement("Domain");
+    XdmfXmlNode     grid = timeStepDOM->FindElement("Grid", 0, domain);
+    XdmfXmlNode     grid_block = timeStepDOM->FindElement("Grid", 0, grid);
+    int nb_arrays = timeStepDOM->GetNumberOfChildren(grid_block);
+    this->BuildHeavyXdmfGrid(mbinput, data_block, nb_arrays);
+  }
 
-    if (timeStepDOM)
-    	delete timeStepDOM;
+  if (timeStepDOM)
+    delete timeStepDOM;
   delete outputDOM;
   this->TimeStep++;
 }

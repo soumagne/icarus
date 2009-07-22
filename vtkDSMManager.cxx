@@ -181,6 +181,20 @@ bool vtkDSMManager::CreateDSM()
     }
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
 
+#ifdef VTK_USE_MPI
+  if (this->Controller) {
+    this->UpdatePiece = this->Controller->GetLocalProcessId();
+    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+  }
+  else {
+    this->UpdatePiece = 0;
+    this->UpdateNumPieces = 1;
+  }
+#else
+  this->UpdatePiece = 0;
+  this->UpdateNumPieces = 1;
+#endif
+
   //
   // Create Xdmf DSM communicator
   //
@@ -221,7 +235,8 @@ void vtkDSMManager::H5Dump()
 {  
   XdmfDsmDump *myDsmDump = new XdmfDsmDump();
   myDsmDump->SetDsmBuffer(this->DSMBuffer);
-  myDsmDump->Dump();
+  if (this->UpdatePiece == 0)
+    myDsmDump->Dump();
   delete myDsmDump;
 }
 //----------------------------------------------------------------------------
