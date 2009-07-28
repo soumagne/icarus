@@ -225,41 +225,6 @@ void vtk2XdmfArray(XdmfArray *xdmfarray, vtkDataArray *vtkarray,
   xdmfarray->SetShape(Rank, Dims);
 }
 //----------------------------------------------------------------------------
-void InitializeDSMArray(XdmfHDF *H5, XdmfConstString DataSetName) {
-
-	// Write a dummy data to initialize structure when using DSM buffer
-	// before other processes write
-	XdmfInt64 *DummyValues;
-	XdmfArray Dummy;
-
-	if (H5->GetRank() == 1) {
-		DummyValues = new XdmfInt64[1];
-		DummyValues[0] = 0;
-	} else {
-		int dim = H5->GetDimension(1);
-		DummyValues = new XdmfInt64[dim];
-		for (int i=0; i<dim; i++)
-			DummyValues[i] = 0;
-	}
-
-	if (H5->Open(DataSetName, "rw") == XDMF_FAIL) {
-		XdmfErrorMessage("Error Opening " << DataSetName << " for Writing");
-		delete[] DummyValues;
-	}
-
-	// Write Dummy Value
-	H5->SelectCoordinates(1, DummyValues);
-	Dummy.CopyType(H5);
-	Dummy.SetNumberOfElements(1);
-	if(H5->Write(&Dummy) == XDMF_FAIL) {
-		H5->Close();
-		delete[] DummyValues;
-	}
-	H5->Close();
-	delete[] DummyValues;
-	DummyValues = NULL;
-}
-//----------------------------------------------------------------------------
 vtkXdmfWriter2::vtkXdmfWriter2()
 {
   this->SetNumberOfInputPorts(1);
@@ -687,18 +652,9 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 	  xdmfH5[index_topo].CopyType( &xdmfarray[index_topo] );
 	  xdmfH5[index_topo].CopyShape( &xdmfarray[index_topo] );
 	  vtkXDRDebug("Opening..." << xdmfarray[index_topo].GetHeavyDataSetName());
-
+	  
 	  if (index_topo == 0) {
-          #ifndef XDMF_NO_MPI // Only for DSM processing
-		  if (DSMManager) {
-			  if (this->UpdatePiece == 0)
-				  InitializeDSMArray(&xdmfH5[index_topo], xdmfarray[index_topo].GetHeavyDataSetName());
-			  this->Controller->Barrier();
-		  }
-          #endif
 		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_topo].WriteBlock( &xdmfarray[index_topo] );
-		  //xdmfH5[index_topo].Close();
 		  fd = xdmfH5[index_topo].GetFile();
 		  cwd = xdmfH5[index_topo].GetCwd();
 		  access_list = xdmfH5[index_topo].GetAccessPlist();
@@ -708,7 +664,6 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_topo].SetAccessPlist(access_list);
 		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
 	  }
-	  this->Controller->Barrier();
 
 	  //
 	  // Geometry - points
@@ -730,9 +685,6 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 	  xdmfH5[index_geom].SetCwd(cwd);
 	  xdmfH5[index_geom].SetAccessPlist(access_list);
 	  xdmfH5[index_geom].OpenBlock( xdmfarray[index_geom].GetHeavyDataSetName(), "rw" );
-	  //xdmfH5[index_geom].WriteBlock( &xdmfarray[index_geom] );
-	  //xdmfH5[index_geom].Close();
-	  this->Controller->Barrier();
 
 	  //
 	  // Point Data : sort alphabetically to avoid potential bad ordering problems
@@ -762,9 +714,6 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_point].SetCwd(cwd);
 		  xdmfH5[index_point].SetAccessPlist(access_list);
 		  xdmfH5[index_point].OpenBlock( xdmfarray[index_point].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_point].WriteBlock( &xdmfarray[index_point] );
-		  //xdmfH5[index_point].Close();
-		  this->Controller->Barrier();
 	  }
 
 	  //
@@ -794,9 +743,6 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index_cell].SetCwd(cwd);
 		  xdmfH5[index_cell].SetAccessPlist(access_list);
 		  xdmfH5[index_cell].OpenBlock( xdmfarray[index_cell].GetHeavyDataSetName(), "rw" );
-		  //xdmfH5[index_cell].WriteBlock( &xdmfarray[index_cell] );
-		  //xdmfH5[index_cell].Close();
-		  this->Controller->Barrier();
 	  }
   }
 
@@ -810,6 +756,8 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 		  xdmfH5[index].WriteBlock( &xdmfarray[index] );
 	  }
   }
+
+  this->Controller->Barrier();
 
   for (int block=0; block<nb_blocks; block++) {
 	for (int i=0 ; i<nb_arrays ; i++) {
@@ -1012,10 +960,10 @@ void vtkXdmfWriter2::WriteData()
   int data_block;
 
   if (dsinput) {
-    vtkXDRDebug("DataSet input !!!!!!!")
+    vtkXDRDebug("DataSet input")
     if (this->UpdateNumPieces > 1) {
       // create multiblock
-      vtkXDRDebug("create mbdataset !!!!!!!")
+      vtkXDRDebug("create mbdataset")
       mbinput = vtkMultiBlockDataSet::New();
       mbinput->SetNumberOfBlocks(this->UpdateNumPieces);
       for (int i = 0; i < this->UpdateNumPieces; i++) {
@@ -1046,7 +994,7 @@ void vtkXdmfWriter2::WriteData()
     }
   }
   if (mbinput) {
-    vtkXDRDebug("MBDataSet input !!!!!!!")
+    vtkXDRDebug("MBDataSet input")
     if (mbinput->GetInformation()->Has(vtkDataObject::DATA_TIME_STEPS()))
       current_time = mbinput->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0];
     vtkXDRDebug("Current Time: " << current_time);
