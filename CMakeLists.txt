@@ -25,9 +25,9 @@ ELSE (ParaView_BINARY_DIR)
   INCLUDE(${PARAVIEW_USE_FILE})
   INCLUDE_DIRECTORIES(
     ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
-    ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2/libxml
+    ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
   )
-ENDIF (ParaView_SOURCE_DIR)
+ENDIF (ParaView_BINARY_DIR)
 
 #--------------------------------------------------
 # Find and Use Boost
