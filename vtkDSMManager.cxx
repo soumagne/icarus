@@ -74,15 +74,11 @@ vtkDSMManager::vtkDSMManager()
   this->LocalBufferSizeMBytes    = 128;
   this->UpdatePiece              = 0;
   this->UpdateNumPieces          = 0;
-#ifdef HAVE_PTHREADS
   this->ServiceThread            = 0;
-#elif HAVE_BOOST_THREADS
-  this->ServiceThread            = 0;
-#endif
   //
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
-  this->DSMComm = NULL;
+  this->DSMComm    = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   //
@@ -151,6 +147,7 @@ class DSMServiceThread
       this->DSMObject = dsmObject;
     }
     void operator()() {
+//      this->DSMObject->SetGlobalDebug(1);
       this->DSMObject->ServiceThread();
     }
     //
@@ -163,37 +160,28 @@ bool vtkDSMManager::CreateDSM()
     return true;
   }
 
-  if (!this->GetController())
+  if (!this->Controller)
     {
     vtkErrorMacro(<<"No MPI Controller specified");
     return false;
     }
 
+#ifdef VTK_USE_MPI
+  this->UpdatePiece     = this->Controller->GetLocalProcessId();
+  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+#else
+  this->UpdatePiece     = 0;
+  this->UpdateNumPieces = 1;
+  vtkErrorMacro(<<"No MPI");
+  return 0;
+#endif
+
   //
   // Get the raw MPI_Comm handle
   //
   vtkMPICommunicator *communicator
-    = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
-  if (!communicator)
-    {
-    vtkErrorMacro(<<"No MPI communicator specified");
-    return false;
-    }
+    = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
-
-#ifdef VTK_USE_MPI
-  if (this->Controller) {
-    this->UpdatePiece = this->Controller->GetLocalProcessId();
-    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-  }
-  else {
-    this->UpdatePiece = 0;
-    this->UpdateNumPieces = 1;
-  }
-#else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces = 1;
-#endif
 
   //
   // Create Xdmf DSM communicator
@@ -235,8 +223,9 @@ void vtkDSMManager::H5Dump()
 {  
   XdmfDsmDump *myDsmDump = new XdmfDsmDump();
   myDsmDump->SetDsmBuffer(this->DSMBuffer);
-  if (this->UpdatePiece == 0)
+  if (this->UpdatePiece == 0) {
     myDsmDump->Dump();
+  }
   delete myDsmDump;
 }
 //----------------------------------------------------------------------------

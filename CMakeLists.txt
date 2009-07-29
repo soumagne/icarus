@@ -18,7 +18,7 @@ IF (ParaView_SOURCE_DIR)
     ${VTK_INCLUDE_DIR}
     ${MPI_INCLUDE_PATH}
     ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
-    ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2/libxml
+    ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
   )
 ELSE (ParaView_SOURCE_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
