@@ -57,6 +57,7 @@ public:
   bool  CreateDSM();
   bool  DestroyDSM();
   void  H5Dump();
+  void  H5DumpLight();
 //BTX
   XdmfDsmBuffer *GetDSMHandle();
 //ETX

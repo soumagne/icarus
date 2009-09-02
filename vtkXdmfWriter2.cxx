@@ -87,14 +87,14 @@ vtkCxxSetObjectMacro(vtkXdmfWriter2, DSMManager, vtkDSMManager);
 
   #undef vtkDebugMacro
   #define vtkDebugMacro(p,a)  \
-	{ \
-	vtkOStreamWrapper::EndlType endl; \
-	vtkOStreamWrapper::UseEndl(endl); \
-	vtkOStrStreamWrapper vtkmsg; \
-	vtkmsg << "P(" << p << ") " << a << "\n"; \
-	OUTPUTTEXT(vtkmsg.str()); \
-	vtkmsg.rdbuf()->freeze(0); \
-	}
+  { \
+  vtkOStreamWrapper::EndlType endl; \
+  vtkOStreamWrapper::UseEndl(endl); \
+  vtkOStrStreamWrapper vtkmsg; \
+  vtkmsg << "P(" << p << ") " << a << "\n"; \
+  OUTPUTTEXT(vtkmsg.str()); \
+  vtkmsg.rdbuf()->freeze(0); \
+  }
   #define vtkXDRDebug(a) vtkDebugMacro(this->UpdatePiece,a)
   #define vtkXDRError(a) vtkDebugMacro(this->UpdatePiece,a)
   //
@@ -106,16 +106,16 @@ vtkCxxSetObjectMacro(vtkXdmfWriter2, DSMManager, vtkDSMManager);
 #endif
 //----------------------------------------------------------------------------
 #define vtkXdmfCELLMAP1(a,b) if (celltype==a) { data[ctr++] = b; \
-	for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
+  for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
 #define vtkXdmfCELLINCN(a,b) if (celltype==a) { data[ctr++] = b; \
-	data[ctr++] = N; for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
+  data[ctr++] = N; for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
 #define vtkXdmfCELLNONE(a,b) if (celltype==a) { return b; }
 const int voxel[8] = {0,1,3,2,4,5,7,6};
 #define vtkXdmfVOXEL(a,b) if (celltype==a) { data[ctr++] = b; \
-	for (int i=0; i<8; ++i) data[ctr++] = pts[voxel[i]]; return b; }
+  for (int i=0; i<8; ++i) data[ctr++] = pts[voxel[i]]; return b; }
 const int pixel[4] = {0,1,3,2};
 #define vtkXdmfPIXEL(a,b) if (celltype==a) { data[ctr++] = b; \
-	for (int i=0; i<4; ++i) data[ctr++] = pts[pixel[i]]; return b; }
+  for (int i=0; i<4; ++i) data[ctr++] = pts[pixel[i]]; return b; }
 //
 int VTKToXdmfCellMap(vtkIdType *data, vtkIdType *pts, int celltype, int N, vtkIdType &ctr) {
   vtkXdmfCELLNONE(VTK_EMPTY_CELL             ,XDMF_NOTOPOLOGY);  // ?
@@ -569,30 +569,29 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
   iter.TakeReference(mbdataset->NewIterator());
   iter->SkipEmptyNodesOff();
   this->BlockNum = 0;
-  XdmfArray *xdmfarray = new XdmfArray[nb_arrays*nb_blocks];
-  XdmfHDF *xdmfH5 = new XdmfHDF[nb_arrays*nb_blocks];
+
   hid_t fd, cwd, access_list;
+  XdmfArray *xdmfarray = new XdmfArray[nb_arrays*nb_blocks];
+  XdmfHDF      *xdmfH5 = new XdmfHDF[nb_arrays*nb_blocks];
 
   for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem(), this->BlockNum++)
   {
-	  vtkXDRDebug("Loop " << this->BlockNum);
-	  vtkDataSet *dataset = vtkUnstructuredGrid::SafeDownCast(iter->GetCurrentDataObject());
-	  this->DummyBuildOff();
+    vtkXDRDebug("Loop " << this->BlockNum);
+    vtkDataSet *dataset = vtkUnstructuredGrid::SafeDownCast(iter->GetCurrentDataObject());
+    if (dataset) {
+      vtkXDRDebug("I got the block number: " << this->BlockNum);
+      this->DummyBuildOff();
+    } else {
+      vtkXDRDebug("Dummy sync " << this->BlockNum);
+      dataset = vtkDataSet::SafeDownCast(mbdataset->GetBlock(data_block));
+      this->DummyBuildOn();
+    }
 
+    this->SetBuildModeToHeavy();
 
-	  if (dataset) {
-		  vtkXDRDebug("I got the block number: " << this->BlockNum);
-	  } else {
-		  vtkXDRDebug("Dummy sync " << this->BlockNum);
-		  dataset = vtkDataSet::SafeDownCast(mbdataset->GetBlock(data_block));
-		  this->DummyBuildOn();
-	  }
-
-	  this->SetBuildModeToHeavy();
-
-	  // Debug DSM info
+    // Debug DSM info
 #ifdef VTK_USE_MPI
-	  if (this->DSMManager && this->DSMManager->GetDSMHandle()) {
+    if (this->DSMManager && this->DSMManager->GetDSMHandle()) {
       XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
       long long tlength, length, start, end;
       tlength = dsmbuffer->GetTotalLength();
@@ -601,170 +600,169 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
       vtkXDRDebug("Length of DSM per node: " << length);
       dsmbuffer->GetAddressRangeForId(this->UpdatePiece, &start, &end);
       vtkXDRDebug("DSM address range: " << start << "-->" << end);
-		  //this->DSMManager->DebugOn();
-	  }
+    }
 #endif
 
-	  //
-	  // File/DataGroup name
-	  //
-	  vtkstd::stringstream temp2;
-	  if (this->DSMManager) temp2 << "DSM:";
-	  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
-	  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
-	  vtkstd::string hdf5String = temp2.str();
+    //
+    // File/DataGroup name
+    //
+    vtkstd::stringstream temp2;
+    if (this->DSMManager) temp2 << "DSM:";
+    temp2 << this->BaseFileName.c_str() << ".h5:/" <<
+    setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
+    vtkstd::string hdf5String = temp2.str();
 
-	  //
-	  // Initialization
-	  //
-	  vtkIdType NumberOfPoints = dataset->GetNumberOfPoints();
-	  vtkIdType NumberOfCells  = dataset->GetNumberOfCells();
-	  vtkXDRDebug("Number of Points: " << NumberOfPoints << ", Number of Cells: " << NumberOfCells);
-	  //
-	  vtkUnstructuredGrid *ug = vtkUnstructuredGrid::SafeDownCast(dataset);
+    //
+    // Initialization
+    //
+    vtkIdType NumberOfPoints = dataset->GetNumberOfPoints();
+    vtkIdType NumberOfCells  = dataset->GetNumberOfCells();
+    vtkXDRDebug("Number of Points: " << NumberOfPoints << ", Number of Cells: " << NumberOfCells);
+    //
+    vtkUnstructuredGrid *ug = vtkUnstructuredGrid::SafeDownCast(dataset);
 
-	  vtkSmartPointer<vtkUnsignedCharArray>  celltypes = ug->GetCellTypesArray();
-	  vtkSmartPointer<vtkIdTypeArray>         celllocs = ug->GetCellLocationsArray();
-	  vtkSmartPointer<vtkCellArray>       connectivity = ug->GetCells();
+    vtkSmartPointer<vtkUnsignedCharArray>  celltypes = ug->GetCellTypesArray();
+    vtkSmartPointer<vtkIdTypeArray>         celllocs = ug->GetCellLocationsArray();
+    vtkSmartPointer<vtkCellArray>       connectivity = ug->GetCells();
 
-	  vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray(connectivity, celltypes, NumberOfCells);
-	  vtkXDRDebug("ConvertConnectivityArray done");
+    vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray(connectivity, celltypes, NumberOfCells);
+    vtkXDRDebug("ConvertConnectivityArray done");
 
-	  //
-	  // Topology
-	  //
-	  int index_topo = this->BlockNum*nb_arrays;
-	  //xdmfH5[index_topo].DebugOn();
-	  if (this->DSMManager) xdmfarray[index_topo].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-	  if (this->DSMManager) xdmfH5[index_topo].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-	  if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-		  xdmfarray[index_topo].SetBuildHeavy(XDMF_TRUE);
-		  if (this->DummyBuild == 1) {
-			  xdmfarray[index_topo].SetDummyArray(XDMF_TRUE);
-              #ifndef XDMF_NO_MPI
-			  int rank;
-			  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-			  vtkXDRDebug("Dummy Array set");
-              #endif
-		  }
-	  }
-	  vtk2XdmfArray(&xdmfarray[index_topo], connectivityXdmf, hdf5String.c_str(), "Topology", "Connectivity");
-	  xdmfH5[index_topo].CopyType( &xdmfarray[index_topo] );
-	  xdmfH5[index_topo].CopyShape( &xdmfarray[index_topo] );
-	  vtkXDRDebug("Opening..." << xdmfarray[index_topo].GetHeavyDataSetName());
-	  
-	  if (index_topo == 0) {
-		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
-		  fd = xdmfH5[index_topo].GetFile();
-		  cwd = xdmfH5[index_topo].GetCwd();
-		  access_list = xdmfH5[index_topo].GetAccessPlist();
-	  } else {
-		  xdmfH5[index_topo].SetFile(fd);
-		  xdmfH5[index_topo].SetCwd(cwd);
-		  xdmfH5[index_topo].SetAccessPlist(access_list);
-		  xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
-	  }
+    //
+    // Topology
+    //
+    int index_topo = this->BlockNum*nb_arrays;
+    //xdmfH5[index_topo].DebugOn();
+    if (this->DSMManager) xdmfarray[index_topo].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+    if (this->DSMManager) xdmfH5[index_topo].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+    if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
+      xdmfarray[index_topo].SetBuildHeavy(XDMF_TRUE);
+      if (this->DummyBuild == 1) {
+        xdmfarray[index_topo].SetDummyArray(XDMF_TRUE);
+#ifndef XDMF_NO_MPI
+        int rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+        vtkXDRDebug("Dummy Array set");
+#endif
+      }
+    }
+    vtk2XdmfArray(&xdmfarray[index_topo], connectivityXdmf, hdf5String.c_str(), "Topology", "Connectivity");
+    xdmfH5[index_topo].CopyType( &xdmfarray[index_topo] );
+    xdmfH5[index_topo].CopyShape( &xdmfarray[index_topo] );
+    vtkXDRDebug("Opening..." << xdmfarray[index_topo].GetHeavyDataSetName());
+    
+    if (index_topo == 0) {
+      xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
+      fd = xdmfH5[index_topo].GetFile();
+      cwd = xdmfH5[index_topo].GetCwd();
+      access_list = xdmfH5[index_topo].GetAccessPlist();
+    } else {
+      xdmfH5[index_topo].SetFile(fd);
+      xdmfH5[index_topo].SetCwd(cwd);
+      xdmfH5[index_topo].SetAccessPlist(access_list);
+      xdmfH5[index_topo].OpenBlock( xdmfarray[index_topo].GetHeavyDataSetName(), "rw" );
+    }
 
-	  //
-	  // Geometry - points
-	  //
-	  int index_geom = this->BlockNum*nb_arrays + 1;
-	  if (this->DSMManager) xdmfarray[index_geom].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-	  if (this->DSMManager) xdmfH5[index_geom].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-	  if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-		  xdmfarray[index_geom].SetBuildHeavy(XDMF_TRUE);
-		  if (this->DummyBuild == 1)
-			  xdmfarray[index_geom].SetDummyArray(XDMF_TRUE);
-	  }
-	  vtkDataArray *points = ug->GetPoints()->GetData();
-	  vtk2XdmfArray(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
-	  xdmfH5[index_geom].CopyType( &xdmfarray[index_geom] );
-	  xdmfH5[index_geom].CopyShape( &xdmfarray[index_geom] );
-	  vtkXDRDebug("Opening..." << xdmfarray[index_geom].GetHeavyDataSetName());
-	  xdmfH5[index_geom].SetFile(fd);
-	  xdmfH5[index_geom].SetCwd(cwd);
-	  xdmfH5[index_geom].SetAccessPlist(access_list);
-	  xdmfH5[index_geom].OpenBlock( xdmfarray[index_geom].GetHeavyDataSetName(), "rw" );
+    //
+    // Geometry - points
+    //
+    int index_geom = this->BlockNum*nb_arrays + 1;
+    if (this->DSMManager) xdmfarray[index_geom].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+    if (this->DSMManager) xdmfH5[index_geom].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+    if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
+      xdmfarray[index_geom].SetBuildHeavy(XDMF_TRUE);
+      if (this->DummyBuild == 1)
+        xdmfarray[index_geom].SetDummyArray(XDMF_TRUE);
+    }
+    vtkDataArray *points = ug->GetPoints()->GetData();
+    vtk2XdmfArray(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
+    xdmfH5[index_geom].CopyType( &xdmfarray[index_geom] );
+    xdmfH5[index_geom].CopyShape( &xdmfarray[index_geom] );
+    vtkXDRDebug("Opening..." << xdmfarray[index_geom].GetHeavyDataSetName());
+    xdmfH5[index_geom].SetFile(fd);
+    xdmfH5[index_geom].SetCwd(cwd);
+    xdmfH5[index_geom].SetAccessPlist(access_list);
+    xdmfH5[index_geom].OpenBlock( xdmfarray[index_geom].GetHeavyDataSetName(), "rw" );
 
-	  //
-	  // Point Data : sort alphabetically to avoid potential bad ordering problems
-	  //
-	  vtkstd::vector<vtkstd::string> PointAttributeNames;
-	  for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
-		  vtkDataArray *scalars = dataset->GetPointData()->GetArray(i);
-		  PointAttributeNames.push_back(scalars->GetName());
-	  }
-	  vtkstd::sort(PointAttributeNames.begin(), PointAttributeNames.end());
+    //
+    // Point Data : sort alphabetically to avoid potential bad ordering problems
+    //
+    vtkstd::vector<vtkstd::string> PointAttributeNames;
+    for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
+      vtkDataArray *scalars = dataset->GetPointData()->GetArray(i);
+      PointAttributeNames.push_back(scalars->GetName());
+    }
+    vtkstd::sort(PointAttributeNames.begin(), PointAttributeNames.end());
 
-	  for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
-		  int index_point = this->BlockNum*nb_arrays + 2 + i;
-		  vtkDataArray *scalars = dataset->GetPointData()->GetArray(PointAttributeNames[i].c_str());
-		  if (this->DSMManager) xdmfarray[index_point].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-		  if (this->DSMManager) xdmfH5[index_point].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-		  if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-			  xdmfarray[index_point].SetBuildHeavy(XDMF_TRUE);
-			  if (this->DummyBuild == 1)
-				  xdmfarray[index_point].SetDummyArray(XDMF_TRUE);
-		  }
-		  vtk2XdmfArray(&xdmfarray[index_point], scalars, hdf5String.c_str(), "PointData", NULL);
-		  xdmfH5[index_point].CopyType( &xdmfarray[index_point] );
-		  xdmfH5[index_point].CopyShape( &xdmfarray[index_point] );
-		  vtkXDRDebug("Opening..." << xdmfarray[index_point].GetHeavyDataSetName());
-		  xdmfH5[index_point].SetFile(fd);
-		  xdmfH5[index_point].SetCwd(cwd);
-		  xdmfH5[index_point].SetAccessPlist(access_list);
-		  xdmfH5[index_point].OpenBlock( xdmfarray[index_point].GetHeavyDataSetName(), "rw" );
-	  }
+    for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
+      int index_point = this->BlockNum*nb_arrays + 2 + i;
+      vtkDataArray *scalars = dataset->GetPointData()->GetArray(PointAttributeNames[i].c_str());
+      if (this->DSMManager) xdmfarray[index_point].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+      if (this->DSMManager) xdmfH5[index_point].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+      if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
+        xdmfarray[index_point].SetBuildHeavy(XDMF_TRUE);
+        if (this->DummyBuild == 1)
+          xdmfarray[index_point].SetDummyArray(XDMF_TRUE);
+      }
+      vtk2XdmfArray(&xdmfarray[index_point], scalars, hdf5String.c_str(), "PointData", NULL);
+      xdmfH5[index_point].CopyType( &xdmfarray[index_point] );
+      xdmfH5[index_point].CopyShape( &xdmfarray[index_point] );
+      vtkXDRDebug("Opening..." << xdmfarray[index_point].GetHeavyDataSetName());
+      xdmfH5[index_point].SetFile(fd);
+      xdmfH5[index_point].SetCwd(cwd);
+      xdmfH5[index_point].SetAccessPlist(access_list);
+      xdmfH5[index_point].OpenBlock( xdmfarray[index_point].GetHeavyDataSetName(), "rw" );
+    }
 
-	  //
-	  // Cell Data : sort alphabetically to avoid potential bad ordering problems
-	  //
-	  vtkstd::vector<vtkstd::string> CellAttributeNames;
-	  for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
-		  vtkDataArray *scalars = dataset->GetPointData()->GetArray(i);
-		  CellAttributeNames.push_back(scalars->GetName());
-	  }
-	  vtkstd::sort(CellAttributeNames.begin(), CellAttributeNames.end());
+    //
+    // Cell Data : sort alphabetically to avoid potential bad ordering problems
+    //
+    vtkstd::vector<vtkstd::string> CellAttributeNames;
+    for (int i=0; i<dataset->GetPointData()->GetNumberOfArrays(); i++) {
+      vtkDataArray *scalars = dataset->GetPointData()->GetArray(i);
+      CellAttributeNames.push_back(scalars->GetName());
+    }
+    vtkstd::sort(CellAttributeNames.begin(), CellAttributeNames.end());
 
-	  for (int i=0; i<dataset->GetCellData()->GetNumberOfArrays(); i++) {
-		  int index_cell = (this->BlockNum + 1)*nb_arrays - dataset->GetCellData()->GetNumberOfArrays() + i;
-		  if (this->DSMManager) xdmfarray[index_cell].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-		  if (this->DSMManager) xdmfH5[index_cell].SetDsmBuffer(this->DSMManager->GetDSMHandle());
-		  if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-			  xdmfarray[index_cell].SetBuildHeavy(XDMF_TRUE);
-			  if (this->DummyBuild == 1)
-				  xdmfarray[index_cell].SetDummyArray(XDMF_TRUE);
-		  }
-		  vtkDataArray *scalars = dataset->GetCellData()->GetArray(CellAttributeNames[i].c_str());
-		  vtk2XdmfArray(&xdmfarray[index_cell], scalars, hdf5String.c_str(), "CellData", NULL);
-		  xdmfH5[index_cell].CopyType( &xdmfarray[index_cell] );
-		  xdmfH5[index_cell].CopyShape( &xdmfarray[index_cell] );
-		  xdmfH5[index_cell].SetFile(fd);
-		  xdmfH5[index_cell].SetCwd(cwd);
-		  xdmfH5[index_cell].SetAccessPlist(access_list);
-		  xdmfH5[index_cell].OpenBlock( xdmfarray[index_cell].GetHeavyDataSetName(), "rw" );
-	  }
+    for (int i=0; i<dataset->GetCellData()->GetNumberOfArrays(); i++) {
+      int index_cell = (this->BlockNum + 1)*nb_arrays - dataset->GetCellData()->GetNumberOfArrays() + i;
+      if (this->DSMManager) xdmfarray[index_cell].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+      if (this->DSMManager) xdmfH5[index_cell].SetDsmBuffer(this->DSMManager->GetDSMHandle());
+      if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
+        xdmfarray[index_cell].SetBuildHeavy(XDMF_TRUE);
+        if (this->DummyBuild == 1)
+          xdmfarray[index_cell].SetDummyArray(XDMF_TRUE);
+      }
+      vtkDataArray *scalars = dataset->GetCellData()->GetArray(CellAttributeNames[i].c_str());
+      vtk2XdmfArray(&xdmfarray[index_cell], scalars, hdf5String.c_str(), "CellData", NULL);
+      xdmfH5[index_cell].CopyType( &xdmfarray[index_cell] );
+      xdmfH5[index_cell].CopyShape( &xdmfarray[index_cell] );
+      xdmfH5[index_cell].SetFile(fd);
+      xdmfH5[index_cell].SetCwd(cwd);
+      xdmfH5[index_cell].SetAccessPlist(access_list);
+      xdmfH5[index_cell].OpenBlock( xdmfarray[index_cell].GetHeavyDataSetName(), "rw" );
+    }
   }
 
   this->Controller->Barrier();
 
   for (int block=0; block<nb_blocks; block++) {
-	  for (int i=0 ; i<nb_arrays ; i++) {
-		  int index = block*nb_arrays + i;
-		  if (xdmfarray[index].GetDummyArray() == XDMF_FALSE)
-			  vtkXDRDebug("Writing..." << xdmfarray[index].GetHeavyDataSetName());
-		  xdmfH5[index].WriteBlock( &xdmfarray[index] );
-	  }
+    for (int i=0 ; i<nb_arrays ; i++) {
+      int index = block*nb_arrays + i;
+      if (xdmfarray[index].GetDummyArray() == XDMF_FALSE)
+        vtkXDRDebug("Writing..." << xdmfarray[index].GetHeavyDataSetName());
+      xdmfH5[index].WriteBlock( &xdmfarray[index] );
+    }
   }
 
   this->Controller->Barrier();
 
   for (int block=0; block<nb_blocks; block++) {
-	for (int i=0 ; i<nb_arrays ; i++) {
-		int index = block*nb_arrays + i;
-		vtkXDRDebug("Closing..." << xdmfarray[index].GetHeavyDataSetName());
-		xdmfH5[index].CloseBlock();
-	}
+  for (int i=0 ; i<nb_arrays ; i++) {
+    int index = block*nb_arrays + i;
+    vtkXDRDebug("Closing..." << xdmfarray[index].GetHeavyDataSetName());
+    xdmfH5[index].CloseBlock();
+  }
   }
 
   xdmfH5[0].CloseBlockFileOnly();

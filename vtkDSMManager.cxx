@@ -229,7 +229,15 @@ void vtkDSMManager::H5Dump()
   delete myDsmDump;
 }
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+void vtkDSMManager::H5DumpLight()
+{  
+  XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+  myDsmDump->SetDsmBuffer(this->DSMBuffer);
+  if (this->UpdatePiece == 0) {
+    myDsmDump->DumpLight();
+  }
+  delete myDsmDump;
+}//----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

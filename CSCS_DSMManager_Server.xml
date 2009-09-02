@@ -16,6 +16,9 @@
       <Property name="H5Dump"
                 command="H5Dump">
       </Property>
+      <Property name="H5DumpLight"
+                command="H5DumpLight">
+      </Property>
 
     </Proxy>
 

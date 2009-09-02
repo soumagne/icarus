@@ -207,7 +207,7 @@ void pqDSMViewerPanel::onTestDSM()
   XdmfWriter->UpdateVTKObjects();
   XdmfWriter->UpdatePipeline();
 
-  this->UI->DSMProxy->InvokeCommand("H5Dump");
+  this->UI->DSMProxy->InvokeCommand("H5DumpLight");
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onQueryDSM()
