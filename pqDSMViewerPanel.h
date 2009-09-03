@@ -18,6 +18,8 @@ public:
   pqDSMViewerPanel(QWidget* p = NULL);
  ~pqDSMViewerPanel();
 
+  bool ProxyReady();
+
 signals:
 
 public slots:

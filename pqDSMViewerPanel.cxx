@@ -46,9 +46,11 @@ public:
   ~pqUI() {
     delete this->Links;
   }
-  //
+
+  // @TODO if the server plugin isn't loaded, this causes an exit
+  // must find a way around this
   void CreateProxy() {
-    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
     this->DSMProxy->UpdatePropertyInformation();
   }
@@ -125,10 +127,7 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onserverAdded(pqServer *server)
 {
-  if (!this->UI->ProxyCreated()) {
-    this->UI->CreateProxy();
-    this->linkServerManagerProperties();
-  }
+//  this->ProxyReady();
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::startRemovingServer(pqServer *server)
@@ -151,10 +150,19 @@ void pqDSMViewerPanel::linkServerManagerProperties()
 
 }
 //---------------------------------------------------------------------------
+bool pqDSMViewerPanel::ProxyReady()
+{
+  if (!this->UI->ProxyCreated()) {
+    this->UI->CreateProxy();
+    this->linkServerManagerProperties();
+    return this->UI->ProxyCreated();
+  }
+  return true;
+}
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onCreateDSM()
 {
-  if (this->UI->ProxyCreated()) {
+  if (this->ProxyReady()) {
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
   }
@@ -162,7 +170,7 @@ void pqDSMViewerPanel::onCreateDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDestroyDSM()
 {
-  if (this->UI->ProxyCreated()) {
+  if (this->ProxyReady()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
     this->UI->DSMInitialized = 0;
   }

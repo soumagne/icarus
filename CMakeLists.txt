@@ -70,27 +70,6 @@ ADD_DEFINITIONS(-DH5FDmpio_DEBUG)
 #--------------------------------------------------
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 
-#--------------------------------------------------
-# Define Server Plugin
-#--------------------------------------------------
-ADD_PARAVIEW_PLUGIN(
-  CSCS_DSM_SMPlugin 
-  "1.0"
-  
-  SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
-  SERVER_MANAGER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter3.cxx
-  SOURCES
-)
-
-TARGET_LINK_LIBRARIES(
-  CSCS_DSM_SMPlugin
-    ${PARAVIEW_HDF5_LIBRARIES}
-    Xdmf
-    ${Boost_LIBRARIES}
-)
 
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
@@ -123,12 +102,19 @@ ENDIF(PARAVIEW_BUILD_QT_GUI)
 # Define Plugin Panel
 #--------------------------------------------------
 ADD_PARAVIEW_PLUGIN(
-  CSCS_DSM_GUIPlugin 
+  CSCS_DSM
   "1.0" 
-   
+
+  SERVER_MANAGER_XML 
+    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
+  SERVER_MANAGER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter3.cxx
+  SERVER_SOURCES
+  
   GUI_INTERFACES 
     ${DSM_IFACE}
-  SOURCES
+  GUI_SOURCES
     pqDSMViewerPanel.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
@@ -139,13 +125,21 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.ui
 )
 
+
+TARGET_LINK_LIBRARIES(
+  CSCS_DSM
+    ${PARAVIEW_HDF5_LIBRARIES}
+    Xdmf
+    ${Boost_LIBRARIES}
+)
+
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #--------------------------------------------------
 # Define GUI Plugin
 #--------------------------------------------------
 
-TARGET_LINK_LIBRARIES(CSCS_DSM_GUIPlugin CSCS_DSM_SMPlugin)
+#TARGET_LINK_LIBRARIES(CSCS_DSM_2GUI CSCS_DSM_1SM)
 
 #--------------------------------------------------
 # Testing
@@ -162,15 +156,10 @@ INSTALL(
   DESTINATION ${CMAKE_INSTALL_PREFIX}/bin
 )
 
-INSTALL(
-  TARGETS 
-    CSCS_DSM_SMPlugin 
-  DESTINATION ${INSTALL_PATH}
-)
 IF(PARAVIEW_BUILD_QT_GUI)
   INSTALL(
     TARGETS
-      CSCS_DSM_GUIPlugin
+      CSCS_DSM
     DESTINATION ${INSTALL_PATH}
   )
 ENDIF(PARAVIEW_BUILD_QT_GUI)

@@ -40,6 +40,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkDSMManager.h"
 #include "vtkXdmfReader.h"
+#include "vtkXdmfWriter2.h"
 #include "vtkXdmfWriter3.h"
 
 #include <vtksys/SystemTools.hxx>
