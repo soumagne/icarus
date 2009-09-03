@@ -23,7 +23,7 @@
     </Proxy>
 
     <!-- ================================================================= -->
-    <WriterProxy name="XdmfWriter2" class="vtkXdmfWriter2">
+    <WriterProxy name="XdmfWriter3" class="vtkXdmfWriter3">
       <Documentation
         short_help="Write data in Xdmf files.">
         Writer to writer data in eXtensible Data Model and Format *(XDMF) files.

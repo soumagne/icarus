@@ -1,6 +1,5 @@
 <ParaViewFilters>
   <Category name="CSCS" menu_label="&amp;CSCS">
-    <Filter name="H5PartWriter" />
-    <Filter name="H5PartWriter2" />
+    <Filter name="XdmfWriter3" />
   </Category>
 </ParaViewFilters>

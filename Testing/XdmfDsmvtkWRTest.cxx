@@ -40,7 +40,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkDSMManager.h"
 #include "vtkXdmfReader.h"
-#include "vtkXdmfWriter2.h"
+#include "vtkXdmfWriter3.h"
 
 #include <vtksys/SystemTools.hxx>
 // Win32 execution test
@@ -158,8 +158,8 @@ MyMain(vtkMultiProcessController *con, void *arg)
 
   WaitForAll(controller, rank, 3);
 
-  // Write back to Xdmf using XdmfWriter2 and put data into DSM
-  vtkSmartPointer<vtkXdmfWriter2> writer = vtkSmartPointer<vtkXdmfWriter2>::New();
+  // Write back to Xdmf using XdmfWriter3 and put data into DSM
+  vtkSmartPointer<vtkXdmfWriter3> writer = vtkSmartPointer<vtkXdmfWriter3>::New();
 #ifdef WRITE_DSM
   cout << "*** Writing to DSM ***" << endl;
   writer->SetDSMManager(DSMManager);
@@ -201,7 +201,7 @@ MyMain(vtkMultiProcessController *con, void *arg)
     // Write back to disk a new set of xmf + h5 file
     if (size == 1) {
     	cout << "*** Writing to Disk ***" << endl;
-    	vtkSmartPointer<vtkXdmfWriter2> writer_test = vtkSmartPointer<vtkXdmfWriter2>::New();
+    	vtkSmartPointer<vtkXdmfWriter3> writer_test = vtkSmartPointer<vtkXdmfWriter3>::New();
     	//vtkSmartPointer<vtkMultiBlockDataSet> mboutdata;
     	vtkSmartPointer<vtkDataSet> outdata;
     	writer_test->SetFileName(xdmfFileName_out);

@@ -182,7 +182,7 @@ void pqDSMViewerPanel::onTestDSM()
   //
   vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
   vtkSmartPointer<vtkSMSourceProxy> XdmfWriter = 
-    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter2"));
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
 
   pqSMAdaptor::setProxyProperty(
     XdmfWriter->GetProperty("DSMManager"), 

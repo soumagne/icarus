@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : vtkXdmfWriter2.h
+  Module                  : vtkXdmfWriter3.h
   Revision of last commit : $Rev: 598 $
   Author of last commit   : $Author: soumagne $
   Date of last commit     : $Date:: 2009-07-15 22:33:59 +0200 #$
@@ -18,7 +18,7 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-#include "vtkXdmfWriter2.h"
+#include "vtkXdmfWriter3.h"
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
@@ -70,11 +70,11 @@
 #endif
 //
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkXdmfWriter2, "$Revision: 598 $");
-vtkStandardNewMacro(vtkXdmfWriter2);
+vtkCxxRevisionMacro(vtkXdmfWriter3, "$Revision: 598 $");
+vtkStandardNewMacro(vtkXdmfWriter3);
 #ifdef VTK_USE_MPI
-vtkCxxSetObjectMacro(vtkXdmfWriter2, Controller, vtkMultiProcessController);
-vtkCxxSetObjectMacro(vtkXdmfWriter2, DSMManager, vtkDSMManager);
+vtkCxxSetObjectMacro(vtkXdmfWriter3, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkXdmfWriter3, DSMManager, vtkDSMManager);
 #endif
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
@@ -225,7 +225,7 @@ void vtk2XdmfArray(XdmfArray *xdmfarray, vtkDataArray *vtkarray,
   xdmfarray->SetShape(Rank, Dims);
 }
 //----------------------------------------------------------------------------
-vtkXdmfWriter2::vtkXdmfWriter2()
+vtkXdmfWriter3::vtkXdmfWriter3()
 {
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(0);
@@ -252,7 +252,7 @@ vtkXdmfWriter2::vtkXdmfWriter2()
 
 }
 //----------------------------------------------------------------------------
-vtkXdmfWriter2::~vtkXdmfWriter2()
+vtkXdmfWriter3::~vtkXdmfWriter3()
 {
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
@@ -269,53 +269,53 @@ vtkXdmfWriter2::~vtkXdmfWriter2()
     }
 }
 //----------------------------------------------------------------------------
-int vtkXdmfWriter2::FillInputPortInformation(int port, vtkInformation* info)
+int vtkXdmfWriter3::FillInputPortInformation(int port, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetWriteModeToCollective()
+void vtkXdmfWriter3::SetWriteModeToCollective()
 {
   this->SetCollectiveIO(1);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetWriteModeToIndependent()
+void vtkXdmfWriter3::SetWriteModeToIndependent()
 {
   this->SetCollectiveIO(0);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetAppendModeToOverwrite()
+void vtkXdmfWriter3::SetAppendModeToOverwrite()
 {
   this->SetAppendMode(VTK_XDMF_APPEND_OVERWRITE);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetAppendModeToAppendMultiBlock()
+void vtkXdmfWriter3::SetAppendModeToAppendMultiBlock()
 {
   this->SetAppendMode(VTK_XDMF_APPEND_MULTIBLOCK);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetAppendModeToAppendTemporal()
+void vtkXdmfWriter3::SetAppendModeToAppendTemporal()
 {
   this->SetAppendMode(VTK_XDMF_APPEND_TEMPORAL);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetBuildModeToLight()
+void vtkXdmfWriter3::SetBuildModeToLight()
 {
   this->SetBuildMode(VTK_XDMF_BUILD_LIGHT);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetBuildModeToHeavy()
+void vtkXdmfWriter3::SetBuildModeToHeavy()
 {
   this->SetBuildMode(VTK_XDMF_BUILD_HEAVY);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::SetBuildModeToAll()
+void vtkXdmfWriter3::SetBuildModeToAll()
 {
   this->SetBuildMode(VTK_XDMF_BUILD_ALL);
 }
 //----------------------------------------------------------------------------
-XdmfDOM *vtkXdmfWriter2::ParseExistingFile(const char* filename)
+XdmfDOM *vtkXdmfWriter3::ParseExistingFile(const char* filename)
 {
   vtkXDRDebug("ParseExistingFile");
 
@@ -331,7 +331,7 @@ XdmfDOM *vtkXdmfWriter2::ParseExistingFile(const char* filename)
   return dom;
 }
 //----------------------------------------------------------------------------
-XdmfXmlNode vtkXdmfWriter2::GetStaticGridNode(XdmfDOM *DOM, const char *path)
+XdmfXmlNode vtkXdmfWriter3::GetStaticGridNode(XdmfDOM *DOM, const char *path)
 {
   vtkXDRDebug("GetStaticGridNode");
 
@@ -343,7 +343,7 @@ XdmfXmlNode vtkXdmfWriter2::GetStaticGridNode(XdmfDOM *DOM, const char *path)
 //----------------------------------------------------------------------------
 // template <typename T> void vtkXW2_delete_object(T *p) { delete p; }
 //----------------------------------------------------------------------------
-XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
+XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
     vtkDataSet *dataset, const char *name, double time, vtkXW2NodeHelp *staticnode)
 {
   XdmfDOM        *DOM = new XdmfDOM();
@@ -559,7 +559,7 @@ XdmfDOM *vtkXdmfWriter2::BuildXdmfGrid(
   return DOM;
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int data_block, int nb_arrays)
+void vtkXdmfWriter3::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int data_block, int nb_arrays)
 {
   //
   vtkXDRDebug("BuildHeavyXdmfGrid");
@@ -772,7 +772,7 @@ void vtkXdmfWriter2::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
   vtkXDRDebug("Heavy Build succeeded");
 }
 //----------------------------------------------------------------------------
-XdmfDOM *vtkXdmfWriter2::CreateEmptyCollection(const char *name, const char *ctype)
+XdmfDOM *vtkXdmfWriter3::CreateEmptyCollection(const char *name, const char *ctype)
 {
   vtkXDRDebug("CreateEmptyCollection");
 
@@ -801,7 +801,7 @@ XdmfDOM *vtkXdmfWriter2::CreateEmptyCollection(const char *name, const char *cty
   return DOM;
 }
 //----------------------------------------------------------------------------
-XdmfDOM *vtkXdmfWriter2::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
+XdmfDOM *vtkXdmfWriter3::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
 {
   vtkXDRDebug("AddGridToCollection");
 
@@ -826,7 +826,7 @@ XdmfDOM *vtkXdmfWriter2::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
   return cDOM;
 }
 //----------------------------------------------------------------------------
-vtkstd::string vtkXdmfWriter2::MakeGridName(vtkDataSet *dataset, const char *name)
+vtkstd::string vtkXdmfWriter3::MakeGridName(vtkDataSet *dataset, const char *name)
 {
   vtkXDRDebug("MakeGridName");
 
@@ -839,7 +839,7 @@ vtkstd::string vtkXdmfWriter2::MakeGridName(vtkDataSet *dataset, const char *nam
   return gridname;
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time)
+void vtkXdmfWriter3::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time)
 {
   vtkXDRDebug("WriteOutputXML");
 
@@ -917,7 +917,7 @@ void vtkXdmfWriter2::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 #endif
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::WriteData()
+void vtkXdmfWriter3::WriteData()
 {
   vtkXDRDebug("WriteData");
 
@@ -1067,7 +1067,7 @@ void vtkXdmfWriter2::WriteData()
   this->TimeStep++;
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter2::PrintSelf(ostream& os, vtkIndent indent)
+void vtkXdmfWriter3::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }
