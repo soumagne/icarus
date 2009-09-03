@@ -27,8 +27,9 @@ public slots:
   void startRemovingServer(pqServer *server);
   void onCreateDSM();
   void onDestroyDSM();
+  void onConnectDSM();
   void onTestDSM();
-  void onQueryDSM();
+  void onH5Dump();
   void TrackSource();
 
 

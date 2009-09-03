@@ -216,7 +216,57 @@ bool vtkDSMManager::CreateDSM()
     // Spin until service initialized
   }
   vtkDebugMacro(<<"DSM Service Ready on " << rank);
+
   return true;
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::ConnectDSM()
+{
+#define MAX_DATA 50
+  int errs = 0;
+  char port_name[MPI_MAX_PORT_NAME];
+  char serv_name[256];
+  int merr;
+  char errmsg[MPI_MAX_ERROR_STRING];
+  int msglen;
+  char buf[MAX_DATA];
+  MPI_Status status;
+  MPI_Comm client;
+
+  strcpy(serv_name, "DSMTest");
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+  if (this->UpdatePiece == 0) {
+    MPI_Open_port(MPI_INFO_NULL, port_name);
+
+
+    merr = MPI_Publish_name(serv_name, MPI_INFO_NULL, port_name);
+    if (merr) {
+      errs++;
+      MPI_Error_string(merr, errmsg, &msglen);
+      vtkDebugMacro(<<"Error in Publish_name: \"" << errmsg << "\"");
+    } else {
+      vtkDebugMacro(<<"Published port_name(" << port_name << ")");
+    }
+  }
+    vtkDebugMacro(<<"Waiting for connection " << this->UpdatePiece);
+    MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &client);
+
+    if (this->UpdatePiece == 0) {
+      MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
+      vtkDebugMacro(<<"Server received: " << buf);
+
+      merr = MPI_Unpublish_name(serv_name, MPI_INFO_NULL, port_name);
+      if (merr) {
+        errs++;
+        MPI_Error_string(merr, errmsg, &msglen);
+        vtkDebugMacro(<<"Error in Unpublish name: \"" << errmsg << "\"");
+      }
+
+      MPI_Close_port(port_name);
+    }
+
+  this->Controller->Barrier();
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()

@@ -56,6 +56,7 @@ public:
 
   bool  CreateDSM();
   bool  DestroyDSM();
+  void  ConnectDSM();
   void  H5Dump();
   void  H5DumpLight();
 //BTX

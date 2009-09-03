@@ -81,8 +81,11 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->connect(this->UI->DestroyDSM,
     SIGNAL(clicked()), this, SLOT(onDestroyDSM()));
 
-  this->connect(this->UI->Query,
-    SIGNAL(clicked()), this, SLOT(onQueryDSM()));
+  this->connect(this->UI->ConnectDSM,
+     SIGNAL(clicked()), this, SLOT(onConnectDSM()));
+
+  this->connect(this->UI->H5Dump,
+    SIGNAL(clicked()), this, SLOT(onH5Dump()));
 
   this->connect(this->UI->TestDSM,
     SIGNAL(clicked()), this, SLOT(onTestDSM()));
@@ -176,6 +179,13 @@ void pqDSMViewerPanel::onDestroyDSM()
   }
 }
 //-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onConnectDSM()
+{
+  if (this->UI->ProxyCreated()) {
+    this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+  }
+}
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onTestDSM()
 {
   if (!this->UI->ActiveSourceProxy) {
@@ -214,12 +224,13 @@ void pqDSMViewerPanel::onTestDSM()
 
   XdmfWriter->UpdateVTKObjects();
   XdmfWriter->UpdatePipeline();
-
-  this->UI->DSMProxy->InvokeCommand("H5DumpLight");
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onQueryDSM()
+void pqDSMViewerPanel::onH5Dump()
 {
+  if (this->UI->ProxyCreated()) {
+    this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::TrackSource()

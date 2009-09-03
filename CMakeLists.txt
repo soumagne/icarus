@@ -41,7 +41,7 @@ find_package(Boost 1.38.0 COMPONENTS thread)
 
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
-  MESSAGE(${Boost_INCLUDE_DIRS})
+  #MESSAGE(${Boost_INCLUDE_DIRS})
   ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 endif()

@@ -47,9 +47,16 @@
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="Query" >
+     <widget class="QPushButton" name="ConnectDSM" >
       <property name="text" >
-       <string>Query</string>
+       <string>ConnectDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="H5Dump" >
+      <property name="text" >
+       <string>H5Dump</string>
       </property>
      </widget>
     </item>

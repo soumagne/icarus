@@ -13,6 +13,9 @@
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
+      <Property name="ConnectDSM"
+                command="ConnectDSM">
+      </Property>
       <Property name="H5Dump"
                 command="H5Dump">
       </Property>
