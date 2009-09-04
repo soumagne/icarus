@@ -23,6 +23,13 @@
                 command="H5DumpLight">
       </Property>
 
+      <StringVectorProperty
+        name="PublishedPortName"
+        command="GetPublishedPortName"
+        information_only="1"
+        number_of_elements="1">
+      </StringVectorProperty>
+
     </Proxy>
 
     <!-- ================================================================= -->

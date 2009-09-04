@@ -75,6 +75,8 @@ vtkDSMManager::vtkDSMManager()
   this->UpdatePiece              = 0;
   this->UpdateNumPieces          = 0;
   this->ServiceThread            = 0;
+  this->PublishedPortName        = NULL;
+
   //
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
@@ -95,6 +97,11 @@ vtkDSMManager::~vtkDSMManager()
     delete [] this->FileName;
     this->FileName = NULL;
   }
+  if (this->PublishedPortName) {
+    delete [] this->PublishedPortName;
+    this->PublishedPortName = NULL;
+  }
+  
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -179,6 +186,18 @@ bool vtkDSMManager::CreateDSM()
   //
   // Get the raw MPI_Comm handle
   //
+  if (this->Controller->IsA("vtkDummyController")) {
+      int provided;
+      MPI_Init_thread(0, NULL, MPI_THREAD_MULTIPLE, &provided);
+      if (provided != MPI_THREAD_MULTIPLE) {
+        vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+          << "MPI distribution with threads enabled" << vtkstd::endl;
+      }
+      else {
+        vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
+      }
+//      this->SetController();
+  }
   vtkMPICommunicator *communicator
     = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
@@ -219,6 +238,7 @@ bool vtkDSMManager::CreateDSM()
 
   return true;
 }
+
 //----------------------------------------------------------------------------
 void vtkDSMManager::ConnectDSM()
 {
@@ -250,6 +270,12 @@ void vtkDSMManager::ConnectDSM()
     }
   }
     vtkDebugMacro(<<"Waiting for connection " << this->UpdatePiece);
+
+
+  // Jerome's conflicts
+  this->SetPublishedPortName("NewName001");
+
+/*
     MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &client);
 
     if (this->UpdatePiece == 0) {
@@ -265,8 +291,11 @@ void vtkDSMManager::ConnectDSM()
 
       MPI_Close_port(port_name);
     }
-
+*/
   this->Controller->Barrier();
+
+
+
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()

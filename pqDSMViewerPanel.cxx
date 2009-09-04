@@ -33,6 +33,7 @@
 #include "pqTreeWidgetItemObject.h"
 //
 #include "ui_pqDSMViewerPanel.h"
+#include <QMessageBox>
 
 class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel {
 public:
@@ -184,6 +185,20 @@ void pqDSMViewerPanel::onConnectDSM()
   if (this->UI->ProxyCreated()) {
     this->UI->DSMProxy->InvokeCommand("ConnectDSM");
   }
+
+  // Jerome's stuff here
+
+
+
+
+  vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
+    this->UI->DSMProxy->GetProperty("PublishedPortName"));
+
+  this->UI->DSMProxy->UpdatePropertyInformation(pn);
+
+  const char* array = pn->GetElement(0);
+
+
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onTestDSM()

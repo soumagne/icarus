@@ -54,6 +54,11 @@ public:
   vtkSetMacro(LocalBufferSizeMBytes,int);
   vtkGetMacro(LocalBufferSizeMBytes,int);
 
+  // Description:
+  // Get the published name of our connection. 
+  // Only valid after a AcceptConnections call has been made.
+  vtkSetStringMacro(PublishedPortName);
+
   bool  CreateDSM();
   bool  DestroyDSM();
   void  ConnectDSM();
@@ -85,6 +90,8 @@ protected:
 
   //
   // Internal Variables
+  //
+  char          *PublishedPortName;
   //
   char          *FileName;
   int            NumberOfTimeSteps;
