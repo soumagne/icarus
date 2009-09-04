@@ -31,9 +31,9 @@ public slots:
   void onDestroyDSM();
   void onConnectDSM();
 
-  void createPublishName();
+  void createPublishNameDialog();
   void timeoutPublishName();
-  void cancelPublishName();
+  void cancelPublishNameDialog();
 
   void onTestDSM();
   void onH5Dump();
@@ -49,8 +49,9 @@ protected:
   class pqUI;
   pqUI* UI;
   QProgressDialog *publishNameDialog;
-  QTimer *publishNameTimer;
-  int publishNameSteps;
+  QTimer          *publishNameTimer;
+  int              publishNameSteps;
+  bool             publishedNameFound;
 
 protected slots:
 

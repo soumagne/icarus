@@ -58,6 +58,7 @@ public:
   // Get the published name of our connection. 
   // Only valid after a AcceptConnections call has been made.
   vtkSetStringMacro(PublishedPortName);
+  vtkGetStringMacro(PublishedPortName);
 
   bool  CreateDSM();
   bool  DestroyDSM();

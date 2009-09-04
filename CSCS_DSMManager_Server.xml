@@ -28,6 +28,7 @@
         command="GetPublishedPortName"
         information_only="1"
         number_of_elements="1">
+        <SimpleStringInformationHelper/>
       </StringVectorProperty>
 
     </Proxy>

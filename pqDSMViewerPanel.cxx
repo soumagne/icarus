@@ -38,6 +38,10 @@
 #include "pqTreeWidgetItem.h"
 //
 #include "ui_pqDSMViewerPanel.h"
+#ifdef WIN32
+  #include "Windows.h"
+  #define sleep ::Sleep
+#endif
 
 class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel {
 public:
@@ -188,45 +192,51 @@ void pqDSMViewerPanel::onDestroyDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::createPublishName()
+void pqDSMViewerPanel::createPublishNameDialog()
 {
   this->publishNameDialog = new QProgressDialog("Publishing name, awaiting connection...", "Cancel", 0, 100);
-  connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishName()));
+  connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishNameDialog()));
   this->publishNameTimer = new QTimer(this);
+  this->publishNameTimer->setInterval(500);
   connect(this->publishNameTimer, SIGNAL(timeout()), this, SLOT(timeoutPublishName()));
-  this->publishNameTimer->start(0);
+  this->publishNameTimer->start();
+  this->timeoutPublishName(); // force an immediate update
 }
-
-
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::timeoutPublishName()
 {
+  // try to get the published name from the server
+  if (!this->publishedNameFound) {
+    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
+      this->UI->DSMProxy->GetProperty("PublishedPortName"));
+    this->UI->DSMProxy->UpdatePropertyInformation(pn);
+    const char* name = pn->GetElement(0);
+    if (QString(name)!="") {
+      QString text = "Publishing Name : \n" + QString(name) + "\n awaiting connection...";
+      this->publishNameDialog->setLabelText(text);
+      this->publishedNameFound = true;
+    }
+  }
   this->publishNameDialog->setValue(publishNameSteps);
   this->publishNameSteps++;
-  sleep(1);
-  if (this->publishNameSteps > this->publishNameDialog->maximum())
-    this->publishNameTimer->stop();
+  if (this->publishNameSteps > this->publishNameDialog->maximum()) {
+    this->cancelPublishNameDialog();
+  }
 }
-
-void pqDSMViewerPanel::cancelPublishName()
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::cancelPublishNameDialog()
 {
   this->publishNameTimer->stop();
+  delete this->publishNameTimer;
 }
-
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onConnectDSM()
 {
   if (this->ProxyReady()) {
     this->publishNameSteps = 0;
-    this->createPublishName();
-
+    this->publishedNameFound = false;
+    this->createPublishNameDialog();
     this->UI->DSMProxy->InvokeCommand("ConnectDSM");
-
-    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
-        this->UI->DSMProxy->GetProperty("PublishedPortName"));
-
-    this->UI->DSMProxy->UpdatePropertyInformation(pn);
-
-    const char* array = pn->GetElement(0);
-    cout << "onConnectDSM_PublishedPortName: " << array << endl;
   }
 }
 //-----------------------------------------------------------------------------
