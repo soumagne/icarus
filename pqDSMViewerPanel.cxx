@@ -6,6 +6,9 @@
 #include <QLabel>
 #include <QComboBox>
 #include <QTableWidget>
+#include <QMessageBox>
+#include <QProgressDialog>
+#include <QTimer>
 
 // VTK includes
 
@@ -31,9 +34,10 @@
 #include "pqSMAdaptor.h"
 #include "pqTreeWidgetCheckHelper.h"
 #include "pqTreeWidgetItemObject.h"
+#include "pqTreeWidget.h"
+#include "pqTreeWidgetItem.h"
 //
 #include "ui_pqDSMViewerPanel.h"
-#include <QMessageBox>
 
 class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel {
 public:
@@ -123,6 +127,10 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
                    SIGNAL(sourceRemoved(pqPipelineSource*)),
                    this, SLOT(TrackSource()));
 
+  //
+  ////////////
+  // pqTree connect SLOT
+
 }
 //----------------------------------------------------------------------------
 pqDSMViewerPanel::~pqDSMViewerPanel()
@@ -180,25 +188,46 @@ void pqDSMViewerPanel::onDestroyDSM()
   }
 }
 //-----------------------------------------------------------------------------
+void pqDSMViewerPanel::createPublishName()
+{
+  this->publishNameDialog = new QProgressDialog("Publishing name, awaiting connection...", "Cancel", 0, 100);
+  connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishName()));
+  this->publishNameTimer = new QTimer(this);
+  connect(this->publishNameTimer, SIGNAL(timeout()), this, SLOT(timeoutPublishName()));
+  this->publishNameTimer->start(0);
+}
+
+
+void pqDSMViewerPanel::timeoutPublishName()
+{
+  this->publishNameDialog->setValue(publishNameSteps);
+  this->publishNameSteps++;
+  sleep(1);
+  if (this->publishNameSteps > this->publishNameDialog->maximum())
+    this->publishNameTimer->stop();
+}
+
+void pqDSMViewerPanel::cancelPublishName()
+{
+  this->publishNameTimer->stop();
+}
+
 void pqDSMViewerPanel::onConnectDSM()
 {
-  if (this->UI->ProxyCreated()) {
+  if (this->ProxyReady()) {
+    this->publishNameSteps = 0;
+    this->createPublishName();
+
     this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+
+    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
+        this->UI->DSMProxy->GetProperty("PublishedPortName"));
+
+    this->UI->DSMProxy->UpdatePropertyInformation(pn);
+
+    const char* array = pn->GetElement(0);
+    cout << "onConnectDSM_PublishedPortName: " << array << endl;
   }
-
-  // Jerome's stuff here
-
-
-
-
-  vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
-    this->UI->DSMProxy->GetProperty("PublishedPortName"));
-
-  this->UI->DSMProxy->UpdatePropertyInformation(pn);
-
-  const char* array = pn->GetElement(0);
-
-
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onTestDSM()
@@ -276,4 +305,12 @@ void pqDSMViewerPanel::TrackSource()
     this->UI->ActiveSourceProxy = NULL;
     this->UI->TextOutput->clear();
   }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::fillDSMContents()
+{
+  this->UI->DSMContents->clear();
+  pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
+  item->setText(0, "test");
+  item->setExpanded(true);
 }

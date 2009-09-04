@@ -257,8 +257,8 @@ void vtkDSMManager::ConnectDSM()
   MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
 
   if (this->UpdatePiece == 0) {
-    MPI_Open_port(MPI_INFO_NULL, port_name);
 
+    MPI_Open_port(MPI_INFO_NULL, port_name);
 
     merr = MPI_Publish_name(serv_name, MPI_INFO_NULL, port_name);
     if (merr) {
@@ -269,13 +269,11 @@ void vtkDSMManager::ConnectDSM()
       vtkDebugMacro(<<"Published port_name(" << port_name << ")");
     }
   }
-    vtkDebugMacro(<<"Waiting for connection " << this->UpdatePiece);
+  vtkDebugMacro(<<"Waiting for connection " << this->UpdatePiece);
 
+  this->SetPublishedPortName(port_name);
 
-  // Jerome's conflicts
-  this->SetPublishedPortName("NewName001");
-
-/*
+  /*
     MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &client);
 
     if (this->UpdatePiece == 0) {
@@ -291,11 +289,8 @@ void vtkDSMManager::ConnectDSM()
 
       MPI_Close_port(port_name);
     }
-*/
+   */
   this->Controller->Barrier();
-
-
-
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()

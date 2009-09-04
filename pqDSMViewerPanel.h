@@ -8,6 +8,8 @@ class QComboBox;
 class QPushButton;
 class pqServer;
 class QTreeWidgetItem;
+class QProgressDialog;
+class QTimer;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -28,10 +30,15 @@ public slots:
   void onCreateDSM();
   void onDestroyDSM();
   void onConnectDSM();
+
+  void createPublishName();
+  void timeoutPublishName();
+  void cancelPublishName();
+
   void onTestDSM();
   void onH5Dump();
   void TrackSource();
-
+  void fillDSMContents();
 
 private slots:
 
@@ -41,6 +48,9 @@ protected:
 
   class pqUI;
   pqUI* UI;
+  QProgressDialog *publishNameDialog;
+  QTimer *publishNameTimer;
+  int publishNameSteps;
 
 protected slots:
 
