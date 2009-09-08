@@ -29,11 +29,12 @@ public slots:
   void startRemovingServer(pqServer *server);
   void onCreateDSM();
   void onDestroyDSM();
-  void onConnectDSM();
 
   void createPublishNameDialog();
   void timeoutPublishName();
   void cancelPublishNameDialog();
+  void onPublishDSM();
+  void onUnpublishDSM();
 
   void onTestDSM();
   void onH5Dump();
@@ -52,6 +53,7 @@ protected:
   QTimer          *publishNameTimer;
   int              publishNameSteps;
   bool             publishedNameFound;
+  bool             connectionFound;
 
 protected slots:
 

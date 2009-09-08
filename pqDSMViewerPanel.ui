@@ -25,7 +25,7 @@
     <item>
      <widget class="QCheckBox" name="a1" >
       <property name="text" >
-       <string>Unused</string>
+       <string>DSM on Server</string>
       </property>
       <property name="checked" >
        <bool>true</bool>
@@ -47,9 +47,16 @@
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="ConnectDSM" >
+     <widget class="QPushButton" name="PublishDSM" >
       <property name="text" >
-       <string>ConnectDSM</string>
+       <string>PublishDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="UnpublishDSM" >
+      <property name="text" >
+       <string>UnpublishDSM</string>
       </property>
      </widget>
     </item>

@@ -163,13 +163,3 @@ IF(PARAVIEW_BUILD_QT_GUI)
     DESTINATION ${INSTALL_PATH}
   )
 ENDIF(PARAVIEW_BUILD_QT_GUI)
-
-#--------------------------------------------------
-# DSM Test apps
-#--------------------------------------------------
-
-ADD_EXECUTABLE( TestDSM
-  ${CMAKE_CURRENT_SOURCE_DIR}/../DSMTesting/TestDSM.cxx
-)
-
-TARGET_LINK_LIBRARIES(TestDSM vtkXdmf)

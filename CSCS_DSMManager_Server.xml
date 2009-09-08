@@ -13,8 +13,11 @@
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
-      <Property name="ConnectDSM"
-                command="ConnectDSM">
+      <Property name="PublishDSM"
+                command="PublishDSM">
+      </Property>
+      <Property name="UnpublishDSM"
+                command="UnpublishDSM">
       </Property>
       <Property name="H5Dump"
                 command="H5Dump">
@@ -30,6 +33,15 @@
         number_of_elements="1">
         <SimpleStringInformationHelper/>
       </StringVectorProperty>
+      
+       <IntVectorProperty
+        name="AcceptedConnection"
+        command="GetAcceptedConnection"
+        information_only="1"
+        number_of_elements="1"
+        default_values="0">
+        <SimpleIntInformationHelper/>
+      </IntVectorProperty>
 
     </Proxy>
 

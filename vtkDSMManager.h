@@ -39,6 +39,7 @@
   #include <boost/thread/thread.hpp> // Boost Threads
 #endif
 
+
 class vtkMultiProcessController;
 
 class VTK_EXPORT vtkDSMManager : public vtkObject
@@ -56,13 +57,20 @@ public:
 
   // Description:
   // Get the published name of our connection. 
-  // Only valid after a AcceptConnections call has been made.
+  // Only valid after a PublishDSM call has been made.
   vtkSetStringMacro(PublishedPortName);
   vtkGetStringMacro(PublishedPortName);
 
+  // Description:
+  // Only valid after a AcceptConnection call has been made.
+  vtkSetMacro(AcceptedConnection, bool);
+  vtkGetMacro(AcceptedConnection, bool);
+
   bool  CreateDSM();
   bool  DestroyDSM();
-  void  ConnectDSM();
+  void  PublishDSM();
+  void  *AcceptConnection();
+  void  UnpublishDSM();
   void  H5Dump();
   void  H5DumpLight();
 //BTX
@@ -86,43 +94,50 @@ public:
 //ETX
 
 protected:
-   vtkDSMManager();
-  ~vtkDSMManager();
+    vtkDSMManager();
+    ~vtkDSMManager();
 
-  //
-  // Internal Variables
-  //
-  char          *PublishedPortName;
-  //
-  char          *FileName;
-  int            NumberOfTimeSteps;
-  int            TimeStep;
-  int            UpdatePiece;
-  int            UpdateNumPieces;
-  vtkTypeInt64   LocalBufferSizeMBytes;
+    //
+    // Internal Variables
+    //
+    char          *FileName;
+    int            NumberOfTimeSteps;
+    int            TimeStep;
+    int            UpdatePiece;
+    int            UpdateNumPieces;
+    vtkTypeInt64   LocalBufferSizeMBytes;
 
-//BTX
+    //BTX
 #ifdef HAVE_PTHREADS
-    pthread_t ServiceThread;
+    pthread_t      ServiceThread;
+    pthread_t      ConnectionThread;
 #elif HAVE_BOOST_THREADS
     boost::thread *ServiceThread;
+    boost::thread *ConnectionThread;
 #endif
     XdmfDsmBuffer *DSMBuffer;
-//ETX
+    //ETX
 
 
-//BTX
-    #ifdef VTK_USE_MPI
-//ETX
-      vtkMultiProcessController* Controller;
-//BTX
-      XdmfDsmCommMpi *DSMComm;
-    #endif
-//ETX
+    //BTX
+#ifdef VTK_USE_MPI
+    //ETX
+    vtkMultiProcessController* Controller;
+    //BTX
+    XdmfDsmCommMpi *DSMComm;
+    //
+    char           *PublishedPortName;
+    bool            AcceptedConnection;
+    bool            KillConnection;
+    char            DSMPortName[MPI_MAX_PORT_NAME];
+    char            DSMServName[256];
+    MPI_Comm        DSMClientComm;
+#endif
+    //ETX
 
 private:
-  vtkDSMManager(const vtkDSMManager&);  // Not implemented.
-  void operator=(const vtkDSMManager&);  // Not implemented.
+    vtkDSMManager(const vtkDSMManager&);  // Not implemented.
+    void operator=(const vtkDSMManager&);  // Not implemented.
 };
 
 #endif

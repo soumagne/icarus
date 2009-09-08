@@ -44,25 +44,25 @@ typedef void* (*servicefn)(void *DsmObj) ;
 //----------------------------------------------------------------------------
 // #ifdef JB_DEBUG__
 //----------------------------------------------------------------------------
-  #ifdef AAWIN32
-      #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
-  #else
-      #define OUTPUTTEXT(a) std::cout << (a) << "\n"; std::cout.flush();
-  #endif
+#ifdef AAWIN32
+#define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
+#else
+#define OUTPUTTEXT(a) std::cout << (a) << "\n"; std::cout.flush();
+#endif
 
-    #undef vtkDebugMacro
-    #define vtkDebugMacro(a)  \
+#undef vtkDebugMacro
+#define vtkDebugMacro(a)  \
     { \
-      vtkOStreamWrapper::EndlType endl; \
-      vtkOStreamWrapper::UseEndl(endl); \
-      vtkOStrStreamWrapper vtkmsg; \
-      vtkmsg a << "\n"; \
-      OUTPUTTEXT(vtkmsg.str()); \
-      vtkmsg.rdbuf()->freeze(0); \
+  vtkOStreamWrapper::EndlType endl; \
+  vtkOStreamWrapper::UseEndl(endl); \
+  vtkOStrStreamWrapper vtkmsg; \
+  vtkmsg a << "\n"; \
+  OUTPUTTEXT(vtkmsg.str()); \
+  vtkmsg.rdbuf()->freeze(0); \
     }
 
-  #undef vtkErrorMacro
-  #define vtkErrorMacro(a) vtkDebugMacro(a)  
+#undef vtkErrorMacro
+#define vtkErrorMacro(a) vtkDebugMacro(a)
 // #endif
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDSMManager, "$Revision: 793 $");
@@ -75,13 +75,17 @@ vtkDSMManager::vtkDSMManager()
   this->UpdatePiece              = 0;
   this->UpdateNumPieces          = 0;
   this->ServiceThread            = 0;
-  this->PublishedPortName        = NULL;
+  this->ConnectionThread         = 0;
 
   //
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->DSMComm    = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
+  this->PublishedPortName        = NULL;
+  this->DSMClientComm            = NULL;
+  this->AcceptedConnection       = false;
+  this->KillConnection           = false;
 #endif
   //
   this->NumberOfTimeSteps        = 0;
@@ -101,7 +105,7 @@ vtkDSMManager::~vtkDSMManager()
     delete [] this->PublishedPortName;
     this->PublishedPortName = NULL;
   }
-  
+
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -120,23 +124,31 @@ bool vtkDSMManager::DestroyDSM()
 #endif
 #ifdef HAVE_PTHREADS
   if (this->ServiceThread) {
-	  pthread_join(this->ServiceThread, NULL);
-	  this->ServiceThread = NULL;
+    pthread_join(this->ServiceThread, NULL);
+    this->ServiceThread = NULL;
+  }
+  if (this->ConnectionThread) {
+    pthread_join(this->ConnectionThread, NULL);
+    this->ConnectionThread = NULL;
   }
 #elif HAVE_BOOST_THREADS
   if (this->ServiceThread) {
-	  delete this->ServiceThread;
-	  this->ServiceThread = NULL;
+    delete this->ServiceThread;
+    this->ServiceThread = NULL;
+  }
+  if (this->ConnectionThread) {
+    delete this->ConnectionThread;
+    this->ConnectionThread = NULL;
   }
 #endif
 
   if (this->DSMComm) {
-	  delete this->DSMComm;
-	  this->DSMComm = NULL;
+    delete this->DSMComm;
+    this->DSMComm = NULL;
   }
   if (this->DSMBuffer) {
-	  delete this->DSMBuffer;
-	  this->DSMBuffer = NULL;
+    delete this->DSMBuffer;
+    this->DSMBuffer = NULL;
   }
   return true;
 }
@@ -146,20 +158,43 @@ XdmfDsmBuffer *vtkDSMManager::GetDSMHandle()
   return DSMBuffer;
 }
 //----------------------------------------------------------------------------
+#ifdef HAVE_PTHREADS
+extern "C"{
+  void *
+  DSMConnectionThread(void *DSMManager){
+    vtkDSMManager *manager = (vtkDSMManager *)DSMManager;
+    return(manager->AcceptConnection());
+  }
+}
+#elif HAVE_BOOST_THREADS
 class DSMServiceThread 
 {
-  public:
-    DSMServiceThread(XdmfDsmBuffer *dsmObject)
-    {
-      this->DSMObject = dsmObject;
-    }
-    void operator()() {
-//      this->DSMObject->SetGlobalDebug(1);
-      this->DSMObject->ServiceThread();
-    }
-    //
-    XdmfDsmBuffer *DSMObject;
+public:
+  DSMServiceThread(XdmfDsmBuffer *dsmObject)
+  {
+    this->DSMObject = dsmObject;
+  }
+  void operator()() {
+    //      this->DSMObject->SetGlobalDebug(1);
+    this->DSMObject->ServiceThread();
+  }
+  //
+  XdmfDsmBuffer *DSMObject;
 };
+class DSMConnectionThread
+{
+public:
+  DSMConnectionThread(vtkDSMManager *manager)
+  {
+    this->DSMManager = manager;
+  }
+  void operator()() {
+    this->DSMManager->AcceptConnection();
+  }
+  //
+  vtkDSMManager *DSMManager;
+};
+#endif
 //----------------------------------------------------------------------------
 bool vtkDSMManager::CreateDSM()
 {
@@ -187,19 +222,19 @@ bool vtkDSMManager::CreateDSM()
   // Get the raw MPI_Comm handle
   //
   if (this->Controller->IsA("vtkDummyController")) {
-      int provided;
-      MPI_Init_thread(0, NULL, MPI_THREAD_MULTIPLE, &provided);
-      if (provided != MPI_THREAD_MULTIPLE) {
-        vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-          << "MPI distribution with threads enabled" << vtkstd::endl;
-      }
-      else {
-        vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
-      }
-//      this->SetController();
+    int provided;
+    MPI_Init_thread(0, NULL, MPI_THREAD_MULTIPLE, &provided);
+    if (provided != MPI_THREAD_MULTIPLE) {
+      vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+      << "MPI distribution with threads enabled" << vtkstd::endl;
+    }
+    else {
+      vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
+    }
+    //      this->SetController();
   }
   vtkMPICommunicator *communicator
-    = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
 
   //
@@ -208,9 +243,10 @@ bool vtkDSMManager::CreateDSM()
   this->DSMComm = new XdmfDsmCommMpi;
   this->DSMComm->DupComm(mpiComm);
   this->DSMComm->Init();
-  int rank = this->DSMComm->GetId();
-  int size = this->DSMComm->GetTotalSize();
-  int last_rank = size - 1;
+  //  int rank = this->DSMComm->GetId();
+  //  int size = this->DSMComm->GetTotalSize();
+  //  int last_rank = size - 1;
+  MPI_Comm_set_errhandler(this->DSMComm->GetComm(), MPI_ERRORS_RETURN);
 
   //
   // Create the DSM buffer
@@ -226,71 +262,99 @@ bool vtkDSMManager::CreateDSM()
   // Start another thread to handle DSM requests from other nodes
   pthread_create(&this->ServiceThread, NULL, &XdmfDsmBufferServiceThread, (void *) this->DSMBuffer);
 #elif HAVE_BOOST_THREADS
-    DSMServiceThread MyDSMServiceThread(this->DSMBuffer);
-    this->ServiceThread = new boost::thread(MyDSMServiceThread);
+  DSMServiceThread MyDSMServiceThread(this->DSMBuffer);
+  this->ServiceThread = new boost::thread(MyDSMServiceThread);
 #endif
 
   // Wait for DSM to be ready
   while (!this->DSMBuffer->GetThreadDsmReady()) {
     // Spin until service initialized
   }
-  vtkDebugMacro(<<"DSM Service Ready on " << rank);
+  vtkDebugMacro(<<"DSM Service Ready on " << this->UpdatePiece);
 
   return true;
 }
 
 //----------------------------------------------------------------------------
-void vtkDSMManager::ConnectDSM()
+void vtkDSMManager::PublishDSM()
 {
-#define MAX_DATA 50
-  int errs = 0;
-  char port_name[MPI_MAX_PORT_NAME];
-  char serv_name[256];
-  int merr;
-  char errmsg[MPI_MAX_ERROR_STRING];
-  int msglen;
-  char buf[MAX_DATA];
-  MPI_Status status;
-  MPI_Comm client;
-
-  strcpy(serv_name, "DSMTest");
-  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-
   if (this->UpdatePiece == 0) {
+    int merr, msglen;
+    char errmsg[MPI_MAX_ERROR_STRING];
 
-    MPI_Open_port(MPI_INFO_NULL, port_name);
+    strcpy(this->DSMServName, "DSMTest");
 
-    merr = MPI_Publish_name(serv_name, MPI_INFO_NULL, port_name);
+    MPI_Open_port(MPI_INFO_NULL, this->DSMPortName);
+    merr = MPI_Publish_name(this->DSMServName, MPI_INFO_NULL, this->DSMPortName);
     if (merr) {
-      errs++;
       MPI_Error_string(merr, errmsg, &msglen);
-      vtkDebugMacro(<<"Error in Publish_name: \"" << errmsg << "\"");
+      vtkErrorMacro(<<"Error in Publish_name: \"" << errmsg << "\"");
     } else {
-      vtkDebugMacro(<<"Published port_name(" << port_name << ")");
+      vtkDebugMacro(<<"Published port_name(" << this->DSMPortName << ")");
     }
+    this->SetPublishedPortName(this->DSMPortName);
   }
-  vtkDebugMacro(<<"Waiting for connection " << this->UpdatePiece);
+  //
+#ifdef HAVE_PTHREADS
+  pthread_create(&this->ConnectionThread, NULL, &DSMConnectionThread, (void *) this);
+#elif HAVE_BOOST_THREADS
+  DSMConnectionThread MyDSMConnectionThread(this);
+  this->ConnectionThread = new boost::thread(MyDSMConnectionThread);
+#endif
+}
+//----------------------------------------------------------------------------
+void *vtkDSMManager::AcceptConnection()
+{
+  char *buf;
+  MPI_Status status;
 
-  this->SetPublishedPortName(port_name);
+  // this->DSMPortName internally used on root
+  MPI_Comm_accept(this->DSMPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &this->DSMClientComm);
 
-  /*
-    MPI_Comm_accept(port_name, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &client);
+  if (this->UpdatePiece == 0 && !this->KillConnection) {
+    int len;
 
-    if (this->UpdatePiece == 0) {
-      MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
-      vtkDebugMacro(<<"Server received: " << buf);
+    MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, this->DSMClientComm, &status);
+    MPI_Get_count(&status, MPI_CHAR, &len);
+    buf = new char[len];
+    MPI_Recv(buf, len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, this->DSMClientComm, &status);
+    vtkDebugMacro(<<"Server received: " << buf);
+    delete[] buf;
+  }
+  this->Controller->Barrier();
+  this->SetAcceptedConnection(true);
 
-      merr = MPI_Unpublish_name(serv_name, MPI_INFO_NULL, port_name);
+  return ((void*)this);
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::UnpublishDSM()
+{
+  //if (this->AcceptedConnection == false) {
+  // Make terminate the thread by forcing the accept
+  //MPI_Comm server;
+  //this->KillConnection = true;
+  //vtkDebugMacro(<<"Connecting for killing connection: " << this->UpdatePiece << " on port: " << this->DSMPortName);
+  //MPI_Comm_connect(this->DSMPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &server);
+  //vtkDebugMacro(<< "Connected for cleaning!\n");
+  //MPI_Comm_disconnect(&server);
+  //}
+
+  if(this->UpdatePiece == 0) {
+    if (this->PublishedPortName != NULL) {
+      int merr, msglen;
+      char errmsg[MPI_MAX_ERROR_STRING];
+
+      merr = MPI_Unpublish_name(this->DSMServName, MPI_INFO_NULL, this->DSMPortName);
       if (merr) {
-        errs++;
         MPI_Error_string(merr, errmsg, &msglen);
         vtkDebugMacro(<<"Error in Unpublish name: \"" << errmsg << "\"");
       }
-
-      MPI_Close_port(port_name);
+      MPI_Close_port(this->DSMPortName);
+      this->SetPublishedPortName(NULL);
     }
-   */
-  this->Controller->Barrier();
+  }
+  this->SetAcceptedConnection(false);
+  this->KillConnection = false;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()
