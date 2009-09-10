@@ -162,13 +162,7 @@ void pqDSMViewerPanel::startRemovingServer(pqServer *server)
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::linkServerManagerProperties()
 {
-  // parent class hooks up some of our widgets in the ui
-  //  pqNamedObjectPanel::linkServerManagerProperties();
-
-  //this->UI->Links->addPropertyLink(this->UI->CreateDSM,
-  //  "clicked", SIGNAL(clicked()),
-  //  this->UI->DSMProxy, this->UI->DSMProxy->GetProperty("CreateDSM")); 
-
+  // TBD
 }
 //---------------------------------------------------------------------------
 bool pqDSMViewerPanel::ProxyReady()
@@ -180,13 +174,22 @@ bool pqDSMViewerPanel::ProxyReady()
   }
   return true;
 }
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onCreateDSM()
+//---------------------------------------------------------------------------
+bool pqDSMViewerPanel::DSMReady()
 {
-  if (this->ProxyReady()) {
+  if (!this->ProxyReady()) return 0;
+  if (!this->UI->DSMInitialized) {
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
   }
+  return this->UI->DSMInitialized;
+}
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onCreateDSM()
+{
+  this->DSMReady();
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDestroyDSM()
@@ -205,66 +208,10 @@ void pqDSMViewerPanel::onDestroyDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::createPublishNameDialog()
-{
-  this->publishNameDialog = new QProgressDialog("Publishing name, awaiting connection...", "Cancel", 0, 100, this);
-  connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishNameDialog()));
-  this->publishNameTimer = new QTimer(this);
-  this->publishNameTimer->setInterval(400);
-  connect(this->publishNameTimer, SIGNAL(timeout()), this, SLOT(timeoutPublishName()));
-  this->publishNameTimer->start();
-}
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::timeoutPublishName()
-{
-  // try to get the published name from the server
-  if (!this->publishedNameFound) {
-    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
-      this->UI->DSMProxy->GetProperty("PublishedPortName"));
-    this->UI->DSMProxy->UpdatePropertyInformation(pn);
-    const char* name = pn->GetElement(0);
-    if (QString(name)!="") {
-      QString text = "Publishing Name : \n" + QString(name) + "\n awaiting connection...";
-      this->publishNameDialog->setLabelText(text);
-      this->publishedNameFound = true;
-    }
-  }
-
-  // try to see if the connection is established
-  if (!this->connectionFound) {
-    vtkSMIntVectorProperty *pn = vtkSMIntVectorProperty::SafeDownCast(
-      this->UI->DSMProxy->GetProperty("AcceptedConnection"));
-    this->UI->DSMProxy->UpdatePropertyInformation(pn);
-    int accepted = pn->GetElement(0);
-    if (accepted != 0) {
-      QMessageBox msgBox(this);
-      msgBox.setIcon(QMessageBox::Information);
-      msgBox.setText("Connection established");
-      msgBox.exec();
-      this->connectionFound = true;
-      this->publishNameSteps = this->publishNameDialog->maximum();
-    }
-  }
-
-  this->publishNameDialog->setValue(publishNameSteps);
-  this->publishNameSteps++;
-
-  if (this->publishNameSteps > this->publishNameDialog->maximum()) {
-    this->cancelPublishNameDialog();
-  }
-}
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::cancelPublishNameDialog()
-{
-  this->publishNameTimer->stop();
-  if(this->publishedNameFound && !this->connectionFound)
-    this->onUnpublishDSM(); // automatically unpublish DSM
-}
-//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPublishDSM()
 {
-  if (this->ProxyReady()) {
-    if(!this->publishedNameFound && !this->connectionFound) {
+  if (this->DSMReady()) {
+    if (!this->publishedNameFound && !this->connectionFound) {
       this->publishNameSteps = 0;
       this->createPublishNameDialog();
       this->UI->DSMProxy->InvokeCommand("PublishDSM");
@@ -280,8 +227,7 @@ void pqDSMViewerPanel::onPublishDSM()
 void pqDSMViewerPanel::onUnpublishDSM()
 {
   if (this->ProxyReady()) {
-
-    if(this->publishedNameFound == false) {
+    if (this->publishedNameFound == false) {
       QMessageBox msgBox(this);
       msgBox.setIcon(QMessageBox::Warning);
       msgBox.setText("No DSM published name found!");
@@ -381,4 +327,61 @@ void pqDSMViewerPanel::fillDSMContents()
   pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
   item->setText(0, "test");
   item->setExpanded(true);
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::createPublishNameDialog()
+{
+  this->publishNameDialog = new QProgressDialog("Publishing name, awaiting connection...", "Cancel", 0, 100);
+  connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishNameDialog()));
+  this->publishNameTimer = new QTimer(this);
+  this->publishNameTimer->setInterval(500);
+  connect(this->publishNameTimer, SIGNAL(timeout()), this, SLOT(timeoutPublishName()));
+  this->publishNameTimer->start();
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::timeoutPublishName()
+{
+  // try to get the published name from the server
+  if (!this->publishedNameFound) {
+    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
+      this->UI->DSMProxy->GetProperty("PublishedPortName"));
+    this->UI->DSMProxy->UpdatePropertyInformation(pn);
+    const char* name = pn->GetElement(0);
+    if (QString(name)!="") {
+      QString text = "Publishing Name : \n" + QString(name) + "\n awaiting connection...";
+      this->publishNameDialog->setLabelText(text);
+      this->publishedNameFound = true;
+    }
+  }
+
+  // try to see if the connection is established
+  if (!this->connectionFound) {
+    vtkSMIntVectorProperty *pn = vtkSMIntVectorProperty::SafeDownCast(
+      this->UI->DSMProxy->GetProperty("AcceptedConnection"));
+    this->UI->DSMProxy->UpdatePropertyInformation(pn);
+    int accepted = pn->GetElement(0);
+    if (accepted != 0) {
+      QMessageBox msgBox(this);
+      msgBox.setIcon(QMessageBox::Information);
+      msgBox.setText("Connection established");
+      msgBox.exec();
+      this->connectionFound = true;
+      this->publishNameSteps = this->publishNameDialog->maximum();
+    }
+  }
+
+  this->publishNameDialog->setValue(publishNameSteps);
+  this->publishNameSteps++;
+
+  if (this->publishNameSteps > this->publishNameDialog->maximum()) {
+    this->cancelPublishNameDialog();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::cancelPublishNameDialog()
+{
+  this->publishNameTimer->stop();
+  if (this->publishedNameFound && !this->connectionFound) {
+    this->onUnpublishDSM(); // automatically unpublish DSM
+  }
 }

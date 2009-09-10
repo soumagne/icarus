@@ -21,6 +21,7 @@ public:
  ~pqDSMViewerPanel();
 
   bool ProxyReady();
+  bool DSMReady();
 
 signals:
 

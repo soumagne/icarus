@@ -106,6 +106,13 @@ main(int argc, char *argv[])
     dsm = 1;
   }
 
+  std::string dsm_port_name;
+
+  if (dsm && argc>2 && strlen(argv[2])>0) {
+//    PRINT_INFO("using dsm_port_name " << argv[2]);
+    dsm_port_name = argv[2];
+  }
+/*
   if (argc == 3 || argc == 4) {
     if ((strcmp(argv[2], "--dump") == 0) || (strcmp(argv[3], "--dump") == 0)) {
       if (dsm == 1)
@@ -129,8 +136,8 @@ main(int argc, char *argv[])
         PRINT_INFO("--local option only available with DSM enabled");
     }
   }
-
-  if (dsm == 1 && local == 1) {
+*/
+  if (dsm == 1) {
     MyDsm = new XdmfDsmBuffer();
     MyComm = new XdmfDsmCommMpi();
 
@@ -138,6 +145,10 @@ main(int argc, char *argv[])
     // New Communicator for Xdmf Transactions
     MyComm->DupComm(MPI_COMM_WORLD);
     MyDsm->ConfigureUniform(MyComm, 3*1024);
+    if (dsm_port_name.length()>0) {
+      MyDsm->SetPortName(dsm_port_name);
+      MyDsm->SetIsServer(0);
+    }
 
     PRINT_DEBUG_INFO("Creating threads");
 
@@ -174,10 +185,10 @@ main(int argc, char *argv[])
       // Initialize the DSM VFL driver
       H5FD_dsm_init();
     //}
-    if (local == 1)
+//    if (local == 1)
       H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
-    else
-      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, NULL);
+//    else
+//      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, NULL);
   } else {
     if (size > 1) {
       // Check for Parallel HDF5 ... MPI must already be initialized
