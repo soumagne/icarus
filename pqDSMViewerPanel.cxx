@@ -181,6 +181,10 @@ bool pqDSMViewerPanel::DSMReady()
   if (!this->UI->DSMInitialized) {
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.setText("DSM created");
+    msgBox.exec();
   }
   return this->UI->DSMInitialized;
 }
@@ -197,6 +201,10 @@ void pqDSMViewerPanel::onDestroyDSM()
   if (this->ProxyReady()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
     this->UI->DSMInitialized = 0;
+    QMessageBox msgBox(this);
+    msgBox.setIcon(QMessageBox::Information);
+    msgBox.setText("DSM destroyed");
+    msgBox.exec();
   }
   if (this->publishNameTimer) {
     delete this->publishNameTimer;

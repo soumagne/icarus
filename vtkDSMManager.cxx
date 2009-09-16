@@ -317,12 +317,14 @@ void *vtkDSMManager::AcceptConnection()
     MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, this->DSMClientComm, &status);
     MPI_Get_count(&status, MPI_CHAR, &len);
     buf = new char[len];
-    MPI_Recv(buf, len, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, this->DSMClientComm, &status);
+    MPI_Recv(buf, len, MPI_CHAR, MPI_ANY_SOURCE, 123, this->DSMClientComm, &status);
     vtkDebugMacro(<<"Server received: " << buf);
     delete[] buf;
   }
   this->Controller->Barrier();
   this->SetAcceptedConnection(true);
+
+  // exchange DSM information
 
   return ((void*)this);
 }
@@ -359,23 +361,28 @@ void vtkDSMManager::UnpublishDSM()
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()
 {  
-  XdmfDsmDump *myDsmDump = new XdmfDsmDump();
-  myDsmDump->SetDsmBuffer(this->DSMBuffer);
-  if (this->UpdatePiece == 0) {
-    myDsmDump->Dump();
+  if (this->DSMBuffer) {
+    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    if (this->UpdatePiece == 0) {
+      myDsmDump->Dump();
+    }
+    delete myDsmDump;
   }
-  delete myDsmDump;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5DumpLight()
 {  
-  XdmfDsmDump *myDsmDump = new XdmfDsmDump();
-  myDsmDump->SetDsmBuffer(this->DSMBuffer);
-  if (this->UpdatePiece == 0) {
-    myDsmDump->DumpLight();
+  if (this->DSMBuffer) {
+    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    if (this->UpdatePiece == 0) {
+      myDsmDump->DumpLight();
+    }
+    delete myDsmDump;
   }
-  delete myDsmDump;
-}//----------------------------------------------------------------------------
+}
+//----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

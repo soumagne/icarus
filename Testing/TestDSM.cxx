@@ -24,7 +24,7 @@ using std::cerr;
 using std::cout;
 using std::endl;
 
-//#define JDEBUG
+#define JDEBUG
 #ifdef  JDEBUG
 #  define PRINT_DEBUG_INFO(x) cout << x << endl;
 #else
@@ -94,6 +94,7 @@ main(int argc, char *argv[])
       PRINT_INFO("Usage: " << argv[0] << " disk|dsm " << "[OPTIONS]" << endl
           << "  OPTIONS" << endl
           << "      --local  Create and test the DSM locally, otherwise try to connect" << endl
+          << "      < port_name > Specify a port name for the DSM" << endl
           << "      --dump   Dump the generated DSM file" << endl
           << "      --ldump  Dump headers of the generated DSM file" << endl
           << "      --notest Disable tests (only done when no dump requested)" << endl);
@@ -109,34 +110,38 @@ main(int argc, char *argv[])
   std::string dsm_port_name;
 
   if (dsm && argc>2 && strlen(argv[2])>0) {
-//    PRINT_INFO("using dsm_port_name " << argv[2]);
+    PRINT_INFO("Using dsm_port_name " << argv[2]);
     dsm_port_name = argv[2];
   }
-/*
+
   if (argc == 3 || argc == 4) {
     if ((strcmp(argv[2], "--dump") == 0) || (strcmp(argv[3], "--dump") == 0)) {
-      if (dsm == 1)
+      if (dsm == 1) {
         dump = 1;
-      else
+    } else {
         PRINT_INFO("--dump option only available with DSM enabled");
+      }
     }
     if ((strcmp(argv[2], "--ldump") == 0) || (strcmp(argv[3], "--ldump") == 0)) {
-      if (dsm == 1)
+      if (dsm == 1) {
         ldump = 1;
-      else
+      } else {
         PRINT_INFO("--ldump option only available with DSM enabled");
+      }
     }
     if ((strcmp(argv[2], "--notest") == 0) || (strcmp(argv[3], "--notest") == 0)) {
       test = 0;
     }
     if ((strcmp(argv[2], "--local") == 0) || (strcmp(argv[3], "--local") == 0)) {
-      if (dsm == 1)
+      if (dsm == 1) {
         local = 1;
-      else
+      }
+      else {
         PRINT_INFO("--local option only available with DSM enabled");
+      }
     }
   }
-*/
+
   if (dsm == 1) {
     MyDsm = new XdmfDsmBuffer();
     MyComm = new XdmfDsmCommMpi();
@@ -145,11 +150,12 @@ main(int argc, char *argv[])
     // New Communicator for Xdmf Transactions
     MyComm->DupComm(MPI_COMM_WORLD);
     MyDsm->ConfigureUniform(MyComm, 3*1024);
-    if (dsm_port_name.length()>0) {
+    if (dsm_port_name.length() > 0) {
       MyDsm->SetPortName(dsm_port_name);
-      MyDsm->SetIsServer(0);
     }
-
+    if (!local)
+      MyDsm->SetIsServer(0);
+    else {
     PRINT_DEBUG_INFO("Creating threads");
 
     // Start another thread to handle DSM requests from other nodes
@@ -164,6 +170,7 @@ main(int argc, char *argv[])
     while (!MyDsm->GetThreadDsmReady())
       {         // Spin
       }
+    }
   }
 
   MPI_Barrier(MPI_COMM_WORLD);
@@ -181,14 +188,10 @@ main(int argc, char *argv[])
   // Create the file access property list
   fapl = H5Pcreate(H5P_FILE_ACCESS);
   if (dsm == 1) {
-    //if (rank == 0) {
       // Initialize the DSM VFL driver
       H5FD_dsm_init();
     //}
-//    if (local == 1)
       H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
-//    else
-//      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, NULL);
   } else {
     if (size > 1) {
       // Check for Parallel HDF5 ... MPI must already be initialized
@@ -220,61 +223,65 @@ main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
   }
+  if (local) {// temporary for creation testing
+    // TODO add support for writing
 
-  // Create the data space for the first dataset
-  PRINT_DEBUG_INFO(endl << "Create the first dataspace");
-  dims[0] = 3;
-  dims[1] = 3;
-  dataspace_id1 = H5Screate_simple(2, dims, NULL);
+    // Create the data space for the first dataset
+    PRINT_DEBUG_INFO(endl << "Create the first dataspace");
+    dims[0] = 3;
+    dims[1] = 3;
+    dataspace_id1 = H5Screate_simple(2, dims, NULL);
 
-  // Create a dataset in group "/"
-  PRINT_DEBUG_INFO("Create the first dataset");
-  dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT);
+    // Create a dataset in group "/"
+    PRINT_DEBUG_INFO("Create the first dataset");
+    dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT);
 
-  // Create the group MyGroup
-  PRINT_DEBUG_INFO(endl << "Create the group");
-  group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT);
+    // Create the group MyGroup
+    PRINT_DEBUG_INFO(endl << "Create the group");
+    group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT);
 
-  // Create the data space for the second dataset
-  PRINT_DEBUG_INFO("Create the second dataspace");
-  dims[0] = 2;
-  dims[1] = 10;
-  dataspace_id2 = H5Screate_simple(2, dims, NULL);
+    // Create the data space for the second dataset
+    PRINT_DEBUG_INFO("Create the second dataspace");
+    dims[0] = 2;
+    dims[1] = 10;
+    dataspace_id2 = H5Screate_simple(2, dims, NULL);
 
-  // Create the second dataset in group "/MyGroup"
-  PRINT_DEBUG_INFO("Create the second dataset");
-  dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT);
+    // Create the second dataset in group "/MyGroup"
+    PRINT_DEBUG_INFO("Create the second dataset");
+    dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT);
 
-  // Write the first dataset
-  if ((rank % 2) == 0) {
-    PRINT_DEBUG_INFO(endl << "Write the first dataset");
-    H5Dwrite(dataset_id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset1_data);
+    // Write the first dataset
+    if ((rank % 2) == 0) {
+      PRINT_DEBUG_INFO(endl << "Write the first dataset");
+      H5Dwrite(dataset_id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset1_data);
+    }
+
+    // Write the second dataset
+    if ((rank % 2) == 1 || size == 1) {
+      PRINT_DEBUG_INFO(endl << "Write the second dataset");
+      H5Dwrite(dataset_id2, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset2_data);
+    }
+
+    // Close the data space for the first dataset
+    PRINT_DEBUG_INFO(endl << "Close datasets");
+    H5Sclose(dataspace_id1);
+
+    // Close the first dataset
+    H5Dclose(dataset_id1);
+
+    // Close the data space for the second dataset
+    H5Sclose(dataspace_id2);
+
+    // Close the second dataset
+    H5Dclose(dataset_id2);
+
+    // Close the group
+    PRINT_DEBUG_INFO("Close group");
+    H5Gclose(group_id);
   }
-
-  // Write the second dataset
-  if ((rank % 2) == 1 || size == 1) {
-    PRINT_DEBUG_INFO(endl << "Write the second dataset");
-    H5Dwrite(dataset_id2, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset2_data);
-  }
-
-  // Close the data space for the first dataset
-  PRINT_DEBUG_INFO(endl << "Close datasets");
-  H5Sclose(dataspace_id1);
-
-  // Close the first dataset
-  H5Dclose(dataset_id1);
-
-  // Close the data space for the second dataset
-  H5Sclose(dataspace_id2);
-
-  // Close the second dataset
-  H5Dclose(dataset_id2);
-
-  // Close the group
-  PRINT_DEBUG_INFO("Close group");
-  H5Gclose(group_id);
-
   // Close the file
+  MPI_Barrier(MPI_COMM_WORLD);
+
   PRINT_DEBUG_INFO("Close file");
   H5Fclose(file_id);
 
