@@ -131,7 +131,6 @@ protected:
     bool            KillConnection;
     char            DSMPortName[MPI_MAX_PORT_NAME];
     char            DSMServName[256];
-    MPI_Comm        DSMClientComm;
 #endif
     //ETX
 

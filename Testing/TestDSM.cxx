@@ -224,7 +224,6 @@ main(int argc, char *argv[])
     }
   }
   if (local) {// temporary for creation testing
-    // TODO add support for writing
 
     // Create the data space for the first dataset
     PRINT_DEBUG_INFO(endl << "Create the first dataspace");
