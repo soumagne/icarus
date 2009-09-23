@@ -74,8 +74,13 @@ vtkDSMManager::vtkDSMManager()
   this->LocalBufferSizeMBytes    = 128;
   this->UpdatePiece              = 0;
   this->UpdateNumPieces          = 0;
+#ifdef HAVE_PTHREADS
   this->ServiceThread            = 0;
   this->ConnectionThread         = 0;
+#elif HAVE_BOOST_THREADS
+  this->ServiceThread            = NULL;
+  this->ConnectionThread         = NULL;
+#endif
 
   //
 #ifdef VTK_USE_MPI
@@ -124,11 +129,11 @@ bool vtkDSMManager::DestroyDSM()
 #ifdef HAVE_PTHREADS
   if (this->ServiceThread) {
     pthread_join(this->ServiceThread, NULL);
-    this->ServiceThread = NULL;
+    this->ServiceThread = 0;
   }
   if (this->ConnectionThread) {
     pthread_join(this->ConnectionThread, NULL);
-    this->ConnectionThread = NULL;
+    this->ConnectionThread = 0;
   }
 #elif HAVE_BOOST_THREADS
   if (this->ServiceThread) {

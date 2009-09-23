@@ -61,7 +61,7 @@ main(int argc, char *argv[])
   int           dset1_data[3][3], dset2_data[2][10];
   int           dset1_data_test[3][3], dset2_data_test[2][10];
 #ifdef HAVE_PTHREADS
-  pthread_t     ServiceThread  = NULL;
+  pthread_t     ServiceThread  = 0;
 #elif HAVE_BOOST_THREADS
   boost::thread *ServiceThread = NULL;
 #endif
@@ -333,7 +333,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_PTHREADS
               if (ServiceThread) {
                 pthread_join(ServiceThread, NULL);
-                ServiceThread = NULL;
+                ServiceThread = 0;
               }
 #elif HAVE_BOOST_THREADS
               if (ServiceThread) {
@@ -383,7 +383,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_PTHREADS
               if (ServiceThread) {
                 pthread_join(ServiceThread, NULL);
-                ServiceThread = NULL;
+                ServiceThread = 0;
               }
 #elif HAVE_BOOST_THREADS
               if (ServiceThread) {
@@ -431,7 +431,7 @@ main(int argc, char *argv[])
 #ifdef HAVE_PTHREADS
       if (ServiceThread) {
         pthread_join(ServiceThread, NULL);
-        ServiceThread = NULL;
+        ServiceThread = 0;
       }
 #elif HAVE_BOOST_THREADS
       if (ServiceThread) {
