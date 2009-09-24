@@ -223,7 +223,7 @@ main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
   }
-  if (local) {// temporary for creation testing
+  //if (local) {// temporary for creation testing
 
     // Create the data space for the first dataset
     PRINT_DEBUG_INFO(endl << "Create the first dataspace");
@@ -277,7 +277,7 @@ main(int argc, char *argv[])
     // Close the group
     PRINT_DEBUG_INFO("Close group");
     H5Gclose(group_id);
-  }
+  //}
   // Close the file
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -451,6 +451,8 @@ main(int argc, char *argv[])
   }
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
+
+  MyDsm->FreeRemoteChannel();
 
   PRINT_DEBUG_INFO("About to MPI_Finalize");
   MPI_Finalize();
