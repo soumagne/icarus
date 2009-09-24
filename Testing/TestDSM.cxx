@@ -110,10 +110,11 @@ main(int argc, char *argv[])
   std::string dsm_port_name;
 
   if (dsm && argc>2 && strlen(argv[2])>0) {
-    PRINT_INFO("Using dsm_port_name " << argv[2]);
+    //PRINT_INFO("Using dsm_port_name " << argv[2]);
     dsm_port_name = argv[2];
+    //cout << "ok" << endl;
   }
-
+/*
   if (argc == 3 || argc == 4) {
     if ((strcmp(argv[2], "--dump") == 0) || (strcmp(argv[3], "--dump") == 0)) {
       if (dsm == 1) {
@@ -140,7 +141,7 @@ main(int argc, char *argv[])
         PRINT_INFO("--local option only available with DSM enabled");
       }
     }
-  }
+  }*/
 
   if (dsm == 1) {
     MyDsm = new XdmfDsmBuffer();
