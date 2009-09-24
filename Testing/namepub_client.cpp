@@ -45,7 +45,7 @@ int main( int argc, char *argv[] )
     else {
 //      strcpy( port_name_out, test );
       char longbuff[256];
-      std::ifstream fserver("//ponte.cscs.ch/biddisco/agno_name.txt");
+      std::ifstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
       fserver.getline(longbuff, 256);
       fserver.close();
       strcpy(port_name_out, longbuff);

@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
       return 1;
     }
 
-    std::ofstream server("//ponte.cscs.ch/biddisco/agno_name.txt");
+    std::ofstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
 
     strcpy(serv_name, "MyTest");
 
