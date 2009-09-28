@@ -259,6 +259,10 @@ bool vtkDSMManager::CreateDSM()
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->LocalBufferSizeMBytes*1024*1024);
 
+  // Enable debug
+  // dynamic_cast <XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->DebugOn();
+  // this->DSMBuffer->DebugOn();
+
   //
   // setup service thread
   //
@@ -354,9 +358,6 @@ void *vtkDSMManager::AcceptConnection()
     XdmfInt32 endServerId = this->DSMBuffer->GetEndServerId();
     vtkDebugMacro(<< "Send DSM endServerId: " << this->DSMBuffer->GetEndServerId());
     MPI_Send(&endServerId, 1, MPI_INT, 0, 123, clientComm);
-
-    // StartAddress ?
-    // EndAddress ?
   }
   return ((void*)this);
 }

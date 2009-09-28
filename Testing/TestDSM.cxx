@@ -55,21 +55,23 @@ public:
 int
 main(int argc, char *argv[])
 {
-  hid_t          file_id, group_id, dataset_id1, dataspace_id1, dataset_id2, dataspace_id2, fapl;  /* identifiers */
-  hsize_t        dims[2];
-  herr_t         status;
-  int           dset1_data[3][3], dset2_data[2][10];
-  int           dset1_data_test[3][3], dset2_data_test[2][10];
+  hid_t           file_id, group_id, dataset_id1, dataspace_id1, dataset_id2, dataspace_id2, fapl;  /* identifiers */
+  hsize_t         dims[2];
+  herr_t          status;
+  int             dset1_data[3][3], dset2_data[2][10];
+  int             dset1_data_test[3][3], dset2_data_test[2][10];
 #ifdef HAVE_PTHREADS
-  pthread_t     ServiceThread  = 0;
+  pthread_t       ServiceThread  = 0;
 #elif HAVE_BOOST_THREADS
-  boost::thread *ServiceThread = NULL;
+  boost::thread  *ServiceThread = NULL;
 #endif
-  int            rank, size, provided;
-  int            dsm = 0, local = 0, dump = 0, ldump = 0, test = 1;
+  int             rank, size, provided;
+  int             dsm = 0, local = 0, dump = 0, ldump = 0, test = 1;
 
   XdmfDsmBuffer  *MyDsm;
   XdmfDsmCommMpi *MyComm;
+
+  std::string     dsm_port_name;
 
   MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
   if (provided != MPI_THREAD_MULTIPLE) {
@@ -91,10 +93,10 @@ main(int argc, char *argv[])
 
   if (argc < 2) {
     if (rank == 0) {
-      PRINT_INFO("Usage: " << argv[0] << " disk|dsm " << "[OPTIONS]" << endl
+      PRINT_INFO("Usage: " << argv[0] << " disk|dsm " << "[--local/port <port_name>] [--dump/ldump/notest]" << endl
           << "  OPTIONS" << endl
           << "      --local  Create and test the DSM locally, otherwise try to connect" << endl
-          << "      < port_name > Specify a port name for the DSM" << endl
+          << "      --port   Specify a port name for the DSM" << endl
           << "      --dump   Dump the generated DSM file" << endl
           << "      --ldump  Dump headers of the generated DSM file" << endl
           << "      --notest Disable tests (only done when no dump requested)" << endl);
@@ -107,41 +109,29 @@ main(int argc, char *argv[])
     dsm = 1;
   }
 
-  std::string dsm_port_name;
-
-  if (dsm && argc>2 && strlen(argv[2])>0) {
-    //PRINT_INFO("Using dsm_port_name " << argv[2]);
-    dsm_port_name = argv[2];
-    //cout << "ok" << endl;
+  if (dsm && (argc > 3)) {
+    if ((strlen(argv[3]) > 0) && (strcmp(argv[2], "--port") == 0)) {
+      dsm_port_name = argv[3];
+    }
   }
-/*
-  if (argc == 3 || argc == 4) {
-    if ((strcmp(argv[2], "--dump") == 0) || (strcmp(argv[3], "--dump") == 0)) {
-      if (dsm == 1) {
-        dump = 1;
-    } else {
-        PRINT_INFO("--dump option only available with DSM enabled");
-      }
+
+  if (dsm && (argc > 2)) {
+    if (strcmp(argv[2], "--local") == 0) {
+      local = 1;
     }
-    if ((strcmp(argv[2], "--ldump") == 0) || (strcmp(argv[3], "--ldump") == 0)) {
-      if (dsm == 1) {
-        ldump = 1;
-      } else {
-        PRINT_INFO("--ldump option only available with DSM enabled");
-      }
+  }
+
+  if (local && (argc > 3)) {
+    if (strcmp(argv[3], "--dump") == 0) {
+      dump = 1;
     }
-    if ((strcmp(argv[2], "--notest") == 0) || (strcmp(argv[3], "--notest") == 0)) {
+    if (strcmp(argv[3], "--ldump") == 0) {
+      ldump = 1;
+    }
+    if (strcmp(argv[3], "--notest") == 0) {
       test = 0;
     }
-    if ((strcmp(argv[2], "--local") == 0) || (strcmp(argv[3], "--local") == 0)) {
-      if (dsm == 1) {
-        local = 1;
-      }
-      else {
-        PRINT_INFO("--local option only available with DSM enabled");
-      }
-    }
-  }*/
+  }
 
   if (dsm == 1) {
     MyDsm = new XdmfDsmBuffer();
@@ -154,8 +144,11 @@ main(int argc, char *argv[])
     if (dsm_port_name.length() > 0) {
       MyDsm->SetPortName(dsm_port_name);
     }
-    if (!local)
+    if (!local) {
       MyDsm->SetIsServer(0);
+      // MyDsm->DebugOn();
+      // MyComm->DebugOn();
+    }
     else {
     PRINT_DEBUG_INFO("Creating threads");
 
@@ -224,61 +217,60 @@ main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
   }
-  //if (local) {// temporary for creation testing
 
-    // Create the data space for the first dataset
-    PRINT_DEBUG_INFO(endl << "Create the first dataspace");
-    dims[0] = 3;
-    dims[1] = 3;
-    dataspace_id1 = H5Screate_simple(2, dims, NULL);
+  // Create the data space for the first dataset
+  PRINT_DEBUG_INFO(endl << "Create the first dataspace");
+  dims[0] = 3;
+  dims[1] = 3;
+  dataspace_id1 = H5Screate_simple(2, dims, NULL);
 
-    // Create a dataset in group "/"
-    PRINT_DEBUG_INFO("Create the first dataset");
-    dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT);
+  // Create a dataset in group "/"
+  PRINT_DEBUG_INFO("Create the first dataset");
+  dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT);
 
-    // Create the group MyGroup
-    PRINT_DEBUG_INFO(endl << "Create the group");
-    group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT);
+  // Create the group MyGroup
+  PRINT_DEBUG_INFO(endl << "Create the group");
+  group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT);
 
-    // Create the data space for the second dataset
-    PRINT_DEBUG_INFO("Create the second dataspace");
-    dims[0] = 2;
-    dims[1] = 10;
-    dataspace_id2 = H5Screate_simple(2, dims, NULL);
+  // Create the data space for the second dataset
+  PRINT_DEBUG_INFO("Create the second dataspace");
+  dims[0] = 2;
+  dims[1] = 10;
+  dataspace_id2 = H5Screate_simple(2, dims, NULL);
 
-    // Create the second dataset in group "/MyGroup"
-    PRINT_DEBUG_INFO("Create the second dataset");
-    dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT);
+  // Create the second dataset in group "/MyGroup"
+  PRINT_DEBUG_INFO("Create the second dataset");
+  dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT);
 
-    // Write the first dataset
-    if ((rank % 2) == 0) {
-      PRINT_DEBUG_INFO(endl << "Write the first dataset");
-      H5Dwrite(dataset_id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset1_data);
-    }
+  // Write the first dataset
+  if ((rank % 2) == 0) {
+    PRINT_DEBUG_INFO(endl << "Write the first dataset");
+    H5Dwrite(dataset_id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset1_data);
+  }
 
-    // Write the second dataset
-    if ((rank % 2) == 1 || size == 1) {
-      PRINT_DEBUG_INFO(endl << "Write the second dataset");
-      H5Dwrite(dataset_id2, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset2_data);
-    }
+  // Write the second dataset
+  if ((rank % 2) == 1 || size == 1) {
+    PRINT_DEBUG_INFO(endl << "Write the second dataset");
+    H5Dwrite(dataset_id2, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset2_data);
+  }
 
-    // Close the data space for the first dataset
-    PRINT_DEBUG_INFO(endl << "Close datasets");
-    H5Sclose(dataspace_id1);
+  // Close the data space for the first dataset
+  PRINT_DEBUG_INFO(endl << "Close datasets");
+  H5Sclose(dataspace_id1);
 
-    // Close the first dataset
-    H5Dclose(dataset_id1);
+  // Close the first dataset
+  H5Dclose(dataset_id1);
 
-    // Close the data space for the second dataset
-    H5Sclose(dataspace_id2);
+  // Close the data space for the second dataset
+  H5Sclose(dataspace_id2);
 
-    // Close the second dataset
-    H5Dclose(dataset_id2);
+  // Close the second dataset
+  H5Dclose(dataset_id2);
 
-    // Close the group
-    PRINT_DEBUG_INFO("Close group");
-    H5Gclose(group_id);
-  //}
+  // Close the group
+  PRINT_DEBUG_INFO("Close group");
+  H5Gclose(group_id);
+
   // Close the file
   MPI_Barrier(MPI_COMM_WORLD);
 
@@ -419,30 +411,31 @@ main(int argc, char *argv[])
       myDsmDump->DumpLight();
       delete myDsmDump;
     }
-  }
     MPI_Barrier(MPI_COMM_WORLD);
-    // Close the file access property list
-    H5Pclose(fapl);
+  }
 
-    if (dsm && local) {
-      if (rank == 0) {
-        MyDsm->SendDone();
-      }
-      MPI_Barrier(MPI_COMM_WORLD);
-#ifdef HAVE_PTHREADS
-      if (ServiceThread) {
-        pthread_join(ServiceThread, NULL);
-        ServiceThread = 0;
-      }
-#elif HAVE_BOOST_THREADS
-      if (ServiceThread) {
-        delete ServiceThread;
-        ServiceThread = NULL;
-      }
-#endif
-      delete MyComm;
-      delete MyDsm;
+  // Close the file access property list
+  H5Pclose(fapl);
+
+  if (dsm && local) {
+    if (rank == 0) {
+      MyDsm->SendDone();
     }
+    MPI_Barrier(MPI_COMM_WORLD);
+#ifdef HAVE_PTHREADS
+    if (ServiceThread) {
+      pthread_join(ServiceThread, NULL);
+      ServiceThread = 0;
+    }
+#elif HAVE_BOOST_THREADS
+    if (ServiceThread) {
+      delete ServiceThread;
+      ServiceThread = NULL;
+    }
+#endif
+    delete MyComm;
+    delete MyDsm;
+  }
 
 #ifdef WIN32
   // wait for input char to allow debugger to be connected
@@ -453,7 +446,13 @@ main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-  MyDsm->FreeRemoteChannel();
+  if(!local) { // temporary here
+    MPI_Comm ServComm =
+        dynamic_cast <XdmfDsmCommMpi*> (MyDsm->GetComm())->GetServerComm();
+    MyDsm->FreeRemoteChannel(); // Go back to normal channel
+    PRINT_DEBUG_INFO("Trying to disconnect");
+    MPI_Comm_disconnect(&ServComm);
+  }
 
   PRINT_DEBUG_INFO("About to MPI_Finalize");
   MPI_Finalize();

@@ -181,10 +181,10 @@ bool pqDSMViewerPanel::DSMReady()
   if (!this->UI->DSMInitialized) {
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
-    QMessageBox msgBox(this);
-    msgBox.setIcon(QMessageBox::Information);
-    msgBox.setText("DSM created");
-    msgBox.exec();
+//    QMessageBox msgBox(this);
+//    msgBox.setIcon(QMessageBox::Information);
+//    msgBox.setText("DSM created");
+//    msgBox.exec();
   }
   return this->UI->DSMInitialized;
 }
@@ -370,10 +370,10 @@ void pqDSMViewerPanel::timeoutPublishName()
     this->UI->DSMProxy->UpdatePropertyInformation(pn);
     int accepted = pn->GetElement(0);
     if (accepted != 0) {
-      QMessageBox msgBox(this);
-      msgBox.setIcon(QMessageBox::Information);
-      msgBox.setText("Connection established");
-      msgBox.exec();
+//      QMessageBox msgBox(this);
+//      msgBox.setIcon(QMessageBox::Information);
+//      msgBox.setText("Connection established");
+//      msgBox.exec();
       this->connectionFound = true;
       this->publishNameSteps = this->publishNameDialog->maximum();
     }

@@ -66,11 +66,13 @@ int main( int argc, char *argv[] )
       }
   //  }
 
-    MPI_Send(buf, MAX_DATA, MPI_CHAR, 0, 1, server);
+//    MPI_Send(buf, MAX_DATA, MPI_CHAR, 0, 1, server);
 
 
     MPI_Comm_disconnect(&server);
 
     MPI_Finalize();
+
+printf("finalize ok\n");
     return 0;
 }

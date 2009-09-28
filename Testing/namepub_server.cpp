@@ -73,9 +73,9 @@ int main( int argc, char *argv[] )
       printf("Error in MPI_Comm_accept : \"%s\"\n", errmsg);
     } 
 
-    MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
+//    MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
 
-    printf("Server received: %s\n", buf);
+//    printf("Server received: %s\n", buf);
 
  //   merr = MPI_Unpublish_name(serv_name, MPI_INFO_NULL, port_name);
  //   if (merr) {
@@ -86,6 +86,7 @@ int main( int argc, char *argv[] )
 
     MPI_Close_port(port_name);
     MPI_Finalize();
+    printf("finalize ok\n");
     return EXIT_SUCCESS;
 }
 
