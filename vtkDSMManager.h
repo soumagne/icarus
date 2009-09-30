@@ -128,9 +128,8 @@ protected:
     //
     char           *PublishedPortName;
     bool            AcceptedConnection;
-    bool            KillConnection;
-    char            DSMPortName[MPI_MAX_PORT_NAME];
-    char            DSMServName[256];
+//  bool            KillConnection;
+
 #endif
     //ETX
 

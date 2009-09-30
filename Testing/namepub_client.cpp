@@ -53,7 +53,8 @@ int main( int argc, char *argv[] )
 #endif
       fserver.getline(longbuff, 256);
       fserver.close();
-      strcpy(port_name_out, longbuff);
+      //strcpy(port_name_out, longbuff);
+      strcpy(port_name_out, argv[1]);
 
       //
       printf ("Our (client) port name is now %s \n", port_name_out);      

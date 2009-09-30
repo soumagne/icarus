@@ -146,8 +146,8 @@ main(int argc, char *argv[])
     }
     if (!local) {
       MyDsm->SetIsServer(0);
-      // MyDsm->DebugOn();
-      // MyComm->DebugOn();
+      MyDsm->DebugOn();
+      MyComm->DebugOn();
     }
     else {
     PRINT_DEBUG_INFO("Creating threads");
@@ -447,11 +447,9 @@ main(int argc, char *argv[])
 #endif
 
   if(!local) { // temporary here
-    MPI_Comm ServComm =
-        dynamic_cast <XdmfDsmCommMpi*> (MyDsm->GetComm())->GetServerComm();
     MyDsm->FreeRemoteChannel(); // Go back to normal channel
     PRINT_DEBUG_INFO("Trying to disconnect");
-    MPI_Comm_disconnect(&ServComm);
+    MyDsm->GetComm()->RemoteCommDisconnect();
   }
 
   PRINT_DEBUG_INFO("About to MPI_Finalize");

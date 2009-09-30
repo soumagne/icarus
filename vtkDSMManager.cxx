@@ -89,7 +89,7 @@ vtkDSMManager::vtkDSMManager()
   this->SetController(vtkMultiProcessController::GetGlobalController());
   this->PublishedPortName        = NULL;
   this->AcceptedConnection       = false;
-  this->KillConnection           = false;
+//  this->KillConnection           = false;
 #endif
   //
   this->NumberOfTimeSteps        = 0;
@@ -247,10 +247,6 @@ bool vtkDSMManager::CreateDSM()
   this->DSMComm = new XdmfDsmCommMpi;
   this->DSMComm->DupComm(mpiComm);
   this->DSMComm->Init();
-  //  int rank = this->DSMComm->GetId();
-  //  int size = this->DSMComm->GetTotalSize();
-  //  int last_rank = size - 1;
-  MPI_Comm_set_errhandler(this->DSMComm->GetComm(), MPI_ERRORS_RETURN);
 
   //
   // Create the DSM buffer
@@ -260,8 +256,8 @@ bool vtkDSMManager::CreateDSM()
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->LocalBufferSizeMBytes*1024*1024);
 
   // Enable debug
-  // dynamic_cast <XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->DebugOn();
-  // this->DSMBuffer->DebugOn();
+  this->DSMBuffer->DebugOn();
+  this->DSMBuffer->GetComm()->DebugOn();
 
   //
   // setup service thread
@@ -287,20 +283,8 @@ bool vtkDSMManager::CreateDSM()
 void vtkDSMManager::PublishDSM()
 {
   if (this->UpdatePiece == 0) {
-    int merr, msglen;
-    char errmsg[MPI_MAX_ERROR_STRING];
-
-    strcpy(this->DSMServName, "DSMTest");
-
-    MPI_Open_port(MPI_INFO_NULL, this->DSMPortName);
-    merr = MPI_Publish_name(this->DSMServName, MPI_INFO_NULL, this->DSMPortName);
-    if (merr) {
-      MPI_Error_string(merr, errmsg, &msglen);
-      vtkErrorMacro(<<"Error in Publish_name: \"" << errmsg << "\"");
-    } else {
-      vtkDebugMacro(<<"Published port_name(" << this->DSMPortName << ")");
-    }
-    this->SetPublishedPortName(this->DSMPortName);
+    this->DSMBuffer->GetComm()->OpenPort();
+    this->SetPublishedPortName(dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDSMPortName());
   }
   //
 #ifdef HAVE_PTHREADS
@@ -313,52 +297,20 @@ void vtkDSMManager::PublishDSM()
 //----------------------------------------------------------------------------
 void *vtkDSMManager::AcceptConnection()
 {
-  char *buf;
-  MPI_Status status;
-  MPI_Comm clientComm;
-
-  // this->DSMPortName internally used on root
-  MPI_Comm_accept(this->DSMPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &clientComm);
-  dynamic_cast <XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetClientComm(clientComm);
-
+  this->DSMBuffer->GetComm()->RemoteCommAccept();
   // We are connected and clientComm is set, the Service loop needs now to listen on the clientComm
   this->DSMBuffer->UseRemoteChannel();
 
-  if (this->UpdatePiece == 0 && !this->KillConnection) {
-    int len;
-
-    MPI_Probe(MPI_ANY_SOURCE, MPI_ANY_TAG, clientComm, &status);
-    MPI_Get_count(&status, MPI_CHAR, &len);
-    buf = new char[len];
-    MPI_Recv(buf, len, MPI_CHAR, MPI_ANY_SOURCE, 123, clientComm, &status);
-    vtkDebugMacro(<<"Server received: " << buf);
-    delete[] buf;
-  }
   this->Controller->Barrier();
   this->SetAcceptedConnection(true);
 
   // send DSM information
-  if (this->UpdatePiece == 0) {
-    // Length
-    XdmfInt64 length = this->DSMBuffer->GetLength();
-    vtkDebugMacro(<< "Send DSM length: " << this->DSMBuffer->GetLength());
-    MPI_Send(&length, 1, MPI_LONG_LONG, 0, 123, clientComm);
+  XdmfInt64 length = this->DSMBuffer->GetLength();
+  XdmfInt64 totalLength = this->DSMBuffer->GetTotalLength();
+  XdmfInt32 startServerId = this->DSMBuffer->GetStartServerId();
+  XdmfInt32 endServerId = this->DSMBuffer->GetEndServerId();
+  this->DSMBuffer->GetComm()->RemoteCommSendInfo(&length, &totalLength, &startServerId, &endServerId);
 
-    // TotalLength
-    XdmfInt64 totalLength = this->DSMBuffer->GetTotalLength();
-    vtkDebugMacro(<< "Send DSM totalLength: " << this->DSMBuffer->GetTotalLength());
-    MPI_Send(&totalLength, 1, MPI_LONG_LONG, 0, 123, clientComm);
-
-    // StartServerId
-    XdmfInt32 startServerId = this->DSMBuffer->GetStartServerId();
-    vtkDebugMacro(<< "Send DSM startServerId: " << this->DSMBuffer->GetStartServerId());
-    MPI_Send(&startServerId, 1, MPI_INT, 0, 123, clientComm);
-
-    // EndServerId
-    XdmfInt32 endServerId = this->DSMBuffer->GetEndServerId();
-    vtkDebugMacro(<< "Send DSM endServerId: " << this->DSMBuffer->GetEndServerId());
-    MPI_Send(&endServerId, 1, MPI_INT, 0, 123, clientComm);
-  }
   return ((void*)this);
 }
 //----------------------------------------------------------------------------
@@ -374,22 +326,12 @@ void vtkDSMManager::UnpublishDSM()
   //MPI_Comm_disconnect(&server);
   //}
 
-  if(this->UpdatePiece == 0) {
-    if (this->PublishedPortName != NULL) {
-      int merr, msglen;
-      char errmsg[MPI_MAX_ERROR_STRING];
-
-      merr = MPI_Unpublish_name(this->DSMServName, MPI_INFO_NULL, this->DSMPortName);
-      if (merr) {
-        MPI_Error_string(merr, errmsg, &msglen);
-        vtkDebugMacro(<<"Error in Unpublish name: \"" << errmsg << "\"");
-      }
-      MPI_Close_port(this->DSMPortName);
-      this->SetPublishedPortName(NULL);
-    }
+  if(this->UpdatePiece == 0 && this->PublishedPortName != NULL) {
+    this->DSMBuffer->GetComm()->ClosePort();
+    this->SetPublishedPortName(NULL);
   }
   this->SetAcceptedConnection(false);
-  this->KillConnection = false;
+  //  this->KillConnection = false;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()

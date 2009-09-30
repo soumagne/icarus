@@ -295,8 +295,8 @@ void pqDSMViewerPanel::onTestDSM()
 void pqDSMViewerPanel::onH5Dump()
 {
   if (this->UI->ProxyCreated()) {
-    //this->UI->DSMProxy->InvokeCommand("H5DumpLight");
-    this->UI->DSMProxy->InvokeCommand("H5Dump");
+    this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+    //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
 }
 //-----------------------------------------------------------------------------
