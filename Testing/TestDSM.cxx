@@ -146,8 +146,8 @@ main(int argc, char *argv[])
     }
     if (!local) {
       MyDsm->SetIsServer(0);
-      MyDsm->DebugOn();
-      MyComm->DebugOn();
+      //MyDsm->DebugOn();
+      //MyComm->DebugOn();
     }
     else {
     PRINT_DEBUG_INFO("Creating threads");
