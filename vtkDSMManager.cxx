@@ -339,9 +339,9 @@ void vtkDSMManager::H5Dump()
   if (this->DSMBuffer) {
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    if (this->UpdatePiece == 0) {
-      myDsmDump->Dump();
-    }
+    myDsmDump->Dump();
+    if(this->UpdatePiece == 0)
+      cout << "Dump done" << endl;
     delete myDsmDump;
   }
 }
@@ -351,9 +351,9 @@ void vtkDSMManager::H5DumpLight()
   if (this->DSMBuffer) {
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    if (this->UpdatePiece == 0) {
-      myDsmDump->DumpLight();
-    }
+    myDsmDump->DumpLight();
+    if(this->UpdatePiece == 0)
+      cout << "Dump light done" << endl;
     delete myDsmDump;
   }
 }
