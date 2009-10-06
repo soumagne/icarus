@@ -141,11 +141,11 @@ main(int argc, char *argv[])
     // New Communicator for Xdmf Transactions
     MyComm->DupComm(MPI_COMM_WORLD);
     MyDsm->ConfigureUniform(MyComm, 3*1024);
-    if (dsm_port_name.length() > 0) {
-      MyDsm->SetPortName(dsm_port_name);
-    }
     if (!local) {
       MyDsm->SetIsServer(0);
+      if (dsm_port_name.length() > 0) {
+        dynamic_cast<XdmfDsmCommMpi*> (MyDsm->GetComm())->SetDSMPortName(dsm_port_name.c_str());
+      }
       //MyDsm->DebugOn();
       //MyComm->DebugOn();
     }

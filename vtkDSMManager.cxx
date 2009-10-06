@@ -278,13 +278,36 @@ bool vtkDSMManager::CreateDSM()
 
   return true;
 }
-
+//----------------------------------------------------------------------------
+void vtkDSMManager::ConnectDSM()
+{
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");
+  this->DSMBuffer->SetIsServer(false);
+  if (this->GetPublishedPortName() != NULL) {
+    dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetDSMPortName(this->GetPublishedPortName());
+    if (this->UpdatePiece == 0) {
+      vtkDebugMacro(<< "Get port: "
+          << dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDSMPortName());
+    }
+  } else {
+    if (this->UpdatePiece == 0) vtkErrorMacro(<< "NULL port");
+  }
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::DisconnectDSM()
+{
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
+  this->DSMBuffer->FreeRemoteChannel(); // Go back to normal channel
+  vtkDebugMacro(<< "Trying to disconnect");
+  this->DSMBuffer->GetComm()->RemoteCommDisconnect();
+}
 //----------------------------------------------------------------------------
 void vtkDSMManager::PublishDSM()
 {
   if (this->UpdatePiece == 0) {
     this->DSMBuffer->GetComm()->OpenPort();
     this->SetPublishedPortName(dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDSMPortName());
+    vtkDebugMacro(<< "Port: " << this->GetPublishedPortName());
   }
   //
 #ifdef HAVE_PTHREADS
@@ -340,8 +363,7 @@ void vtkDSMManager::H5Dump()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->Dump();
-    if(this->UpdatePiece == 0)
-      cout << "Dump done" << endl;
+    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
     delete myDsmDump;
   }
 }
@@ -352,8 +374,7 @@ void vtkDSMManager::H5DumpLight()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->DumpLight();
-    if(this->UpdatePiece == 0)
-      cout << "Dump light done" << endl;
+    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
     delete myDsmDump;
   }
 }

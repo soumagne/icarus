@@ -31,6 +31,9 @@ public slots:
   void onCreateDSM();
   void onDestroyDSM();
 
+  void onConnectDSM();
+  void onDisconnectDSM();
+
   void createPublishNameDialog();
   void timeoutPublishName();
   void cancelPublishNameDialog();

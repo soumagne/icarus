@@ -47,6 +47,20 @@
      </widget>
     </item>
     <item>
+     <widget class="QPushButton" name="ConnectDSM" >
+      <property name="text" >
+       <string>ConnectDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QPushButton" name="DisconnectDSM" >
+      <property name="text" >
+       <string>DisconnectDSM</string>
+      </property>
+     </widget>
+    </item>
+    <item>
      <widget class="QPushButton" name="PublishDSM" >
       <property name="text" >
        <string>PublishDSM</string>

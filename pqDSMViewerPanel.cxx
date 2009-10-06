@@ -9,6 +9,7 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QTimer>
+#include <QInputDialog>
 
 // VTK includes
 
@@ -91,6 +92,12 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
 
   this->connect(this->UI->DestroyDSM,
     SIGNAL(clicked()), this, SLOT(onDestroyDSM()));
+
+  this->connect(this->UI->ConnectDSM,
+     SIGNAL(clicked()), this, SLOT(onConnectDSM()));
+
+  this->connect(this->UI->DisconnectDSM,
+      SIGNAL(clicked()), this, SLOT(onDisconnectDSM()));
 
   this->connect(this->UI->PublishDSM,
      SIGNAL(clicked()), this, SLOT(onPublishDSM()));
@@ -198,21 +205,46 @@ void pqDSMViewerPanel::onCreateDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDestroyDSM()
 {
-  if (this->ProxyReady()) {
+  if (this->DSMReady()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
     this->UI->DSMInitialized = 0;
     QMessageBox msgBox(this);
     msgBox.setIcon(QMessageBox::Information);
     msgBox.setText("DSM destroyed");
     msgBox.exec();
+
+    if (this->publishNameTimer) {
+      delete this->publishNameTimer;
+      this->publishNameTimer = NULL;
+    }
+    if (this->publishNameDialog) {
+      delete this->publishNameDialog;
+      this->publishNameDialog = NULL;
+    }
   }
-  if (this->publishNameTimer) {
-    delete this->publishNameTimer;
-    this->publishNameTimer = NULL;
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onConnectDSM()
+{
+  if (this->DSMReady()) {
+    QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+        tr("Enter the connection MPI port:"), QLineEdit::Normal);
+
+    if(!text.isEmpty()) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("MPIport"),
+          text.toStdString().c_str());
+
+      this->UI->DSMProxy->UpdateVTKObjects();
+      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+    }
   }
-  if (this->publishNameDialog) {
-    delete this->publishNameDialog;
-    this->publishNameDialog = NULL;
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDisconnectDSM()
+{
+  if (this->DSMReady()) {
+    this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
   }
 }
 //-----------------------------------------------------------------------------
@@ -234,7 +266,7 @@ void pqDSMViewerPanel::onPublishDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUnpublishDSM()
 {
-  if (this->ProxyReady()) {
+  if (this->DSMReady()) {
     if (this->publishedNameFound == false) {
       QMessageBox msgBox(this);
       msgBox.setIcon(QMessageBox::Warning);
@@ -254,47 +286,49 @@ void pqDSMViewerPanel::onUnpublishDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onTestDSM()
 {
-  if (!this->UI->ActiveSourceProxy) {
-    vtkGenericWarningMacro(<<"Nothing to Write");
-    return;
-  }
-  if (!this->UI->DSMInitialized) {
-    vtkGenericWarningMacro(<<"Creating DSM before calling Test");
-    this->onCreateDSM();
-  }
+  if (this->DSMReady()) {
+    if (!this->UI->ActiveSourceProxy) {
+      vtkGenericWarningMacro(<<"Nothing to Write");
+      return;
+    }
+    if (!this->UI->DSMInitialized) {
+      vtkGenericWarningMacro(<<"Creating DSM before calling Test");
+      this->onCreateDSM();
+    }
 
-  //
-  vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
-  vtkSmartPointer<vtkSMSourceProxy> XdmfWriter = 
-    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
+    //
+    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
+        vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
 
-  pqSMAdaptor::setProxyProperty(
-    XdmfWriter->GetProperty("DSMManager"), 
-    this->UI->DSMProxy
-  );
-  
-  pqSMAdaptor::setElementProperty(
-    XdmfWriter->GetProperty("FileName"),
+    pqSMAdaptor::setProxyProperty(
+        XdmfWriter->GetProperty("DSMManager"),
+        this->UI->DSMProxy
+    );
+
+    pqSMAdaptor::setElementProperty(
+        XdmfWriter->GetProperty("FileName"),
 #ifndef WIN32
-    "/home/soumagne/test"
+        "/home/soumagne/test"
 #else
-    "d:/test"
+        "d:/test"
 #endif
-  );
+    );
 
-  pqSMAdaptor::setInputProperty(
-    XdmfWriter->GetProperty("Input"),
-    this->UI->ActiveSourceProxy, 
-    this->UI->ActiveSourcePort
-  );
+    pqSMAdaptor::setInputProperty(
+        XdmfWriter->GetProperty("Input"),
+        this->UI->ActiveSourceProxy,
+        this->UI->ActiveSourcePort
+    );
 
-  XdmfWriter->UpdateVTKObjects();
-  XdmfWriter->UpdatePipeline();
+    XdmfWriter->UpdateVTKObjects();
+    XdmfWriter->UpdatePipeline();
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onH5Dump()
 {
-  if (this->UI->ProxyCreated()) {
+  if (this->DSMReady()) {
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
@@ -332,10 +366,12 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::fillDSMContents()
 {
-  this->UI->DSMContents->clear();
-  pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
-  item->setText(0, "test");
-  item->setExpanded(true);
+  if (this->DSMReady()) {
+    this->UI->DSMContents->clear();
+    pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
+    item->setText(0, "test");
+    item->setExpanded(true);
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::createPublishNameDialog()
