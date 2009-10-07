@@ -323,6 +323,8 @@ void pqDSMViewerPanel::onTestDSM()
 
     XdmfWriter->UpdateVTKObjects();
     XdmfWriter->UpdatePipeline();
+
+    this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
   }
 }
 //-----------------------------------------------------------------------------
@@ -379,7 +381,7 @@ void pqDSMViewerPanel::createPublishNameDialog()
   this->publishNameDialog = new QProgressDialog("Publishing name, awaiting connection...", "Cancel", 0, 100);
   connect(this->publishNameDialog, SIGNAL(canceled()), this, SLOT(cancelPublishNameDialog()));
   this->publishNameTimer = new QTimer(this);
-  this->publishNameTimer->setInterval(500);
+  this->publishNameTimer->setInterval(800);
   connect(this->publishNameTimer, SIGNAL(timeout()), this, SLOT(timeoutPublishName()));
   this->publishNameTimer->start();
 }
