@@ -327,7 +327,8 @@ void pqDSMViewerPanel::onTestDSM()
     XdmfWriter->UpdateVTKObjects();
     XdmfWriter->UpdatePipeline();
 
-    this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
+//    if (this->connectionFound)
+//      this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
   }
 }
 //-----------------------------------------------------------------------------
