@@ -111,6 +111,9 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->connect(this->UI->TestDSM,
     SIGNAL(clicked()), this, SLOT(onTestDSM()));
 
+  this->connect(this->UI->DisplayDSM,
+      SIGNAL(clicked()), this, SLOT(onDisplayDSM()));
+
   //
   // Link paraview events to callbacks
   //
@@ -325,6 +328,36 @@ void pqDSMViewerPanel::onTestDSM()
     XdmfWriter->UpdatePipeline();
 
     this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDisplayDSM()
+{
+  if (this->DSMReady()) {
+    //
+    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSmartPointer<vtkSMSourceProxy> XdmfReader =
+        vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3"));
+
+    pqSMAdaptor::setProxyProperty(
+        XdmfReader->GetProperty("DSMManager"),
+        this->UI->DSMProxy
+    );
+
+    pqSMAdaptor::setElementProperty(
+        XdmfReader->GetProperty("FileName"),
+#ifndef WIN32
+        "/home/soumagne/test.xmf"
+#else
+        "d:/test.xmf"
+#endif
+    );
+
+    XdmfReader->InvokeCommand("AllGrids");
+    XdmfReader->InvokeCommand("AllArrays");
+
+    XdmfReader->UpdateVTKObjects();
+    XdmfReader->UpdatePipeline();
   }
 }
 //-----------------------------------------------------------------------------

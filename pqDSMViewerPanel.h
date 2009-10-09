@@ -40,8 +40,9 @@ public slots:
   void onPublishDSM();
   void onUnpublishDSM();
 
-  void onTestDSM();
   void onH5Dump();
+  void onTestDSM();
+  void onDisplayDSM();
   void TrackSource();
   void fillDSMContents();
 

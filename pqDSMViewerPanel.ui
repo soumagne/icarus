@@ -89,6 +89,13 @@
      </widget>
     </item>
     <item>
+     <widget class="QPushButton" name="DisplayDSM" >
+      <property name="text" >
+       <string>DisplayDSM</string>
+      </property>
+     </widget>
+    </item>    
+    <item>
      <widget class="QTextEdit" name="TextOutput" />
     </item>
     <item>

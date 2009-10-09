@@ -1,5 +1,6 @@
 <ParaViewFilters>
   <Category name="CSCS" menu_label="&amp;CSCS">
     <Filter name="XdmfWriter3" />
+    <Filter name="XdmfReader3" />
   </Category>
 </ParaViewFilters>
