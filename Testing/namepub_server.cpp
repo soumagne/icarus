@@ -33,7 +33,7 @@ int main( int argc, char *argv[] )
       return 1;
     }
 
-#ifdef WIN_32
+#ifdef WIN32
     std::ofstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
 #else
     std::ofstream fserver("/home/biddisco/DSM/agno_name.txt");
