@@ -71,7 +71,8 @@ ADD_DEFINITIONS(-DH5FDmpio_DEBUG)
 # Set Definitions 
 #--------------------------------------------------
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-
+ADD_DEFINITIONS(-DCSCS_PARAVIEW_INTERNAL)
+ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
 
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
@@ -112,8 +113,10 @@ ADD_PARAVIEW_PLUGIN(
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter3.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
   SERVER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
   
   GUI_INTERFACES 
     ${DSM_IFACE}
@@ -128,7 +131,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.ui
 )
 
-
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
     ${PARAVIEW_HDF5_LIBRARIES}
@@ -142,6 +144,34 @@ ENDIF(PARAVIEW_BUILD_QT_GUI)
 # Testing
 #--------------------------------------------------
 ADD_SUBDIRECTORY(Testing)
+
+#--------------------------------------------------
+# Converter
+#--------------------------------------------------
+
+ADD_EXECUTABLE(
+  ConvertToXdmf
+  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
+)
+
+SET(Converter_LIBS CSCS_DSM CSCS_COMMON)
+
+IF(CSCS_PLUGIN_CFX)
+  MESSAGE("Xdmf converter supporting CFX")
+  SET(HAS_CFX ON)
+  ADD_DEFINITIONS(-DHAS_CFX)
+  SET(Converter_LIBS ${Converter_LIBS} CSCS_CFX)
+ENDIF(CSCS_PLUGIN_CFX)
+  
+IF(CSCS_PLUGIN_Fluent)
+  MESSAGE("Xdmf converter supporting Fluent " ${CSCS_FLUENT_DIR})
+  SET(HAS_FLUENT ON)
+  ADD_DEFINITIONS(-DHAS_FLUENT)
+  INCLUDE_DIRECTORIES(${CSCS_FLUENT_DIR})
+  SET(Converter_LIBS ${Converter_LIBS} CSCS_Fluent)
+ENDIF(CSCS_PLUGIN_Fluent)
+
+TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 
 #--------------------------------------------------
 # Install
