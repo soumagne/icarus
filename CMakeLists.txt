@@ -139,12 +139,6 @@ TARGET_LINK_LIBRARIES(
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #--------------------------------------------------
-# Define GUI Plugin
-#--------------------------------------------------
-
-#TARGET_LINK_LIBRARIES(CSCS_DSM_2GUI CSCS_DSM_1SM)
-
-#--------------------------------------------------
 # Testing
 #--------------------------------------------------
 ADD_SUBDIRECTORY(Testing)
