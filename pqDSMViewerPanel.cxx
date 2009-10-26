@@ -304,10 +304,10 @@ void pqDSMViewerPanel::onTestDSM()
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
         vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
 
-    //pqSMAdaptor::setProxyProperty(
-    //    XdmfWriter->GetProperty("DSMManager"),
-    //    this->UI->DSMProxy
-    //);
+    pqSMAdaptor::setProxyProperty(
+        XdmfWriter->GetProperty("DSMManager"),
+        this->UI->DSMProxy
+    );
 
     pqSMAdaptor::setElementProperty(
         XdmfWriter->GetProperty("FileName"),
