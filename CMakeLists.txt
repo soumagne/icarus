@@ -113,7 +113,7 @@ ADD_PARAVIEW_PLUGIN(
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter3.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
+#    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
   SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
@@ -149,27 +149,29 @@ ADD_SUBDIRECTORY(Testing)
 # Converter
 #--------------------------------------------------
 
-ADD_EXECUTABLE(
-  ConvertToXdmf
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
-)
-
 SET(Converter_LIBS CSCS_DSM CSCS_COMMON)
 
 IF(CSCS_PLUGIN_CFX)
-  MESSAGE("Xdmf converter supporting CFX")
+  MESSAGE("Xdmf converter supporting CFX " ${CSCS_CFX_DIR})
   SET(HAS_CFX ON)
   ADD_DEFINITIONS(-DHAS_CFX)
+  INCLUDE_DIRECTORIES(${CSCS_CFX_DIR})
+  LINK_DIRECTORIES(${CSCS_CFX_LINK_DIRS})
   SET(Converter_LIBS ${Converter_LIBS} CSCS_CFX)
 ENDIF(CSCS_PLUGIN_CFX)
   
 IF(CSCS_PLUGIN_Fluent)
-  MESSAGE("Xdmf converter supporting Fluent " ${CSCS_FLUENT_DIR})
+  MESSAGE("Xdmf converter supporting Fluent " ${CSCS_Fluent_DIR})
   SET(HAS_FLUENT ON)
   ADD_DEFINITIONS(-DHAS_FLUENT)
-  INCLUDE_DIRECTORIES(${CSCS_FLUENT_DIR})
+  INCLUDE_DIRECTORIES(${CSCS_Fluent_DIR})
   SET(Converter_LIBS ${Converter_LIBS} CSCS_Fluent)
 ENDIF(CSCS_PLUGIN_Fluent)
+
+ADD_EXECUTABLE(
+  ConvertToXdmf
+  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
+)
 
 TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 
