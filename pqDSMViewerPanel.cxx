@@ -304,10 +304,10 @@ void pqDSMViewerPanel::onTestDSM()
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
         vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
 
-    pqSMAdaptor::setProxyProperty(
-        XdmfWriter->GetProperty("DSMManager"),
-        this->UI->DSMProxy
-    );
+    //pqSMAdaptor::setProxyProperty(
+    //    XdmfWriter->GetProperty("DSMManager"),
+    //    this->UI->DSMProxy
+    //);
 
     pqSMAdaptor::setElementProperty(
         XdmfWriter->GetProperty("FileName"),
@@ -347,12 +347,15 @@ void pqDSMViewerPanel::onDisplayDSM()
 
     pqSMAdaptor::setElementProperty(
         XdmfReader->GetProperty("FileName"),
+//        "/home/soumagne/cav_4_single.xmf"
 #ifndef WIN32
         "/home/soumagne/test.xmf"
 #else
         "d:/test.xmf"
 #endif
     );
+
+    XdmfReader->UpdatePropertyInformation();
 
     XdmfReader->InvokeCommand("AllGrids");
     XdmfReader->InvokeCommand("AllArrays");

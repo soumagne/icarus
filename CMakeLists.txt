@@ -149,7 +149,7 @@ ADD_SUBDIRECTORY(Testing)
 # Converter
 #--------------------------------------------------
 
-SET(Converter_LIBS CSCS_DSM CSCS_COMMON)
+SET(Converter_LIBS CSCS_DSM CSCS_Common)
 
 IF(CSCS_PLUGIN_CFX)
   MESSAGE("Xdmf converter supporting CFX " ${CSCS_CFX_DIR})

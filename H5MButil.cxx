@@ -13,7 +13,7 @@
 #include <vtksys/SystemTools.hxx>
 
 #include "H5MButil.h"
-#include "tree.h"
+#include "Tree.h"
 
 #ifdef H5_HAVE_PARALLEL
 

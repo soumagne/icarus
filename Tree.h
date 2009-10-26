@@ -148,7 +148,7 @@ public:
     //Node* operator -> ()  {  return (_current);                    }
     //Node& operator * ()  {  assert (_current);  return (* _current);        }
     // NO . .iterator dereferenes should return the T type, not the (internal) Node type.
-    T* operator -> () {  return ( current ? & _current -> data() : current  );  }
+    T* operator -> () {  return (_current ? & _current -> data() : _current  );  }
     T& operator * ()  {  assert (_current);  return (_current -> data() );    }
 
 
