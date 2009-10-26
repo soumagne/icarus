@@ -347,7 +347,6 @@ void pqDSMViewerPanel::onDisplayDSM()
 
     pqSMAdaptor::setElementProperty(
         XdmfReader->GetProperty("FileName"),
-//        "/home/soumagne/cav_4_single.xmf"
 #ifndef WIN32
         "/home/soumagne/test.xmf"
 #else
@@ -356,9 +355,6 @@ void pqDSMViewerPanel::onDisplayDSM()
     );
 
     XdmfReader->UpdatePropertyInformation();
-
-    XdmfReader->InvokeCommand("AllGrids");
-    XdmfReader->InvokeCommand("AllArrays");
 
     XdmfReader->UpdateVTKObjects();
     XdmfReader->UpdatePipeline();

@@ -130,14 +130,6 @@
         </Documentation>
       </ProxyProperty>
 
-      <Property name="AllGrids"
-                command="EnableAllGrids">
-      </Property>
-      
-      <Property name="AllArrays"
-                command="EnableAllArrays">
-      </Property>
-
       <Hints>
         <Property name="FileName" show="0"/>
       </Hints>

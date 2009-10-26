@@ -112,7 +112,7 @@ vtkCxxSetObjectMacro(vtkXdmfReader3, DSMManager, vtkDSMManager);
 
 #define PRINT_EXTENT(x) "[" << (x)[0] << " " << (x)[1] << " " << (x)[2] << " " << (x)[3] << " " << (x)[4] << " " << (x)[5] << "]" 
 //----------------------------------------------------------------------------
-//#define JB_DEBUG__
+#define JB_DEBUG__
 #if defined (JB_DEBUG__)
   #define OUTPUTTEXT(a) vtkstd::cout << (a); vtkstd::cout.flush();
 
@@ -1600,7 +1600,7 @@ bool vtkXdmfReader3::ParseXML()
     unsigned int data_length=0;
     if (this->InputArray)
       {
-      vtkDebugMacro(<< "Reading from InputArray");
+      vtkDebugMacro(this->UpdatePiece, "Reading from InputArray");
       data = this->InputArray->GetPointer(0);
       data_length = static_cast<unsigned int>(
         this->InputArray->GetNumberOfTuples()*
@@ -1622,11 +1622,11 @@ bool vtkXdmfReader3::ParseXML()
       STRNCASECMP(data, this->Internals->InputString, data_length) == 0)
       {
       modified = false;
-      vtkDebugMacro("Input Text Unchanged ... skipping re-parse()");
+      vtkDebugMacro(this->UpdatePiece, "Input Text Unchanged ... skipping re-parse()");
       }
     else
       {
-      vtkDebugMacro("Input Text Changed ...  re-parseing");
+      vtkDebugMacro(this->UpdatePiece, "Input Text Changed ...  re-parseing");
       delete this->Internals->Data;
       this->Internals->Data = 0;
       delete [] this->Internals->InputString;
@@ -1660,12 +1660,12 @@ bool vtkXdmfReader3::ParseXML()
     if (this->DOM->GetInputFileName() &&
       STRCASECMP(this->DOM->GetInputFileName(), this->FileName) == 0)
       {
-      vtkDebugMacro("Filename Unchanged ... skipping re-parse()");
+      vtkDebugMacro(this->UpdatePiece, "Filename Unchanged ... skipping re-parse()");
       modified = false;
       }
     else
       {
-      vtkDebugMacro("Parsing file: " << this->FileName);
+      vtkDebugMacro(this->UpdatePiece, "Parsing file: " << this->FileName);
 
       //Tell the parser what the working directory is.
       vtkstd::string directory =
@@ -1703,7 +1703,7 @@ int vtkXdmfReader3::RequestDataObject(vtkInformationVector *outputVector)
     return 0;
     }
 
-  vtkDebugMacro("My output is a "
+  vtkDebugMacro(this->UpdatePiece, "My output is a "
     << vtkDataObjectTypes::GetClassNameFromTypeId(this->OutputVTKType));
 
   //Look at the in memory structures and create an empty vtkDataObject of the
@@ -3128,7 +3128,7 @@ int vtkXdmfReader3Internal::RequestGridData(
                                 << xdmfDOM->Get(dataNode, "CData"));
         if (this->DataItem->Update()==XDMF_FAIL) 
         {
-          vtkGenericWarningMacro(<<"Reading of HDF5 dataset failed");
+          vtkGenericWarningMacro("Reading of HDF5 dataset failed");
         }
         values = this->DataItem->GetArray();
         }
