@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : vtkXdmfWriter3.h
+  Module                  : vtkXdmfWriter4.h
   Revision of last commit : $Rev: 153 $
   Author of last commit   : $Author: biddisco $
   Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
@@ -18,7 +18,7 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkXdmfWriter3 - Write Xdmf + HDF5 files from vtk input
+// .NAME vtkXdmfWriter4 - Write Xdmf + HDF5 files from vtk input
 // .SECTION Description
 // This writer takes vtk input data and writes it out to Xdmf xml + hdf5
 // files. It uses xdmf structures and DOM objects to manipulate files
@@ -27,8 +27,8 @@
 // Currently this writer has only limited functionality, but should
 // gradually improve to eventually surpass the earlier writer.
 
-#ifndef __vtkXdmfWriter3_h
-#define __vtkXdmfWriter3_h
+#ifndef __vtkXdmfWriter4_h
+#define __vtkXdmfWriter4_h
 
 #include "vtkToolkits.h"     // For VTK_USE_MPI
 #include "vtkSmartPointer.h" // For vtkSmartPointer
@@ -61,11 +61,11 @@ struct vtkXW3NodeHelp {
 };
 //ETX
 
-class VTK_EXPORT vtkXdmfWriter3 : public vtkXdmfWriter2
+class VTK_EXPORT vtkXdmfWriter4 : public vtkXdmfWriter2
 {
 public:
-  static vtkXdmfWriter3 *New();
-  vtkTypeRevisionMacro(vtkXdmfWriter3,vtkXdmfWriter2);
+  static vtkXdmfWriter4 *New();
+  vtkTypeRevisionMacro(vtkXdmfWriter4,vtkXdmfWriter2);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:
@@ -163,8 +163,8 @@ public:
   vtkBooleanMacro(TemporalCollection,int);
 
 protected:
-   vtkXdmfWriter3();
-  ~vtkXdmfWriter3();
+   vtkXdmfWriter4();
+  ~vtkXdmfWriter4();
   //
 
 //BTX
@@ -268,8 +268,8 @@ protected:
   //ETX
 
 private:
-  vtkXdmfWriter3(const vtkXdmfWriter3&);  // Not implemented.
-  void operator=(const vtkXdmfWriter3&);  // Not implemented.
+  vtkXdmfWriter4(const vtkXdmfWriter4&);  // Not implemented.
+  void operator=(const vtkXdmfWriter4&);  // Not implemented.
 };
 
 #endif
