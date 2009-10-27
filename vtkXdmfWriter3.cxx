@@ -519,7 +519,7 @@ XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
   }
   vtkstd::sort(CellAttributeNames.begin(), CellAttributeNames.end());
 
-  for (int i=0; i<dataset->GetCellData()->GetNumberOfArrays(); i++) {
+  for (int i=0; i<CellAttributeNames.size(); i++) {
     XdmfAttribute *celldata = new XdmfAttribute();
     celldata->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_CELL);
     //

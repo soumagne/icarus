@@ -117,7 +117,7 @@ const int pixel[4] = {0,1,3,2};
 #define vtkXdmfPIXEL(a,b) if (celltype==a) { data[ctr++] = b; \
   for (int i=0; i<4; ++i) data[ctr++] = pts[pixel[i]]; return b; }
 //
-int VTKToXdmfCellMap(vtkIdType *data, vtkIdType *pts, int celltype, int N, vtkIdType &ctr) {
+int VTKToXdmfCellMap4(vtkIdType *data, vtkIdType *pts, int celltype, int N, vtkIdType &ctr) {
   vtkXdmfCELLNONE(VTK_EMPTY_CELL             ,XDMF_NOTOPOLOGY);  // ?
   vtkXdmfCELLINCN(VTK_VERTEX                 ,XDMF_POLYVERTEX);
   vtkXdmfCELLINCN(VTK_POLY_VERTEX            ,XDMF_POLYVERTEX);
@@ -146,7 +146,7 @@ int VTKToXdmfCellMap(vtkIdType *data, vtkIdType *pts, int celltype, int N, vtkId
 //----------------------------------------------------------------------------
 #define vtk2XdmfTYPEMAP(a,b) if (datatype==a) return b;
 //
-int VTKToXdmfTypeMap(int datatype) {
+int VTKToXdmfTypeMap4(int datatype) {
   vtk2XdmfTYPEMAP(VTK_FLOAT             ,XDMF_FLOAT32_TYPE);
   vtk2XdmfTYPEMAP(VTK_DOUBLE            ,XDMF_FLOAT64_TYPE);
   if (sizeof(vtkIdType) == sizeof(XDMF_64_INT)) {
@@ -172,7 +172,7 @@ int VTKToXdmfTypeMap(int datatype) {
   return XDMF_UNKNOWN_TYPE;
 }
 //----------------------------------------------------------------------------
-vtkSmartPointer<vtkIdTypeArray> ConvertConnectivityArray(
+vtkSmartPointer<vtkIdTypeArray> ConvertConnectivityArray4(
     vtkCellArray *cells, vtkUnsignedCharArray *types, vtkIdType &NumberOfCells)
     {
       vtkIdType  npts, cellId = 0, Idcnt = 0;
@@ -189,7 +189,7 @@ vtkSmartPointer<vtkIdTypeArray> ConvertConnectivityArray(
       cells->InitTraversal();
       NumberOfCells = 0;
       while (cells->GetNextCell(npts, pts)) {
-        int xdmftype = VTKToXdmfCellMap(Idptr, pts, types->GetValue(cellId), npts, Idcnt);
+        int xdmftype = VTKToXdmfCellMap4(Idptr, pts, types->GetValue(cellId), npts, Idcnt);
         if (xdmftype == XDMF_NOTOPOLOGY) warning = true;
         else NumberOfCells++;
         cellId++;
@@ -203,7 +203,7 @@ vtkSmartPointer<vtkIdTypeArray> ConvertConnectivityArray(
       return newconnectivity;
     }
 //----------------------------------------------------------------------------
-vtkstd::string GenerateHDF5DataSetName(
+vtkstd::string GenerateHDF5DataSetName4(
     const char *Name, const char *group, const char *txt)
 {
   vtkstd::string datasetname = vtkstd::string(Name);
@@ -215,11 +215,11 @@ vtkstd::string GenerateHDF5DataSetName(
   return datasetname;
 }
 //----------------------------------------------------------------------------
-void vtk2XdmfArray(XdmfArray *xdmfarray, vtkDataArray *vtkarray,
+void vtk2XdmfArray4(XdmfArray *xdmfarray, vtkDataArray *vtkarray,
     const char *Name, const char *group, const char *txt)
 {
-  vtkstd::string datasetname = GenerateHDF5DataSetName(Name, group, txt ? txt : vtkarray->GetName());
-  xdmfarray->SetNumberType(VTKToXdmfTypeMap(vtkarray->GetDataType()));
+  vtkstd::string datasetname = GenerateHDF5DataSetName4(Name, group, txt ? txt : vtkarray->GetName());
+  xdmfarray->SetNumberType(VTKToXdmfTypeMap4(vtkarray->GetDataType()));
 
   xdmfarray->SetHeavyDataSetName(datasetname.c_str());
   xdmfarray->SetDataPointer(vtkarray->GetVoidPointer(0));
@@ -409,13 +409,9 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
   vtkSmartPointer<vtkIdTypeArray>         celllocs = ug->GetCellLocationsArray();
   vtkSmartPointer<vtkCellArray>       connectivity = ug->GetCells();
 
-  vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray(connectivity, celltypes, NumberOfCells);
-  vtkXDRDebug("ConvertConnectivityArray done");
+  vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray4(connectivity, celltypes, NumberOfCells);
+  vtkXDRDebug("ConvertConnectivityArray4 done");
   */
-
-  this->CreateTopology(dataset, &grid, staticnode);
-
-  this->CreateGeometry(dataset, &grid, staticnode);
 
   //Attributes
   vtkIdType FRank = 1;
@@ -424,6 +420,11 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
   vtkIdType CDims[3];
   vtkIdType PRank = 3;
   vtkIdType PDims[3];
+
+
+  this->CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
+
+  this->CreateGeometry(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
 
 /*
   //
@@ -537,8 +538,8 @@ void vtkXdmfWriter4::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
     vtkSmartPointer<vtkIdTypeArray>         celllocs = ug->GetCellLocationsArray();
     vtkSmartPointer<vtkCellArray>       connectivity = ug->GetCells();
 
-    vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray(connectivity, celltypes, NumberOfCells);
-    vtkXDRDebug("ConvertConnectivityArray done");
+    vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray4(connectivity, celltypes, NumberOfCells);
+    vtkXDRDebug("ConvertConnectivityArray4 done");
 
     //
     // Topology
@@ -558,7 +559,7 @@ void vtkXdmfWriter4::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
 #endif
       }
     }
-    vtk2XdmfArray(&xdmfarray[index_topo], connectivityXdmf, hdf5String.c_str(), "Topology", "Connectivity");
+    vtk2XdmfArray4(&xdmfarray[index_topo], connectivityXdmf, hdf5String.c_str(), "Topology", "Connectivity");
     xdmfH5[index_topo].CopyType( &xdmfarray[index_topo] );
     xdmfH5[index_topo].CopyShape( &xdmfarray[index_topo] );
     vtkXDRDebug("Opening..." << xdmfarray[index_topo].GetHeavyDataSetName());
@@ -587,7 +588,7 @@ void vtkXdmfWriter4::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
         xdmfarray[index_geom].SetDummyArray(XDMF_TRUE);
     }
     vtkDataArray *points = ug->GetPoints()->GetData();
-    vtk2XdmfArray(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
+    vtk2XdmfArray4(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
     xdmfH5[index_geom].CopyType( &xdmfarray[index_geom] );
     xdmfH5[index_geom].CopyShape( &xdmfarray[index_geom] );
     vtkXDRDebug("Opening..." << xdmfarray[index_geom].GetHeavyDataSetName());
@@ -616,7 +617,7 @@ void vtkXdmfWriter4::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
         if (this->DummyBuild == 1)
           xdmfarray[index_point].SetDummyArray(XDMF_TRUE);
       }
-      vtk2XdmfArray(&xdmfarray[index_point], scalars, hdf5String.c_str(), "PointData", NULL);
+      vtk2XdmfArray4(&xdmfarray[index_point], scalars, hdf5String.c_str(), "PointData", NULL);
       xdmfH5[index_point].CopyType( &xdmfarray[index_point] );
       xdmfH5[index_point].CopyShape( &xdmfarray[index_point] );
       vtkXDRDebug("Opening..." << xdmfarray[index_point].GetHeavyDataSetName());
@@ -646,7 +647,7 @@ void vtkXdmfWriter4::BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int dat
           xdmfarray[index_cell].SetDummyArray(XDMF_TRUE);
       }
       vtkDataArray *scalars = dataset->GetCellData()->GetArray(CellAttributeNames[i].c_str());
-      vtk2XdmfArray(&xdmfarray[index_cell], scalars, hdf5String.c_str(), "CellData", NULL);
+      vtk2XdmfArray4(&xdmfarray[index_cell], scalars, hdf5String.c_str(), "CellData", NULL);
       xdmfH5[index_cell].CopyType( &xdmfarray[index_cell] );
       xdmfH5[index_cell].CopyShape( &xdmfarray[index_cell] );
       xdmfH5[index_cell].SetFile(fd);
@@ -833,18 +834,11 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 #endif
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, void *staticdata)
+void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata)
 {
   vtkXW3NodeHelp *staticnode = (vtkXW3NodeHelp*)staticdata;
   XdmfTopology *topology;
   XdmfArray    *xdmfarray;
-  //Attributes
-  vtkIdType FRank = 1;
-//  vtkIdType FDims[1];
-  vtkIdType CRank = 3;
-  vtkIdType CDims[3];
-  vtkIdType PRank = 3;
-  vtkIdType PDims[3];
   //
   switch (ds->GetDataObjectType()) {
     /*
@@ -883,7 +877,7 @@ void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, void *static
   }
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata)
+void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata)
 {
   vtkXW3NodeHelp *staticnode = (vtkXW3NodeHelp*)staticdata;
   XdmfGeometry *geometry;
@@ -930,7 +924,7 @@ void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *static
         xdmfarray[index_geom].SetDummyArray(XDMF_TRUE);
     }
     vtkDataArray *points = ug->GetPoints()->GetData();
-    vtk2XdmfArray(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
+    vtk2XdmfArray4(&xdmfarray[index_geom], points, hdf5String.c_str(), "Geometry", "Points");
     xdmfH5[index_geom].CopyType( &xdmfarray[index_geom] );
     xdmfH5[index_geom].CopyShape( &xdmfarray[index_geom] );
     vtkXDRDebug("Opening..." << xdmfarray[index_geom].GetHeavyDataSetName());
@@ -950,7 +944,7 @@ void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *static
 */
       break;
     default:
-      this->vtkXdmfWriter2::CreateGeometry(ds, grid, staticnode);
+      this->vtkXdmfWriter2::CreateGeometry(ds, grid, PDims, CDims, PRank, CRank, staticnode);
     break;
   }
 }
@@ -1003,7 +997,8 @@ int vtkXdmfWriter4::RequestData(
     current_time = doinput->GetInformation()->Get(vtkDataObject::DATA_TIME_STEPS())[0];
     vtkXDRDebug("Current Time: " << current_time);
   }
-
+                  
+  this->BlockNum = 0;
   if (dsinput) {
     bool StaticFlag = false;
     vtkstd::string name = this->MakeGridName(dsinput, NULL);

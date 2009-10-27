@@ -216,8 +216,8 @@ protected:
   // a temporal collection with just one step.
   void WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time);
 
-  void CreateTopology(vtkDataSet *ds, XdmfGrid *grid, void *staticdata);
-  void CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata);
+  virtual void CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata);
+  virtual void CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata);
 
 //ETX
 
