@@ -279,6 +279,12 @@ bool vtkDSMManager::CreateDSM()
   return true;
 }
 //----------------------------------------------------------------------------
+void vtkDSMManager::ClearDSM()
+{
+  //this->DSMBuffer->Clear();
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "DSM cleared");
+}
+//----------------------------------------------------------------------------
 void vtkDSMManager::ConnectDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");

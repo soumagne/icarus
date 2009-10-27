@@ -30,6 +30,7 @@ public slots:
   void startRemovingServer(pqServer *server);
   void onCreateDSM();
   void onDestroyDSM();
+  void onClearDSM();
 
   void onConnectDSM();
   void onDisconnectDSM();

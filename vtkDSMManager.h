@@ -68,6 +68,7 @@ public:
 
   bool  CreateDSM();
   bool  DestroyDSM();
+  void  ClearDSM();
   void  ConnectDSM();
   void  DisconnectDSM();
   void  PublishDSM();

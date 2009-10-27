@@ -93,6 +93,9 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->connect(this->UI->DestroyDSM,
     SIGNAL(clicked()), this, SLOT(onDestroyDSM()));
 
+  this->connect(this->UI->ClearDSM,
+    SIGNAL(clicked()), this, SLOT(onClearDSM()));
+
   this->connect(this->UI->ConnectDSM,
      SIGNAL(clicked()), this, SLOT(onConnectDSM()));
 
@@ -224,6 +227,13 @@ void pqDSMViewerPanel::onDestroyDSM()
       delete this->publishNameDialog;
       this->publishNameDialog = NULL;
     }
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onClearDSM()
+{
+  if (this->DSMReady()) {
+    this->UI->DSMProxy->InvokeCommand("ClearDSM");
   }
 }
 //-----------------------------------------------------------------------------

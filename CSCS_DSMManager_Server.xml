@@ -13,6 +13,9 @@
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
+      <Property name="ClearDSM"
+                command="ClearDSM">
+      </Property>
       <Property name="ConnectDSM"
                 command="ConnectDSM">
       </Property>
