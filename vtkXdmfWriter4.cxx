@@ -105,103 +105,6 @@ vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
   #define vtkXDRError(a) vtkDebugMacro(a)
 #endif
 //----------------------------------------------------------------------------
-#define vtkXdmfCELLMAP1(a,b) if (celltype==a) { data[ctr++] = b; \
-  for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
-#define vtkXdmfCELLINCN(a,b) if (celltype==a) { data[ctr++] = b; \
-  data[ctr++] = N; for (int i=0; i<N; ++i) data[ctr++] = pts[i]; return b; }
-#define vtkXdmfCELLNONE(a,b) if (celltype==a) { return b; }
-const int voxel[8] = {0,1,3,2,4,5,7,6};
-#define vtkXdmfVOXEL(a,b) if (celltype==a) { data[ctr++] = b; \
-  for (int i=0; i<8; ++i) data[ctr++] = pts[voxel[i]]; return b; }
-const int pixel[4] = {0,1,3,2};
-#define vtkXdmfPIXEL(a,b) if (celltype==a) { data[ctr++] = b; \
-  for (int i=0; i<4; ++i) data[ctr++] = pts[pixel[i]]; return b; }
-//
-int VTKToXdmfCellMap4(vtkIdType *data, vtkIdType *pts, int celltype, int N, vtkIdType &ctr) {
-  vtkXdmfCELLNONE(VTK_EMPTY_CELL             ,XDMF_NOTOPOLOGY);  // ?
-  vtkXdmfCELLINCN(VTK_VERTEX                 ,XDMF_POLYVERTEX);
-  vtkXdmfCELLINCN(VTK_POLY_VERTEX            ,XDMF_POLYVERTEX);
-  vtkXdmfCELLINCN(VTK_LINE                   ,XDMF_POLYLINE);
-  vtkXdmfCELLINCN(VTK_POLY_LINE              ,XDMF_POLYLINE);
-  vtkXdmfCELLMAP1(VTK_TRIANGLE               ,XDMF_TRI);
-  vtkXdmfCELLNONE(VTK_TRIANGLE_STRIP         ,XDMF_NOTOPOLOGY);  // ?
-  vtkXdmfCELLINCN(VTK_POLYGON                ,XDMF_POLYGON);
-  vtkXdmfPIXEL   (VTK_PIXEL                  ,XDMF_QUAD);
-  vtkXdmfCELLMAP1(VTK_QUAD                   ,XDMF_QUAD);
-  vtkXdmfCELLMAP1(VTK_TETRA                  ,XDMF_TET);
-  vtkXdmfVOXEL   (VTK_VOXEL                  ,XDMF_HEX);
-  vtkXdmfCELLMAP1(VTK_HEXAHEDRON             ,XDMF_HEX);
-  vtkXdmfCELLMAP1(VTK_WEDGE                  ,XDMF_WEDGE);
-  vtkXdmfCELLMAP1(VTK_PYRAMID                ,XDMF_PYRAMID);
-  vtkXdmfCELLNONE(VTK_PENTAGONAL_PRISM       ,XDMF_NOTOPOLOGY);  // ?
-  vtkXdmfCELLNONE(VTK_HEXAGONAL_PRISM        ,XDMF_NOTOPOLOGY);  // ?
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_TRIANGLE     ,XDMF_TRI_6);
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_QUAD         ,XDMF_QUAD_8);
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_TETRA        ,XDMF_TET_10);
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_PYRAMID      ,XDMF_PYRAMID_13);
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_WEDGE        ,XDMF_WEDGE_15);
-  vtkXdmfCELLMAP1(VTK_QUADRATIC_HEXAHEDRON   ,XDMF_HEX_20);
-  return XDMF_NOTOPOLOGY;
-}
-//----------------------------------------------------------------------------
-#define vtk2XdmfTYPEMAP(a,b) if (datatype==a) return b;
-//
-int VTKToXdmfTypeMap4(int datatype) {
-  vtk2XdmfTYPEMAP(VTK_FLOAT             ,XDMF_FLOAT32_TYPE);
-  vtk2XdmfTYPEMAP(VTK_DOUBLE            ,XDMF_FLOAT64_TYPE);
-  if (sizeof(vtkIdType) == sizeof(XDMF_64_INT)) {
-    vtk2XdmfTYPEMAP(VTK_ID_TYPE         ,XDMF_INT64_TYPE);
-  }
-  else {
-    vtk2XdmfTYPEMAP(VTK_ID_TYPE         ,XDMF_INT32_TYPE);
-  }
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED_CHAR     ,XDMF_UINT8_TYPE);
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED_SHORT    ,XDMF_UINT16_TYPE);
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED_INT      ,XDMF_UINT32_TYPE);
-  vtk2XdmfTYPEMAP(VTK_SIGNED_CHAR       ,XDMF_INT8_TYPE);
-  vtk2XdmfTYPEMAP(VTK_CHAR              ,XDMF_INT8_TYPE);
-  vtk2XdmfTYPEMAP(VTK_SHORT             ,XDMF_INT16_TYPE);
-  vtk2XdmfTYPEMAP(VTK_INT               ,XDMF_INT32_TYPE);
-  vtk2XdmfTYPEMAP(VTK_LONG              ,XDMF_INT64_TYPE);
-  vtk2XdmfTYPEMAP(VTK_LONG_LONG         ,XDMF_UNKNOWN_TYPE);
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED_LONG_LONG,XDMF_UNKNOWN_TYPE);
-  vtk2XdmfTYPEMAP(VTK___INT64           ,XDMF_UNKNOWN_TYPE);
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED___INT64  ,XDMF_UNKNOWN_TYPE);
-  vtk2XdmfTYPEMAP(VTK_UNSIGNED_LONG     ,XDMF_UNKNOWN_TYPE);
-  vtk2XdmfTYPEMAP(VTK_STRING            ,XDMF_UNKNOWN_TYPE);
-  return XDMF_UNKNOWN_TYPE;
-}
-//----------------------------------------------------------------------------
-vtkSmartPointer<vtkIdTypeArray> ConvertConnectivityArray4(
-    vtkCellArray *cells, vtkUnsignedCharArray *types, vtkIdType &NumberOfCells)
-    {
-      vtkIdType  npts, cellId = 0, Idcnt = 0;
-      vtkIdType *pts;
-      bool warning = false;
-      //
-      vtkSmartPointer<vtkIdTypeArray> newconnectivity = vtkSmartPointer<vtkIdTypeArray>::New();
-      // we must allocate extra space because xdmf
-      // connectivity stores xdmf {type,N,pts}, vtk {type, pts}
-      //vtkIdType *Idptr = newconnectivity->WritePointer(0, cells->GetNumberOfConnectivityEntries()*2);
-      vtkIdType *Idptr = new vtkIdType[cells->GetNumberOfConnectivityEntries()*2];
-      newconnectivity->SetVoidArray(Idptr, cells->GetNumberOfConnectivityEntries()*2, 1);
-      //
-      cells->InitTraversal();
-      NumberOfCells = 0;
-      while (cells->GetNextCell(npts, pts)) {
-        int xdmftype = VTKToXdmfCellMap4(Idptr, pts, types->GetValue(cellId), npts, Idcnt);
-        if (xdmftype == XDMF_NOTOPOLOGY) warning = true;
-        else NumberOfCells++;
-        cellId++;
-      }
-
-      newconnectivity->SetNumberOfValues(Idcnt);
-      if (warning) {
-        vtkGenericWarningMacro("A Cell type that is not yet supported by Xdmf was encountered."
-            << " The Cell data array will not match the cells written (NumTuples!=NumCells)");
-      }
-      return newconnectivity;
-    }
 //----------------------------------------------------------------------------
 vtkstd::string GenerateHDF5DataSetName4(
     const char *Name, const char *group, const char *txt)
@@ -215,23 +118,6 @@ vtkstd::string GenerateHDF5DataSetName4(
   return datasetname;
 }
 //----------------------------------------------------------------------------
-void vtk2XdmfArray4(XdmfArray *xdmfarray, vtkDataArray *vtkarray,
-    const char *Name, const char *group, const char *txt)
-{
-  vtkstd::string datasetname = GenerateHDF5DataSetName4(Name, group, txt ? txt : vtkarray->GetName());
-  xdmfarray->SetNumberType(VTKToXdmfTypeMap4(vtkarray->GetDataType()));
-
-  xdmfarray->SetHeavyDataSetName(datasetname.c_str());
-  xdmfarray->SetDataPointer(vtkarray->GetVoidPointer(0));
-  XdmfInt32 Rank = 1;
-  XdmfInt64 Dims[2] = {vtkarray->GetNumberOfTuples(), 1};
-  if (vtkarray->GetNumberOfComponents()>1) {
-    Rank = 2;
-    Dims[0] = vtkarray->GetNumberOfTuples();
-    Dims[1] = vtkarray->GetNumberOfComponents();
-  }
-  xdmfarray->SetShape(Rank, Dims);
-}
 //----------------------------------------------------------------------------
 vtkXdmfWriter4::vtkXdmfWriter4()
 {
@@ -840,41 +726,7 @@ void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PD
   XdmfTopology *topology;
   XdmfArray    *xdmfarray;
   //
-  switch (ds->GetDataObjectType()) {
-    /*
-    case VTK_STRUCTURED_GRID:
-    case VTK_POLY_DATA:
-    case VTK_UNSTRUCTURED_GRID:
-      //
-      // Topology
-      //
-      topology = grid->GetTopology();
-      if (!staticnode->DOM || !staticnode->node) {
-        xdmfarray = topology->GetConnectivity();
-        if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
-        if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-          xdmfarray->SetBuildHeavy(XDMF_TRUE);
-          if (this->DummyBuild == 1) {
-            xdmfarray->SetDummyArray(XDMF_TRUE);
-          }
-        }
-      }
-      else {
-        XdmfXmlNode staticTopo = staticnode->DOM->FindElement("Topology", 0, staticnode->node);
-        XdmfConstString text = staticnode->DOM->Serialize(staticTopo->children);
-        topology->SetDataXml(text);
-      }
-      if (staticnode->staticFlag) {
-        grid->Set("TopologyConstant", "True");
-      }
-      vtkXDRDebug("Topology create done");
-
-      break;
-      */
-    default:
-      this->vtkXdmfWriter2::CreateTopology(ds, grid, PDims, CDims, PRank, CRank, staticnode);
-    break;
-  }
+  this->vtkXdmfWriter2::CreateTopology(ds, grid, PDims, CDims, PRank, CRank, staticnode);
 }
 //----------------------------------------------------------------------------
 void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata)
