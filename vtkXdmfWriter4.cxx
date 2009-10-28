@@ -283,34 +283,16 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
   grid.SetName(name);
   grid.SetDOM(DOM);
   domain.Insert(&grid);
+
   //
-  /*
-  vtkIdType NumberOfPoints = dataset->GetNumberOfPoints();
-  vtkIdType NumberOfCells  = dataset->GetNumberOfCells();
-  vtkXDRDebug("Number of Points: " << NumberOfPoints << ", Number of Cells: " << NumberOfCells);
+  // Attributes
   //
-  vtkUnstructuredGrid *ug = vtkUnstructuredGrid::SafeDownCast(dataset);
-
-  vtkSmartPointer<vtkUnsignedCharArray>  celltypes = ug->GetCellTypesArray();
-  vtkSmartPointer<vtkIdTypeArray>         celllocs = ug->GetCellLocationsArray();
-  vtkSmartPointer<vtkCellArray>       connectivity = ug->GetCells();
-
-  vtkSmartPointer<vtkIdTypeArray> connectivityXdmf = ConvertConnectivityArray4(connectivity, celltypes, NumberOfCells);
-  vtkXDRDebug("ConvertConnectivityArray4 done");
-  */
-
-  //Attributes
   vtkIdType FRank = 1;
-  vtkIdType FDims[1];
+  vtkIdType FDims[1] = {dataset->GetFieldData()->GetNumberOfTuples() };
   vtkIdType CRank = 3;
   vtkIdType CDims[3];
   vtkIdType PRank = 3;
   vtkIdType PDims[3];
-
-
-  this->CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
-
-  this->CreateGeometry(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
 
 /*
   //
@@ -332,16 +314,15 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
     CellAttributeNames.push_back(scalars->GetName());
   }
   vtkstd::sort(CellAttributeNames.begin(), CellAttributeNames.end());
-  
-  
 */
 
-  FDims[0] = dataset->GetFieldData()->GetNumberOfTuples();
+  this->CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
+  this->vtkXdmfWriter2::CreateGeometry(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
+
   this->WriteArrays(dataset->GetFieldData(), &grid,XDMF_ATTRIBUTE_CENTER_GRID, FRank, FDims);
   this->WriteArrays(dataset->GetCellData(),  &grid,XDMF_ATTRIBUTE_CENTER_CELL, CRank, CDims);
   this->WriteArrays(dataset->GetPointData(), &grid,XDMF_ATTRIBUTE_CENTER_NODE, PRank, PDims);
 
-/*
   // Build is recursive ... it will be called on all of the child nodes.
   // This updates the DOM and writes the HDF5
   if (grid.Build()!=XDMF_SUCCESS) {
@@ -350,9 +331,6 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
   }
   vtkXDRDebug("Xdmf Grid Build succeeded");
 
-*/
-
-  grid.Build();
   //
   return DOM;
 }
@@ -871,7 +849,6 @@ int vtkXdmfWriter4::RequestData(
     iter->SkipEmptyNodesOff();
 
     this->BlockNum = 0;
-
     timeStepDOM = this->CreateEmptyCollection("vtkMultiBlock", "Spatial");
 
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem(), this->BlockNum++)
