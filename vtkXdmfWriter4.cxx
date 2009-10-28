@@ -237,7 +237,7 @@ XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(XdmfDOM *DOM, const char *path)
 //----------------------------------------------------------------------------
 // template <typename T> void vtkXW2_delete_object(T *p) { delete p; }
 //----------------------------------------------------------------------------
-XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
+XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
     vtkDataSet *dataset, const char *name, double time, vtkXW3NodeHelp *staticnode)
 {
   XdmfDOM        *DOM = new XdmfDOM();
@@ -245,20 +245,8 @@ XdmfDOM *vtkXdmfWriter4::BuildXdmfGrid(
   XdmfDomain      domain;
   XdmfGrid        grid;
   //
-  vtkXDRDebug("BuildXdmfGrid");
+  vtkXDRDebug("CreateXdmfGrid");
   // Debug DSM info
-#ifdef VTK_USE_MPI
-  if (this->DSMManager && this->DSMManager->GetDSMHandle()) {    
-    XdmfDsmBuffer *dsmbuffer = this->DSMManager->GetDSMHandle();
-    long long tlength, length, start, end;
-    tlength = dsmbuffer->GetTotalLength();
-    vtkXDRDebug("Total length of DSM: " << tlength);
-    length = dsmbuffer->GetLength();
-    vtkXDRDebug("Length of DSM per node: " << length);
-    dsmbuffer->GetAddressRangeForId(this->UpdatePiece, &start, &end);
-    vtkXDRDebug("DSM address range: " << start << "-->" << end);
-  }
-#endif
   DOM->SetWorkingDirectory(this->WorkingDirectory.c_str());
   domain.SetName(this->DomainName);
   //
@@ -607,13 +595,11 @@ XdmfDOM *vtkXdmfWriter4::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
 vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *name)
 {
   vtkXDRDebug("MakeGridName");
-
   vtkstd::stringstream temp1, temp2;
-  if (!name)
+  if (!name) {
     temp1 << dataset->GetClassName() << "_" << this->BlockNum << vtkstd::ends;
-
+  }
   vtkstd::string gridname = name ? name : temp1.str().c_str();
-
   return gridname;
 }
 //----------------------------------------------------------------------------
@@ -802,7 +788,7 @@ int vtkXdmfWriter4::RequestData(
   //
   vtkDataObject        *doinput = this->GetInput();
   vtkMultiBlockDataSet *mbinput = vtkMultiBlockDataSet::SafeDownCast(this->GetInput());
-  vtkDataSet           *dsinput = vtkUnstructuredGrid::SafeDownCast(this->GetInput());
+  vtkDataSet           *dsinput = vtkDataSet::SafeDownCast(this->GetInput());
   //
   this->WorkingDirectory = vtksys::SystemTools::GetFilenamePath(this->FileName);
   this->BaseFileName     = vtksys::SystemTools::GetFilenameName(this->FileName);
@@ -841,7 +827,7 @@ int vtkXdmfWriter4::RequestData(
       StaticFlag = true;
       }
     vtkXW3NodeHelp helper(outputDOM, staticnode, StaticFlag);
-    timeStepDOM = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
+    timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
   }
   if (mbinput) {
     vtkSmartPointer<vtkCompositeDataIterator> iter;
@@ -872,7 +858,7 @@ int vtkXdmfWriter4::RequestData(
           }
         vtkXW3NodeHelp helper(outputDOM, staticnode, StaticFlag);
         this->SetBuildModeToLight();
-        XdmfDOM *block = this->BuildXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
+        XdmfDOM *block = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
         this->AddGridToCollection(timeStepDOM, block);
         delete block;
       }
@@ -884,8 +870,9 @@ int vtkXdmfWriter4::RequestData(
   }
 
 #ifdef VTK_USE_MPI
-  if (this->Controller)
+  if (this->Controller) {
     this->Controller->Barrier();
+  }
 #endif
 
 /*

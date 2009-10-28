@@ -193,7 +193,7 @@ protected:
   // Takes a dataset as input and creates the XML description for it
   // as an xdmf DOM. The HDF5 files associated with the data are written
   // to disk. The xml is returned and must be written separately.
-  XdmfDOM *BuildXdmfGrid(
+  XdmfDOM *CreateXdmfGrid(
     vtkDataSet *dataset, const char *name, double time, vtkXW3NodeHelp *staticnode);
 //  void BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int data_block, int nb_arrays);
 
