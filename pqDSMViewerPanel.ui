@@ -1,129 +1,126 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <class>DSMViewerPanel</class>
- <widget class="QDockWidget" name="DSMViewerPanel" >
-  <property name="geometry" >
+ <widget class="QDockWidget" name="DSMViewerPanel">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>312</width>
-    <height>454</height>
+    <width>331</width>
+    <height>657</height>
    </rect>
   </property>
-  <property name="windowTitle" >
+  <property name="windowTitle">
    <string>DSMViewerPanel</string>
   </property>
-  <widget class="QWidget" name="dockWidgetContents" >
-   <property name="geometry" >
-    <rect>
-     <x>0</x>
-     <y>22</y>
-     <width>312</width>
-     <height>432</height>
-    </rect>
-   </property>
-   <layout class="QVBoxLayout" name="verticalLayout" >
+  <widget class="QWidget" name="dockWidgetContents">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QCheckBox" name="a1" >
-      <property name="text" >
+     <widget class="QCheckBox" name="a1">
+      <property name="text">
        <string>DSM on Server</string>
       </property>
-      <property name="checked" >
+      <property name="checked">
        <bool>true</bool>
       </property>
      </widget>
     </item>
     <item>
-     <widget class="QPushButton" name="CreateDSM" >
-      <property name="text" >
-       <string>CreateDSM</string>
-      </property>
-     </widget>
+     <layout class="QGridLayout" name="gridLayout">
+      <item row="0" column="0">
+       <widget class="QPushButton" name="CreateDSM">
+        <property name="text">
+         <string>CreateDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QPushButton" name="DestroyDSM">
+        <property name="text">
+         <string>DestroyDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="2">
+       <widget class="QPushButton" name="ClearDSM">
+        <property name="text">
+         <string>ClearDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QPushButton" name="PublishDSM">
+        <property name="text">
+         <string>PublishDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QPushButton" name="UnpublishDSM">
+        <property name="text">
+         <string>UnpublishDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QPushButton" name="ConnectDSM">
+        <property name="text">
+         <string>ConnectDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QPushButton" name="DisconnectDSM">
+        <property name="text">
+         <string>DisconnectDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QPushButton" name="H5Dump">
+        <property name="text">
+         <string>H5Dump</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QPushButton" name="TestDSM">
+        <property name="text">
+         <string>TestDSM</string>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="2">
+       <widget class="QPushButton" name="DisplayDSM">
+        <property name="text">
+         <string>DisplayDSM</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
     </item>
     <item>
-     <widget class="QPushButton" name="DestroyDSM" >
-      <property name="text" >
-       <string>DestroyDSM</string>
-      </property>
-     </widget>
+     <widget class="QTextEdit" name="TextOutput"/>
     </item>
     <item>
-     <widget class="QPushButton" name="ClearDSM" >
-      <property name="text" >
-       <string>ClearDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="ConnectDSM" >
-      <property name="text" >
-       <string>ConnectDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="DisconnectDSM" >
-      <property name="text" >
-       <string>DisconnectDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="PublishDSM" >
-      <property name="text" >
-       <string>PublishDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="UnpublishDSM" >
-      <property name="text" >
-       <string>UnpublishDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="H5Dump" >
-      <property name="text" >
-       <string>H5Dump</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="TestDSM" >
-      <property name="text" >
-       <string>TestDSM</string>
-      </property>
-     </widget>
-    </item>
-    <item>
-     <widget class="QPushButton" name="DisplayDSM" >
-      <property name="text" >
-       <string>DisplayDSM</string>
-      </property>
-     </widget>
-    </item>    
-    <item>
-     <widget class="QTextEdit" name="TextOutput" />
-    </item>
-    <item>
-     <widget class="pqTreeWidget" name="DSMContents" >
-      <property name="sizePolicy" >
-       <sizepolicy vsizetype="MinimumExpanding" hsizetype="Ignored" >
+     <widget class="pqTreeWidget" name="DSMContents">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="MinimumExpanding">
         <horstretch>0</horstretch>
         <verstretch>1</verstretch>
        </sizepolicy>
       </property>
-      <property name="minimumSize" >
+      <property name="minimumSize">
        <size>
         <width>0</width>
         <height>40</height>
        </size>
       </property>
-      <property name="rootIsDecorated" >
+      <property name="rootIsDecorated">
        <bool>false</bool>
       </property>
       <column>
-       <property name="text" >
+       <property name="text">
         <string>Contents</string>
        </property>
       </column>
