@@ -2,6 +2,7 @@
 
 // Qt includes
 #include <QTreeWidget>
+#include <QTreeWidgetItem>
 #include <QVariant>
 #include <QLabel>
 #include <QComboBox>
@@ -152,7 +153,9 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   //
   ////////////
   // pqTree connect SLOT
-
+  this->connect(this->UI->DSMContents,
+      SIGNAL(itemChanged(QTreeWidgetItem *, int)),
+      this, SLOT(fillDSMContents(QTreeWidgetItem *, int)));
 }
 //----------------------------------------------------------------------------
 pqDSMViewerPanel::~pqDSMViewerPanel()
@@ -377,6 +380,12 @@ void pqDSMViewerPanel::onH5Dump()
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
+  this->UI->DSMContents->setColumnCount(1);
+  QTreeWidgetItem *root = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString("Root")));
+  this->fillDSMContents(root, 0);
+  for (int i = 0; i < 10; ++i)
+    this->fillDSMContents(new QTreeWidgetItem(root, QStringList(QString("Group: %1").arg(i))), 0);
+  this->UI->DSMContents->expandItem(root);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::TrackSource()
@@ -409,14 +418,10 @@ void pqDSMViewerPanel::TrackSource()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::fillDSMContents()
+void pqDSMViewerPanel::fillDSMContents(QTreeWidgetItem *item, int node)
 {
-  if (this->DSMReady()) {
-    this->UI->DSMContents->clear();
-    pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
-    item->setText(0, "test");
-    item->setExpanded(true);
-  }
+  this->items.append(item);
+  this->UI->DSMContents->insertTopLevelItem(node, item);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::createPublishNameDialog()

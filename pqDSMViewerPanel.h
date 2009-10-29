@@ -45,7 +45,7 @@ public slots:
   void onTestDSM();
   void onDisplayDSM();
   void TrackSource();
-  void fillDSMContents();
+  void fillDSMContents(QTreeWidgetItem *item, int node);
 
 private slots:
 
@@ -60,6 +60,7 @@ protected:
   int              publishNameSteps;
   bool             publishedNameFound;
   bool             connectionFound;
+  QList<QTreeWidgetItem *> items;
 
 protected slots:
 

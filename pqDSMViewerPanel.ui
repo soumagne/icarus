@@ -100,7 +100,29 @@
      </layout>
     </item>
     <item>
-     <widget class="QTextEdit" name="TextOutput"/>
+     <widget class="QTextEdit" name="TextOutput">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Ignored" vsizetype="MinimumExpanding">
+        <horstretch>0</horstretch>
+        <verstretch>1</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="maximumSize">
+       <size>
+        <width>16777215</width>
+        <height>40</height>
+       </size>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
     </item>
     <item>
      <widget class="pqTreeWidget" name="DSMContents">
@@ -113,7 +135,7 @@
       <property name="minimumSize">
        <size>
         <width>0</width>
-        <height>40</height>
+        <height>150</height>
        </size>
       </property>
       <property name="rootIsDecorated">
