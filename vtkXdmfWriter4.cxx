@@ -143,7 +143,7 @@ vtkXdmfWriter4::vtkXdmfWriter4()
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
-
+  this->LightDataLimit = 0;
 }
 //----------------------------------------------------------------------------
 vtkXdmfWriter4::~vtkXdmfWriter4()
@@ -259,6 +259,19 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   domain.Insert(&grid);
 
   //
+  // File/DataGroup name
+  //
+  vtkstd::stringstream temp2;
+  if (this->DSMManager) {
+    temp2 << "DSM:";
+  }
+  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
+  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
+  vtkstd::string hdf5String = temp2.str();
+
+  this->SetHeavyDataSetName(hdf5String.c_str());
+
+  //
   // Attributes
   //
   vtkIdType FRank = 1;
@@ -305,19 +318,6 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   }
   vtkXDRDebug("Xdmf Grid Build succeeded");
 
-
-/*
-  //
-  // File/DataGroup name
-  //
-  vtkstd::stringstream temp2;
-  if (this->DSMManager) {
-    temp2 << "DSM:";
-  }
-  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
-  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
-  vtkstd::string hdf5String = temp2.str();
- */
 
   //
   return DOM;
@@ -761,6 +761,9 @@ void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PD
       break;
     default:
       this->vtkXdmfWriter2::CreateGeometry(ds, grid, PDims, CDims, PRank, CRank, staticnode);
+      if (grid->Build()!=XDMF_SUCCESS) {
+        vtkErrorMacro("Xdmf Grid Build failed");
+      }
     break;
   }
 }
