@@ -206,11 +206,37 @@ bool vtkDSMManager::CreateDSM()
     return true;
   }
 
-  if (!this->Controller)
+  if (this->Controller->IsA("vtkDummyController"))
+  {
+    int flag = 0;
+    MPI_Initialized(&flag);
+    if(flag == 0)
     {
-    vtkErrorMacro(<<"No MPI Controller specified");
-    return false;
+      vtkErrorMacro(<<"Running without MPI, attempting to initialize ");
+      int argc = 1;
+      char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
+      char **_argv = &argv;
+      int provided, rank, size;
+      MPI_Init_thread(&argc, &_argv, MPI_THREAD_MULTIPLE, &provided);
+      MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+      MPI_Comm_size(MPI_COMM_WORLD, &size);
+      //
+      if (rank == 0) {
+        if (provided != MPI_THREAD_MULTIPLE) {
+          vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+            << "MPI distribution with threads enabled" << vtkstd::endl;
+        }
+        else {
+          vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
+        }
+      }
+      vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
+      controller->Initialize(&argc, &_argv, 1);
+      this->SetController(controller);
+      vtkMPIController::SetGlobalController(controller);
     }
+
+  }
 
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
@@ -225,18 +251,6 @@ bool vtkDSMManager::CreateDSM()
   //
   // Get the raw MPI_Comm handle
   //
-  if (this->Controller->IsA("vtkDummyController")) {
-    int provided;
-    MPI_Init_thread(0, NULL, MPI_THREAD_MULTIPLE, &provided);
-    if (provided != MPI_THREAD_MULTIPLE) {
-      vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-      << "MPI distribution with threads enabled" << vtkstd::endl;
-    }
-    else {
-      vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
-    }
-    //      this->SetController();
-  }
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
