@@ -246,7 +246,7 @@ void pqDSMViewerPanel::onConnectDSM()
     QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
         tr("Enter the connection MPI port:"), QLineEdit::Normal);
 
-    if(!text.isEmpty()) {
+    if (!text.isEmpty()) {
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("MPIport"),
           text.toStdString().c_str());
@@ -380,12 +380,14 @@ void pqDSMViewerPanel::onH5Dump()
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
+/*
   this->UI->DSMContents->setColumnCount(1);
   QTreeWidgetItem *root = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString("Root")));
   this->fillDSMContents(root, 0);
   for (int i = 0; i < 10; ++i)
     this->fillDSMContents(new QTreeWidgetItem(root, QStringList(QString("Group: %1").arg(i))), 0);
   this->UI->DSMContents->expandItem(root);
+*/
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::TrackSource()
@@ -420,8 +422,12 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::fillDSMContents(QTreeWidgetItem *item, int node)
 {
-  this->items.append(item);
-  this->UI->DSMContents->insertTopLevelItem(node, item);
+  if (this->DSMReady()) {
+    this->UI->DSMContents->clear();
+    pqTreeWidgetItem *item = new pqTreeWidgetItem(this->UI->DSMContents);
+    item->setText(0, "test");
+    item->setExpanded(true);
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::createPublishNameDialog()
