@@ -250,26 +250,12 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   DOM->SetWorkingDirectory(this->WorkingDirectory.c_str());
   domain.SetName(this->DomainName);
   //
-  // File/DataGroup name
-  //
-  vtkstd::stringstream temp2;
-  if (this->DSMManager) {
-    temp2 << "DSM:";
-  }
-  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
-  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
-  vtkstd::string hdf5String = temp2.str();
-
-  //
   // Initialization
   //
   root.SetDOM(DOM);
-  domain.SetDOM(DOM);
   root.Build();
   root.Insert(&domain);
-  root.Build();
   grid.SetName(name);
-  grid.SetDOM(DOM);
   domain.Insert(&grid);
 
   //
@@ -318,6 +304,20 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
     return NULL;
   }
   vtkXDRDebug("Xdmf Grid Build succeeded");
+
+
+/*
+  //
+  // File/DataGroup name
+  //
+  vtkstd::stringstream temp2;
+  if (this->DSMManager) {
+    temp2 << "DSM:";
+  }
+  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
+  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
+  vtkstd::string hdf5String = temp2.str();
+ */
 
   //
   return DOM;
