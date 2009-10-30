@@ -176,6 +176,14 @@ ADD_EXECUTABLE(
 TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 
 #--------------------------------------------------
+# Testing, pull in the test from ParaView/Utilities/Xdmf2/vtk/Testing/Cxx
+#--------------------------------------------------
+ADD_SUBDIRECTORY(
+  ${ParaView_SOURCE_DIR}/Utilities/Xdmf2/vtk/Testing/Cxx
+  ${CMAKE_CURRENT_BINARY_DIR}/PVTesting
+  )
+
+#--------------------------------------------------
 # Install
 #--------------------------------------------------
 SET(INSTALL_PATH "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}")

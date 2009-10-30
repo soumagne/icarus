@@ -46,20 +46,6 @@ class vtkUnstructuredGrid;
 class vtkDataSet;
 class vtkMultiBlockDataSet;
 class vtkDSMManager;
-//BTX
-class XdmfDOM;
-class XdmfGrid;
-class XdmfDsmBuffer;
-class XdmfDomain;
-struct  _xmlNode;
-typedef _xmlNode *XdmfXmlNode;
-struct vtkXW3NodeHelp {
-  XdmfDOM     *DOM;
-  XdmfXmlNode  node;
-  bool         staticFlag;
-  vtkXW3NodeHelp(XdmfDOM *d, XdmfXmlNode n, bool f) : DOM(d), node(n), staticFlag(f) {};
-};
-//ETX
 
 class VTK_EXPORT vtkXdmfWriter4 : public vtkXdmfWriter2
 {
@@ -194,7 +180,7 @@ protected:
   // as an xdmf DOM. The HDF5 files associated with the data are written
   // to disk. The xml is returned and must be written separately.
   XdmfDOM *CreateXdmfGrid(
-    vtkDataSet *dataset, const char *name, double time, vtkXW3NodeHelp *staticnode);
+    vtkDataSet *dataset, const char *name, double time, vtkXW2NodeHelp *staticnode);
 //  void BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int data_block, int nb_arrays);
 
   // Description:
@@ -217,7 +203,7 @@ protected:
   void WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time);
 
   virtual void CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata);
-  virtual void CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata);
+  virtual void CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata);
 
 //ETX
 

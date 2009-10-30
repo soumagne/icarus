@@ -33,6 +33,7 @@
 #include "vtkToolkits.h"     // For VTK_USE_MPI
 #include "vtkSmartPointer.h" // For vtkSmartPointer
 #include "vtkWriter.h"
+#include "vtkXdmfWriter2.h"
 #include <vtkstd/string>
 
 #ifdef VTK_USE_MPI
@@ -46,20 +47,6 @@ class vtkUnstructuredGrid;
 class vtkDataSet;
 class vtkMultiBlockDataSet;
 class vtkDSMManager;
-//BTX
-class XdmfDOM;
-class XdmfGrid;
-class XdmfDsmBuffer;
-class XdmfDomain;
-struct  _xmlNode;
-typedef _xmlNode *XdmfXmlNode;
-struct vtkXW2NodeHelp {
-  XdmfDOM     *DOM;
-  XdmfXmlNode  node;
-  bool         staticFlag;
-  vtkXW2NodeHelp(XdmfDOM *d, XdmfXmlNode n, bool f) : DOM(d), node(n), staticFlag(f) {};
-};
-//ETX
 
 class VTK_EXPORT vtkXdmfWriter3 : public vtkWriter
 {

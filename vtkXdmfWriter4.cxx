@@ -238,7 +238,7 @@ XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(XdmfDOM *DOM, const char *path)
 // template <typename T> void vtkXW2_delete_object(T *p) { delete p; }
 //----------------------------------------------------------------------------
 XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
-    vtkDataSet *dataset, const char *name, double time, vtkXW3NodeHelp *staticnode)
+    vtkDataSet *dataset, const char *name, double time, vtkXW2NodeHelp *staticnode)
 {
   XdmfDOM        *DOM = new XdmfDOM();
   XdmfRoot        root;
@@ -261,15 +261,16 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   //
   // File/DataGroup name
   //
-  vtkstd::stringstream temp2;
+  vtkstd::string hdf5name = this->BaseFileName + ".h5";
+  vtkstd::stringstream hdf5group;
+  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << ends;
   if (this->DSMManager) {
-    temp2 << "DSM:";
+    hdf5name = "DSM:" + hdf5name;
   }
-  temp2 << this->BaseFileName.c_str() << ".h5:/" <<
-  setw(5) << setfill('0') << this->TimeStep << "/" << this->BlockNum << "/" << ends;
-  vtkstd::string hdf5String = temp2.str();
 
-  this->SetHeavyDataSetName(hdf5String.c_str());
+  this->SetHeavyDataFileName(hdf5name.c_str());
+  this->SetHeavyDataGroupName(hdf5group.str().c_str());
+
 
   //
   // Attributes
@@ -304,11 +305,11 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
 */
 
   this->CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
-  this->vtkXdmfWriter2::CreateGeometry(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
+  this->vtkXdmfWriter2::CreateGeometry(dataset, &grid, staticnode);
 
-  this->WriteArrays(dataset->GetFieldData(), &grid,XDMF_ATTRIBUTE_CENTER_GRID, FRank, FDims);
-  this->WriteArrays(dataset->GetCellData(),  &grid,XDMF_ATTRIBUTE_CENTER_CELL, CRank, CDims);
-  this->WriteArrays(dataset->GetPointData(), &grid,XDMF_ATTRIBUTE_CENTER_NODE, PRank, PDims);
+  this->WriteArrays(dataset->GetFieldData(), &grid,XDMF_ATTRIBUTE_CENTER_GRID, FRank, FDims, "Field");
+  this->WriteArrays(dataset->GetCellData(),  &grid,XDMF_ATTRIBUTE_CENTER_CELL, CRank, CDims, "Cell");
+  this->WriteArrays(dataset->GetPointData(), &grid,XDMF_ATTRIBUTE_CENTER_NODE, PRank, PDims, "Node");
 
   // Build is recursive ... it will be called on all of the child nodes.
   // This updates the DOM and writes the HDF5
@@ -686,16 +687,13 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 //----------------------------------------------------------------------------
 void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata)
 {
-  vtkXW3NodeHelp *staticnode = (vtkXW3NodeHelp*)staticdata;
-  XdmfTopology *topology;
-  XdmfArray    *xdmfarray;
-  //
+  vtkXW2NodeHelp *staticnode = (vtkXW2NodeHelp*)staticdata;
   this->vtkXdmfWriter2::CreateTopology(ds, grid, PDims, CDims, PRank, CRank, staticnode);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata)
+void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata)
 {
-  vtkXW3NodeHelp *staticnode = (vtkXW3NodeHelp*)staticdata;
+  vtkXW2NodeHelp *staticnode = (vtkXW2NodeHelp*)staticdata;
   XdmfGeometry *geometry;
   XdmfArray    *xdmfarray;
   //
@@ -760,7 +758,7 @@ void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PD
 */
       break;
     default:
-      this->vtkXdmfWriter2::CreateGeometry(ds, grid, PDims, CDims, PRank, CRank, staticnode);
+      this->vtkXdmfWriter2::CreateGeometry(ds, grid, staticnode);
       if (grid->Build()!=XDMF_SUCCESS) {
         vtkErrorMacro("Xdmf Grid Build failed");
       }
@@ -827,9 +825,9 @@ int vtkXdmfWriter4::RequestData(
       vtkstd::stringstream staticXPath;
       staticXPath << XpathPrefix << "/Grid[@Name=\"" << name.c_str() << "\"][1]";
       staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
-      StaticFlag = true;
+      StaticFlag = (staticnode!=NULL);
       }
-    vtkXW3NodeHelp helper(outputDOM, staticnode, StaticFlag);
+    vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
     timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
   }
   if (mbinput) {
@@ -859,7 +857,7 @@ int vtkXdmfWriter4::RequestData(
           XdmfXmlNode staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
           StaticFlag = true;
           }
-        vtkXW3NodeHelp helper(outputDOM, staticnode, StaticFlag);
+        vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
         this->SetBuildModeToLight();
         XdmfDOM *block = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);
         this->AddGridToCollection(timeStepDOM, block);
