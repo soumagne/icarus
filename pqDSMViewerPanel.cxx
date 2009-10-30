@@ -303,6 +303,8 @@ void pqDSMViewerPanel::onUnpublishDSM()
 void pqDSMViewerPanel::onTestDSM()
 {
   if (this->DSMReady()) {
+    this->UI->DSMProxy->InvokeCommand("ClearDSM");
+
     if (!this->UI->ActiveSourceProxy) {
       vtkGenericWarningMacro(<<"Nothing to Write");
       return;

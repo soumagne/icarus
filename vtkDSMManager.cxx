@@ -214,8 +214,8 @@ bool vtkDSMManager::CreateDSM()
     {
       vtkErrorMacro(<<"Running without MPI, attempting to initialize ");
       int argc = 1;
-      char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
-      char **_argv = &argv;
+      const char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
+      char **_argv = (char**) &argv;
       int provided, rank, size;
       MPI_Init_thread(&argc, &_argv, MPI_THREAD_MULTIPLE, &provided);
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
