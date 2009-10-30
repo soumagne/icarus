@@ -422,6 +422,8 @@ XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
       xdmfarray->SetBuildHeavy(XDMF_TRUE);
       if (this->DummyBuild == 1)
         xdmfarray->SetDummyArray(XDMF_TRUE);
+    } else {
+      xdmfarray->SetBuildHeavy(XDMF_FALSE);
     }
     vtk2XdmfArray(xdmfarray, connectivityXdmf, hdf5String.c_str(), "Topology", "Connectivity");
 
@@ -454,6 +456,8 @@ XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
        if (this->DummyBuild == 1)
          xdmfarray->SetDummyArray(XDMF_TRUE);
+     } else {
+       xdmfarray->SetBuildHeavy(XDMF_FALSE);
      }
     vtkDataArray *points = ug->GetPoints()->GetData();
     vtk2XdmfArray(xdmfarray, points, hdf5String.c_str(), "Geometry", "Points");
@@ -492,6 +496,8 @@ XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
        if (this->DummyBuild == 1)
          xdmfarray->SetDummyArray(XDMF_TRUE);
+     } else {
+       xdmfarray->SetBuildHeavy(XDMF_FALSE);
      }
     vtk2XdmfArray(xdmfarray, scalars, hdf5String.c_str(), "PointData", NULL);
 
@@ -531,6 +537,8 @@ XdmfDOM *vtkXdmfWriter3::BuildXdmfGrid(
        xdmfarray->SetBuildHeavy(XDMF_TRUE);
        if (this->DummyBuild == 1)
          xdmfarray->SetDummyArray(XDMF_TRUE);
+     } else {
+       xdmfarray->SetBuildHeavy(XDMF_FALSE);
      }
     vtkDataArray *scalars = dataset->GetCellData()->GetArray(CellAttributeNames[i].c_str());
     vtk2XdmfArray(xdmfarray, scalars, hdf5String.c_str(), "CellData", NULL);
