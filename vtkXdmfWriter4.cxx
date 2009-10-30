@@ -693,37 +693,6 @@ void vtkXdmfWriter4::CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PD
 //----------------------------------------------------------------------------
 void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata)
 {
-  vtkXW2NodeHelp *staticnode = (vtkXW2NodeHelp*)staticdata;
-  XdmfGeometry *geometry;
-  XdmfArray    *xdmfarray;
-  //
-  switch (ds->GetDataObjectType()) {
-    case VTK_STRUCTURED_GRID:
-    case VTK_POLY_DATA:
-    case VTK_UNSTRUCTURED_GRID:
-      //
-      // Geometry - points
-      //
-      geometry = grid->GetGeometry();
-      if (!staticnode->DOM || !staticnode->node) {
-        //
-        xdmfarray = geometry->GetPoints();
-        if (this->DSMManager) xdmfarray->SetDsmBuffer(this->DSMManager->GetDSMHandle());
-        if (this->BuildMode == VTK_XDMF_BUILD_HEAVY || this->BuildMode == VTK_XDMF_BUILD_ALL) {
-           xdmfarray->SetBuildHeavy(XDMF_TRUE);
-           if (this->DummyBuild == 1) {
-             xdmfarray->SetDummyArray(XDMF_TRUE);
-           }
-         }
-      }
-      else {
-        XdmfXmlNode staticGeom = staticnode->DOM->FindElement("Geometry", 0, staticnode->node);
-        XdmfConstString text = staticnode->DOM->Serialize(staticGeom->children);
-        geometry->SetDataXml(text);
-      }
-      if (staticnode->staticFlag) {
-        grid->Set("GeometryConstant", "True");
-      }
 
 /*
     //
@@ -756,14 +725,7 @@ void vtkXdmfWriter4::CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *static
         return NULL;
       }
 */
-      break;
-    default:
-      this->vtkXdmfWriter2::CreateGeometry(ds, grid, staticnode);
-      if (grid->Build()!=XDMF_SUCCESS) {
-        vtkErrorMacro("Xdmf Grid Build failed");
-      }
-    break;
-  }
+  this->vtkXdmfWriter2::CreateGeometry(ds, grid, staticdata);
 }
 //----------------------------------------------------------------------------
 int vtkXdmfWriter4::RequestData(
@@ -825,7 +787,7 @@ int vtkXdmfWriter4::RequestData(
       vtkstd::stringstream staticXPath;
       staticXPath << XpathPrefix << "/Grid[@Name=\"" << name.c_str() << "\"][1]";
       staticnode = this->GetStaticGridNode(outputDOM, staticXPath.str().c_str());
-      StaticFlag = (staticnode!=NULL);
+      StaticFlag = true;
       }
     vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
     timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
