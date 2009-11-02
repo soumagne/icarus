@@ -187,30 +187,29 @@ main(int argc, char *argv[])
     for (int j = 0; j < 10; j++)
       dset2_data[i][j] = j + 1;
 
-  // Create the file access property list
-  fapl = H5Pcreate(H5P_FILE_ACCESS);
-  if (dsm == 1) {
-      // Initialize the DSM VFL driver
-      H5FD_dsm_init();
-    //}
-      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
-  } else {
-    if (size > 1) {
-      // Check for Parallel HDF5 ... MPI must already be initialized
-#if H5_HAVE_PARALLEL && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=6)))
-      PRINT_INFO("Using Parallel File Interface");
-      H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
-#else
-      PRINT_INFO("Using Serial File Interface");
-#endif
-    }
-  }
-
-
   for(int write_step = 0; write_step < nwrite; write_step++) {
 
     PRINT_DEBUG_INFO(endl << "------ Writing step " << write_step << " ------" << endl);
     MyDsm->ClearStorage();
+
+    // Create the file access property list
+    fapl = H5Pcreate(H5P_FILE_ACCESS);
+    if (dsm == 1) {
+      // Initialize the DSM VFL driver
+      H5FD_dsm_init();
+      //}
+      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
+    } else {
+      if (size > 1) {
+        // Check for Parallel HDF5 ... MPI must already be initialized
+#if H5_HAVE_PARALLEL && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=6)))
+        PRINT_INFO("Using Parallel File Interface");
+        H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+#else
+        PRINT_INFO("Using Serial File Interface");
+#endif
+      }
+    }
 
     // Create a new file
     if (dsm == 1) {
@@ -285,6 +284,9 @@ main(int argc, char *argv[])
     PRINT_DEBUG_INFO("Close group");
     H5Gclose(group_id);
 
+    // Close the file access property list
+     H5Pclose(fapl);
+
     // Close the file
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -292,12 +294,30 @@ main(int argc, char *argv[])
     H5Fclose(file_id);
 
     MPI_Barrier(MPI_COMM_WORLD);
-
   }
 
   /////////////////////////////////////////////////////////////////
   // Test to validate written data
   /////////////////////////////////////////////////////////////////
+
+  // Create the file access property list
+  fapl = H5Pcreate(H5P_FILE_ACCESS);
+  if (dsm == 1) {
+    // Initialize the DSM VFL driver
+    H5FD_dsm_init();
+    //}
+    H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
+  } else {
+    if (size > 1) {
+      // Check for Parallel HDF5 ... MPI must already be initialized
+#if H5_HAVE_PARALLEL && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=6)))
+      PRINT_INFO("Using Parallel File Interface");
+      H5Pset_fapl_mpio(fapl, MPI_COMM_WORLD, MPI_INFO_NULL);
+#else
+      PRINT_INFO("Using Serial File Interface");
+#endif
+    }
+  }
 
   if (local) {
     if (!dump && !ldump && test) {
