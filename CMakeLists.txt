@@ -178,10 +178,10 @@ TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 #--------------------------------------------------
 # Testing, pull in the test from ParaView/Utilities/Xdmf2/vtk/Testing/Cxx
 #--------------------------------------------------
-ADD_SUBDIRECTORY(
-  ${ParaView_SOURCE_DIR}/Utilities/Xdmf2/vtk/Testing/Cxx
-  ${CMAKE_CURRENT_BINARY_DIR}/PVTesting
-  )
+#ADD_SUBDIRECTORY(
+#  ${ParaView_SOURCE_DIR}/Utilities/Xdmf2/vtk/Testing/Cxx
+#  ${CMAKE_CURRENT_BINARY_DIR}/PVTesting
+#  )
 
 #--------------------------------------------------
 # Install
