@@ -60,7 +60,7 @@ protected:
   int              publishNameSteps;
   bool             publishedNameFound;
   bool             connectionFound;
-  QList<QTreeWidgetItem *> items;
+  QTreeWidgetItem *dsmContentTree;
 
 protected slots:
 

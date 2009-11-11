@@ -237,6 +237,10 @@ void pqDSMViewerPanel::onClearDSM()
 {
   if (this->DSMReady()) {
     this->UI->DSMProxy->InvokeCommand("ClearDSM");
+    if(this->dsmContentTree) {
+      delete this->dsmContentTree;
+      this->dsmContentTree = NULL;
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -384,12 +388,15 @@ void pqDSMViewerPanel::onH5Dump()
   }
 
   this->UI->DSMContents->setColumnCount(1);
-  QTreeWidgetItem *root = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString("Root")));
-  this->fillDSMContents(root, 0);
-  for (int i = 0; i < 10; ++i)
-    this->fillDSMContents(new QTreeWidgetItem(root, QStringList(QString("Group: %1").arg(i))), 0);
-  this->UI->DSMContents->expandItem(root);
-
+  if (this->dsmContentTree) delete this->dsmContentTree;
+  this->dsmContentTree = new QTreeWidgetItem((QTreeWidget*)0,
+      QStringList(QString("Group: \" / \"")));
+  this->fillDSMContents(this->dsmContentTree, 0);
+  for (int i = 0; i < 10; ++i) {
+    this->fillDSMContents(new QTreeWidgetItem(this->dsmContentTree,
+        QStringList(QString("Group: 00000%1").arg(i))), 0);
+  }
+  this->UI->DSMContents->expandItem(this->dsmContentTree);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::TrackSource()
@@ -424,7 +431,6 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::fillDSMContents(QTreeWidgetItem *item, int node)
 {
-  this->items.append(item);
   this->UI->DSMContents->insertTopLevelItem(node, item);
 }
 //-----------------------------------------------------------------------------
