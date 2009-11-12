@@ -399,6 +399,17 @@ void vtkDSMManager::H5DumpLight()
   }
 }
 //----------------------------------------------------------------------------
+void vtkDSMManager::H5DumpXML()
+{
+  if (this->DSMBuffer) {
+    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->DumpXML();
+    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
+    delete myDsmDump;
+  }
+}
+//----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

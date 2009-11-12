@@ -76,6 +76,7 @@ public:
   void  UnpublishDSM();
   void  H5Dump();
   void  H5DumpLight();
+  void  H5DumpXML();
 //BTX
   XdmfDsmBuffer *GetDSMHandle();
 //ETX

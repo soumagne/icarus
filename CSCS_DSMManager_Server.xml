@@ -34,7 +34,10 @@
       <Property name="H5DumpLight"
                 command="H5DumpLight">
       </Property>
-
+      <Property name="H5DumpXML"
+                command="H5DumpXML">
+      </Property>
+      
       <StringVectorProperty
         name="PublishedPortName"
         command="GetPublishedPortName"

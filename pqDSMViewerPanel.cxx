@@ -84,6 +84,7 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
 
   this->publishedNameFound = false;
   this->connectionFound = false;
+  this->dsmContentTree = NULL;
 
   //
   // Link GUI object events to callbacks
@@ -229,6 +230,10 @@ void pqDSMViewerPanel::onDestroyDSM()
     if (this->publishNameDialog) {
       delete this->publishNameDialog;
       this->publishNameDialog = NULL;
+    }
+    if(this->dsmContentTree) {
+      delete this->dsmContentTree;
+      this->dsmContentTree = NULL;
     }
   }
 }
@@ -383,7 +388,8 @@ void pqDSMViewerPanel::onDisplayDSM()
 void pqDSMViewerPanel::onH5Dump()
 {
   if (this->DSMReady()) {
-    this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+      this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+    //this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
 
