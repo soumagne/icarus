@@ -108,13 +108,6 @@ public:
   vtkGetObjectMacro(DSMManager, vtkDSMManager);
 
   // Description:
-  // Set/get the FileName that is being written to. You should
-  // specify a full path and filename.xmf - heavy data will
-  // be written to one or more filename[_XXX].h5 datasets
-  vtkSetStringMacro(FileName);
-  vtkGetStringMacro(FileName);
-
-  // Description:
   // Specify the domain name under which the grid/grids will be written
   vtkSetStringMacro(DomainName);
   vtkGetStringMacro(DomainName);
@@ -192,7 +185,7 @@ protected:
   // Add one grid (DOM) to another already existing collection
   XdmfDOM *AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block);
 
-  XdmfXmlNode GetStaticGridNode(XdmfDOM *DOM, const char *path);
+  XdmfXmlNode GetStaticGridNode(vtkDataSet *dsinput, bool multiblock, XdmfDOM *DOM, const char *name, bool &staticFlag);
 
   vtkstd::string MakeGridName(vtkDataSet *dataset, const char *name);
 
@@ -201,9 +194,6 @@ protected:
   // Note that for simplicity, even a single dataset is written as
   // a temporal collection with just one step.
   void WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time);
-
-  virtual void CreateTopology(vtkDataSet *ds, XdmfGrid *grid, vtkIdType PDims[3], vtkIdType CDims[3], vtkIdType &PRank, vtkIdType &CRank, void *staticdata);
-  virtual void CreateGeometry(vtkDataSet *ds, XdmfGrid *grid, void *staticdata);
 
 //ETX
 
@@ -220,8 +210,6 @@ protected:
   int     CollectiveIO;
   int     AppendMode;
   int     TimeStep;
-  int     BlockNum;
-  char   *FileName;
   char   *DomainName;
   int     TopologyConstant;
   int     GeometryConstant;

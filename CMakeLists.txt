@@ -46,6 +46,8 @@ if(Boost_FOUND)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 endif()
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 #--------------------------------------------------
 # Set project include directories 
 #--------------------------------------------------
@@ -171,6 +173,11 @@ ENDIF(CSCS_PLUGIN_Fluent)
 ADD_EXECUTABLE(
   ConvertToXdmf
   ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
+)
+
+ADD_EXECUTABLE(
+  TreeTest
+  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/TreeTest.cpp
 )
 
 TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
