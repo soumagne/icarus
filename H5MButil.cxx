@@ -49,8 +49,9 @@ class H5MB_info {
     int         Stride[5];
     hid_t       hdf5_handle;
     //
+/*
     template<class Archive>
-    void serialize(Archive & ar, const unsigned int /*version*/)
+    void serialize(Archive & ar, const unsigned int )
     {
       ar & Text
       ar & DataType;
@@ -61,6 +62,7 @@ class H5MB_info {
         ar & t.Stride;//[d];
 //      }
     }
+*/
 
   public:
     friend bool operator < (const H5MB_info& lhs, const H5MB_info& rhs) { 
@@ -99,7 +101,7 @@ namespace H5MB_utility
   //------------------------------------------------------------------------
   template<typename T> typename T::iterator find(T *node, const std::string &item)
   {
-    for (T::iterator it=node->begin(); it!=node->end(); ++it ) {
+    for (typename T::iterator it=node->begin(); it!=node->end(); ++it ) {
       if (it->get_text()==item) return it;
     }
     return node->end();
@@ -116,7 +118,7 @@ namespace H5MB_utility
   template<typename T> void print_tree(T& tree, const int depth)
   {
     std::cout << tree.get()->get_text() << std::endl;
-    for (T::const_iterator it=tree.begin(); it!=tree.end(); ++it ) {
+    for (typename T::const_iterator it=tree.begin(); it!=tree.end(); ++it ) {
       for ( int i = 0; i < depth; ++i ) {
         T* parent = &tree;
         for ( int j = depth - 1; j>i; --j ) parent = parent->parent();
