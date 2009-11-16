@@ -402,9 +402,11 @@ void vtkDSMManager::H5DumpLight()
 void vtkDSMManager::H5DumpXML()
 {
   if (this->DSMBuffer) {
+    std::ostringstream dumpStream;
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    myDsmDump->DumpXML();
+    myDsmDump->DumpXML(dumpStream);
+    if(this->UpdatePiece == 0) cout << dumpStream.str() << endl;
     if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
     delete myDsmDump;
   }
