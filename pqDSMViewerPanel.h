@@ -26,8 +26,11 @@ public:
 signals:
 
 public slots:
-  void onserverAdded(pqServer *server);
-  void startRemovingServer(pqServer *server);
+  void onServerAdded(pqServer *server);
+  void StartRemovingServer(pqServer *server);
+
+  void onBrowseFile();
+
   void onCreateDSM();
   void onDestroyDSM();
   void onClearDSM();
@@ -35,9 +38,9 @@ public slots:
   void onConnectDSM();
   void onDisconnectDSM();
 
-  void createPublishNameDialog();
-  void timeoutPublishName();
-  void cancelPublishNameDialog();
+  void CreatePublishNameDialog();
+  void TimeoutPublishName();
+  void CancelPublishNameDialog();
   void onPublishDSM();
   void onUnpublishDSM();
 
@@ -45,22 +48,22 @@ public slots:
   void onTestDSM();
   void onDisplayDSM();
   void TrackSource();
-  void fillDSMContents(QTreeWidgetItem *item, int node);
+  void FillDSMContents(QTreeWidgetItem *item, int node);
 
 private slots:
 
 protected:
   /// populate widgets with properties from the server manager
-  virtual void linkServerManagerProperties();
+  virtual void LinkServerManagerProperties();
 
   class pqUI;
   pqUI* UI;
-  QProgressDialog *publishNameDialog;
-  QTimer          *publishNameTimer;
-  int              publishNameSteps;
-  bool             publishedNameFound;
-  bool             connectionFound;
-  QTreeWidgetItem *dsmContentTree;
+  QProgressDialog *PublishNameDialog;
+  QTimer          *PublishNameTimer;
+  int              PublishNameSteps;
+  bool             PublishedNameFound;
+  bool             ConnectionFound;
+  QTreeWidgetItem *DSMContentTree;
 
 protected slots:
 
