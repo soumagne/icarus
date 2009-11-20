@@ -61,8 +61,6 @@ public:
     delete this->Links;
   }
 
-  // @TODO if the server plugin isn't loaded, this causes an exit
-  // must find a way around this
   void CreateProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
@@ -377,8 +375,15 @@ void pqDSMViewerPanel::onTestDSM()
     XdmfWriter->UpdateVTKObjects();
     XdmfWriter->UpdatePipeline();
 
-//    if (this->connectionFound)
-//      this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
+    if(!this->UI->xdmfFilePathLineEdit->text().isEmpty() &&
+        (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description"))) {
+        pqSMAdaptor::setElementProperty(
+                this->UI->DSMProxy->GetProperty("XMLFilePath"),
+                this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+
+        this->UI->DSMProxy->UpdateVTKObjects();
+        this->UI->DSMProxy->InvokeCommand("SendDSMXML");
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -395,14 +400,22 @@ void pqDSMViewerPanel::onDisplayDSM()
         this->UI->DSMProxy
     );
 
-    pqSMAdaptor::setElementProperty(
-        XdmfReader->GetProperty("FileName"),
+    if(this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
+        pqSMAdaptor::setElementProperty(
+                XdmfReader->GetProperty("FileName"),
 #ifndef WIN32
-        "/home/soumagne/test.xmf"
+                "/home/soumagne/test.xmf"
 #else
-        "d:/test.xmf"
+                "d:/test.xmf"
 #endif
-    );
+        );
+    } else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {
+        pqSMAdaptor::setElementProperty(
+                XdmfReader->GetProperty("FileName"),
+                this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+    } else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description")) {
+        // TODO Call H5Dump / Get back new XML generated file
+    }
 
     XdmfReader->UpdatePropertyInformation();
 
@@ -417,6 +430,12 @@ void pqDSMViewerPanel::onH5Dump()
     //this->UI->DSMProxy->InvokeCommand("H5DumpXML");
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
+  }
+  if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {
+      // Do nothing
+  }
+  else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description")) {
+      // TODO Tell to generate XML file
   }
 
   this->UI->dsmContents->setColumnCount(1);

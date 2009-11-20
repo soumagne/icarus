@@ -31,6 +31,7 @@
 #include "XdmfDsm.h"         // Xdmf DSM objects
 #include "XdmfDsmBuffer.h"   // Xdmf DSM objects
 #include "XdmfDsmCommMpi.h"  // Xdmf DSM objects
+#include "XdmfDOM.h"
 
 #ifndef WIN32
   #define HAVE_PTHREADS
@@ -66,17 +67,21 @@ public:
   vtkSetMacro(AcceptedConnection, bool);
   vtkGetMacro(AcceptedConnection, bool);
 
-  bool  CreateDSM();
-  bool  DestroyDSM();
-  void  ClearDSM();
-  void  ConnectDSM();
-  void  DisconnectDSM();
-  void  PublishDSM();
+  vtkSetStringMacro(XMLFilePath);
+  vtkGetStringMacro(XMLFilePath);
+
+  bool   CreateDSM();
+  bool   DestroyDSM();
+  void   ClearDSM();
+  void   ConnectDSM();
+  void   DisconnectDSM();
+  void   PublishDSM();
   void  *AcceptConnection();
-  void  UnpublishDSM();
-  void  H5Dump();
-  void  H5DumpLight();
-  void  H5DumpXML();
+  void   UnpublishDSM();
+  void   H5Dump();
+  void   H5DumpLight();
+  void   H5DumpXML();
+  void   SendDSMXML();
 //BTX
   XdmfDsmBuffer *GetDSMHandle();
 //ETX
@@ -132,8 +137,11 @@ protected:
     //
     char           *PublishedPortName;
     bool            AcceptedConnection;
-//  bool            KillConnection;
+    // bool            KillConnection;
 
+    char           *XMLFilePath;
+    // std::string     DSMxml;
+    // XdmfXmlNode     DSMdom;
 #endif
     //ETX
 

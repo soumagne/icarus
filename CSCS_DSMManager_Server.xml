@@ -37,6 +37,9 @@
       <Property name="H5DumpXML"
                 command="H5DumpXML">
       </Property>
+      <Property name="SendDSMXML"
+                command="SendDSMXML">
+      </Property>
       
       <StringVectorProperty
         name="PublishedPortName"
@@ -49,6 +52,12 @@
       <StringVectorProperty
         name="MPIport"
         command="SetPublishedPortName"
+        number_of_elements="1">
+      </StringVectorProperty>
+      
+      <StringVectorProperty
+        name="XMLFilePath"
+        command="SetXMLFilePath"
         number_of_elements="1">
       </StringVectorProperty>
       

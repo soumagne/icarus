@@ -95,6 +95,11 @@ vtkDSMManager::vtkDSMManager()
   this->NumberOfTimeSteps        = 0;
   this->TimeStep                 = 0;
   this->FileName                 = NULL;
+
+  this->XMLFilePath              = NULL;
+
+//  this->DSMxml                   = "";
+//  this->DSMdom                   = NULL;
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
@@ -406,9 +411,19 @@ void vtkDSMManager::H5DumpXML()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->DumpXML(dumpStream);
-    if(this->UpdatePiece == 0) cout << dumpStream.str() << endl;
     if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
+    // this->DSMxml = dumpStream.str();
+    if(this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
     delete myDsmDump;
+  }
+  // if(this->UpdatePiece == 0) cout << this->DSMxml << endl;
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::SendDSMXML()
+{
+  if (this->GetXMLFilePath() != NULL) {
+    cerr << "XML File Path to send: " << this->XMLFilePath << endl;
+    this->DSMBuffer->SendXML(this->XMLFilePath);
   }
 }
 //----------------------------------------------------------------------------
