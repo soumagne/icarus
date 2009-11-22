@@ -422,8 +422,9 @@ void vtkDSMManager::H5DumpXML()
 void vtkDSMManager::SendDSMXML()
 {
   if (this->GetXMLFilePath() != NULL) {
-    cerr << "XML File Path to send: " << this->XMLFilePath << endl;
-    this->DSMBuffer->SendXML(this->XMLFilePath);
+//    cerr << "XML File Path to send: " << this->XMLFilePath << endl;
+    this->DSMBuffer->PrepareXMLChannel();
+    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLFilePath);
   }
 }
 //----------------------------------------------------------------------------
