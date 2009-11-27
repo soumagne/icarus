@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : vtkDSMManager.h
-  Revision of last commit : $Rev: 754 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2009-01-09 13:40:38 +0100 #$
+  Revision of last commit : $Rev$
+  Author of last commit   : $Author$
+  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing 
@@ -67,8 +67,8 @@ public:
   vtkSetMacro(AcceptedConnection, bool);
   vtkGetMacro(AcceptedConnection, bool);
 
-  vtkSetStringMacro(XMLFilePath);
-  vtkGetStringMacro(XMLFilePath);
+  vtkSetStringMacro(XMFDescriptionFilePath);
+  vtkGetStringMacro(XMFDescriptionFilePath);
 
   bool   CreateDSM();
   bool   DestroyDSM();
@@ -81,7 +81,9 @@ public:
   void   H5Dump();
   void   H5DumpLight();
   void   H5DumpXML();
+  void   GenerateXMFDescription();
   void   SendDSMXML();
+
 //BTX
   XdmfDsmBuffer *GetDSMHandle();
 //ETX
@@ -139,9 +141,9 @@ protected:
     bool            AcceptedConnection;
     // bool            KillConnection;
 
-    char           *XMLFilePath;
-    // std::string     DSMxml;
-    // XdmfXmlNode     DSMdom;
+    char           *XMFDescriptionFilePath;
+    std::string     DumpDescription;
+    std::string     GeneratedDescription;
 #endif
     //ETX
 

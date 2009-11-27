@@ -287,6 +287,8 @@ void pqDSMViewerPanel::onConnectDSM()
       this->UI->DSMProxy->UpdateVTKObjects();
       this->UI->DSMProxy->InvokeCommand("ConnectDSM");
     }
+
+    // TODO set connection found
   }
 }
 //-----------------------------------------------------------------------------
@@ -294,6 +296,8 @@ void pqDSMViewerPanel::onDisconnectDSM()
 {
   if (this->DSMReady()) {
     this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
+
+    // TODO reset connection found
   }
 }
 //-----------------------------------------------------------------------------
@@ -376,9 +380,10 @@ void pqDSMViewerPanel::onTestDSM()
     XdmfWriter->UpdatePipeline();
 
     if(!this->UI->xdmfFilePathLineEdit->text().isEmpty() &&
-        (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description"))) {
+        (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description"))
+        & (this->ConnectionFound)) {
         pqSMAdaptor::setElementProperty(
-                this->UI->DSMProxy->GetProperty("XMLFilePath"),
+                this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
                 this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
 
         this->UI->DSMProxy->UpdateVTKObjects();
@@ -427,15 +432,22 @@ void pqDSMViewerPanel::onDisplayDSM()
 void pqDSMViewerPanel::onH5Dump()
 {
   if (this->DSMReady()) {
-    //this->UI->DSMProxy->InvokeCommand("H5DumpXML");
-    this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+    this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+    //this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
   if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {
       // Do nothing
   }
-  else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description")) {
-      // TODO Tell to generate XML file
+  else if ((this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description"))
+      & (!this->UI->xdmfFilePathLineEdit->text().isEmpty())) {
+    // TODO Tell to generate XML file
+    pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
+        this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+
+    this->UI->DSMProxy->UpdateVTKObjects();
+    this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
   }
 
   this->UI->dsmContents->setColumnCount(1);

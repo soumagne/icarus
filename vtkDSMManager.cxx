@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : vtkDSMManager.h
-  Revision of last commit : $Rev: 793 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2009-02-19 12:15:43 +0100 #$
+  Revision of last commit : $Rev$
+  Author of last commit   : $Author$
+  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing 
@@ -39,6 +39,7 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfDsmCommMpi.h"
 #include "XdmfDsmMsg.h"
 #include "XdmfDsmDump.h"
+#include "XdmfGenerator.h"
 
 typedef void* (*servicefn)(void *DsmObj) ;
 //----------------------------------------------------------------------------
@@ -65,7 +66,7 @@ typedef void* (*servicefn)(void *DsmObj) ;
 #define vtkErrorMacro(a) vtkDebugMacro(a)
 // #endif
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkDSMManager, "$Revision: 793 $");
+vtkCxxRevisionMacro(vtkDSMManager, "$Revision$");
 vtkStandardNewMacro(vtkDSMManager);
 //----------------------------------------------------------------------------
 vtkDSMManager::vtkDSMManager() 
@@ -96,10 +97,9 @@ vtkDSMManager::vtkDSMManager()
   this->TimeStep                 = 0;
   this->FileName                 = NULL;
 
-  this->XMLFilePath              = NULL;
-
-//  this->DSMxml                   = "";
-//  this->DSMdom                   = NULL;
+  this->XMFDescriptionFilePath   = NULL;
+  this->DumpDescription          = "";
+  this->GeneratedDescription     = "";
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
@@ -412,19 +412,34 @@ void vtkDSMManager::H5DumpXML()
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->DumpXML(dumpStream);
     if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
-    // this->DSMxml = dumpStream.str();
-    if(this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
+    this->DumpDescription = dumpStream.str();
+    //if(this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
     delete myDsmDump;
   }
-  // if(this->UpdatePiece == 0) cout << this->DSMxml << endl;
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::GenerateXMFDescription()
+{
+  XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
+  std::ostringstream generatedDescription;
+
+  if(this->UpdatePiece == 0) {
+    generatedDescription << "<?xml version=\"1.0\" ?>" << endl
+        << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << endl ;
+    if(this->DSMBuffer) xdmfGenerator->SetHdfFileName("DSM:test.h5:");
+    xdmfGenerator->Generate((const char*)this->XMFDescriptionFilePath, this->DumpDescription.c_str());
+    generatedDescription << xdmfGenerator->GetGeneratedDOM()->Serialize();
+    this->GeneratedDescription = generatedDescription.str();
+    vtkDebugMacro(<< this->GeneratedDescription.c_str());
+  }
+  delete xdmfGenerator;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::SendDSMXML()
 {
-  if (this->GetXMLFilePath() != NULL) {
-//    cerr << "XML File Path to send: " << this->XMLFilePath << endl;
+  if (this->GetXMFDescriptionFilePath() != NULL) {
     this->DSMBuffer->PrepareXMLChannel();
-    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLFilePath);
+    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMFDescriptionFilePath);
   }
 }
 //----------------------------------------------------------------------------
