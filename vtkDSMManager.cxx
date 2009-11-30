@@ -424,10 +424,9 @@ void vtkDSMManager::GenerateXMFDescription()
   std::ostringstream generatedDescription;
 
   if(this->UpdatePiece == 0) {
-    generatedDescription << "<?xml version=\"1.0\" ?>" << endl
-        << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << endl ;
     if(this->DSMBuffer) xdmfGenerator->SetHdfFileName("DSM:test.h5:");
     xdmfGenerator->Generate((const char*)this->XMFDescriptionFilePath, this->DumpDescription.c_str());
+    generatedDescription << xdmfGenerator->GetGeneratedDOM()->GenerateHead();
     generatedDescription << xdmfGenerator->GetGeneratedDOM()->Serialize();
     this->GeneratedDescription = generatedDescription.str();
     vtkDebugMacro(<< this->GeneratedDescription.c_str());

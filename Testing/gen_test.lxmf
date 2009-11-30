@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<Xdmf>
+  <Domain>
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/PartType2/Coordinates</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/PartType2/Acceleration</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/PartType2/Potential</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/PartType2/Velocities</DataItem>
+      </Attribute>
+      <Time Value="0.5"/>
+    </Grid>
+  </Domain>
+</Xdmf>

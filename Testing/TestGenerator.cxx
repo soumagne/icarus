@@ -21,6 +21,14 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <sstream>
+
+#include <h5dump.h>
+#include <XdmfGenerator.h>
+
+#ifdef H5_HAVE_PARALLEL
+#include <mpi.h>
+#endif
 
 using std::cerr;
 using std::cout;
@@ -41,6 +49,30 @@ int main(int argc, char *argv[])
     PRINT_INFO("Usage: " << argv[0] << " <HDF file path>" << " <XDMF template file path>" << endl);
     return EXIT_FAILURE;
   }
+
+#ifdef H5_HAVE_PARALLEL
+  MPI_Init(&argc, &argv);
+#endif
+
+  std::ostringstream  dumpStream;
+  std::ostringstream  generatedDescription;
+  XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
+  std::string         hdfFileName = argv[1];
+  std::string         lxdmfFileName = argv[2];
+
+  H5dump_xml(dumpStream, hdfFileName.c_str());
+  xdmfGenerator->SetHdfFileName(hdfFileName.c_str());
+  // cerr << dumpStream.str().c_str() << endl;
+  xdmfGenerator->Generate(lxdmfFileName.c_str(), dumpStream.str().c_str());
+  generatedDescription << xdmfGenerator->GetGeneratedDOM()->GenerateHead();
+  generatedDescription << xdmfGenerator->GetGeneratedDOM()->Serialize();
+  cout << generatedDescription.str().c_str() << endl;
+
+  delete xdmfGenerator;
+
+#ifdef H5_HAVE_PARALLEL
+  MPI_Finalize();
+#endif
 
   return EXIT_SUCCESS;
 }

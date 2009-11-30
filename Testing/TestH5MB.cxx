@@ -7,6 +7,7 @@
 #include <iomanip>
 #include <sstream>
 #include <mpi.h>
+#include <cstdlib>
 #include <time.h>
 //
 #include "H5MButil.h"

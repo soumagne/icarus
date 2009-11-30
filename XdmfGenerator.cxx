@@ -66,6 +66,8 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
   }
 
   // Start Building new DOM
+
+
   root.SetDOM(this->GeneratedDOM);
   domain.SetDOM(this->GeneratedDOM);
   root.Build();
@@ -105,11 +107,13 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
     topology = grid.GetTopology();
     topology->SetTopologyTypeFromString(this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType"));
     XdmfXmlNode topologyDINode = this->LXdmfDOM->FindElement("DataItem", 0, topologyNode);
-    XdmfConstString topologyPath = this->LXdmfDOM->GetCData(topologyDINode);
-    XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(topologyPath);
-    topology->SetNumberOfElements(this->FindNumberOfCells(hdfTopologyNode,
-        this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
-    topology->SetDataXml(this->FindDataItemInfo(hdfTopologyNode, topologyPath));
+    if(topologyDINode != NULL) {
+      XdmfConstString topologyPath = this->LXdmfDOM->GetCData(topologyDINode);
+      XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(topologyPath);
+      topology->SetNumberOfElements(this->FindNumberOfCells(hdfTopologyNode,
+          this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
+      topology->SetDataXml(this->FindDataItemInfo(hdfTopologyNode, topologyPath));
+    }
 
     // Look for Geometry
     geometry = grid.GetGeometry();
