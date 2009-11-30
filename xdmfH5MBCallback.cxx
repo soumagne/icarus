@@ -182,7 +182,14 @@ void H5MBCallback::Synchronize()
 void H5MBCallback::CloseTree()
 {
   // finished this timestep, close and delete everything
-  H5MB_close(this->tree, false);
+  herr_t status = H5MB_close(this->tree, false);
+  if ( status < 0 ) {
+    Error("closing tree ");
+  }
+  status = H5Pclose(this->AccessPlist);
+  if ( status < 0 ) {
+    Error("closing property list");
+  }
   this->tree = NULL;
   delete this->dataArrays;
   this->dataArrays = NULL;
