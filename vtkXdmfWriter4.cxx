@@ -68,6 +68,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkMPICommunicator.h"
 #endif
+#include "xdmfH5MBCallback.h"
 //
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision: 598 $");
@@ -123,6 +124,7 @@ vtkXdmfWriter4::vtkXdmfWriter4()
 
   this->BuildMode                  = VTK_XDMF_BUILD_ALL;
   this->DummyBuild                 = 0;
+  this->Callback                   = NULL;
 
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
@@ -141,6 +143,11 @@ vtkXdmfWriter4::~vtkXdmfWriter4()
       delete []this->DomainName;
       this->DomainName = NULL;
     }
+
+  if (this->Callback) {
+    this->Callback->CloseTree();
+  }
+
 }
 //----------------------------------------------------------------------------
 int vtkXdmfWriter4::FillInputPortInformation(int port, vtkInformation* info)
@@ -230,10 +237,8 @@ XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(vtkDataSet *dsinput, bool multiblo
   return grid;
 }
 //----------------------------------------------------------------------------
-// template <typename T> void vtkXW2_delete_object(T *p) { delete p; }
-//----------------------------------------------------------------------------
 XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
-    vtkDataSet *dataset, const char *name, double time, vtkXW2NodeHelp *staticnode)
+    vtkDataSet *dataset, const char *name, int index, double time, vtkXW2NodeHelp *staticnode)
 {
   XdmfDOM        *DOM = new XdmfDOM();
   XdmfRoot        root;
@@ -259,7 +264,11 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   //
   vtkstd::string hdf5name = this->BaseFileName + ".h5";
   vtkstd::stringstream hdf5group;
-  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << "/Process_" << this->UpdatePiece << ends;
+  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << "/Process_" << this->UpdatePiece;
+  if (index>=0) {
+    hdf5group << "/Block_" << index;
+  }
+  hdf5group << ends;
   if (this->DSMManager) {
     hdf5name = "DSM:" + hdf5name;
   }
@@ -285,7 +294,7 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
 
   // Build is recursive ... it will be called on all of the child nodes.
   // This updates the DOM and writes the HDF5
-  if (grid.Build(false)!=XDMF_SUCCESS) {
+  if (grid.Build()!=XDMF_SUCCESS) {
     vtkErrorMacro("Xdmf Grid Build failed");
     return NULL;
   }
@@ -353,13 +362,20 @@ XdmfDOM *vtkXdmfWriter4::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
   return cDOM;
 }
 //----------------------------------------------------------------------------
-vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *name)
+vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *name, int index)
 {
   vtkXDRDebug("MakeGridName");
   vtkstd::stringstream temp1, temp2;
   if (!name) {
-    temp1 << dataset->GetClassName() << "_" << this->UpdatePiece << vtkstd::ends;
+    temp1 << dataset->GetClassName();
   }
+  if (this->UpdateNumPieces>1) {
+    temp1 << "_P_" << this->UpdatePiece;
+  }
+  if (index>=0) {
+    temp1 << "_B_" << index;
+  }
+  temp1 << vtkstd::ends;
   vtkstd::string gridname = name ? name : temp1.str().c_str();
   return gridname;
 }
@@ -445,6 +461,14 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 #endif
 }
 //----------------------------------------------------------------------------
+void vtkXdmfWriter4::SetXdmfArrayCallbacks(XdmfArray *data)
+{
+  data->setOpenCallback( this->Callback );
+//  data->setReadCallback( this->Callback );
+  data->setWriteCallback( this->Callback );
+  data->setCloseCallback( this->Callback );
+}
+//----------------------------------------------------------------------------
 int vtkXdmfWriter4::RequestData(
   vtkInformation* request,
   vtkInformationVector** inputVector,
@@ -475,6 +499,18 @@ int vtkXdmfWriter4::RequestData(
   this->XdmfFileName     = this->WorkingDirectory + "/" + this->BaseFileName + ".xmf";
 
   //
+  // Get the raw MPI_Comm handle
+  //
+  vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
+  //
+
+  if (!this->Callback) {
+    this->Callback = new H5MBCallback(mpiComm);
+    this->Callback->SetDSMManager(this->DSMManager);
+  }
+
+  //
   // Adding to an existing file?
   //
   XdmfDOM     *outputDOM = NULL;
@@ -494,30 +530,33 @@ int vtkXdmfWriter4::RequestData(
                   
   if (dsinput) {
     bool StaticFlag = false;
-    vtkstd::string name = this->MakeGridName(dsinput, NULL);
+    vtkstd::string name = this->MakeGridName(dsinput, NULL, -1);
     staticnode = this->GetStaticGridNode(dsinput, false, outputDOM, name.c_str(), StaticFlag);
     vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
-    timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
+    timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), -1, 0.0, &helper);    
   }
   if (mbinput) {
     vtkSmartPointer<vtkCompositeDataIterator> iter;
     iter.TakeReference(mbinput->NewIterator());
-
+    int index = 0;
     timeStepDOM = this->CreateEmptyCollection("vtkMultiBlock", "Spatial");
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem()) {
       const char *dsname = mbinput->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
       dsinput = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
       bool StaticFlag = false;
       if (dsinput) {
-        vtkstd::string name = this->MakeGridName(dsinput, NULL);
+        vtkstd::string name = this->MakeGridName(dsinput, NULL, index);
         staticnode = this->GetStaticGridNode(dsinput, true, outputDOM, name.c_str(), StaticFlag);
         vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
-        XdmfDOM *block = this->CreateXdmfGrid(dsinput, name.c_str(), 0.0, &helper);    
+        std::cout << "Adding block by index " << index << std::endl;
+        XdmfDOM *block = this->CreateXdmfGrid(dsinput, name.c_str(), index++, 0.0, &helper);    
         this->AddGridToCollection(timeStepDOM, block);
         delete block;
       }
     }
   }
+
+  this->Callback->Synchronize();
 
   if (timeStepDOM) {
     XdmfXmlNode domain = timeStepDOM->FindElement("Domain");

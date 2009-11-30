@@ -3,39 +3,22 @@
 // mpiexec -localonly -n 2 -channel mt D:\cmakebuild\plugins\plugins\bin\RelWithDebInfo\TestDSM.exe dsm --dump
 //
 
-#include <cstdlib>
-#include <cstring>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
 #include <mpi.h>
 #include <time.h>
-
-#ifndef WIN32
-#  define HAVE_PTHREADS
-#  include <pthread.h>
-#elif HAVE_BOOST_THREADS
-#  include <boost/thread/thread.hpp> // Boost Threads
-#endif
-
+//
 #include "H5MButil.h"
-
-#include "Xdmf.h"
-#include "XdmfDsmDump.h"
-#include "hdf5.h"
-#include "H5FDdsm.h"
-#include <sstream>
-
-using std::cerr;
-using std::cout;
-using std::endl;
-
+//
 #define JDEBUG
 #ifdef  JDEBUG
-#  define PRINT_DEBUG_INFO(x) cout << x << endl;
+#  define PRINT_DEBUG_INFO(x) cout << x << std::endl;
 #else
 #  define PRINT_DEBUG_INFO(x)
 #endif
-#define PRINT_INFO(x) cout << x << endl;
-#define PRINT_ERROR(x) cerr << x << endl;
+#define PRINT_INFO(x) std::cout << x << std::endl;
+#define PRINT_ERROR(x) std::cerr << x << std::endl;
 //----------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
@@ -59,7 +42,11 @@ int main(int argc, char *argv[])
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
+#ifdef WIN32
   H5MB_tree_type *tree = H5MB_init("D:\\data\\xdmf\\scratch\\H5MB_Test.h5");
+#else
+  H5MB_tree_type *tree = H5MB_init("/H5MB_Test.h5");
+#endif
 
   for (int r=0; r<rank; r++) srand( (unsigned)time( NULL ) );
   //
@@ -73,19 +60,20 @@ int main(int argc, char *argv[])
         << "/Proc#" << std::setw(5) << std::setfill('0') << rank
         << "/Grid#" << std::setw(5) << std::setfill('0') << i;
 
-      int start[3]  = { 0,0,0};
-      int count[3]  = { 100,100,3};
-      int stride[3] = { 0,0,0};
-      H5MB_add(tree, data.str().c_str(), MB_H5T_NATIVE_DOUBLE, 3, start, count, stride);
+      hssize_t count[3]  = { 100,100,3};
+      H5MB_add(tree, data.str().c_str(), "H5T_STD_I32LE", 3, count);
     }
   }
 
   std::cout << "\nLocal tree on Rank " << rank << std::endl;
+  std::cout <<   "--------------------" << std::endl;
   H5MB_print(tree);
   std::cout << "\nCollecting " << std::endl;
   H5MB_collect(tree, MPI_COMM_WORLD);
   std::cout << "\nCombined tree " << std::endl;
-  H5MB_create(tree, MPI_COMM_WORLD);
+  std::cout <<   "--------------" << std::endl;
+  H5MB_create(tree, MPI_COMM_WORLD, NULL);
+  std::cout << "\nCombined tree " << std::endl;
   H5MB_print(tree);
 
 #ifdef WIN32

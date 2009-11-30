@@ -9,6 +9,8 @@ ENDIF(COMMAND CMAKE_POLICY)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
+INCLUDE_DIRECTORIES( D:/code/hdf5-v18-dsm/hl/src )
+
 IF (ParaView_BINARY_DIR)
   INCLUDE(${QT_USE_FILE}) 
   INCLUDE_DIRECTORIES(
@@ -114,13 +116,13 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
   SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/xdmfH5MBCallback.cxx
   
   GUI_INTERFACES 
     ${DSM_IFACE}
@@ -137,7 +139,7 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
-    ${PARAVIEW_HDF5_LIBRARIES}
+    ${PARAVIEW_HDF5_LIBRARIES} D:/cmakebuild/hdf5-1.8.4-dsm/Bin/RelWithDebInfo/hdf5_hl.lib 
     Xdmf
     ${Boost_LIBRARIES}
 )

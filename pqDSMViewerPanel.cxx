@@ -354,7 +354,7 @@ void pqDSMViewerPanel::onTestDSM()
     //
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
-        vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter3"));
+        vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
 
     pqSMAdaptor::setProxyProperty(
         XdmfWriter->GetProperty("DSMManager"),
@@ -432,8 +432,8 @@ void pqDSMViewerPanel::onDisplayDSM()
 void pqDSMViewerPanel::onH5Dump()
 {
   if (this->DSMReady()) {
-    this->UI->DSMProxy->InvokeCommand("H5DumpXML");
-    //this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+    //this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+    this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
   if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {

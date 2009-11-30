@@ -46,6 +46,9 @@ class vtkUnstructuredGrid;
 class vtkDataSet;
 class vtkMultiBlockDataSet;
 class vtkDSMManager;
+//BTX
+class H5MBCallback;
+//ETX
 
 class VTK_EXPORT vtkXdmfWriter4 : public vtkXdmfWriter2
 {
@@ -173,7 +176,7 @@ protected:
   // as an xdmf DOM. The HDF5 files associated with the data are written
   // to disk. The xml is returned and must be written separately.
   XdmfDOM *CreateXdmfGrid(
-    vtkDataSet *dataset, const char *name, double time, vtkXW2NodeHelp *staticnode);
+    vtkDataSet *dataset, const char *name, int index, double time, vtkXW2NodeHelp *staticnode);
 //  void BuildHeavyXdmfGrid(vtkMultiBlockDataSet *mbdataset, int data_block, int nb_arrays);
 
   // Description:
@@ -187,7 +190,7 @@ protected:
 
   XdmfXmlNode GetStaticGridNode(vtkDataSet *dsinput, bool multiblock, XdmfDOM *DOM, const char *name, bool &staticFlag);
 
-  vtkstd::string MakeGridName(vtkDataSet *dataset, const char *name);
+  vtkstd::string MakeGridName(vtkDataSet *dataset, const char *name, int index);
 
   // Description:
   // Writes the current data (dataset or multiblock) out to Xdmf xml
@@ -203,6 +206,8 @@ protected:
     vtkInformation* request,
     vtkInformationVector** inputVector,
     vtkInformationVector* vtkNotUsed(outputVector));
+
+  virtual void SetXdmfArrayCallbacks(XdmfArray *data);
 
   //
   // User Variables
@@ -231,6 +236,7 @@ protected:
   vtkstd::string WorkingDirectory;
   vtkstd::string BaseFileName;
   vtkstd::string XdmfFileName;
+  H5MBCallback  *Callback;
 //ETX
 
   //BTX

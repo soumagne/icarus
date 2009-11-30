@@ -26,7 +26,7 @@
 #include "XdmfDOM.h"
 #include "XdmfHDFDOM.h"
 
-class XDMF_EXPORT XdmfGenerator : public XdmfObject
+class XdmfGenerator : public XdmfObject
 {
 public:
   XdmfGenerator();

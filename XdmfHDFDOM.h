@@ -24,7 +24,7 @@
 
 #include "XdmfLightData.h"
 
-class XDMF_EXPORT XdmfHDFDOM : public XdmfLightData {
+class XdmfHDFDOM : public XdmfLightData {
 
 public :
 

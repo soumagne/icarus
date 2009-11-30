@@ -1,11 +1,22 @@
 #include "H5MButil.h"
 //
+#ifdef H5_HAVE_PARALLEL
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include "H5Dpublic.h"
 #include "H5Fpublic.h"
 #include "H5Ppublic.h"
 #include "H5FDpublic.h"
 #include "hdf5.h"
-//
+#include "hdf5_hl.h"
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -15,24 +26,26 @@
 //
 #include "TCL/Tree.h"
 #include "mpi.h"
-//
-//#include <boost/archive/text_oarchive.hpp>
-//#include <boost/archive/text_iarchive.hpp>
 
-#ifdef H5_HAVE_PARALLEL
+#if (!H5_USE_16_API && ((H5_VERS_MAJOR>1) || ((H5_VERS_MAJOR==1) && (H5_VERS_MINOR>6))))
+  #define HAVE_H5LT 1
+#else
+  #undef  HAVE_H5LT 
+#endif
+
 //--------------------------------------------------------------------------
 class H5MB_info {
   public:
-    H5MB_info(const char *text, int type, int rank, int *start=NULL, int *count=NULL, int *stride=NULL)
+    H5MB_info(const char *text, const char *type, int rank, hssize_t *count=NULL)
     {
       this->Text        = text;
       this->hdf5_handle = -1;
-      this->DataType    = type;
+      if (type) {
+        this->DataType  = type;
+      }
       this->Rank        = rank;
       for (int d=0; d<rank; d++) {
-        this->Start[d]  = start[d];
         this->Count[d]  = count[d];
-        this->Stride[d] = stride[d];
       }
     }
     //
@@ -42,27 +55,11 @@ class H5MB_info {
   public:
     //
     std::string Text;
-    int         DataType;
+    std::string DataType;
     int         Rank;
-    int         Start[5];
     hsize_t     Count[5];
-    int         Stride[5];
     hid_t       hdf5_handle;
     //
-/*
-    template<class Archive>
-    void serialize(Archive & ar, const unsigned int )
-    {
-      ar & Text
-      ar & DataType;
-      ar & Rank;
-//      for (int d=0; d<t.Rank; ++d) {
-        ar & t.Start;//[d];
-        ar & t.Count;//[d];
-        ar & t.Stride;//[d];
-//      }
-    }
-*/
 
   public:
     friend bool operator < (const H5MB_info& lhs, const H5MB_info& rhs) { 
@@ -73,10 +70,15 @@ class H5MB_info {
   friend std::ostream& operator<<(std::ostream& os, const H5MB_info &t)
   {
     os << t.get_text().c_str() << std::endl;
-    os << t.DataType << " " << t.Rank << " " << std::endl;
-    for (int d=0; d<t.Rank; ++d) {
-      os << t.Start[d] << " " << t.Count[d] << " " << t.Stride[d] << std::endl;
+    if (t.DataType.size()>0) {
+      os << t.DataType.c_str();
     }
+    else {
+      os << "NO_DATATYPE";
+    }
+    os << " " << t.Rank << " " << std::endl;
+    for (int d=0; d<t.Rank; ++d) os << t.Count[d] << " ";
+    os << std::endl;
     return os;
   }
 
@@ -86,10 +88,13 @@ class H5MB_info {
     char buffer[256];
     is.getline(buffer,256);
     t.set_text(buffer);
-    is >> t.DataType >> t.Rank;
-    for (int d=0; d<t.Rank; ++d) {
-      is >> t.Start[d] >> t.Count[d] >> t.Stride[d];
+    t.DataType = "";
+    char dtypebuf[256];
+    is >> dtypebuf >> t.Rank;; 
+    if (strcmp(dtypebuf,"NO_DATATYPE")!=0) {
+      t.DataType = dtypebuf;
     }
+    for (int d=0; d<t.Rank; ++d) is >> t.Count[d];
     return is;
   }
 };
@@ -105,6 +110,28 @@ namespace H5MB_utility
       if (it->get_text()==item) return it;
     }
     return node->end();
+  }
+  //------------------------------------------------------------------------
+  template<typename T> typename T::value_type* find_path(T *tree, const char *path)
+  {
+    typename T::post_order_node_iterator it = tree->post_order_node_begin();
+    for (; it!=tree->post_order_node_end(); ++it ) {
+      T *node = &(*it);
+      std::string full_path = node->get()->get_text();
+      while (node->parent()) {
+        node = node->parent();
+        if (node==tree) {
+          full_path = "/" + full_path;
+        }
+        else {
+          full_path = node->get()->get_text() + "/" + full_path;
+        }
+      }
+      if (full_path==path) {
+        return it->get();
+      }
+    }
+    return NULL;
   }
   //------------------------------------------------------------------------
   template<typename T> bool is_last_child(const T* node)
@@ -239,7 +266,7 @@ hid_t H5MB_get_type(int Id)
 */
 H5MB_tree_type *H5MB_init(const char *filename) {
   H5MB_tree_type *data = new H5MB_tree_type();
-  TreeClass *tree = new TreeClass(H5MB_info(filename, 0, 0));
+  TreeClass *tree = new TreeClass(H5MB_info(filename, NULL, 0));
   data->TreePtr = tree;
   return data;
 }
@@ -249,7 +276,7 @@ H5MB_tree_type *H5MB_init(const char *filename) {
     H5MB_add : Add an object to the tree
 
 */
-bool H5MB_add(H5MB_tree_type *treestruct, const char *path, int type, int rank, int *start, int *count, int *stride)
+bool H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, int rank, hssize_t *count)
 {
   TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
   if (!tree) return false;
@@ -266,7 +293,7 @@ bool H5MB_add(H5MB_tree_type *treestruct, const char *path, int type, int rank, 
     }
     else {
       if (it==(paths.end()-1)) {
-        parent = parent->insert(H5MB_info((*it).c_str(), type, rank, start, count, stride)).node();
+        parent = parent->insert(H5MB_info((*it).c_str(), type, rank, count)).node();
       }
       else {
         parent = parent->insert(H5MB_info((*it).c_str(), 0, 0)).node();
@@ -298,13 +325,13 @@ bool H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm)
   // Do an exchange between all processes
   //
   int len = data.str().size();
-//  std::cout << "size to send is " << len << std::endl;
+  Debug("size to send is " << len);
 
   // Collect all the trees into one big string
   std::vector<int> sizePerProcess(size);
   MPI_Allgather(&len, 1, MPI_INT, &sizePerProcess[0], 1, MPI_INT, comm);
   int totalsize = std::accumulate(sizePerProcess.begin(), sizePerProcess.end(), 0);
-//  std::cout << "Total size to allocate is " << totalsize << std::endl;
+  Debug("Total size to allocate is " << totalsize);
   std::vector<int> offsets(size+1);
   std::partial_sum(sizePerProcess.begin(), sizePerProcess.end(), offsets.begin()+1);
   std::vector<char> bigBuffer(totalsize);
@@ -333,7 +360,7 @@ bool H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm)
     operations.
 
 */
-bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm)
+bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
 {
   TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
   if (!tree) return false;
@@ -344,23 +371,25 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm)
   //
   std::string filename = tree->get()->get_text();
   
-  hid_t  file_id;         /* file and dataset identifiers */
-  hid_t  plist_id;        /* property list identifier( access template) */
   herr_t status;
    
-  // Set up file access property list with parallel I/O access
-  plist_id = H5Pcreate(H5P_FILE_ACCESS);
-  status = H5Pset_fapl_mpio(plist_id, comm, MPI_INFO_NULL);
-
-  // Create a new file collectively.
-  file_id = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+  // Create a new file collectively. If handle non-negative, we are reusing an earlier tree
+  if (tree->get()->hdf5_handle<0) {
+    tree->get()->hdf5_handle = H5Fcreate(filename.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, plist_id);
+    if ( tree->get()->hdf5_handle < 0 ) {
+      Error("Error creating file " << tree->get()->get_text().c_str());
+    }
+    else {
+      Debug("creating file " << tree->get()->get_text().c_str() << " returned handle " << tree->get()->hdf5_handle);
+    }
+  }
 
   //
   // iterate over tree nodes/leaves
   //
   typedef std::pair<TreeClass*, hid_t> location_pair;
   std::stack<location_pair> node_stack;
-  node_stack.push( location_pair(tree, file_id) );
+  node_stack.push( location_pair(tree, tree->get()->hdf5_handle) );
   std::vector<hid_t> groups;
   //
   while (!node_stack.empty()) {
@@ -370,40 +399,106 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm)
     for (TreeClass::node_iterator it=parent->node_begin(); it!=parent->node_end(); ++it ) {
       if (it->size()>0) { 
         // it's a parent node, so create a group
-        std::cout << "creating group " << it->get()->get_text().c_str() << std::endl;
-        hid_t group_id = H5Gcreate(location, it->get()->get_text().c_str(), 0);
-        node_stack.push( location_pair(&(*it), group_id) );
-        groups.push_back(group_id);
+        H5MB_info *data = it->get();
+        data->hdf5_handle = H5Gcreate(location, data->get_text().c_str(), 0);
+        if ( data->hdf5_handle < 0 ) {
+          Error("Error creating group " << data->get_text().c_str());
+        }
+        else {
+          Debug("creating group " << data->get_text().c_str() << " returned handle " << data->hdf5_handle);
+        }
+        node_stack.push( location_pair(&(*it), data->hdf5_handle) );
+        groups.push_back(data->hdf5_handle);
       }
       else {
         // it's a leaf, so create a dataset
         H5MB_info   *data = it->get();
-        std::cout << "creating dataset " << it->get()->get_text().c_str() << std::endl;
-        hid_t     type_id = H5MB_get_type(data->DataType);
+        hid_t     type_id = H5LTtext_to_dtype(data->DataType.c_str(), H5LT_DDL);
         hid_t    space_id = H5Screate_simple(data->Rank, data->Count, NULL);
-        data->hdf5_handle = H5Dcreate(location, it->get()->get_text().c_str(), type_id, space_id, H5P_DEFAULT);
-        status = H5Dclose(data->hdf5_handle);
+        data->hdf5_handle = H5Dcreate(location, data->get_text().c_str(), type_id, space_id, H5P_DEFAULT);
+        if ( data->hdf5_handle < 0 ) {
+          Error("Error creating dataset " << data->get_text().c_str());
+        }
+        else {
+          Debug("creating dataset " << data->get_text().c_str() << " returned handle " << data->hdf5_handle);
+        }
         status = H5Sclose(space_id);
-        // H5Tclose(type_id);
+        status = H5Tclose(type_id);
       }
     }
-  }
-  for (std::vector<hid_t>::iterator g=groups.begin(); g!=groups.end(); ++g) {
-    status = H5Gclose(*g);
   }
 
   // Close property list.
   H5Pclose(plist_id);
 
-
-  /*
-   * Close the file.
-   */
-  H5Fclose(file_id);
-
-
-
   return true;
+}
+//--------------------------------------------------------------------------
+/*
+
+    H5MB_get : Retrieve a dataset handle from a previously created tree
+
+*/
+hid_t H5MB_get(H5MB_tree_type *treestruct, const char *datasetpath)
+{
+  TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
+  if (!tree) return false;
+  //
+  H5MB_info *info = H5MB_utility::find_path(tree, datasetpath);
+  if (info) {
+    Error("Returning handle for " << datasetpath << " " << info->hdf5_handle);
+    return info->hdf5_handle;
+  }
+  Error("No handle for " << datasetpath);
+  return -1;
+}
+//--------------------------------------------------------------------------
+/*
+
+    H5MB_close : Close the file and free all memory associated with the 
+    multi-block tree. If reuse_tree is TRUE, then the groups and datasets 
+    are closed and all tree nodes associated with them are cleared, 
+    but the file is left open and the tree root is preserved.
+    This is typically useful for adding timesteps one after the other
+    as new groups/datasets descended from the root.
+
+*/
+bool H5MB_close(const H5MB_tree_type *treestruct, bool reuse_tree)
+{
+  TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
+  if (!tree) return false;
+  //
+  herr_t status;
+  bool   result = true;
+  // we traverse tree from leaf nodes upwards, making sure datasets
+  // are closed before groups.
+  TreeClass::post_order_node_iterator it=tree->post_order_node_begin();
+  for (; it!=tree->post_order_node_end(); ++it ) {
+    if (&(*it)==tree) {
+      // we're at the root of the tree. Exit to leave root untouched
+      break;
+    }
+    if (it->size()>0) { 
+      // it's a parent node, so close a group
+      status = H5Gclose(it->get()->hdf5_handle);
+    }
+    else { 
+      // it's a leaf node, so close a dataset
+      status = H5Dclose(it->get()->hdf5_handle);
+    }
+    if (status<0) result = false;
+  }
+  if (reuse_tree) {
+    tree->clear();
+    std::cout << "File handle is now " << tree->get()->hdf5_handle << std::endl;
+  }
+  else {
+    status = H5Fclose(tree->get()->hdf5_handle);
+    if (status<0) result = false;
+    delete tree;
+    delete treestruct;
+  }
+  return result;
 }
 //--------------------------------------------------------------------------
 /*
@@ -416,17 +511,7 @@ void H5MB_print(const H5MB_tree_type *treestruct)
   TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
   if (!tree) return;
   //
-  std::stringstream test;
-  test << *tree << std::endl;
-  std::cout << test.str().c_str() << std::endl;
   H5MB_utility::print_tree<TreeClass>(*tree, 0);
-/*
-  // make BOOST archive
-  std::stringstream ofs;
-  boost::archive::text_oarchive oa(ofs);
-  oa << *tree;
-  std::cout << ofs.str().c_str();
-*/
 }
 //--------------------------------------------------------------------------
 #endif // H5_HAVE_PARALLEL
