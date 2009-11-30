@@ -357,7 +357,7 @@ void pqDSMViewerPanel::onTestDSM()
         vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
     if (pm->GetReferenceCount()>1) {
       std::cout << " Decrementing the ref count. Fixme : JB " << std::endl;
-      pm->Delete();
+      XdmfWriter->Delete();
     }
 
     pqSMAdaptor::setProxyProperty(
