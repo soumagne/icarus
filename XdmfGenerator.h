@@ -22,11 +22,12 @@
 #ifndef XDMFGENERATOR_H
 #define XDMFGENERATOR_H
 
+#include "H5MButil.h"     // for DSM_DLL
 #include "XdmfLightData.h"
 #include "XdmfDOM.h"
 #include "XdmfHDFDOM.h"
 
-class XdmfGenerator : public XdmfObject
+class DSM_DLL XdmfGenerator : public XdmfObject
 {
 public:
   XdmfGenerator();

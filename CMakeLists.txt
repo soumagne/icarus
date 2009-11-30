@@ -9,8 +9,6 @@ ENDIF(COMMAND CMAKE_POLICY)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
-INCLUDE_DIRECTORIES( D:/code/hdf5-v18-dsm/hl/src )
-
 IF (ParaView_BINARY_DIR)
   INCLUDE(${QT_USE_FILE}) 
   INCLUDE_DIRECTORIES(
@@ -139,7 +137,7 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
-    ${PARAVIEW_HDF5_LIBRARIES} D:/cmakebuild/hdf5-1.8.4-dsm/Bin/RelWithDebInfo/hdf5_hl.lib 
+    ${PARAVIEW_HDF5_LIBRARIES} 
     Xdmf
     ${Boost_LIBRARIES}
 )
