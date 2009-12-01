@@ -275,8 +275,8 @@ bool vtkDSMManager::CreateDSM()
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->LocalBufferSizeMBytes*1024*1024);
 
   // Enable debug
-  this->DSMBuffer->DebugOn();
-  this->DSMBuffer->GetComm()->DebugOn();
+  // this->DSMBuffer->DebugOn();
+  // this->DSMBuffer->GetComm()->DebugOn();
 
   //
   // setup service thread

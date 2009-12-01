@@ -239,11 +239,18 @@ main(int argc, char *argv[])
 
     // Create a dataset in group "/"
     PRINT_DEBUG_INFO("Create the first dataset");
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+    dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+#else
     dataset_id1 = H5Dcreate(file_id, "/dset1", H5T_STD_I32BE, dataspace_id1, H5P_DEFAULT);
-
+#endif
     // Create the group MyGroup
     PRINT_DEBUG_INFO(endl << "Create the group");
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+    group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+#else
     group_id = H5Gcreate(file_id, "/MyGroup", H5P_DEFAULT);
+#endif
 
     // Create the data space for the second dataset
     PRINT_DEBUG_INFO("Create the second dataspace");
@@ -253,7 +260,11 @@ main(int argc, char *argv[])
 
     // Create the second dataset in group "/MyGroup"
     PRINT_DEBUG_INFO("Create the second dataset");
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+    dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+#else
     dataset_id2 = H5Dcreate(group_id, "dset2", H5T_STD_I32BE, dataspace_id2, H5P_DEFAULT);
+#endif
 
     // Write the first dataset
     if ((rank % 2) == 0) {
@@ -335,7 +346,11 @@ main(int argc, char *argv[])
       }
 
       // Open the first dataset
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+      dataset_id1 = H5Dopen(file_id, "/dset1", H5P_DEFAULT);
+#else
       dataset_id1 = H5Dopen(file_id, "/dset1");
+#endif
 
       // Read the dataset
       H5Dread(dataset_id1, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset1_data_test);
@@ -379,10 +394,18 @@ main(int argc, char *argv[])
           }
 
       // Open the group MyGroup
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+      group_id = H5Gopen(file_id, "/MyGroup", H5P_DEFAULT);
+#else
       group_id = H5Gopen(file_id, "/MyGroup");
+#endif
 
       // Open the second dataset
+#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+      dataset_id2 = H5Dopen(group_id, "dset2", H5P_DEFAULT);
+#else
       dataset_id2 = H5Dopen(group_id, "dset2");
+#endif
 
       // Read the dataset
       H5Dread(dataset_id2, H5T_NATIVE_INT, H5S_ALL, H5S_ALL, H5P_DEFAULT, dset2_data_test);
