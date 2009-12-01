@@ -92,7 +92,7 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
       status = H5Pset_fapl_dsm(this->AccessPlist, H5FD_DSM_INCREMENT, this->DSMManager->GetDSMHandle());
     }
     else {
-      filename = std::string(ds->GetWorkingDirectory()) + FileName;
+      filename = std::string(ds->GetWorkingDirectory()) + "/" + FileName;
       // Set up file access property list with parallel I/O access
       status = H5Pset_fapl_mpio(this->AccessPlist, this->Communicator, MPI_INFO_NULL);
     }
