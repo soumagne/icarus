@@ -429,9 +429,6 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
     }
   }
 
-  // Close property list.
-  H5Pclose(plist_id);
-
   return true;
 }
 //--------------------------------------------------------------------------
@@ -447,7 +444,7 @@ hid_t H5MB_get(H5MB_tree_type *treestruct, const char *datasetpath)
   //
   H5MB_info *info = H5MB_utility::find_path(tree, datasetpath);
   if (info) {
-    Error("Returning handle for " << datasetpath << " " << info->hdf5_handle);
+    Debug("Returning handle for " << datasetpath << " " << info->hdf5_handle);
     return info->hdf5_handle;
   }
   Error("No handle for " << datasetpath);

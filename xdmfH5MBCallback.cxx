@@ -80,7 +80,10 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     std::string filename = FileName;
     herr_t status;
     this->AccessPlist = H5Pcreate(H5P_FILE_ACCESS);
-    if (this->AccessPlist<0) {
+    if (this->AccessPlist>=0) {
+      Debug("property list created with Id " << this->AccessPlist);
+    }
+    else {
       Error("file access property list creation failed");
     }
     if (this->DSMManager && ds->GetDomain()==std::string("DSM")) {
@@ -182,13 +185,15 @@ void H5MBCallback::Synchronize()
 void H5MBCallback::CloseTree()
 {
   // finished this timestep, close and delete everything
-  herr_t status = H5MB_close(this->tree, false);
-  if ( status < 0 ) {
-    Error("closing tree ");
-  }
-  status = H5Pclose(this->AccessPlist);
+  herr_t status = H5Pclose(this->AccessPlist);
+  Debug("property list closed returning " << status);
   if ( status < 0 ) {
     Error("closing property list");
+  }
+  status = H5MB_close(this->tree, false);
+  Debug("tree closed returning " << status);
+  if ( status < 0 ) {
+    Error("closing tree ");
   }
   this->tree = NULL;
   delete this->dataArrays;

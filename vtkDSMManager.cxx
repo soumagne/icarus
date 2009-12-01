@@ -45,10 +45,10 @@ typedef void* (*servicefn)(void *DsmObj) ;
 //----------------------------------------------------------------------------
 // #ifdef JB_DEBUG__
 //----------------------------------------------------------------------------
-#ifdef AAWIN32
-#define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
+#ifdef NO_WIN32
+  #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
 #else
-#define OUTPUTTEXT(a) std::cout << (a) << "\n"; std::cout.flush();
+  #define OUTPUTTEXT(a) std::cout << (a) << "\n"; std::cout.flush();
 #endif
 
 #undef vtkDebugMacro

@@ -75,7 +75,7 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
     std::cout << vtkmsg.str().c_str() << std::endl; \
   }
   #define Debug(a) DebugMacro(0,a)
-  #define Error(a) DebugMacro(0,a)
+  #define Error(a) DebugMacro(0,"Error " << a)
 #else
   #define Debug(a) DebugMacro(a)
   #define Error(a) DebugMacro(a)
