@@ -58,17 +58,6 @@ FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
 INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
 
 #--------------------------------------------------
-IF (NOT PARAVIEW_HDF5_LIBRARIES)
-  INCLUDE(FindHDF5.cmake)
-  SET(PARAVIEW_HDF5_LIBRARIES ${HDF_LIBRARY})
-  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-ELSE (NOT PARAVIEW_HDF5_LIBRARIES)
-  INCLUDE_DIRECTORIES(../DSMDriver)
-ENDIF (NOT PARAVIEW_HDF5_LIBRARIES)
-
-#ADD_DEFINITIONS(-DH5FDmpio_DEBUG)
-
-#--------------------------------------------------
 # Set Definitions 
 #--------------------------------------------------
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)

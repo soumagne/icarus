@@ -401,7 +401,7 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
       if (it->size()>0) { 
         // it's a parent node, so create a group
         H5MB_info *data = it->get();
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+#if (!H5_USE_16_API_DEFAULT && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))))
         data->hdf5_handle = H5Gcreate(location, data->get_text().c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #else
         data->hdf5_handle = H5Gcreate(location, data->get_text().c_str(), 0);
@@ -420,7 +420,7 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
         H5MB_info   *data = it->get();
         hid_t     type_id = H5LTtext_to_dtype(data->DataType.c_str(), H5LT_DDL);
         hid_t    space_id = H5Screate_simple(data->Rank, data->Count, NULL);
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
+#if (!H5_USE_16_API_DEFAULT && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))))
         data->hdf5_handle = H5Dcreate(location, data->get_text().c_str(), type_id, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #else
         data->hdf5_handle = H5Dcreate(location, data->get_text().c_str(), type_id, space_id, H5P_DEFAULT);
