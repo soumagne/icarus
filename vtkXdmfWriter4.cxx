@@ -68,7 +68,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkMPICommunicator.h"
 #endif
-#include "xdmfH5MBCallback.h"
+#include "XdmfH5MBCallback.h"
 //
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision: 598 $");

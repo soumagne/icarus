@@ -1,0 +1,26 @@
+#-----------------------------------------------
+# Build h5dump
+#-----------------------------------------------
+IF(PARAVIEW_USE_MPI)
+  ADD_DEFINITIONS("-DMPICH_IGNORE_CXX_SEEK")
+  ADD_DEFINITIONS("-DMPICH_SKIP_MPICXX")
+#  ADD_DEFINITIONS("-DH5DUMP_EXEC")
+#  ADD_EXECUTABLE( 
+SET(h5dump_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5tools
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5tools_str
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5tools_utils
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5tools_ref
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5tools_type
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5trav
+  )
+ADD_LIBRARY(CSCS_h5dump SHARED ${h5dump_SOURCES})
+
+  TARGET_LINK_LIBRARIES(
+    CSCS_h5dump
+    ${MPI_LIBRARY}
+    ${PARAVIEW_HDF5_LIBRARIES}
+  )
+ENDIF(PARAVIEW_USE_MPI)
+
