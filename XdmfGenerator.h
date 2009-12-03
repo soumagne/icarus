@@ -27,44 +27,54 @@
 #include "XdmfDOM.h"
 #include "XdmfHDFDOM.h"
 
+#include <sstream>
+#include <string>
+
 class DSM_DLL XdmfGenerator : public XdmfObject
 {
 public:
   XdmfGenerator();
   ~XdmfGenerator();
 
+  // Set/Get HDF file name used with h5dump and where heavy data is stored
+  void SetHdfFileName(XdmfConstString);
+
   // Generated DOM put into an XDMF DOM
-  XdmfDOM     *GetGeneratedDOM();
+  XdmfDOM         *GetGeneratedDOM();
+
+  // Generated XML file put into a String
+  XdmfConstString  GetGeneratedFile();
+
+  // Generate the XML header of the being generated file
+  XdmfInt32        GenerateHead();
 
   // Generate an XDMF File from a template file and the H5dump XML output
   // Puts the result into an XDMF DOM
-  XdmfInt32    Generate(XdmfConstString, XdmfConstString);
-
-  // Set/Get HDF file name used with h5dump and where heavy data is stored
-  XdmfSetStringMacro(HdfFileName);
-  XdmfGetStringMacro(HdfFileName);
+  XdmfInt32        Generate(XdmfConstString, XdmfConstString);
 
 protected:
 
   // Convert written light XDMF Dataset path into HDF XML XPath and return
   // corresponding XML Node from the HDF DOM
-  XdmfXmlNode     FindConvertHDFPath(XdmfConstString);
+  XdmfXmlNode      FindConvertHDFPath(XdmfConstString);
 
   // Find the number of cells using the Topology Node
   // from HDF DOM and topology type
-  XdmfInt32       FindNumberOfCells(XdmfXmlNode, XdmfConstString);
+  XdmfInt32        FindNumberOfCells(XdmfXmlNode, XdmfConstString);
 
   // Find DataItem structure information from a given dataset node of the HDF DOM
   // and the path of this node as defined in the light XDMF template
-  XdmfConstString FindDataItemInfo(XdmfXmlNode, XdmfConstString);
+  XdmfConstString  FindDataItemInfo(XdmfXmlNode, XdmfConstString);
 
   // Find attribute type from a given dataset node of the HDF DOM
-  XdmfInt32       FindAttributeType(XdmfXmlNode);
+  XdmfInt32        FindAttributeType(XdmfXmlNode);
 
-  XdmfDOM    *GeneratedDOM;
-  XdmfDOM    *LXdmfDOM;
-  XdmfHDFDOM *HdfDOM;
-  XdmfString  HdfFileName;
+  std::string         HdfFileName;
+  XdmfDOM            *GeneratedDOM;
+  std::ostringstream  GeneratedFileStream;
+  std::string        *GeneratedFile;
+  XdmfDOM            *LXdmfDOM;
+  XdmfHDFDOM         *HdfDOM;
 };
 
 #endif /* XDMFGENERATOR_H */

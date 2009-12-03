@@ -420,17 +420,18 @@ void vtkDSMManager::H5DumpXML()
 //----------------------------------------------------------------------------
 void vtkDSMManager::GenerateXMFDescription()
 {
-  XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
-  std::ostringstream generatedDescription;
+  XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
-  if(this->UpdatePiece == 0) {
-    if(this->DSMBuffer) xdmfGenerator->SetHdfFileName("DSM:test.h5:");
-    xdmfGenerator->Generate((const char*)this->XMFDescriptionFilePath, this->DumpDescription.c_str());
-    generatedDescription << xdmfGenerator->GetGeneratedDOM()->GenerateHead();
-    generatedDescription << xdmfGenerator->GetGeneratedDOM()->Serialize();
-    this->GeneratedDescription = generatedDescription.str();
-    vtkDebugMacro(<< this->GeneratedDescription.c_str());
+  if(this->DSMBuffer) {
+    xdmfGenerator->SetHdfFileName("DSM:test.h5");
   }
+  else {
+    xdmfGenerator->SetHdfFileName("test.h5");
+  }
+  xdmfGenerator->GenerateHead();
+  xdmfGenerator->Generate((const char*)this->XMFDescriptionFilePath, this->DumpDescription.c_str());
+  this->GeneratedDescription = xdmfGenerator->GetGeneratedFile();
+  if(this->UpdatePiece == 0) vtkDebugMacro(<< this->GeneratedDescription.c_str());
   delete xdmfGenerator;
 }
 //----------------------------------------------------------------------------
