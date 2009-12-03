@@ -32,23 +32,19 @@ ENDIF (ParaView_BINARY_DIR)
 #--------------------------------------------------
 # Find and Use Boost
 #--------------------------------------------------
-set(Boost_DEBUG ON)
-set(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
-set(BOOST_ROOT "C:/Program Files/Boost")
-set(Boost_USE_STATIC_LIBS   ON)
-set(Boost_USE_MULTITHREADED ON)
-find_package(Boost 1.38.0 COMPONENTS thread) 
+SET(Boost_DEBUG ON)
+SET(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
+SET(BOOST_ROOT "C:/Program Files/Boost")
+SET(Boost_USE_STATIC_LIBS   ON)
+SET(Boost_USE_MULTITHREADED ON)
+FIND_PACKAGE(Boost 1.38.0 COMPONENTS thread) 
 
-if(Boost_FOUND)
-  include_directories(${Boost_INCLUDE_DIRS})
+IF(Boost_FOUND)
+  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
   #MESSAGE(${Boost_INCLUDE_DIRS})
   ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
   LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-endif()
-
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../DSMDriver)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/DSMDump-1.8)
+ENDIF(Boost_FOUND)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -58,6 +54,9 @@ FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
   ${CMAKE_CURRENT_SOURCE_DIR}/../../vtkCSCSCommon
 )
 INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../DSMDriver)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/DSMDump-1.8)
 
 #--------------------------------------------------
 # Set Definitions 
