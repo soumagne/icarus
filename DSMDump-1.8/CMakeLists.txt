@@ -1,7 +1,7 @@
 #-----------------------------------------------
 # Build h5dump
 #-----------------------------------------------
-IF(PARAVIEW_USE_MPI)
+IF(VTK_USE_MPI)
   ADD_DEFINITIONS("-DMPICH_IGNORE_CXX_SEEK")
   ADD_DEFINITIONS("-DMPICH_SKIP_MPICXX")
   #  ADD_DEFINITIONS("-DH5DUMP_EXEC")
@@ -23,5 +23,5 @@ IF(PARAVIEW_USE_MPI)
     ${MPI_LIBRARY}
     ${PARAVIEW_HDF5_LIBRARIES}
   )
-ENDIF(PARAVIEW_USE_MPI)
+ENDIF(VTK_USE_MPI)
 

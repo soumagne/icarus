@@ -70,6 +70,7 @@ XdmfInt32 XdmfGenerator::GenerateHead()
 {
  this->GeneratedFileStream << "<?xml version=\"1.0\" ?>" << endl
         << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << endl ;
+ return XDMF_SUCCESS;
 }
 //----------------------------------------------------------------------------
 XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dumpHdfDescription)

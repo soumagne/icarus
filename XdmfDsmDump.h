@@ -26,7 +26,26 @@
 
 #include <sstream>
 
-class XDMF_EXPORT XdmfDsmDump : public XdmfObject {
+//--------------------------------------------------------------------------
+#if defined(CSCS_DSM_EXPORTS)
+  #if defined (_MSC_VER)  /* MSVC Compiler Case */
+    #define DSM_DLL __declspec(dllexport)
+    #define DSM_DLLVAR extern __declspec(dllexport)
+  #elif (__GNUC__ >= 4)  /* GCC 4.x has support for visibility options */
+    #define DSM_DLL __attribute__ ((visibility("default")))
+    #define DSM_DLLVAR extern __attribute__ ((visibility("default")))
+  #endif
+#else
+  #if defined (_MSC_VER)  /* MSVC Compiler Case */
+    #define DSM_DLL __declspec(dllimport)
+    #define DSM_DLLVAR __declspec(dllimport)
+  #elif (__GNUC__ >= 4)  /* GCC 4.x has support for visibility options */
+    #define DSM_DLL __attribute__ ((visibility("default")))
+    #define DSM_DLLVAR extern __attribute__ ((visibility("default")))
+  #endif
+#endif
+
+class DSM_DLL XdmfDsmDump : public XdmfObject {
 
     public :
         XdmfDsmDump();
