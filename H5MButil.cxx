@@ -429,7 +429,11 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
           Error("Error creating dataset " << data->get_text().c_str());
         }
         else {
-          Debug("creating dataset " << data->get_text().c_str() << " returned handle " << data->hdf5_handle);
+          std::stringstream temp;
+          temp << " {"; 
+          for (int i=0; i<data->Rank; i++) temp << data->Count[i] << ",";
+          temp << "} ";
+          Debug("creating dataset " << data->get_text().c_str() << " " << temp.str().c_str() << " returned handle " << data->hdf5_handle);
         }
         status = H5Sclose(space_id);
         status = H5Tclose(type_id);

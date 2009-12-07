@@ -10,8 +10,7 @@
 #include "vtkDSMManager.h"
 
 typedef std::pair<std::string, XdmfArray *> HeavyType;
-typedef std::pair<XdmfHeavyData*, HeavyType> MapType;
-typedef std::map< XdmfHeavyData*, HeavyType> HeavyDataMap;
+typedef std::map< std::string, XdmfArray *> HeavyDataMap;
 
 class ArrayMap {
   public: 
@@ -52,7 +51,7 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
   if ( ( lastcolon == NULL ) && ( firstcolon == NULL ) ){
     Path = name;
     ds->SetPath(Path.c_str());
-    Debug("No Colons - simple HDF Filename");
+//    Debug("No Colons - simple HDF Filename");
   } 
   else if ( lastcolon != firstcolon ) {
     Domain   = std::string(name, firstcolon);;
@@ -62,8 +61,8 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     ds->SetPath(Path.c_str());
     ds->SetFileName(FileName.c_str());
     ds->SetDomain(Domain.c_str());
-    Debug("Two Colons -  Full HDF Filename Domain : " <<
-      Domain.c_str() << " File " << FileName.c_str());
+//    Debug("Two Colons -  Full HDF Filename Domain : " <<
+//      Domain.c_str() << " File " << FileName.c_str());
   } 
   else {
     Domain   = "FILE";
@@ -72,8 +71,8 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     ds->SetPath(Path.c_str());
     ds->SetFileName(FileName.c_str());
     ds->SetDomain(Domain.c_str());
-    Debug("One colon - file or domain? : " <<
-      Domain.c_str() << " File " << FileName.c_str());
+//    Debug("One colon - file or domain? : " <<
+//      Domain.c_str() << " File " << FileName.c_str());
   }
 
   if (this->tree==NULL) {
@@ -106,7 +105,8 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
   hssize_t count[5] = { 0,0,0,0,0};
   hdf->GetShape(&count[0]);
   //
-  this->dataArrays->datamap.insert( MapType(ds, HeavyType(Path, NULL)));
+  this->dataArrays->datamap.insert( HeavyType(Path, NULL));
+//  Debug("DoOpen with map size " << this->dataArrays->datamap.size());
   //
   char datatype[256];
   size_t len=256;
@@ -135,14 +135,16 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
   newArray->SetDataPointer(array->GetDataPointer());
   array->DropDataPointer();
   //
-  HeavyDataMap::iterator it = this->dataArrays->datamap.find(ds);
+  HeavyDataMap::iterator it = this->dataArrays->datamap.find(ds->GetPath());
   if (it!=this->dataArrays->datamap.end()) {
-    it->second.second = newArray;
+    it->second = newArray;
+    Debug("Set array for " << ds->GetPath());
   }
   else {
     Error("A serious error occurred matching datasets during write ");
   }
   //
+//  Debug("DoWrite with map size " << this->dataArrays->datamap.size());
   return XDMF_SUCCESS;
 }
 //----------------------------------------------------------------------------
@@ -154,11 +156,11 @@ void H5MBCallback::Synchronize()
   //
   HeavyDataMap::iterator it = this->dataArrays->datamap.begin();
   for (; it != this->dataArrays->datamap.end(); ++it) {
-    const char *datasetpath = it->second.first.c_str();
+    const char *datasetpath = it->first.c_str();
+    Debug("Fetching array for " << datasetpath);
     hid_t Dataset = H5MB_get(this->tree, datasetpath);
 
-    XdmfArray     *data_array = it->second.second;
-    XdmfHeavyData *heavy_data = it->first;
+    XdmfArray     *data_array = it->second;
 
     herr_t status = H5Dwrite( Dataset,
       data_array->GetDataType(),
