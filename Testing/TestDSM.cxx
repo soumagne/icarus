@@ -190,7 +190,7 @@ main(int argc, char *argv[])
   for(int write_step = 0; write_step < nwrite; write_step++) {
 
     PRINT_DEBUG_INFO(endl << "------ Writing step " << write_step << " ------" << endl);
-    MyDsm->ClearStorage();
+    // MyDsm->ClearStorage();
 
     // Create the file access property list
     fapl = H5Pcreate(H5P_FILE_ACCESS);

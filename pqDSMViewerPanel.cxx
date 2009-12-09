@@ -340,7 +340,8 @@ void pqDSMViewerPanel::onUnpublishDSM()
 void pqDSMViewerPanel::onTestDSM()
 {
   if (this->DSMReady()) {
-    this->UI->DSMProxy->InvokeCommand("ClearDSM");
+    // No longer needed since done automatically on create from the driver itself
+    // this->UI->DSMProxy->InvokeCommand("ClearDSM");
 
     if (!this->UI->ActiveSourceProxy) {
       vtkGenericWarningMacro(<<"Nothing to Write");
