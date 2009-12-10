@@ -33,11 +33,11 @@ int main( int argc, char *argv[] )
       return 1;
     }
 
-#ifdef WIN32
-    std::ofstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
-#else
-    std::ofstream fserver("/home/biddisco/DSM/agno_name.txt");
-#endif
+//#ifdef WIN32
+//    std::ofstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
+//#else
+//    std::ofstream fserver("/home/biddisco/DSM/agno_name.txt");
+//#endif
 
     //strcpy(serv_name, "MyTest");
 
@@ -50,10 +50,10 @@ int main( int argc, char *argv[] )
     //strcpy(port_name, argv[1]);
     MPI_Open_port(MPI_INFO_NULL, port_name);
     printf ("Our port name is %s \n", port_name);      
-    fserver << port_name << std::endl;
-    fserver.close();
+ //   fserver << port_name << std::endl;
+ //   fserver.close();
 
-    fflush(stdout);
+ //   fflush(stdout);
 
 //    merr = MPI_Publish_name(serv_name, MPI_INFO_NULL, port_name);
 //    merr = 0;
@@ -73,9 +73,9 @@ int main( int argc, char *argv[] )
       printf("Error in MPI_Comm_accept : \"%s\"\n", errmsg);
     } 
 
-//    MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
+    MPI_Recv(buf, MAX_DATA, MPI_CHAR, MPI_ANY_SOURCE, MPI_ANY_TAG, client, &status);
 
-//    printf("Server received: %s\n", buf);
+    printf("Server received: %s\n", buf);
 
  //   merr = MPI_Unpublish_name(serv_name, MPI_INFO_NULL, port_name);
  //   if (merr) {

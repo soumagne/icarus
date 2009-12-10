@@ -44,15 +44,15 @@ int main( int argc, char *argv[] )
 //    }
 //    else {
 //      strcpy( port_name_out, test );
-      char longbuff[256];
+//      char longbuff[256];
 
-#ifdef WIN_32
-    std::ifstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
-#else
-    std::ifstream fserver("/home/biddisco/DSM/agno_name.txt");
-#endif
-      fserver.getline(longbuff, 256);
-      fserver.close();
+//#ifdef WIN_32
+//    std::ifstream fserver("//ponte.cscs.ch/home/biddisco/DSM/agno_name.txt");
+//#else
+ //   std::ifstream fserver("/home/biddisco/DSM/agno_name.txt");
+//#endif
+  //    fserver.getline(longbuff, 256);
+  //    fserver.close();
       //strcpy(port_name_out, longbuff);
       strcpy(port_name_out, argv[1]);
 
@@ -67,7 +67,7 @@ int main( int argc, char *argv[] )
       }
   //  }
 
-//    MPI_Send(buf, MAX_DATA, MPI_CHAR, 0, 1, server);
+    MPI_Send(buf, MAX_DATA, MPI_CHAR, 0, 1, server);
 
 
     MPI_Comm_disconnect(&server);
