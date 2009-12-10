@@ -22,6 +22,7 @@ IF(VTK_USE_MPI)
     CSCS_h5dump
     ${MPI_LIBRARY}
     ${PARAVIEW_HDF5_LIBRARIES}
+    hdf5_hl
   )
 ENDIF(VTK_USE_MPI)
 
