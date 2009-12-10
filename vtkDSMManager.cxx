@@ -322,7 +322,7 @@ void vtkDSMManager::ConnectDSM()
 void vtkDSMManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
-  this->DSMBuffer->FreeRemoteChannel(); // Go back to normal channel
+  this->DSMBuffer->RequestLocalChannel(); // Go back to normal channel
   vtkDebugMacro(<< "Trying to disconnect");
   this->DSMBuffer->GetComm()->RemoteCommDisconnect();
 }
@@ -347,7 +347,7 @@ void *vtkDSMManager::AcceptConnection()
 {
   this->DSMBuffer->GetComm()->RemoteCommAccept();
   // We are connected and clientComm is set, the Service loop needs now to listen on the clientComm
-  this->DSMBuffer->UseRemoteChannel();
+  this->DSMBuffer->RequestRemoteChannel();
 
   this->Controller->Barrier();
   this->SetAcceptedConnection(true);
@@ -438,7 +438,7 @@ void vtkDSMManager::GenerateXMFDescription()
 void vtkDSMManager::SendDSMXML()
 {
   if (this->GetXMFDescriptionFilePath() != NULL) {
-    this->DSMBuffer->PrepareXMLChannel();
+    this->DSMBuffer->RequestXMLChannel();
     this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMFDescriptionFilePath);
   }
 }

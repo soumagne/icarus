@@ -506,7 +506,7 @@ main(int argc, char *argv[])
 #endif
 
   if(!local) { // temporary here
-    MyDsm->FreeRemoteChannel(); // Go back to normal channel
+    MyDsm->RequestLocalChannel(); // Go back to normal channel
     PRINT_DEBUG_INFO("Trying to disconnect");
     MyDsm->GetComm()->RemoteCommDisconnect();
   }
