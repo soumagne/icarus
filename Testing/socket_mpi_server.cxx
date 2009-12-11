@@ -13,9 +13,11 @@
 
 int main(int argc, char *argv[]) {
 
-  int recvbuf[15];
+  char *recvbuf;
+  int recvLength;
   int err=0, rank, nprocs;
   MPI_Comm intercomm;
+  MPI_Status status;
   int port;
   XdmfDsmSocket dsmSock;
 
@@ -51,31 +53,44 @@ int main(int argc, char *argv[]) {
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
+  printf("Waiting now for connection on port %d...", port);
   if (dsmSock.Accept() < 0) {
     fprintf(stderr, "Accept failed\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
+  printf("ok\n");
 
   MPI_Barrier(MPI_COMM_WORLD);
-//  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-//  err = MPI_Comm_join(dsmSock.GetSocketDescriptor(), &intercomm);
-//  if (err) {
-//    fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
-//  }
-//  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+  printf("Joining now communcators...");
+  err = MPI_Comm_join(dsmSock.GetClientSocketDescriptor(), &intercomm);
+  if (err) {
+    fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\n");
+  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
 
-//  err = MPI_Recv(recvbuf, 15, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
-//  if (err != MPI_SUCCESS) {
-//    fprintf(stderr, "Error in MPI_Recv on new communicator\n");
-//  }
-dsmSock.Receive(recvbuf, 5);
+  MPI_Probe(0, 0, intercomm, &status);
+  MPI_Get_count(&status, MPI_CHAR, &recvLength);
+  recvbuf = (char*) malloc(recvLength);
+  err = MPI_Recv(recvbuf, recvLength, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
+  if (err != MPI_SUCCESS) {
+    fprintf(stderr, "Error in MPI_Recv on new communicator\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
   printf("Server received: %s\n", recvbuf);
 
+  free(recvbuf);
 
-//  err = MPI_Comm_disconnect(&intercomm);
-//  if (err != MPI_SUCCESS) {
-//    fprintf(stderr, "Error in MPI_Comm_disconnect\n");
-//  }
+  printf("Disconnecting...");
+  err = MPI_Comm_disconnect(&intercomm);
+  if (err != MPI_SUCCESS) {
+    fprintf(stderr, "Error in MPI_Comm_disconnect\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\n");
+
   MPI_Finalize();
   return err;
 }

@@ -29,18 +29,9 @@
 =========================================================================*/
 #include "XdmfDsmSocket.h"
 
-// TODO The XDMF_SOCKET_FAKE_API definition is given to the compiler
-// command line by CMakeLists.txt if there is no real sockets
-// interface available.  When this macro is defined we simply make
-// every method return failure.
-//
-// Perhaps we should add a method to query at runtime whether a real
-// sockets interface is available.
-
-#ifndef XDMF_SOCKET_FAKE_API // Really needed ??
 #if defined(_WIN32) && !defined(__CYGWIN__)
-#define VTK_WINDOWS_FULL
-#include "vtkWindows.h"
+#include <windows.h>
+#include <winsock.h>
 #else
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -52,7 +43,6 @@
 #include <sys/time.h>
 #include <errno.h>
 #endif
-#endif
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define WSA_VERSION MAKEWORD(1,1)
@@ -61,23 +51,22 @@
 #define XdmfCloseSocketMacro(sock) (close(sock))
 #endif
 
-#if defined(__BORLANDC__)
-# pragma warn -8012 /* signed/unsigned comparison */
-#endif
+#define QLEN 5
 
-#if !defined(_WIN32)
-#define XDMF_HAVE_GETSOCKNAME_WITH_SOCKLEN_T
-//#define XDMF_HAVE_SO_REUSEADDR
-#endif
 //-----------------------------------------------------------------------------
 XdmfDsmSocket::XdmfDsmSocket()
 {
   this->SocketDescriptor = -1;
+  this->ClientSocketDescriptor = -1;
 }
 
 //-----------------------------------------------------------------------------
 XdmfDsmSocket::~XdmfDsmSocket()
 {
+  if (this->ClientSocketDescriptor != -1) {
+    this->CloseClient();
+    this->ClientSocketDescriptor = -1;
+  }
   if (this->SocketDescriptor != -1) {
     this->Close();
     this->SocketDescriptor = -1;
@@ -87,7 +76,6 @@ XdmfDsmSocket::~XdmfDsmSocket()
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Create()
 {
-#ifndef XDMF_SOCKET_FAKE_API
   this->SocketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
   // Eliminate windows 0.2 second delay sending (buffering) data.
   int on = 1;
@@ -95,15 +83,28 @@ int XdmfDsmSocket::Create()
     return -1;
   }
   return 0;
-#else
-  return -1;
-#endif
+}
+//-----------------------------------------------------------------------------
+int XdmfDsmSocket::Close()
+{
+  if (this->SocketDescriptor < 0) {
+    return -1;
+  }
+  return XdmfCloseSocketMacro(this->SocketDescriptor);
+}
+
+//-----------------------------------------------------------------------------
+int XdmfDsmSocket::CloseClient()
+{
+  if (this->ClientSocketDescriptor < 0) {
+    return -1;
+  }
+  return XdmfCloseSocketMacro(this->ClientSocketDescriptor);
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Bind(int port)
 {
-#ifndef XDMF_SOCKET_FAKE_API
   struct sockaddr_in server;
 
   server.sin_family = AF_INET;
@@ -113,7 +114,7 @@ int XdmfDsmSocket::Bind(int port)
   int opt=1;
 #ifdef _WIN32
   setsockopt(this->SocketDescriptor, SOL_SOCKET, SO_REUSEADDR, (char*) &opt, sizeof(int));
-#elif defined(XDMF_HAVE_SO_REUSEADDR)
+#else
   setsockopt(this->SocketDescriptor, SOL_SOCKET, SO_REUSEADDR, (void *) &opt, sizeof(int));
 #endif
 
@@ -121,77 +122,40 @@ int XdmfDsmSocket::Bind(int port)
     return -1;
   }
   return 0;
-#else
-  static_cast<void>(port);
-  return -1;
-#endif
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Accept() {
-#ifndef XDMF_SOCKET_FAKE_API
+int XdmfDsmSocket::Accept()
+{
+  struct sockaddr_in client;
+#if !defined(_WIN32) || defined(__CYGWIN__)
+  socklen_t client_len = sizeof(client);
+#else
+  int client_len = sizeof(client);
+#endif
+
   if (this->SocketDescriptor < 0) {
     return -1;
   }
-  return accept(this->SocketDescriptor, 0, 0);
-#else
-  return -1;
-#endif
+  this->ClientSocketDescriptor = accept(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&client), &client_len);
+  if (this->ClientSocketDescriptor < 0) {
+    return -1;
+  }
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Listen()
 {
-#ifndef XDMF_SOCKET_FAKE_API
   if (this->SocketDescriptor < 0) {
     return -1;
   }
-  return listen(this->SocketDescriptor, 1);
-#else
-  return -1;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-int XdmfDsmSocket::Select(unsigned long msec)
-{
-#ifndef XDMF_SOCKET_FAKE_API
-  if (this->SocketDescriptor < 0 ) {
-    // invalid socket descriptor.
-    return -1;
-  }
-
-  fd_set rset;
-  struct timeval tval;
-  struct timeval* tvalptr = 0;
-  if (msec > 0) {
-    tval.tv_sec = msec / 1000;
-    tval.tv_usec = (msec % 1000)*1000;
-    tvalptr = &tval;
-  }
-  FD_ZERO(&rset);
-  FD_SET(this->SocketDescriptor, &rset);
-  int res = select(this->SocketDescriptor + 1, &rset, 0, 0, tvalptr);
-  if(res == 0) {
-    return 0;//for time limit expire
-  }
-
-  if (res < 0 || !(FD_ISSET(this->SocketDescriptor, &rset))) {
-    // Some error.
-    return -1;
-  }
-  // The indicated socket has some activity on it.
-  return 1;
-#else
-  static_cast<void>(msec);
-  return -1;
-#endif
+  return listen(this->SocketDescriptor, QLEN);
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Connect(const char* hostName, int port)
 {
-#ifndef XDMF_SOCKET_FAKE_API
   if (this->SocketDescriptor < 0) {
     return -1;
   }
@@ -215,20 +179,14 @@ int XdmfDsmSocket::Connect(const char* hostName, int port)
 
   return connect(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&name),
       sizeof(name));
-#else
-  static_cast<void>(hostName);
-  static_cast<void>(port);
-  return -1;
-#endif
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::GetPort()
 {
-#ifndef XDMF_SOCKET_FAKE_API
   struct sockaddr_in sockinfo;
   memset(&sockinfo, 0, sizeof(sockinfo));
-#if defined(XDMF_HAVE_GETSOCKNAME_WITH_SOCKLEN_T)
+#if !defined(_WIN32) || defined(__CYGWIN__)
   socklen_t sizebuf = sizeof(sockinfo);
 #else
   int sizebuf = sizeof(sockinfo);
@@ -237,28 +195,11 @@ int XdmfDsmSocket::GetPort()
     return -1;
   }
   return ntohs(sockinfo.sin_port);
-#else
-  return -1;
-#endif
-}
-
-//-----------------------------------------------------------------------------
-int XdmfDsmSocket::Close()
-{
-#ifndef XDMF_SOCKET_FAKE_API
-  if (this->SocketDescriptor < 0) {
-    return -1;
-  }
-  return XdmfCloseSocketMacro(this->SocketDescriptor);
-#else
-  return -1;
-#endif
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Send(const void* data, int length)
 {
-#ifndef XDMF_SOCKET_FAKE_API
   if (!this->GetConnected()) {
     return -1;
   }
@@ -269,7 +210,7 @@ int XdmfDsmSocket::Send(const void* data, int length)
   const char* buffer = reinterpret_cast<const char*>(data);
   int total = 0;
   do {
-    int flags;
+    int flags, n;
 #if defined(_WIN32) && !defined(__CYGWIN__)
     flags = 0;
 #else
@@ -277,25 +218,23 @@ int XdmfDsmSocket::Send(const void* data, int length)
     // flags = MSG_NOSIGNAL; //disable signal on Unix boxes.
     flags = 0;
 #endif
-    int n = send(this->SocketDescriptor, buffer+total, length-total, flags);
-    if(n < 0) {
+    if (this->ClientSocketDescriptor < 0) {// Send from client to server
+      n = send(this->SocketDescriptor, buffer+total, length-total, flags);
+    } else {// Send from server to client
+      n = send(this->ClientSocketDescriptor, buffer+total, length-total, flags);
+    }
+    if (n < 0) {
       XdmfErrorMessage("Socket Error: Send failed.");
       return -1;
     }
     total += n;
   } while(total < length);
   return 0;
-#else
-  static_cast<void>(data);
-  static_cast<void>(length);
-  return -1;
-#endif
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Receive(void* data, int length, int readFully/*=1*/)
 {
-#ifndef XDMF_SOCKET_FAKE_API
   if (!this->GetConnected()) {
     return -1;
   }
@@ -303,10 +242,15 @@ int XdmfDsmSocket::Receive(void* data, int length, int readFully/*=1*/)
   char* buffer = reinterpret_cast<char*>(data);
   int total = 0;
   do {
+    int n;
 #if defined(_WIN32) && !defined(__CYGWIN__)
     int trys = 0;
 #endif
-    int n = recv(this->SocketDescriptor, buffer+total, length-total, 0);
+    if (this->ClientSocketDescriptor < 0) {// Recv from Server to Client
+      n = recv(this->SocketDescriptor, buffer+total, length-total, 0);
+    } else {// Recv from Client to Server
+      n = recv(this->ClientSocketDescriptor, buffer+total, length-total, 0);
+    }
     if(n < 1) {
 #if defined(_WIN32) && !defined(__CYGWIN__)
       // On long messages, Windows recv sometimes fails with WSAENOBUFS, but
@@ -328,10 +272,4 @@ int XdmfDsmSocket::Receive(void* data, int length, int readFully/*=1*/)
     total += n;
   } while(readFully && total < length);
   return total;
-#else
-  static_cast<void>(data);
-  static_cast<void>(length);
-  static_cast<void>(readFully);
-  return -1;
-#endif
 }

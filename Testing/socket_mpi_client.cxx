@@ -44,28 +44,38 @@ int main(int argc, char *argv[]) {
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
+  printf("Attempt to connect to %s:%d...", hostname, port);
   if(dsmSock.Connect(hostname, port) < 0) {
     fprintf(stderr, "Unable to connect to %s:%d\n", hostname, port);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
+  printf("ok\n");
 
   MPI_Barrier(MPI_COMM_WORLD);
-//  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
- // err = MPI_Comm_join(dsmSock.GetSocketDescriptor(), &intercomm);
- // if (err) {
- //   fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
- // }
-//  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
+  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+  err = MPI_Comm_join(dsmSock.GetSocketDescriptor(), &intercomm);
+  if (err) {
+    fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
 
-//  err = MPI_Send(sendbuf, strlen(sendbuf)+1, MPI_CHAR, 0, 0, intercomm);
-//  if (err != MPI_SUCCESS) {
-//    fprintf(stderr, "Error in MPI_Send on new communicator\n");
-//  }
-dsmSock.Send(sendbuf, 5);
-//  err = MPI_Comm_disconnect(&intercomm);
-//  if (err != MPI_SUCCESS) {
-//    fprintf(stderr, "Error in MPI_Comm_disconnect\n");
-//  }
+  printf("Sending message...");
+  err = MPI_Send(sendbuf, strlen(sendbuf)+1, MPI_CHAR, 0, 0, intercomm);
+  if (err != MPI_SUCCESS) {
+    fprintf(stderr, "Error in MPI_Send on new communicator\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\n");
+
+  printf("Disconnecting...");
+  err = MPI_Comm_disconnect(&intercomm);
+  if (err != MPI_SUCCESS) {
+    fprintf(stderr, "Error in MPI_Comm_disconnect\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\n");
+
   MPI_Finalize();
   return err;
 }

@@ -49,6 +49,7 @@ public:
   int GetConnected() { return (this->SocketDescriptor >=0); }
 
   XdmfGetValueMacro(SocketDescriptor, int);
+  XdmfGetValueMacro(ClientSocketDescriptor, int);
 
   // Description:
   // Creates an endpoint for communication and returns the descriptor.
@@ -58,6 +59,10 @@ public:
   // Description:
   // Close the socket.
   int Close();
+
+  // Description:
+  // Close the client socket if it exists.
+  int CloseClient();
 
   // Description:
   // Binds socket to a particular port.
@@ -104,6 +109,7 @@ public:
 
 protected:
   int SocketDescriptor;
+  int ClientSocketDescriptor;
 };
 
 
