@@ -12,6 +12,12 @@ IF(VTK_USE_MPI)
 
   ADD_EXECUTABLE(namepub_server ${CMAKE_CURRENT_SOURCE_DIR}/namepub_server.cpp)
   TARGET_LINK_LIBRARIES(namepub_server CSCS_DSM)
+  
+  ADD_EXECUTABLE(socket_mpi_client ${CMAKE_CURRENT_SOURCE_DIR}/socket_mpi_client.cxx)
+  TARGET_LINK_LIBRARIES(socket_mpi_client CSCS_DSM)
+
+  ADD_EXECUTABLE(socket_mpi_server ${CMAKE_CURRENT_SOURCE_DIR}/socket_mpi_server.cxx)
+  TARGET_LINK_LIBRARIES(socket_mpi_server CSCS_DSM)
 
   ADD_EXECUTABLE(TestDSM ${CMAKE_CURRENT_SOURCE_DIR}/TestDSM.cxx)
   TARGET_LINK_LIBRARIES(TestDSM CSCS_DSM)
