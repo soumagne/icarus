@@ -9,7 +9,11 @@
 #include <cstdlib>
 #include <mpi.h>
 
+#ifndef TESTSOCKET
 #include "XdmfDsmSocket.h"
+#else
+#include "TestSocket.h"
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -18,8 +22,12 @@ int main(int argc, char *argv[]) {
   int err=0, rank, nprocs;
   MPI_Comm intercomm;
   MPI_Status status;
-  int port;
-  XdmfDsmSocket dsmSock;
+  int port; char *hostName = NULL;
+#ifndef TESTSOCKET
+  XdmfDsmSocket sock;
+#else
+  TestSocket sock;
+#endif
 
   MPI_Init( &argc, &argv );
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
@@ -30,43 +38,48 @@ int main(int argc, char *argv[]) {
     return 0;
   }
 
-  if (argc != 2) {
-     fprintf(stderr, "Usage: %s port\n", argv[0]);
-     MPI_Finalize();
-     return 0;
-   }
+  if (argc == 2) {
+    port = atoi(argv[1]);
+  }
+  else if (argc == 3) {
+    hostName = argv[1];
+    port = atoi(argv[2]);
+  }
+  else {
+    fprintf(stderr, "Usage: %s [hostName] port\n", argv[0]);
+    MPI_Finalize();
+    return 0;
+  }
 
-  port = atoi(argv[1]);
-
-  if (dsmSock.Create() < 0) {
+  if (sock.Create() < 0) {
     fprintf(stderr, "Server cannot open socket\n");
     MPI_Abort(MPI_COMM_WORLD,1);
   }
 
-  if (dsmSock.Bind(port) < 0) {
+  if (sock.Bind(port, hostName) < 0) {
     fprintf(stderr, "Bind failed\n");
     MPI_Abort(MPI_COMM_WORLD,1);
   }
 
-  if (dsmSock.Listen() < 0) {
+  if (sock.Listen() < 0) {
     fprintf(stderr, "Listen failed\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   printf("Waiting now for connection on port %d...", port);
-  if (dsmSock.Accept() < 0) {
+  if (sock.Accept() < 0) {
     fprintf(stderr, "Accept failed\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
   printf("ok\n");
 
   printf("Receiving test message using sockets only...");
-  if (dsmSock.Receive(&recvLength1, sizeof(recvLength1)) < 0) {
+  if (sock.Receive(&recvLength1, sizeof(recvLength1)) < 0) {
       fprintf(stderr, "Error in Socket Receive\n");
       MPI_Abort(MPI_COMM_WORLD, 1);
     }
   recvbuf1 = (char*) malloc(recvLength1);
-  if (dsmSock.Receive(recvbuf1, recvLength1) < 0) {
+  if (sock.Receive(recvbuf1, recvLength1) < 0) {
     fprintf(stderr, "Error in Socket Receive\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
@@ -76,7 +89,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   printf("Joining now communicators...");
-  err = MPI_Comm_join(dsmSock.GetClientSocketDescriptor(), &intercomm);
+  err = MPI_Comm_join(sock.GetClientSocketDescriptor(), &intercomm);
   if (err) {
     fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
     MPI_Abort(MPI_COMM_WORLD, 1);

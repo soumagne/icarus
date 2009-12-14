@@ -1,10 +1,10 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : XdmfDsmSocket.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
+  Module                  : TestSocket.h
+  Revision of last commit : $Rev: 1481 $
+  Author of last commit   : $Author: soumagne $
+  Date of last commit     : $Date:: 2009-12-11 16:30:26 +0100 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -27,7 +27,7 @@
      PURPOSE.  See the above copyright notice for more information.
 
 =========================================================================*/
-#include "XdmfDsmSocket.h"
+#include "TestSocket.h"
 
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #include <windows.h>
@@ -44,24 +44,26 @@
 #include <errno.h>
 #endif
 
+#include <cstring>
+
 #if defined(_WIN32) && !defined(__CYGWIN__)
 #define WSA_VERSION MAKEWORD(1,1)
-#define XdmfCloseSocketMacro(sock) (closesocket(sock))
+#define CloseSocketMacro(sock) (closesocket(sock))
 #else
-#define XdmfCloseSocketMacro(sock) (close(sock))
+#define CloseSocketMacro(sock) (close(sock))
 #endif
 
 #define QLEN 5
 
 //-----------------------------------------------------------------------------
-XdmfDsmSocket::XdmfDsmSocket()
+TestSocket::TestSocket()
 {
   this->SocketDescriptor = -1;
   this->ClientSocketDescriptor = -1;
 }
 
 //-----------------------------------------------------------------------------
-XdmfDsmSocket::~XdmfDsmSocket()
+TestSocket::~TestSocket()
 {
   if (this->ClientSocketDescriptor != -1) {
     this->CloseClient();
@@ -74,7 +76,7 @@ XdmfDsmSocket::~XdmfDsmSocket()
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Create()
+int TestSocket::Create()
 {
   this->SocketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
   // Eliminate windows 0.2 second delay sending (buffering) data.
@@ -85,25 +87,25 @@ int XdmfDsmSocket::Create()
   return 0;
 }
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Close()
+int TestSocket::Close()
 {
   if (this->SocketDescriptor < 0) {
     return -1;
   }
-  return XdmfCloseSocketMacro(this->SocketDescriptor);
+  return CloseSocketMacro(this->SocketDescriptor);
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::CloseClient()
+int TestSocket::CloseClient()
 {
   if (this->ClientSocketDescriptor < 0) {
     return -1;
   }
-  return XdmfCloseSocketMacro(this->ClientSocketDescriptor);
+  return CloseSocketMacro(this->ClientSocketDescriptor);
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Bind(int port, const char *hostName)
+int TestSocket::Bind(int port, const char *hostName)
 {
   struct sockaddr_in server;
   struct hostent *hp = NULL;
@@ -117,7 +119,6 @@ int XdmfDsmSocket::Bind(int port, const char *hostName)
     }
   }
   if (!hp || (hostName == NULL)) {
-    // XdmfErrorMacro("Unknown host: " << hostName);
     server.sin_addr.s_addr = INADDR_ANY;
   } else {
     memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
@@ -139,7 +140,7 @@ int XdmfDsmSocket::Bind(int port, const char *hostName)
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Accept()
+int TestSocket::Accept()
 {
   struct sockaddr_in client;
 #if !defined(_WIN32) || defined(__CYGWIN__)
@@ -159,7 +160,7 @@ int XdmfDsmSocket::Accept()
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Listen()
+int TestSocket::Listen()
 {
   if (this->SocketDescriptor < 0) {
     return -1;
@@ -168,7 +169,7 @@ int XdmfDsmSocket::Listen()
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Connect(const char* hostName, int port)
+int TestSocket::Connect(const char* hostName, int port)
 {
   if (this->SocketDescriptor < 0) {
     return -1;
@@ -182,7 +183,6 @@ int XdmfDsmSocket::Connect(const char* hostName, int port)
   }
 
   if (!hp) {
-    // XdmfErrorMacro("Unknown host: " << hostName);
     return -1;
   }
 
@@ -196,7 +196,7 @@ int XdmfDsmSocket::Connect(const char* hostName, int port)
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::GetPort()
+int TestSocket::GetPort()
 {
   struct sockaddr_in sockinfo;
   memset(&sockinfo, 0, sizeof(sockinfo));
@@ -212,7 +212,7 @@ int XdmfDsmSocket::GetPort()
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Send(const void* data, int length)
+int TestSocket::Send(const void* data, int length)
 {
   if (!this->GetConnected()) {
     return -1;
@@ -238,7 +238,6 @@ int XdmfDsmSocket::Send(const void* data, int length)
       n = send(this->ClientSocketDescriptor, buffer+total, length-total, flags);
     }
     if (n < 0) {
-      XdmfErrorMessage("Socket Error: Send failed.");
       return -1;
     }
     total += n;
@@ -247,7 +246,7 @@ int XdmfDsmSocket::Send(const void* data, int length)
 }
 
 //-----------------------------------------------------------------------------
-int XdmfDsmSocket::Receive(void* data, int length, int readFully/*=1*/)
+int TestSocket::Receive(void* data, int length, int readFully/*=1*/)
 {
   if (!this->GetConnected()) {
     return -1;
@@ -280,7 +279,6 @@ int XdmfDsmSocket::Receive(void* data, int length, int readFully/*=1*/)
       int errorNumber = errno;
       if (errorNumber == EINTR) continue;
 #endif
-      XdmfErrorMessage("Socket Error: Receive failed.");
       return -1;
     }
     total += n;

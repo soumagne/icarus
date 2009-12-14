@@ -10,7 +10,11 @@
 #include <cstdlib>
 #include <mpi.h>
 
+#ifndef TESTSOCKET
 #include "XdmfDsmSocket.h"
+#else
+#include "TestSocket.h"
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -21,7 +25,11 @@ int main(int argc, char *argv[]) {
   MPI_Comm intercomm;
   int port;
   char hostname[MPI_MAX_PROCESSOR_NAME];
-  XdmfDsmSocket dsmSock;
+#ifndef TESTSOCKET
+  XdmfDsmSocket sock;
+#else
+  TestSocket sock;
+#endif
 
   MPI_Init(&argc, &argv);
   MPI_Comm_size(MPI_COMM_WORLD,&nprocs);
@@ -41,13 +49,13 @@ int main(int argc, char *argv[]) {
   strcpy(hostname, argv[1]);
   port = atoi(argv[2]);
 
-  if(dsmSock.Create() < 0) {
+  if(sock.Create() < 0) {
     fprintf(stderr, "Unable to create socket\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
   printf("Attempting to connect to %s:%d...", hostname, port);
-  if(dsmSock.Connect(hostname, port) < 0) {
+  if(sock.Connect(hostname, port) < 0) {
     fprintf(stderr, "Unable to connect to %s:%d\n", hostname, port);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
@@ -55,11 +63,11 @@ int main(int argc, char *argv[]) {
 
   printf("Sending test message using sockets only...");
   sendLength1 = strlen(sendbuf1)+1;
-  if (dsmSock.Send(&sendLength1, sizeof(int)) < 0) {
+  if (sock.Send(&sendLength1, sizeof(int)) < 0) {
     fprintf(stderr, "Error in Socket Send\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
-  if (dsmSock.Send(sendbuf1, sendLength1) < 0) {
+  if (sock.Send(sendbuf1, sendLength1) < 0) {
     fprintf(stderr, "Error in Socket Send\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
@@ -68,7 +76,7 @@ int main(int argc, char *argv[]) {
   MPI_Barrier(MPI_COMM_WORLD);
 
   printf("Joining now communicators...");
-  err = MPI_Comm_join(dsmSock.GetSocketDescriptor(), &intercomm);
+  err = MPI_Comm_join(sock.GetSocketDescriptor(), &intercomm);
   if (err) {
     fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
     MPI_Abort(MPI_COMM_WORLD, 1);

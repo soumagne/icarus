@@ -1,10 +1,10 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : XdmfDsmSocket.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
+  Module                  : TestSocket.h
+  Revision of last commit : $Rev: 1481 $
+  Author of last commit   : $Author: soumagne $
+  Date of last commit     : $Date:: 2009-12-11 16:30:26 +0100 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -32,24 +32,30 @@
 // This abstract class encapsulates a BSD socket. It provides an API for
 // basic socket operations.
 
-#ifndef XDMFDSMSOCKET_H
-#define XDMFDSMSOCKET_H
+#ifndef TESTSOCKET_H
+#define TESTSOCKET_H
 
-#include "XdmfObject.h"
+#include <cstdlib>
 
-class XDMF_EXPORT XdmfDsmSocket : public XdmfObject {
+#define GetValueMacro(var,type) \
+type Get##var () \
+  { \
+  return ( this->var ); \
+  }
+
+class TestSocket {
 
 public:
-  XdmfDsmSocket();
-  ~XdmfDsmSocket();
+  TestSocket();
+  ~TestSocket();
 
   // ----- Status API ----
   // Description:
   // Check if the socket is alive.
   int GetConnected() { return (this->SocketDescriptor >=0); }
 
-  XdmfGetValueMacro(SocketDescriptor, int);
-  XdmfGetValueMacro(ClientSocketDescriptor, int);
+  GetValueMacro(SocketDescriptor, int);
+  GetValueMacro(ClientSocketDescriptor, int);
 
   // Description:
   // Creates an endpoint for communication and returns the descriptor.
@@ -113,4 +119,4 @@ protected:
 };
 
 
-#endif /* XDMFDSMSOCKET_H */
+#endif /* TESTSOCKET_H */
