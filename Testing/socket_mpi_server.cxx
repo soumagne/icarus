@@ -13,8 +13,8 @@
 
 int main(int argc, char *argv[]) {
 
-  char *recvbuf;
-  int recvLength;
+  char *recvbuf1, *recvbuf2;
+  int recvLength1 ,recvLength2;
   int err=0, rank, nprocs;
   MPI_Comm intercomm;
   MPI_Status status;
@@ -60,28 +60,40 @@ int main(int argc, char *argv[]) {
   }
   printf("ok\n");
 
+  printf("Receiving test message using sockets only...");
+  if (dsmSock.Receive(&recvLength1, sizeof(recvLength1)) < 0) {
+      fprintf(stderr, "Error in Socket Receive\n");
+      MPI_Abort(MPI_COMM_WORLD, 1);
+    }
+  recvbuf1 = (char*) malloc(recvLength1);
+  if (dsmSock.Receive(recvbuf1, recvLength1) < 0) {
+    fprintf(stderr, "Error in Socket Receive\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\nServer received: %s\n", recvbuf1);
+  free(recvbuf1);
+
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
-  printf("Joining now communcators...");
+
+  printf("Joining now communicators...");
   err = MPI_Comm_join(dsmSock.GetClientSocketDescriptor(), &intercomm);
   if (err) {
     fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
   printf("ok\n");
-  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
 
+  printf("Receiving test message using new MPI communicator...");
   MPI_Probe(0, 0, intercomm, &status);
-  MPI_Get_count(&status, MPI_CHAR, &recvLength);
-  recvbuf = (char*) malloc(recvLength);
-  err = MPI_Recv(recvbuf, recvLength, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
+  MPI_Get_count(&status, MPI_CHAR, &recvLength2);
+  recvbuf2 = (char*) malloc(recvLength2);
+  err = MPI_Recv(recvbuf2, recvLength2, MPI_CHAR, 0, 0, intercomm, MPI_STATUS_IGNORE);
   if (err != MPI_SUCCESS) {
     fprintf(stderr, "Error in MPI_Recv on new communicator\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
-  printf("Server received: %s\n", recvbuf);
-
-  free(recvbuf);
+  printf("ok\nServer received: %s\n", recvbuf2);
+  free(recvbuf2);
 
   printf("Disconnecting...");
   err = MPI_Comm_disconnect(&intercomm);

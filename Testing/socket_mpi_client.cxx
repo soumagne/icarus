@@ -14,7 +14,9 @@
 
 int main(int argc, char *argv[]) {
 
-  char sendbuf[] = "Hello World!";
+  char sendbuf1[] = "Hello World!";
+  int sendLength1;
+  char sendbuf2[] = "My name is Bob";
   int err=0, rank, nprocs;
   MPI_Comm intercomm;
   int port;
@@ -44,24 +46,37 @@ int main(int argc, char *argv[]) {
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
 
-  printf("Attempt to connect to %s:%d...", hostname, port);
+  printf("Attempting to connect to %s:%d...", hostname, port);
   if(dsmSock.Connect(hostname, port) < 0) {
     fprintf(stderr, "Unable to connect to %s:%d\n", hostname, port);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
   printf("ok\n");
 
+  printf("Sending test message using sockets only...");
+  sendLength1 = strlen(sendbuf1)+1;
+  if (dsmSock.Send(&sendLength1, sizeof(int)) < 0) {
+    fprintf(stderr, "Error in Socket Send\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  if (dsmSock.Send(sendbuf1, sendLength1) < 0) {
+    fprintf(stderr, "Error in Socket Send\n");
+    MPI_Abort(MPI_COMM_WORLD, 1);
+  }
+  printf("ok\n");
+
   MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Comm_set_errhandler(MPI_COMM_WORLD, MPI_ERRORS_RETURN);
+
+  printf("Joining now communicators...");
   err = MPI_Comm_join(dsmSock.GetSocketDescriptor(), &intercomm);
   if (err) {
     fprintf(stderr, "Error in MPI_Comm_join %d\n", err);
     MPI_Abort(MPI_COMM_WORLD, 1);
   }
-  MPI_Comm_set_errhandler(intercomm, MPI_ERRORS_RETURN);
+  printf("ok\n");
 
-  printf("Sending message...");
-  err = MPI_Send(sendbuf, strlen(sendbuf)+1, MPI_CHAR, 0, 0, intercomm);
+  printf("Sending test message using new MPI communicator...");
+  err = MPI_Send(sendbuf2, strlen(sendbuf2)+1, MPI_CHAR, 0, 0, intercomm);
   if (err != MPI_SUCCESS) {
     fprintf(stderr, "Error in MPI_Send on new communicator\n");
     MPI_Abort(MPI_COMM_WORLD, 1);
