@@ -85,15 +85,17 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     else {
       Error("file access property list creation failed");
     }
-    if (this->DSMManager && ds->GetDomain()==std::string("DSM")) {
-      // Set up file access property list with DSM
+    // If using DSM - Set up file access property list with DSM handle
+    if (this->DSMManager && ds->GetDomain()==std::string("DSM")) {      
       H5FD_dsm_init();
       status = H5Pset_fapl_dsm(this->AccessPlist, H5FD_DSM_INCREMENT, this->DSMManager->GetDSMHandle());
     }
     else {
       filename = std::string(ds->GetWorkingDirectory()) + "/" + FileName;
-      // Set up file access property list with parallel I/O access
-      status = H5Pset_fapl_mpio(this->AccessPlist, this->Communicator, MPI_INFO_NULL);
+      // if we are running in parallel, setup with MPI_IO
+      if (this->Size>1) { 
+        status = H5Pset_fapl_mpio(this->AccessPlist, this->Communicator, MPI_INFO_NULL);
+      }
     }
     if (status<0) {
       Error("setting file access property list information failed");

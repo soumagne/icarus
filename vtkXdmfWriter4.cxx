@@ -264,9 +264,9 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   //
   vtkstd::string hdf5name = this->BaseFileName + ".h5";
   vtkstd::stringstream hdf5group;
-  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << "/Process_" << this->UpdatePiece;
+  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << XDMFW_GROUP_SEPARATOR << "Process_" << this->UpdatePiece;
   if (index>=0) {
-    hdf5group << "/Block_" << index;
+    hdf5group << XDMFW_GROUP_SEPARATOR << "Block_" << index;
   }
   hdf5group << ends;
   if (this->DSMManager) {

@@ -169,6 +169,7 @@ ENDIF(CSCS_PLUGIN_Fluent)
 ADD_EXECUTABLE(
   ConvertToXdmf
   ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/vtkSubdivideUnstructuredGrid.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/vtkSubdivideBlocksFilter.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
 )
 
