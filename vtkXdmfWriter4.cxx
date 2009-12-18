@@ -63,7 +63,6 @@
 #include <libxml/tree.h>
 //
 #ifdef VTK_USE_MPI
-#include "vtkExtentTranslator.h"
 #include "vtkMPI.h"
 #include "vtkMultiProcessController.h"
 #include "vtkMPICommunicator.h"
