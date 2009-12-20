@@ -152,6 +152,8 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
 //----------------------------------------------------------------------------
 void H5MBCallback::Synchronize()
 {
+  if (!this->tree) return;
+  //
   H5MB_collect(this->tree, this->Communicator);
 //  H5MB_print(this->tree);
   H5MB_create(this->tree, this->Communicator, this->AccessPlist);
@@ -188,6 +190,8 @@ void H5MBCallback::Synchronize()
 //----------------------------------------------------------------------------
 void H5MBCallback::CloseTree()
 {
+  if (!this->tree) return;
+  //
   // finished this timestep, close and delete everything
   herr_t status = H5Pclose(this->AccessPlist);
   Debug("property list closed returning " << status);
