@@ -214,8 +214,9 @@ XdmfDOM *vtkXdmfWriter4::ParseExistingFile(const char* filename)
 XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(vtkDataSet *dsinput, bool multiblock, XdmfDOM *DOM, const char *name, bool &staticFlag)
 {
   vtkXDRDebug("GetStaticGridNode");
-  staticFlag = false;
+  // on first time step, there is no valid DOM yet, only second onwards make sense!
   if (!DOM) return NULL;
+  staticFlag = false;
   XdmfXmlNode grid = NULL;
   //
   if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) || this->TopologyConstant)
@@ -404,10 +405,9 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 
   // Using parallel mode, get XML blocks from each process and gather on node 0
 #ifdef VTK_USE_MPI
-  if (this->Controller && (this->UpdateNumPieces > 1)) {
+  if (this->Controller && (this->UpdateNumPieces>1)) {
     vtkXDRDebug("Gathering XML blocks");
     if (this->UpdatePiece != 0) {// Slave
-
       int nb_blocks = timestep->GetNumberOfChildren(grid);// If more than one block per process
       if (this->TemporalCollection != 0) nb_blocks--;// Only need the time value from the master
       this->Controller->Send(&nb_blocks, 1, 0, 0);
@@ -421,7 +421,6 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
       }
     }
     else {// Master
-
       int recv_len, recv_nb_blocks;
       char *recv;
       XdmfConstString text = timestep->Serialize(domain->children);
@@ -437,7 +436,7 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
         outputDOM->InsertFromString(out_domain, text);
         out_space_grid = outputDOM->FindElement("Grid", 0, out_domain);
       }
-      for (int i = 1; i < this->UpdateNumPieces; i++) {
+      for (int i=1; i<this->UpdateNumPieces; i++) {
         this->Controller->Receive(&recv_nb_blocks, 1, i, 0);
         for (int j=0 ; j<recv_nb_blocks; j++) {
           this->Controller->Receive(&recv_len, 1, i, 1);
@@ -559,7 +558,6 @@ int vtkXdmfWriter4::RequestData(
 
   if (timeStepDOM) {
     XdmfXmlNode domain = timeStepDOM->FindElement("Domain");
-
     this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
   }
 
