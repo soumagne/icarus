@@ -62,20 +62,19 @@
 #include "XdmfLightData.h"
 #include <libxml/tree.h>
 //
-#ifdef VTK_USE_MPI
-#include "vtkMPI.h"
+// #undef VTK_USE_MPI
 #include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
+#ifdef VTK_USE_MPI
+  #include "vtkMPIController.h"
+  #include "vtkMPI.h"
 #endif
 #include "XdmfH5MBCallback.h"
 //
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision: 598 $");
 vtkStandardNewMacro(vtkXdmfWriter4);
-#ifdef VTK_USE_MPI
 vtkCxxSetObjectMacro(vtkXdmfWriter4, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
-#endif
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
 #ifdef JB_DEBUG__
@@ -125,18 +124,15 @@ vtkXdmfWriter4::vtkXdmfWriter4()
   this->DummyBuild                 = 0;
   this->Callback                   = NULL;
 
-#ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-#endif
+
   this->LightDataLimit = 0;
 }
 //----------------------------------------------------------------------------
 vtkXdmfWriter4::~vtkXdmfWriter4()
 {
-#ifdef VTK_USE_MPI
   this->SetController(NULL);
-#endif
   if (this->DomainName)
     {
       delete []this->DomainName;
@@ -214,14 +210,13 @@ XdmfDOM *vtkXdmfWriter4::ParseExistingFile(const char* filename)
 XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(vtkDataSet *dsinput, bool multiblock, XdmfDOM *DOM, const char *name, bool &staticFlag)
 {
   vtkXDRDebug("GetStaticGridNode");
-  // on first time step, there is no valid DOM yet, only second onwards make sense!
-  if (!DOM) return NULL;
   staticFlag = false;
-  XdmfXmlNode grid = NULL;
   //
   if (dsinput->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED()) || this->TopologyConstant)
   {
     staticFlag = true;
+    // first timestep there is no DOM yet
+    if (!DOM) return NULL; 
     // if re-using static topology/geometry, then find the first dataset ...
     vtkstd::stringstream staticXPath;
     const char *XpathPrefix = "/Xdmf/Domain/Grid[@CollectionType=\"Temporal\"]";
@@ -231,10 +226,9 @@ XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(vtkDataSet *dsinput, bool multiblo
     else {
       staticXPath << XpathPrefix << "/Grid[@Name=\"" << name << "\"][1]";
     }
-    staticFlag = true;
-    grid = DOM->FindElementByPath(staticXPath.str().c_str());
+    return DOM->FindElementByPath(staticXPath.str().c_str());
   }
-  return grid;
+  return NULL;
 }
 //----------------------------------------------------------------------------
 XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
@@ -383,33 +377,23 @@ vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *nam
 void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, double time)
 {
   vtkXDRDebug("WriteOutputXML");
-
-  vtkstd::stringstream temp;
-  temp << time;
-  XdmfXmlNode   domain = timestep->FindElement("Domain");
-  XdmfXmlNode     grid = timestep->FindElement("Grid", 0, domain);
-
-  if (this->TemporalCollection != 0) {// Insert time info
-    XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
-    timestep->Set(timeNode, "TimeType", "Single");
-    timestep->Set(timeNode, "Value", temp.str().c_str());
-    if (!outputDOM) {
+  if (!outputDOM) {
+    if (this->TemporalCollection!=0) {
       outputDOM = this->CreateEmptyCollection("TimeSeries", "Temporal");
     }
-  }
-  else {
-    if (!outputDOM) {
+    else {
       outputDOM = this->CreateEmptyCollection(NULL, NULL);
     }
   }
 
+  XdmfXmlNode   domain = timestep->FindElement("Domain");
+  XdmfXmlNode     grid = timestep->FindElement("Grid", 0, domain);
+
   // Using parallel mode, get XML blocks from each process and gather on node 0
-#ifdef VTK_USE_MPI
   if (this->Controller && (this->UpdateNumPieces>1)) {
     vtkXDRDebug("Gathering XML blocks");
-    if (this->UpdatePiece != 0) {// Slave
+    if (this->UpdatePiece != 0) { // Slave
       int nb_blocks = timestep->GetNumberOfChildren(grid);// If more than one block per process
-      if (this->TemporalCollection != 0) nb_blocks--;// Only need the time value from the master
       this->Controller->Send(&nb_blocks, 1, 0, 0);
       XdmfXmlNode sub_grid = grid->children;
       for (int i=0 ; i<nb_blocks ; i++) {// Can only insert block by block
@@ -420,43 +404,32 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
         sub_grid = sub_grid->next;
       }
     }
-    else {// Master
+    else { // node 0
       int recv_len, recv_nb_blocks;
-      char *recv;
-      XdmfConstString text = timestep->Serialize(domain->children);
-      int text_len = (int)strlen(text);
-      XdmfXmlNode out_domain = outputDOM->FindElement("Domain");
-      XdmfXmlNode out_space_grid;
-      if (this->TemporalCollection != 0) {
-        XdmfXmlNode out_time_grid = outputDOM->FindElement("Grid", 0, out_domain);
-        outputDOM->InsertFromString(out_time_grid, text);
-        out_space_grid = outputDOM->FindElement("Grid", 0, out_time_grid);
-      }
-      else {
-        outputDOM->InsertFromString(out_domain, text);
-        out_space_grid = outputDOM->FindElement("Grid", 0, out_domain);
-      }
       for (int i=1; i<this->UpdateNumPieces; i++) {
         this->Controller->Receive(&recv_nb_blocks, 1, i, 0);
         for (int j=0 ; j<recv_nb_blocks; j++) {
           this->Controller->Receive(&recv_len, 1, i, 1);
-          recv = new char[recv_len+1];
-          this->Controller->Receive(recv, recv_len+1, i, 2);
-          recv[recv_len+0] = 0;
-          outputDOM->InsertFromString(out_space_grid, recv);
-          delete[] recv;
+          std::vector<char> buffer(recv_len+1);
+          this->Controller->Receive(&buffer[0], recv_len+1, i, 2);
+          buffer[recv_len] = 0;
+          XdmfXmlNode rgidtimeNode = timestep->InsertFromString(grid, &buffer[0]);
         }
       }
-      outputDOM->Write(this->XdmfFileName.c_str());
     }
   }
-  else {// If not parallel
-#endif
-    this->AddGridToCollection(outputDOM, timestep);
-    outputDOM->Write(this->XdmfFileName.c_str());
-#ifdef VTK_USE_MPI
+
+  // Add the Time key to xml
+  if (this->TemporalCollection != 0) {// Insert time info
+    vtkstd::stringstream temp;
+    temp << time;
+    XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
+    timestep->Set(timeNode, "TimeType", "Single");
+    timestep->Set(timeNode, "Value", temp.str().c_str());
   }
-#endif
+
+  this->AddGridToCollection(outputDOM, timestep);
+  outputDOM->Write(this->XdmfFileName.c_str());
 }
 //----------------------------------------------------------------------------
 void vtkXdmfWriter4::SetXdmfArrayCallbacks(XdmfArray *data)
@@ -474,7 +447,6 @@ int vtkXdmfWriter4::RequestData(
 {
   vtkXDRDebug("WriteData");
 
-#ifdef VTK_USE_MPI
   if (this->Controller) {
     this->UpdatePiece = this->Controller->GetLocalProcessId();
     this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
@@ -483,10 +455,6 @@ int vtkXdmfWriter4::RequestData(
     this->UpdatePiece = 0;
     this->UpdateNumPieces = 1;
   }
-#else
-  this->UpdatePiece = 0;
-  this->UpdateNumPieces = 1;
-#endif
   //
   vtkDataObject        *doinput = this->GetInput();
   vtkMultiBlockDataSet *mbinput = vtkMultiBlockDataSet::SafeDownCast(this->GetInput());
@@ -499,14 +467,15 @@ int vtkXdmfWriter4::RequestData(
   //
   // Get the raw MPI_Comm handle
   //
+#ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
   MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
   //
-
   if (!this->Callback) {
     this->Callback = new H5MBCallback(mpiComm);
     this->Callback->SetDSMManager(this->DSMManager);
   }
+#endif
 
   //
   // Adding to an existing file?

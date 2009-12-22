@@ -35,10 +35,7 @@
 #include "vtkXdmfWriter2.h"
 #include <vtkstd/string>
 
-#ifdef VTK_USE_MPI
-  class vtkMultiProcessController;
-#endif
-//
+class vtkMultiProcessController;
 class vtkPointSet;
 class vtkDataArray;
 class vtkPointData;
@@ -91,17 +88,13 @@ public:
   void SetAppendModeToAppendMultiBlock();
   void SetAppendModeToAppendTemporal();
 
-//BTX
-  #ifdef VTK_USE_MPI
-    // Description:
-    // Set/Get the controller used for coordinating parallel writing
-    // (set to the global controller by default)
-    // If not using the default, this must be called before any
-    // other methods.
-    virtual void SetController(vtkMultiProcessController* controller);
-    vtkGetObjectMacro(Controller, vtkMultiProcessController);
-  #endif
-//ETX
+  // Description:
+  // Set/Get the controller used for coordinating parallel writing
+  // (set to the global controller by default)
+  // If not using the default, this must be called before any
+  // other methods.
+  virtual void SetController(vtkMultiProcessController* controller);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
   // Description:
   // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
@@ -239,13 +232,7 @@ protected:
   H5MBCallback  *Callback;
 //ETX
 
-  //BTX
-    #ifdef VTK_USE_MPI
-  //ETX
-      vtkMultiProcessController* Controller;
-  //BTX
-    #endif
-  //ETX
+  vtkMultiProcessController* Controller;
 
 private:
   vtkXdmfWriter4(const vtkXdmfWriter4&);  // Not implemented.
