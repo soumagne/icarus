@@ -192,8 +192,6 @@ XdmfInt32
 XdmfHDFDOM::Parse(XdmfConstString inxml)
 {
   XdmfXmlNode Root;
-  XdmfXmlNode Node;
-  XdmfConstString  Attribute;
 
   // Remove Previous Data
   if (this->Doc) xmlFreeDoc((xmlDoc *)this->Doc);

@@ -3,6 +3,10 @@
 
 #include <QDockWidget>
 
+// For communicator selection, has to match XdmfDsmComm.h
+#define XDMF_DSM_COMM_MPI 0x10
+#define XDMF_DSM_COMM_SOCKET 0x11
+
 class QCheckBox;
 class QComboBox;
 class QPushButton;
@@ -64,6 +68,7 @@ protected:
   bool             PublishedNameFound;
   bool             ConnectionFound;
   QTreeWidgetItem *DSMContentTree;
+  int              DSMCommType;
 
 protected slots:
 

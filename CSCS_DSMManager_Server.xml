@@ -44,19 +44,42 @@
                 command="SendDSMXML">
       </Property>
       
+      <IntVectorProperty
+        name="DsmCommType"
+        command="SetDsmCommType"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+      
       <StringVectorProperty
-        name="PublishedPortName"
-        command="GetPublishedPortName"
+        name="PublishedServerHostName"
+        command="GetPublishedServerHostName"
         information_only="1"
         number_of_elements="1">
         <SimpleStringInformationHelper/>
       </StringVectorProperty>
       
+      <IntVectorProperty
+        name="PublishedServerPort"
+        command="GetPublishedServerPort"
+        information_only="1"
+        number_of_elements="1"
+        default_values="0">
+        <SimpleIntInformationHelper/>
+      </IntVectorProperty>
+      
       <StringVectorProperty
-        name="MPIport"
-        command="SetPublishedPortName"
+        name="ServerHostName"
+        command="SetPublishedServerHostName"
         number_of_elements="1">
       </StringVectorProperty>
+      
+      <IntVectorProperty
+        name="ServerPort"
+        command="SetPublishedServerPort"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
       
       <StringVectorProperty
         name="XMFDescriptionFilePath"

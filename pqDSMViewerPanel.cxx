@@ -83,10 +83,13 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->UI = new pqUI(this);
   this->UI->setupUi(this);
 
+  this->PublishNameDialog = NULL;
+  this->PublishNameTimer = NULL;
+  this->PublishNameSteps = 0;
   this->PublishedNameFound = false;
   this->ConnectionFound = false;
   this->DSMContentTree = NULL;
-
+  this->DSMCommType = 0;
 
   //
   // Link GUI object events to callbacks
@@ -204,12 +207,21 @@ bool pqDSMViewerPanel::DSMReady()
 {
   if (!this->ProxyReady()) return 0;
   if (!this->UI->DSMInitialized) {
+    if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
+      this->DSMCommType = XDMF_DSM_COMM_MPI;
+      pqSMAdaptor::setElementProperty(
+                this->UI->DSMProxy->GetProperty("DsmCommType"),
+                this->DSMCommType);
+    }
+    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
+      this->DSMCommType = XDMF_DSM_COMM_SOCKET;
+      pqSMAdaptor::setElementProperty(
+                this->UI->DSMProxy->GetProperty("DsmCommType"),
+                this->DSMCommType);
+    }
+    this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
-//    QMessageBox msgBox(this);
-//    msgBox.setIcon(QMessageBox::Information);
-//    msgBox.setText("DSM created");
-//    msgBox.exec();
   }
   return this->UI->DSMInitialized;
 }
@@ -242,10 +254,6 @@ void pqDSMViewerPanel::onDestroyDSM()
   if (this->DSMReady()) {
     this->UI->DSMProxy->InvokeCommand("DestroyDSM");
     this->UI->DSMInitialized = 0;
-    QMessageBox msgBox(this);
-    msgBox.setIcon(QMessageBox::Information);
-    msgBox.setText("DSM destroyed");
-    msgBox.exec();
 
     if (this->PublishNameTimer) {
       delete this->PublishNameTimer;
@@ -276,20 +284,37 @@ void pqDSMViewerPanel::onClearDSM()
 void pqDSMViewerPanel::onConnectDSM()
 {
   if (this->DSMReady()) {
-    QString text = QInputDialog::getText(this, tr("QInputDialog::getText()"),
-        tr("Enter the connection MPI port:"), QLineEdit::Normal);
-
-    if (!text.isEmpty()) {
-      pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("MPIport"),
-          text.toStdString().c_str());
-
-      this->UI->DSMProxy->UpdateVTKObjects();
-      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+    if (this->DSMCommType == XDMF_DSM_COMM_MPI) {
+      QString ipDialog = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+          tr("Please enter the MPI port name you want to connect to:"), QLineEdit::Normal);
+      if (!ipDialog.isEmpty()) {
+        pqSMAdaptor::setElementProperty(
+            this->UI->DSMProxy->GetProperty("ServerHostName"),
+            ipDialog.toStdString().c_str());
+      }
     }
+    else if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+      QString ipDialog = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+          tr("Please enter the hostname/ip address you want to connect to:"), QLineEdit::Normal);
 
-    // TODO set connection found
+      QString portDialog = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+          tr("Please enter the server port number:"), QLineEdit::Normal);
+
+      if (!ipDialog.isEmpty() && !portDialog.isEmpty()) {
+        pqSMAdaptor::setElementProperty(
+            this->UI->DSMProxy->GetProperty("ServerHostName"),
+            ipDialog.toStdString().c_str());
+        pqSMAdaptor::setElementProperty(
+            this->UI->DSMProxy->GetProperty("ServerPort"),
+            portDialog.toStdString().c_str());
+      }
+    }
+    this->UI->DSMProxy->UpdateVTKObjects();
+    this->UI->DSMProxy->InvokeCommand("ConnectDSM");
   }
+
+  // TODO set connection found
+
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisconnectDSM()
@@ -347,17 +372,18 @@ void pqDSMViewerPanel::onTestDSM()
       vtkGenericWarningMacro(<<"Nothing to Write");
       return;
     }
-    if (!this->UI->DSMInitialized) {
-      vtkGenericWarningMacro(<<"Creating DSM before calling Test");
-      this->onCreateDSM();
-    }
+    // Is it still necessary?
+  //  if (!this->UI->DSMInitialized) {
+  //    vtkGenericWarningMacro(<<"Creating DSM before calling Test");
+  //    this->onCreateDSM();
+  //  }
 
     //
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
         vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
     if (XdmfWriter->GetReferenceCount()>1) {
-      std::cout << " Decrementing the ref count. Fixme : JB " << std::endl;
+      // std::cout << " Decrementing the ref count " << std::endl;
       XdmfWriter->Delete();
     }
 
@@ -385,7 +411,7 @@ void pqDSMViewerPanel::onTestDSM()
     XdmfWriter->UpdatePipeline();
 
     if(!this->UI->xdmfFilePathLineEdit->text().isEmpty() &&
-        (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description"))
+        (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description"))
         & (this->ConnectionFound)) {
         pqSMAdaptor::setElementProperty(
                 this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
@@ -419,11 +445,11 @@ void pqDSMViewerPanel::onDisplayDSM()
                 "d:/test.xmf"
 #endif
         );
-    } else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {
+    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
         pqSMAdaptor::setElementProperty(
                 XdmfReader->GetProperty("FileName"),
                 this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
-    } else if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description")) {
+    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
         // TODO Call H5Dump / Get back new XML generated file
     }
 
@@ -441,12 +467,12 @@ void pqDSMViewerPanel::onH5Dump()
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
-  if (this->UI->xdmfFileTypeLineEdit->currentText() == QString("Full description")) {
+  if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
       // Do nothing
   }
-  else if ((this->UI->xdmfFileTypeLineEdit->currentText() == QString("Pseudo description"))
+  else if ((this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description"))
       & (!this->UI->xdmfFilePathLineEdit->text().isEmpty())) {
-    // TODO Tell to generate XML file
+    // Tell to generate XML file
     pqSMAdaptor::setElementProperty(
         this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
         this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
@@ -516,12 +542,23 @@ void pqDSMViewerPanel::TimeoutPublishName()
 {
   // try to get the published name from the server
   if (!this->PublishedNameFound) {
-    vtkSMStringVectorProperty *pn = vtkSMStringVectorProperty::SafeDownCast(
-      this->UI->DSMProxy->GetProperty("PublishedPortName"));
-    this->UI->DSMProxy->UpdatePropertyInformation(pn);
-    const char* name = pn->GetElement(0);
+    vtkSMStringVectorProperty *pshn = vtkSMStringVectorProperty::SafeDownCast(
+        this->UI->DSMProxy->GetProperty("PublishedServerHostName"));
+    this->UI->DSMProxy->UpdatePropertyInformation(pshn);
+    const char* name = pshn->GetElement(0);
+    int port = 0;
+    if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+      vtkSMIntVectorProperty *psp = vtkSMIntVectorProperty::SafeDownCast(
+          this->UI->DSMProxy->GetProperty("PublishedServerPort"));
+      this->UI->DSMProxy->UpdatePropertyInformation(psp);
+      port = psp->GetElement(0);
+    }
     if (QString(name)!="") {
-      QString text = "Publishing Name : \n" + QString(name) + "\n awaiting connection...";
+      QString text = "Publishing Name : \n" + QString(name);
+      if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+        text += "On Port : \n" + QString(port);
+      }
+      text += "\n awaiting connection...";
       this->PublishNameDialog->setLabelText(text);
       this->PublishedNameFound = true;
     }
@@ -529,15 +566,11 @@ void pqDSMViewerPanel::TimeoutPublishName()
 
   // try to see if the connection is established
   if (!this->ConnectionFound) {
-    vtkSMIntVectorProperty *pn = vtkSMIntVectorProperty::SafeDownCast(
+    vtkSMIntVectorProperty *ac = vtkSMIntVectorProperty::SafeDownCast(
       this->UI->DSMProxy->GetProperty("AcceptedConnection"));
-    this->UI->DSMProxy->UpdatePropertyInformation(pn);
-    int accepted = pn->GetElement(0);
+    this->UI->DSMProxy->UpdatePropertyInformation(ac);
+    int accepted = ac->GetElement(0);
     if (accepted != 0) {
-//      QMessageBox msgBox(this);
-//      msgBox.setIcon(QMessageBox::Information);
-//      msgBox.setText("Connection established");
-//      msgBox.exec();
       this->ConnectionFound = true;
       this->PublishNameSteps = this->PublishNameDialog->maximum();
     }

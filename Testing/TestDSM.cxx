@@ -57,7 +57,6 @@ main(int argc, char *argv[])
 {
   hid_t           file_id, group_id, dataset_id1, dataspace_id1, dataset_id2, dataspace_id2, fapl;  /* identifiers */
   hsize_t         dims[2];
-  herr_t          status;
   int             dset1_data[3][3], dset2_data[2][10];
   int             dset1_data_test[3][3], dset2_data_test[2][10];
 #ifdef HAVE_PTHREADS
@@ -69,8 +68,8 @@ main(int argc, char *argv[])
   int             dsm = 0, local = 0, dump = 0, ldump = 0, test = 1;
   int             nwrite = 1;
 
-  XdmfDsmBuffer  *MyDsm;
-  XdmfDsmCommMpi *MyComm;
+  XdmfDsmBuffer  *MyDsm = NULL;
+  XdmfDsmCommMpi *MyComm = NULL;
 
   std::string     dsm_port_name;
 
@@ -152,7 +151,7 @@ main(int argc, char *argv[])
     if (!local) {
       MyDsm->SetIsServer(0);
       if (dsm_port_name.length() > 0) {
-        dynamic_cast<XdmfDsmCommMpi*> (MyDsm->GetComm())->SetDSMPortName(dsm_port_name.c_str());
+        dynamic_cast<XdmfDsmCommMpi*> (MyDsm->GetComm())->SetDsmMasterHostName(dsm_port_name.c_str());
       }
       //MyDsm->DebugOn();
       //MyComm->DebugOn();

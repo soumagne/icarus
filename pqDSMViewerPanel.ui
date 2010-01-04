@@ -29,7 +29,7 @@
          <x>0</x>
          <y>0</y>
          <width>393</width>
-         <height>522</height>
+         <height>528</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -71,7 +71,7 @@
               </widget>
              </item>
              <item row="0" column="1">
-              <widget class="QComboBox" name="xdmfFileTypeLineEdit">
+              <widget class="QComboBox" name="xdmfFileTypeComboBox">
                <item>
                 <property name="text">
                  <string>Full description</string>
@@ -115,14 +115,32 @@
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
-            <widget class="QCheckBox" name="dsmServer">
-             <property name="text">
-              <string>DSM on Server</string>
+            <layout class="QFormLayout" name="formLayout_3">
+             <property name="fieldGrowthPolicy">
+              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
              </property>
-             <property name="checked">
-              <bool>true</bool>
-             </property>
-            </widget>
+             <item row="0" column="1">
+              <widget class="QComboBox" name="xdmfCommTypeComboBox">
+               <item>
+                <property name="text">
+                 <string>MPI</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Sockets</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="xdmfCommTypeLabel">
+               <property name="text">
+                <string>DSM InterCommunication</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </item>
            <item>
             <layout class="QGridLayout" name="gridLayout">

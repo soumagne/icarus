@@ -35,7 +35,9 @@
 
 #ifndef WIN32
   #define HAVE_PTHREADS
+extern "C" {
   #include <pthread.h>
+}
 #elif HAVE_BOOST_THREADS
   #include <boost/thread/thread.hpp> // Boost Threads
 #endif
@@ -57,15 +59,26 @@ public:
   vtkGetMacro(LocalBufferSizeMBytes,int);
 
   // Description:
-  // Get the published name of our connection. 
+  // Set/Get the interprocess communication subsystem
+  vtkSetMacro(DsmCommType, int);
+  vtkGetMacro(DsmCommType, int);
+
+  // Description:
+  // Set/Get the published host name of our connection.
   // Only valid after a PublishDSM call has been made.
-  vtkSetStringMacro(PublishedPortName);
-  vtkGetStringMacro(PublishedPortName);
+  vtkSetStringMacro(PublishedServerHostName);
+  vtkGetStringMacro(PublishedServerHostName);
+
+  // Description:
+  // Set/Get the published port of our connection.
+  // Only valid after a PublishDSM call has been made.
+  vtkSetMacro(PublishedServerPort, int);
+  vtkGetMacro(PublishedServerPort, int);
 
   // Description:
   // Only valid after a AcceptConnection call has been made.
   vtkSetMacro(AcceptedConnection, bool);
-  vtkGetMacro(AcceptedConnection, bool);
+  bool GetAcceptedConnection();
 
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
@@ -76,7 +89,6 @@ public:
   void   ConnectDSM();
   void   DisconnectDSM();
   void   PublishDSM();
-  void  *AcceptConnection();
   void   UnpublishDSM();
   void   H5Dump();
   void   H5DumpLight();
@@ -121,10 +133,8 @@ protected:
     //BTX
 #ifdef HAVE_PTHREADS
     pthread_t      ServiceThread;
-    pthread_t      ConnectionThread;
 #elif HAVE_BOOST_THREADS
     boost::thread *ServiceThread;
-    boost::thread *ConnectionThread;
 #endif
     XdmfDsmBuffer *DSMBuffer;
     //ETX
@@ -135,9 +145,12 @@ protected:
     //ETX
     vtkMultiProcessController* Controller;
     //BTX
-    XdmfDsmCommMpi *DSMComm;
+    XdmfDsmComm    *DSMComm;
     //
-    char           *PublishedPortName;
+    int             DsmCommType;
+    char           *PublishedServerHostName;
+    int             PublishedServerPort;
+
     bool            AcceptedConnection;
     // bool            KillConnection;
 

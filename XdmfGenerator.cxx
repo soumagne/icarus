@@ -117,7 +117,8 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
     XdmfXmlNode   gridNode       = this->LXdmfDOM->FindElement("Grid", currentGridIndex, domainNode);
     XdmfXmlNode   topologyNode   = this->LXdmfDOM->FindElement("Topology", 0, gridNode);
     XdmfXmlNode   geometryNode   = this->LXdmfDOM->FindElement("Geometry", 0, gridNode);
-    XdmfXmlNode   timeNode       = this->LXdmfDOM->FindElement("Time", 0, gridNode);
+    // TODO Use timeNode
+    //XdmfXmlNode   timeNode       = this->LXdmfDOM->FindElement("Time", 0, gridNode);
 
     grid.SetDOM(this->GeneratedDOM);
     domain.Insert(&grid);
@@ -211,9 +212,9 @@ XdmfXmlNode XdmfGenerator::FindConvertHDFPath(XdmfConstString path)
 //----------------------------------------------------------------------------
 XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfXmlNode hdfTopologyNode, XdmfConstString topologyTypeStr)
 {
-  XdmfInt32   numberOfCells;
+  XdmfInt32   numberOfCells = 0;
   std::string topologyType = topologyTypeStr;
-  for (int i=0; i<topologyType.length(); i++) {
+  for (int i=0; i<(int)topologyType.length(); i++) {
     topologyType[i] = toupper(topologyType[i]);
   }
 

@@ -36,6 +36,7 @@
 vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #endif
 
+#include "XdmfDsmCommSocket.h"
 #include "XdmfDsmCommMpi.h"
 #include "XdmfDsmMsg.h"
 #include "XdmfDsmDump.h"
@@ -77,10 +78,8 @@ vtkDSMManager::vtkDSMManager()
   this->UpdateNumPieces          = 0;
 #ifdef HAVE_PTHREADS
   this->ServiceThread            = 0;
-  this->ConnectionThread         = 0;
 #elif HAVE_BOOST_THREADS
   this->ServiceThread            = NULL;
-  this->ConnectionThread         = NULL;
 #endif
 
   //
@@ -88,8 +87,9 @@ vtkDSMManager::vtkDSMManager()
   this->Controller = NULL;
   this->DSMComm    = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-  this->PublishedPortName        = NULL;
-  this->AcceptedConnection       = false;
+  this->PublishedServerPort = 0;
+  this->PublishedServerHostName = NULL;
+  this->AcceptedConnection = false;
 //  this->KillConnection           = false;
 #endif
   //
@@ -97,7 +97,7 @@ vtkDSMManager::vtkDSMManager()
   this->TimeStep                 = 0;
   this->FileName                 = NULL;
 
-  this->XMFDescriptionFilePath   = NULL;
+  this->XMFDescriptionFilePath = NULL;
   this->DumpDescription          = "";
   this->GeneratedDescription     = "";
 }
@@ -110,14 +110,17 @@ vtkDSMManager::~vtkDSMManager()
     delete [] this->FileName;
     this->FileName = NULL;
   }
-  if (this->PublishedPortName) {
-    delete [] this->PublishedPortName;
-    this->PublishedPortName = NULL;
-  }
 
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
+}
+//----------------------------------------------------------------------------
+bool vtkDSMManager::GetAcceptedConnection()
+{
+  bool ret = false;
+  if (this->DSMBuffer) ret = this->DSMBuffer->GetIsConnected();
+  return ret;
 }
 //----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
@@ -136,18 +139,10 @@ bool vtkDSMManager::DestroyDSM()
     pthread_join(this->ServiceThread, NULL);
     this->ServiceThread = 0;
   }
-  if (this->ConnectionThread) {
-    pthread_join(this->ConnectionThread, NULL);
-    this->ConnectionThread = 0;
-  }
 #elif HAVE_BOOST_THREADS
   if (this->ServiceThread) {
     delete this->ServiceThread;
     this->ServiceThread = NULL;
-  }
-  if (this->ConnectionThread) {
-    delete this->ConnectionThread;
-    this->ConnectionThread = NULL;
   }
 #endif
 
@@ -168,13 +163,7 @@ XdmfDsmBuffer *vtkDSMManager::GetDSMHandle()
 }
 //----------------------------------------------------------------------------
 #ifdef HAVE_PTHREADS
-extern "C"{
-  void *
-  DSMConnectionThread(void *DSMManager){
-    vtkDSMManager *manager = (vtkDSMManager *)DSMManager;
-    return(manager->AcceptConnection());
-  }
-}
+// nothing at the moment
 #elif HAVE_BOOST_THREADS
 class DSMServiceThread 
 {
@@ -190,19 +179,6 @@ public:
   //
   XdmfDsmBuffer *DSMObject;
 };
-class DSMConnectionThread
-{
-public:
-  DSMConnectionThread(vtkDSMManager *manager)
-  {
-    this->DSMManager = manager;
-  }
-  void operator()() {
-    this->DSMManager->AcceptConnection();
-  }
-  //
-  vtkDSMManager *DSMManager;
-};
 #endif
 //----------------------------------------------------------------------------
 bool vtkDSMManager::CreateDSM()
@@ -215,7 +191,7 @@ bool vtkDSMManager::CreateDSM()
   {
     int flag = 0;
     MPI_Initialized(&flag);
-    if(flag == 0)
+    if (flag == 0)
     {
       vtkErrorMacro(<<"Running without MPI, attempting to initialize ");
       int argc = 1;
@@ -263,24 +239,31 @@ bool vtkDSMManager::CreateDSM()
   //
   // Create Xdmf DSM communicator
   //
-  this->DSMComm = new XdmfDsmCommMpi;
-  this->DSMComm->DupComm(mpiComm);
+  if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
+    this->DSMComm = new XdmfDsmCommMpi();
+    vtkDebugMacro(<< "Using MPI Intercomm...");
+    dynamic_cast<XdmfDsmCommMpi*> (this->DSMComm)->DupComm(mpiComm);
+  }
+  else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
+    this->DSMComm = new XdmfDsmCommSocket();
+    vtkDebugMacro(<< "Using Socket Intercomm...");
+    dynamic_cast<XdmfDsmCommSocket*> (this->DSMComm)->DupComm(mpiComm);
+  }
+  //this->DSMComm->DebugOn();
   this->DSMComm->Init();
-
   //
   // Create the DSM buffer
   //
   this->DSMBuffer = new XdmfDsmBuffer();
+  //this->DSMBuffer->DebugOn();
+  this->DSMBuffer->SetServiceThreadUseCopy(0);
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(this->DSMComm, this->LocalBufferSizeMBytes*1024*1024);
-
-  // Enable debug
-  // this->DSMBuffer->DebugOn();
-  // this->DSMBuffer->GetComm()->DebugOn();
+  this->DSMBuffer->ConfigureUniform(this->DSMComm, this->GetLocalBufferSizeMBytes()*1024*1024);
 
   //
   // setup service thread
   //
+  vtkDebugMacro(<< "Creating service thread...");
 #ifdef HAVE_PTHREADS
   // Start another thread to handle DSM requests from other nodes
   pthread_create(&this->ServiceThread, NULL, &XdmfDsmBufferServiceThread, (void *) this->DSMBuffer);
@@ -308,13 +291,28 @@ void vtkDSMManager::ConnectDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");
   this->DSMBuffer->SetIsServer(false);
-  if (this->GetPublishedPortName() != NULL) {
-    dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetDSMPortName(this->GetPublishedPortName());
-    if (this->UpdatePiece == 0) {
-      vtkDebugMacro(<< "Get port: "
-          << dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDSMPortName());
+  if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
+    if (this->GetPublishedServerHostName() != NULL) {
+      dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
+      if (this->UpdatePiece == 0) {
+        vtkDebugMacro(<< "Initializing connection to "
+            << dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
+      }
     }
-  } else {
+  }
+  else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
+    if ((this->GetPublishedServerHostName() != NULL) && (this->GetPublishedServerPort() != 0)) {
+      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
+      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
+      if (this->UpdatePiece == 0) {
+        vtkDebugMacro(<< "Initializing connection to "
+            << dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
+            << ":"
+            << dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort());
+      }
+    }
+  }
+  else {
     if (this->UpdatePiece == 0) vtkErrorMacro(<< "NULL port");
   }
 }
@@ -322,61 +320,47 @@ void vtkDSMManager::ConnectDSM()
 void vtkDSMManager::DisconnectDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
-  this->DSMBuffer->RequestLocalChannel(); // Go back to normal channel
-  vtkDebugMacro(<< "Trying to disconnect");
-  this->DSMBuffer->GetComm()->RemoteCommDisconnect();
+  this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::PublishDSM()
 {
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
+  this->DSMBuffer->GetComm()->OpenPort();
+
   if (this->UpdatePiece == 0) {
-    this->DSMBuffer->GetComm()->OpenPort();
-    this->SetPublishedPortName(dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDSMPortName());
-    vtkDebugMacro(<< "Port: " << this->GetPublishedPortName());
+    if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
+      this->SetPublishedServerHostName(dynamic_cast<XdmfDsmCommMpi*>
+         (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
+         vtkDebugMacro(<< "Server PortName: " << this->GetPublishedServerHostName());
+    }
+    else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
+      this->SetPublishedServerHostName(dynamic_cast<XdmfDsmCommSocket*>
+      (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
+      this->SetPublishedServerPort(dynamic_cast<XdmfDsmCommSocket*>
+      (this->DSMBuffer->GetComm())->GetDsmMasterPort());
+      vtkDebugMacro(<< "Server HostName: " << this->GetPublishedServerHostName()
+          << "Server port: " << this->GetPublishedServerPort());
+    }
   }
   //
-#ifdef HAVE_PTHREADS
-  pthread_create(&this->ConnectionThread, NULL, &DSMConnectionThread, (void *) this);
-#elif HAVE_BOOST_THREADS
-  DSMConnectionThread MyDSMConnectionThread(this);
-  this->ConnectionThread = new boost::thread(MyDSMConnectionThread);
-#endif
-}
-//----------------------------------------------------------------------------
-void *vtkDSMManager::AcceptConnection()
-{
-  this->DSMBuffer->GetComm()->RemoteCommAccept();
-  // We are connected and clientComm is set, the Service loop needs now to listen on the clientComm
   this->DSMBuffer->RequestRemoteChannel();
-
-  this->Controller->Barrier();
-  this->SetAcceptedConnection(true);
-
-  // send DSM information
-  XdmfInt64 length = this->DSMBuffer->GetLength();
-  XdmfInt64 totalLength = this->DSMBuffer->GetTotalLength();
-  XdmfInt32 startServerId = this->DSMBuffer->GetStartServerId();
-  XdmfInt32 endServerId = this->DSMBuffer->GetEndServerId();
-  this->DSMBuffer->GetComm()->RemoteCommSendInfo(&length, &totalLength, &startServerId, &endServerId);
-
-  return ((void*)this);
 }
 //----------------------------------------------------------------------------
+
 void vtkDSMManager::UnpublishDSM()
 {
   //if (this->AcceptedConnection == false) {
   // Make terminate the thread by forcing the accept
-  //MPI_Comm server;
-  //this->KillConnection = true;
-  //vtkDebugMacro(<<"Connecting for killing connection: " << this->UpdatePiece << " on port: " << this->DSMPortName);
-  //MPI_Comm_connect(this->DSMPortName, MPI_INFO_NULL, 0, MPI_COMM_WORLD, &server);
-  //vtkDebugMacro(<< "Connected for cleaning!\n");
-  //MPI_Comm_disconnect(&server);
+  // TODO Should simply add a signal to the socket
   //}
-
-  if(this->UpdatePiece == 0 && this->PublishedPortName != NULL) {
+  if (this->GetPublishedServerHostName() != NULL) {
     this->DSMBuffer->GetComm()->ClosePort();
-    this->SetPublishedPortName(NULL);
+
+    if (this->UpdatePiece == 0) {
+      this->SetPublishedServerHostName(NULL);
+      this->SetPublishedServerPort(0);
+    }
   }
   this->SetAcceptedConnection(false);
   //  this->KillConnection = false;
@@ -388,7 +372,7 @@ void vtkDSMManager::H5Dump()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->Dump();
-    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
     delete myDsmDump;
   }
 }
@@ -399,7 +383,7 @@ void vtkDSMManager::H5DumpLight()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->DumpLight();
-    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
     delete myDsmDump;
   }
 }
@@ -411,9 +395,9 @@ void vtkDSMManager::H5DumpXML()
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->DumpXML(dumpStream);
-    if(this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
     this->DumpDescription = dumpStream.str();
-    //if(this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
+    //if (this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
     delete myDsmDump;
   }
 }
@@ -422,24 +406,24 @@ void vtkDSMManager::GenerateXMFDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
-  if(this->DSMBuffer) {
+  if (this->DSMBuffer) {
     xdmfGenerator->SetHdfFileName("DSM:test.h5");
   }
   else {
     xdmfGenerator->SetHdfFileName("test.h5");
   }
   xdmfGenerator->GenerateHead();
-  xdmfGenerator->Generate((const char*)this->XMFDescriptionFilePath, this->DumpDescription.c_str());
+  xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), this->DumpDescription.c_str());
   this->GeneratedDescription = xdmfGenerator->GetGeneratedFile();
-  if(this->UpdatePiece == 0) vtkDebugMacro(<< this->GeneratedDescription.c_str());
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< this->GeneratedDescription.c_str());
   delete xdmfGenerator;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::SendDSMXML()
 {
   if (this->GetXMFDescriptionFilePath() != NULL) {
-    this->DSMBuffer->RequestXMLChannel();
-    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMFDescriptionFilePath);
+    this->DSMBuffer->RequestXMLExchange();
+    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->GetXMFDescriptionFilePath());
   }
 }
 //----------------------------------------------------------------------------
