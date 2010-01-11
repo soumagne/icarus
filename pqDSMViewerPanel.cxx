@@ -219,6 +219,15 @@ bool pqDSMViewerPanel::DSMReady()
                 this->UI->DSMProxy->GetProperty("DsmCommType"),
                 this->DSMCommType);
     }
+    if (this->UI->dsmIsServer->isChecked()) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("DsmIsServer"),
+          1);
+    } else {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("DsmIsServer"),
+          0);
+    }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
@@ -554,11 +563,13 @@ void pqDSMViewerPanel::TimeoutPublishName()
       port = psp->GetElement(0);
     }
     if (QString(name)!="") {
-      QString text = "Publishing Name : \n" + QString(name);
+      QString text = "Publishing Name:\n" + QString(name);
       if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
-        text += "On Port : \n" + QString(port);
+        char portString[64];
+        sprintf(portString, "%d", port);
+        text += "\nOn Port:\n" + QString(portString);
       }
-      text += "\n awaiting connection...";
+      text += "\nawaiting connection...";
       this->PublishNameDialog->setLabelText(text);
       this->PublishedNameFound = true;
     }

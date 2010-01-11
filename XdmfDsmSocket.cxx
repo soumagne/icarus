@@ -63,14 +63,8 @@ XdmfDsmSocket::XdmfDsmSocket()
 //-----------------------------------------------------------------------------
 XdmfDsmSocket::~XdmfDsmSocket()
 {
-  if (this->ClientSocketDescriptor != -1) {
-    this->CloseClient();
-    this->ClientSocketDescriptor = -1;
-  }
-  if (this->SocketDescriptor != -1) {
-    this->Close();
-    this->SocketDescriptor = -1;
-  }
+  if (this->ClientSocketDescriptor != -1) this->CloseClient();
+  if (this->SocketDescriptor != -1) this->Close();
 }
 
 //-----------------------------------------------------------------------------
@@ -87,19 +81,19 @@ int XdmfDsmSocket::Create()
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::Close()
 {
-  if (this->SocketDescriptor < 0) {
-    return -1;
-  }
-  return XdmfCloseSocketMacro(this->SocketDescriptor);
+  if (this->SocketDescriptor < 0) return -1;
+  if (XdmfCloseSocketMacro(this->SocketDescriptor) < 0) return -1;
+  this->SocketDescriptor = -1;
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
 int XdmfDsmSocket::CloseClient()
 {
-  if (this->ClientSocketDescriptor < 0) {
-    return -1;
-  }
-  return XdmfCloseSocketMacro(this->ClientSocketDescriptor);
+  if (this->ClientSocketDescriptor < 0) return -1;
+  if (XdmfCloseSocketMacro(this->ClientSocketDescriptor) < 0) return -1;
+  this->ClientSocketDescriptor = -1;
+  return 0;
 }
 
 //-----------------------------------------------------------------------------
@@ -118,7 +112,11 @@ int XdmfDsmSocket::Bind(int port, const char *hostName)
   }
   if (!hp || (hostName == NULL)) {
     // XdmfErrorMacro("Unknown host: " << hostName);
-    server.sin_addr.s_addr = INADDR_ANY;
+    //server.sin_addr.s_addr = INADDR_ANY;
+    char localhost[256];
+    gethostname(localhost, sizeof(localhost));
+    hp = gethostbyname(localhost);
+    memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
   } else {
     memcpy(&server.sin_addr, hp->h_addr, hp->h_length);
   }
@@ -177,6 +175,7 @@ int XdmfDsmSocket::Connect(const char* hostName, int port)
   struct hostent* hp;
   hp = gethostbyname(hostName);
   if (!hp) {
+    // TODO replace inet_addr by inet_aton/inet_pton
     unsigned long addr = inet_addr(hostName);
     hp = gethostbyaddr((char *)&addr, sizeof(addr), AF_INET);
   }
@@ -209,6 +208,22 @@ int XdmfDsmSocket::GetPort()
     return -1;
   }
   return ntohs(sockinfo.sin_port);
+}
+
+//-----------------------------------------------------------------------------
+const char* XdmfDsmSocket::GetHostName()
+{
+  struct sockaddr_in sockinfo;
+  memset(&sockinfo, 0, sizeof(sockinfo));
+#if !defined(_WIN32) || defined(__CYGWIN__)
+  socklen_t sizebuf = sizeof(sockinfo);
+#else
+  int sizebuf = sizeof(sockinfo);
+#endif
+  if(getsockname(this->SocketDescriptor, reinterpret_cast<sockaddr*>(&sockinfo), &sizebuf) != 0) {
+    return NULL;
+  }
+  return (const char*)inet_ntoa(sockinfo.sin_addr);
 }
 
 //-----------------------------------------------------------------------------

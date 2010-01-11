@@ -29,14 +29,19 @@ XdmfDsmCommSocket::XdmfDsmCommSocket()
 {
   this->Comm = MPI_COMM_WORLD;
   this->CommType = XDMF_DSM_COMM_SOCKET;
-  this->InterComm = NULL;
+  for (int i=0; i<XDMF_DSM_MAX_SOCKET; i++) this->InterComm[i] = NULL;
   this->DsmMasterSocket = NULL;
   this->CommChannel  = XDMF_DSM_COMM_CHANNEL_LOCAL;
+  this->DsmMasterPort = 0;
 }
 
 //----------------------------------------------------------------------------
 XdmfDsmCommSocket::~XdmfDsmCommSocket()
 {
+  for (int i=0; i<XDMF_DSM_MAX_SOCKET ;i++) {
+     if (this->InterComm[i]) delete this->InterComm;
+     this->InterComm[i] = NULL;
+   }
   if (this->DsmMasterSocket) delete this->DsmMasterSocket;
   this->DsmMasterSocket = NULL;
 }
@@ -69,7 +74,7 @@ XdmfDsmCommSocket::Init()
   if (this->Id == 0) {
     this->DsmMasterSocket = new XdmfDsmSocket();
     if (this->DsmMasterSocket->Create() == XDMF_FAIL) {
-      XdmfErrorMessage("Creating socket for joining communicators failed");
+      XdmfErrorMessage("Create DsmMasterSocket failed");
       return(XDMF_FAIL);
     }
   }
@@ -109,8 +114,12 @@ XdmfDsmCommSocket::Receive(XdmfDsmMsg *Msg)
 
   if (this->CommChannel == XDMF_DSM_COMM_CHANNEL_REMOTE) {
     XdmfDebug("::::: (" << this->Id << ") Receiving from remote DSM " << Msg->Length << " bytes from " << source << " Tag = " << Msg->Tag);
-    this->InterComm[source]->Receive(Msg->Data, Msg->Length);
+    if (source >= 0) {
+      this->InterComm[source]->Receive(Msg->Data, Msg->Length);
+    } else {
+
     // if ANY_SOURCE use select on the whole list of sockets descriptors
+    }
   }
   else {
     XdmfDebug("::::: (" << this->Id << ") Receiving " << Msg->Length << " bytes from " << source << " Tag = " << Msg->Tag);
@@ -172,10 +181,13 @@ XdmfDsmCommSocket::OpenPort()
 {
   if (XdmfDsmComm::OpenPort() != XDMF_SUCCESS) return(XDMF_FAIL);
   if (this->Id == 0) {
-    if (this->DsmMasterSocket->Bind(this->DsmMasterPort, this->DsmMasterHostName) == XDMF_FAIL) {
-      XdmfErrorMessage("Binding socket for joining communicators failed");
+    // Take this port as default for now and let Bind decide about hostname
+    if (this->DsmMasterSocket->Bind(22000) == XDMF_FAIL) {
+      XdmfErrorMessage("Bind DsmMasterSocket failed");
       return(XDMF_FAIL);
     }
+    this->DsmMasterPort = this->DsmMasterSocket->GetPort();
+    strcpy(this->DsmMasterHostName, this->DsmMasterSocket->GetHostName());
     this->DsmMasterSocket->Listen();
   }
   this->Barrier();
@@ -187,6 +199,7 @@ XdmfInt32
 XdmfDsmCommSocket::ClosePort()
 {
   if (XdmfDsmComm::ClosePort() != XDMF_SUCCESS) return(XDMF_FAIL);
+  // close MasterSocket
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
@@ -203,17 +216,20 @@ XdmfDsmCommSocket::RemoteCommAccept()
       XdmfErrorMessage("Accept socket failed");
       return(XDMF_FAIL);
     }
+    this->DsmMasterSocket->Receive(&this->InterSize, sizeof(int));
+    this->DsmMasterSocket->Send(&this->TotalSize, sizeof(int));
   }
-  this->Barrier();
+  if (MPI_Bcast(&this->InterSize, 1, MPI_INT, 0, this->Comm) != MPI_SUCCESS) {
+    XdmfErrorMessage("Id = " << this->Id << " MPI_Bcast of InterSize failed");
+    return(XDMF_FAIL);
+  }
 
-  return(XDMF_SUCCESS);
-}
-//----------------------------------------------------------------------------
-XdmfInt32
-XdmfDsmCommSocket::RemoteCommReset()
-{
-  if (XdmfDsmComm::RemoteCommReset() != XDMF_SUCCESS) return(XDMF_FAIL);
-  // needed ??
+  if (this->InterCommServerConnect() != XDMF_SUCCESS) {
+    XdmfErrorMessage("Id = " << this->Id << " Error in InterCommServerConnect");
+    return(XDMF_FAIL);
+  }
+
+  this->CommChannel = XDMF_DSM_COMM_CHANNEL_REMOTE;
 
   return(XDMF_SUCCESS);
 }
@@ -228,9 +244,20 @@ XdmfDsmCommSocket::RemoteCommConnect()
       XdmfErrorMessage("Socket connection failed");
       return(XDMF_FAIL);
     }
+    this->DsmMasterSocket->Send(&this->TotalSize, sizeof(int));
+    this->DsmMasterSocket->Receive(&this->InterSize, sizeof(int));
   }
-  this->Barrier();
+  if (MPI_Bcast(&this->InterSize, 1, MPI_INT, 0, this->Comm) != MPI_SUCCESS){
+    XdmfErrorMessage("Id = " << this->Id << " MPI_Bcast of InterSize failed");
+    return(XDMF_FAIL);
+  }
 
+  if (this->InterCommClientConnect() != XDMF_SUCCESS) {
+    XdmfErrorMessage("Id = " << this->Id << " Error in InterCommClientConnect");
+    return(XDMF_FAIL);
+  }
+
+  this->CommChannel = XDMF_DSM_COMM_CHANNEL_REMOTE;
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
@@ -238,9 +265,11 @@ XdmfInt32
 XdmfDsmCommSocket::RemoteCommDisconnect()
 {
   if (XdmfDsmComm::RemoteCommDisconnect() != XDMF_SUCCESS) return(XDMF_FAIL);
-  if (this->DsmMasterSocket) delete this->DsmMasterSocket;
-  this->DsmMasterSocket = NULL;
-
+  for (int i=0; i<XDMF_DSM_MAX_SOCKET ;i++) {
+    if (this->InterComm[i]) delete this->InterComm;
+    this->InterComm[i] = NULL;
+  }
+  this->CommChannel = XDMF_DSM_COMM_CHANNEL_LOCAL;
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
@@ -344,4 +373,137 @@ XdmfDsmCommSocket::RemoteCommRecvXML(XdmfString *file)
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+XdmfInt32
+XdmfDsmCommSocket::InterCommServerConnect()
+{
+  char *interCommHostName = NULL;
+  char *masterInterCommHostName = NULL;
+  int  *interCommPort = NULL;
+  int  *masterInterCommPort = NULL;
+
+  interCommHostName = new char[this->InterSize*MPI_MAX_PORT_NAME];
+  masterInterCommHostName = new char[(this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME];
+  interCommPort = new int[this->InterSize];
+  masterInterCommPort = new int[(this->InterSize)*(this->TotalSize)];
+
+  XdmfDebug("(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
+  for(int sock=0; sock<(this->InterSize); sock++) {
+    int bindPort = 23000 + sock * this->Id;
+    this->InterComm[sock] = new XdmfDsmSocket();
+    this->InterComm[sock]->Create();
+    while (1) {
+      if (this->InterComm[sock]->Bind(bindPort) < 0) {
+        bindPort++;
+      } else {
+        break;
+      }
+    }
+    strcpy(&interCommHostName[sock*MPI_MAX_PORT_NAME], this->InterComm[sock]->GetHostName());
+    interCommPort[sock] = this->InterComm[sock]->GetPort();
+    this->InterComm[sock]->Listen();
+  }
+
+  // Gather socket info
+  MPI_Gather(interCommHostName, this->InterSize*MPI_MAX_PORT_NAME, MPI_CHAR,
+      masterInterCommHostName, this->InterSize*MPI_MAX_PORT_NAME, MPI_CHAR, 0, this->Comm);
+  MPI_Gather(interCommPort, this->InterSize, MPI_INT,
+        masterInterCommPort, this->InterSize, MPI_INT, 0, this->Comm);
+
+  // Send it then to interComm 0
+  if (this->Id == 0) {
+    for (int i=0; i<((this->InterSize)*(this->TotalSize)); i++) {
+      char tmpHost[MPI_MAX_PORT_NAME];
+      int tmpPort = masterInterCommPort[i];
+      strncpy(tmpHost, masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
+      XdmfDebug("Send info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
+    }
+    // Send masterInterCommHostName
+    this->DsmMasterSocket->Send(masterInterCommHostName,
+        (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
+    // Send masterInterCommPort
+    this->DsmMasterSocket->Send(masterInterCommPort,
+            (this->InterSize)*(this->TotalSize)*sizeof(int));
+  }
+  //
+  // Accept
+  for(int sock=0; sock<(this->InterSize); sock++) {
+    this->InterComm[sock]->Accept();
+  }
+  this->Barrier();
+  //
+  delete[] interCommHostName;
+  delete[] masterInterCommHostName;
+  delete[] interCommPort;
+  delete[] masterInterCommPort;
+
+  XdmfDebug("Cleaned well interCommHostName/masterInterCommHostName");
+  return XDMF_SUCCESS;
+}
+//----------------------------------------------------------------------------
+XdmfInt32
+XdmfDsmCommSocket::InterCommClientConnect()
+{
+  char *interCommHostName = NULL;
+  char *masterInterCommHostName = NULL;
+  int  *interCommPort = NULL;
+  int  *masterInterCommPort = NULL;
+
+  interCommHostName = new char[this->InterSize*MPI_MAX_PORT_NAME];
+  masterInterCommHostName = new char[(this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME];
+  interCommPort = new int[this->InterSize];
+  masterInterCommPort = new int[(this->InterSize)*(this->TotalSize)];
+
+  if (this->Id == 0) {
+    // Send masterInterCommHostName
+    this->DsmMasterSocket->Receive(masterInterCommHostName,
+        (this->InterSize)*(this->TotalSize)*MPI_MAX_PORT_NAME*sizeof(char));
+    // Send masterInterCommPort
+    this->DsmMasterSocket->Receive(masterInterCommPort,
+            (this->InterSize)*(this->TotalSize)*sizeof(int));
+
+    for (int i=0; i<((this->InterSize)*(this->TotalSize)); i++) {
+      if (i%(this->TotalSize) == 0) {
+        strncpy(interCommHostName+(i/this->TotalSize)*MPI_MAX_PORT_NAME,
+            masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
+        interCommPort[i/this->TotalSize] = masterInterCommPort[i];
+      } else {
+        char tmpHost[MPI_MAX_PORT_NAME];
+        int tmpPort = masterInterCommPort[i];
+        strncpy(tmpHost, masterInterCommHostName+i*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
+        //XdmfDebug("Receive info for intercomm socket on " << i << " to " << tmpHost << ":" << tmpPort);
+        MPI_Send(tmpHost, MPI_MAX_PORT_NAME, MPI_CHAR, i%(this->TotalSize), 0, this->Comm);
+        MPI_Send(&tmpPort, 1, MPI_INT, i%(this->TotalSize), 0, this->Comm);
+      }
+    }
+  } else {
+    for (int i=0; i<this->InterSize; i++) {
+      MPI_Recv((interCommHostName+i*MPI_MAX_PORT_NAME), MPI_MAX_PORT_NAME, MPI_CHAR, 0, 0, this->Comm, MPI_STATUS_IGNORE);
+      MPI_Recv((interCommPort+i), 1, MPI_INT, 0, 0, this->Comm, MPI_STATUS_IGNORE);
+    }
+  }
+  this->Barrier();
+
+  XdmfDebug("(" << this->Id << ") Creating " << this->InterSize << " sockets for intercomm");
+  for(int sock=0; sock<(this->InterSize); sock++) {
+    char tmpHost[MPI_MAX_PORT_NAME];
+    int tmpPort = interCommPort[sock];
+    strncpy(tmpHost, interCommHostName+sock*MPI_MAX_PORT_NAME, MPI_MAX_PORT_NAME);
+    this->InterComm[sock] = new XdmfDsmSocket();
+    this->InterComm[sock]->Create();
+    // Connect
+    XdmfDebug("Connecting intercomm socket " << sock << " on " << this->Id << " to " << tmpHost << ":" << tmpPort);
+    this->InterComm[sock]->Connect(tmpHost, tmpPort);
+  }
+  this->Barrier();
+  //
+  delete[] interCommHostName;
+  delete[] masterInterCommHostName;
+  delete[] interCommPort;
+  delete[] masterInterCommPort;
+
+  XdmfDebug("Cleaned well interCommHostName/masterInterCommHostName");
+
+  return XDMF_SUCCESS;
+}
 //----------------------------------------------------------------------------

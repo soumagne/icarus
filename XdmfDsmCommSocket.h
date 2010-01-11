@@ -22,6 +22,8 @@
 #ifndef XDMFDSMCOMMSOCKET_H
 #define XDMFDSMCOMMSOCKET_H
 
+#define XDMF_DSM_MAX_SOCKET 256
+
 #include "XdmfDsmComm.h"
 #include "XdmfDsmSocket.h"
 
@@ -53,17 +55,12 @@ public:
   XdmfInt32   Check(XdmfDsmMsg *Msg);
   XdmfInt32   Barrier();
 
-  // Server Side
   XdmfInt32   OpenPort();
   XdmfInt32   ClosePort();
   XdmfInt32   RemoteCommAccept();
-  XdmfInt32   RemoteCommReset();
-
-  // Client Side
   XdmfInt32   RemoteCommConnect();
   XdmfInt32   RemoteCommDisconnect();
 
-  // Info exchange
   XdmfInt32   RemoteCommRecvInfo(XdmfInt64 *length, XdmfInt64 *totalLength,
       XdmfInt32 *startServerId, XdmfInt32 *endServerId);
   XdmfInt32   RemoteCommSendInfo(XdmfInt64 *length, XdmfInt64 *totalLength,
@@ -73,8 +70,12 @@ public:
   XdmfInt32   RemoteCommRecvXML(XdmfString *file);
 
 protected:
+  XdmfInt32   InterCommServerConnect();
+  XdmfInt32   InterCommClientConnect();
+
   MPI_Comm             Comm;
-  XdmfDsmSocket      **InterComm;  // Internode Socket Collection for data exchange
+  XdmfDsmSocket       *InterComm[XDMF_DSM_MAX_SOCKET]; // Internode Socket Collection for data exchange
+  XdmfInt32            InterSize;
   XdmfDsmSocket       *DsmMasterSocket; // Used for initializing connection and send comm orders
   XdmfByte             DsmMasterHostName[MPI_MAX_PORT_NAME];
   XdmfInt32            DsmMasterPort;

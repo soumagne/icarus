@@ -93,6 +93,11 @@ public:
   // -1 on error.
   int GetPort();
 
+  // Description:
+  // Returns the hostname to which the socket is connected.
+  // -1 on error.
+  const char* GetHostName();
+
   // ------ Communication API --- // Should never be used
   // Description:
   // These methods send data over the socket.

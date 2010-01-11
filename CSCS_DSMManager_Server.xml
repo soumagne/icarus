@@ -45,6 +45,14 @@
       </Property>
       
       <IntVectorProperty
+        name="DsmIsServer"
+        command="SetDsmIsServer"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+      
+      
+      <IntVectorProperty
         name="DsmCommType"
         command="SetDsmCommType"
         number_of_elements="1"

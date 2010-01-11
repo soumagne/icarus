@@ -59,6 +59,11 @@ public:
   vtkGetMacro(LocalBufferSizeMBytes,int);
 
   // Description:
+  // Set/Get DsmIsServer info
+  vtkSetMacro(DsmIsServer, int);
+  vtkGetMacro(DsmIsServer, int);
+
+  // Description:
   // Set/Get the interprocess communication subsystem
   vtkSetMacro(DsmCommType, int);
   vtkGetMacro(DsmCommType, int);
@@ -77,8 +82,8 @@ public:
 
   // Description:
   // Only valid after a AcceptConnection call has been made.
-  vtkSetMacro(AcceptedConnection, bool);
-  bool GetAcceptedConnection();
+  vtkSetMacro(AcceptedConnection, int);
+  int GetAcceptedConnection();
 
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
@@ -123,9 +128,6 @@ protected:
     //
     // Internal Variables
     //
-    char          *FileName;
-    int            NumberOfTimeSteps;
-    int            TimeStep;
     int            UpdatePiece;
     int            UpdateNumPieces;
     vtkTypeInt64   LocalBufferSizeMBytes;
@@ -136,24 +138,23 @@ protected:
 #elif HAVE_BOOST_THREADS
     boost::thread *ServiceThread;
 #endif
-    XdmfDsmBuffer *DSMBuffer;
     //ETX
-
 
     //BTX
 #ifdef VTK_USE_MPI
     //ETX
     vtkMultiProcessController* Controller;
     //BTX
+    XdmfDsmBuffer  *DSMBuffer;
     XdmfDsmComm    *DSMComm;
     //
+    int             DsmIsServer;
     int             DsmCommType;
     char           *PublishedServerHostName;
     int             PublishedServerPort;
-
-    bool            AcceptedConnection;
-    // bool            KillConnection;
-
+    //
+    int             AcceptedConnection;
+    //
     char           *XMFDescriptionFilePath;
     std::string     DumpDescription;
     std::string     GeneratedDescription;
