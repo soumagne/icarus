@@ -51,7 +51,8 @@ enum H5_MB_types {
 };
 //--------------------------------------------------------------------------
 DSM_DLL H5MB_tree_type *H5MB_init(const char *filename);
-DSM_DLL bool            H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, int rank, hssize_t *count=NULL);
+DSM_DLL bool            H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, 
+  int rank, hssize_t *dims=NULL, hssize_t *start=NULL, hssize_t *stride=NULL, hssize_t *count=NULL);
 DSM_DLL bool            H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm);
 DSM_DLL bool            H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id);
 DSM_DLL hid_t           H5MB_get(H5MB_tree_type *treestruct, const char *datasetpath);

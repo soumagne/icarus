@@ -104,8 +104,14 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     this->dataArrays = new ArrayMap();
   }
   XdmfHDF *hdf = dynamic_cast<XdmfHDF*>(ds);
-  hssize_t count[5] = { 0,0,0,0,0};
-  hdf->GetShape(&count[0]);
+  hssize_t   dims[5] = { 0,0,0,0,0};
+  hssize_t  start[5] = { 0,0,0,0,0};
+  hssize_t stride[5] = { 0,0,0,0,0};
+  hssize_t  count[5] = { 0,0,0,0,0};
+  hdf->GetShape(dims);
+  if (hdf->GetSelectionType()==XDMF_HYPERSLAB) {
+    hdf->GetHyperSlab(&start[0],&stride[0],&count[0]);
+  }
   //
   this->dataArrays->datamap.insert( HeavyType(Path, NULL));
 //  Debug("DoOpen with map size " << this->dataArrays->datamap.size());
@@ -114,10 +120,10 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
   size_t len=256;
   herr_t err = H5LTdtype_to_text(hdf->GetDataType(), datatype, H5LT_DDL, &len);
   if (err>=0) {
-    H5MB_add(this->tree, Path.c_str(), datatype, hdf->GetRank(), count);
+    H5MB_add(this->tree, Path.c_str(), datatype, hdf->GetRank(), dims, start, stride, count);
   }
   else {
-    H5MB_add(this->tree, Path.c_str(), "TYPE_ERROR", hdf->GetRank(), count);
+    H5MB_add(this->tree, Path.c_str(), "TYPE_ERROR", hdf->GetRank(), dims, start, stride, count);
   }
 
   return XDMF_SUCCESS;
@@ -163,16 +169,39 @@ void H5MBCallback::Synchronize()
     const char *datasetpath = it->first.c_str();
     Debug("Fetching array for " << datasetpath);
     hid_t Dataset = H5MB_get(this->tree, datasetpath);
+    herr_t status;
 
-    XdmfArray     *data_array = it->second;
-
-    herr_t status = H5Dwrite( Dataset,
-      data_array->GetDataType(),
-      H5S_ALL,
-      H5S_ALL,
-      H5P_DEFAULT,
-      data_array->GetDataPointer() );
-
+    XdmfArray *data_array = it->second;
+    if (data_array->GetSelectionType()==XDMF_HYPERSLAB) {
+      hsize_t   dims[5] = { 0,0,0,0,0};
+      hsize_t  start[5] = { 0,0,0,0,0};
+      hsize_t stride[5] = { 0,0,0,0,0};
+      hsize_t  count[5] = { 0,0,0,0,0};
+      data_array->GetShape((XdmfInt64*)(&dims[0]));
+      data_array->GetHyperSlab((XdmfInt64*)(start), (XdmfInt64*)(stride), (XdmfInt64*)(count));
+      hid_t diskshape = H5Screate_simple(data_array->GetRank(), dims, NULL);
+      status = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET, start, stride, count, NULL);
+      hid_t memshape  = H5Screate_simple(data_array->GetRank(), count, NULL);
+      if ( status < 0 ) {
+        Error("creating hyperslab " << datasetpath);
+      }
+      status = H5Dwrite(Dataset,  
+          data_array->GetDataType(),
+          memshape,
+          diskshape,
+          H5P_DEFAULT,
+          data_array->GetDataPointer() );
+      H5Sclose(memshape);
+      H5Sclose(diskshape);
+    }
+    else {
+      status = H5Dwrite( Dataset,
+          data_array->GetDataType(),
+          H5S_ALL,
+          H5S_ALL,
+          H5P_DEFAULT,
+          data_array->GetDataPointer() );
+    }
     if ( status < 0 ) {
       Error("writing " << datasetpath);
     }

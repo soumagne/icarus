@@ -37,7 +37,8 @@ extern "C" {
 //--------------------------------------------------------------------------
 class H5MB_info {
   public:
-    H5MB_info(const char *text, const char *type, int rank, hssize_t *count=NULL)
+    H5MB_info(const char *text, const char *type, int rank, 
+      hssize_t *dims=NULL, hssize_t *start=NULL, hssize_t *stride=NULL, hssize_t *count=NULL)
     {
       this->Text        = text;
       this->hdf5_handle = -1;
@@ -46,7 +47,10 @@ class H5MB_info {
       }
       this->Rank        = rank;
       for (int d=0; d<rank; d++) {
-        this->Count[d]  = count[d];
+        this->Dims[d]   = dims[d];
+        this->Start[d]  = start  ? start[d]  : 0;
+        this->Stride[d] = stride ? stride[d] : 0;
+        this->Count[d]  = count  ? count[d]  : 0;
       }
     }
     //
@@ -58,6 +62,9 @@ class H5MB_info {
     std::string Text;
     std::string DataType;
     int         Rank;
+    hsize_t     Dims[5];
+    hsize_t     Start[5];
+    hsize_t     Stride[5];
     hsize_t     Count[5];
     hid_t       hdf5_handle;
     //
@@ -78,6 +85,9 @@ class H5MB_info {
       os << "NO_DATATYPE";
     }
     os << " " << t.Rank << " " << std::endl;
+    for (int d=0; d<t.Rank; ++d) os << t.Dims[d] << " ";
+    for (int d=0; d<t.Rank; ++d) os << t.Start[d] << " ";
+    for (int d=0; d<t.Rank; ++d) os << t.Stride[d] << " ";
     for (int d=0; d<t.Rank; ++d) os << t.Count[d] << " ";
     os << std::endl;
     return os;
@@ -95,6 +105,9 @@ class H5MB_info {
     if (strcmp(dtypebuf,"NO_DATATYPE")!=0) {
       t.DataType = dtypebuf;
     }
+    for (int d=0; d<t.Rank; ++d) is >> t.Dims[d];
+    for (int d=0; d<t.Rank; ++d) is >> t.Start[d];
+    for (int d=0; d<t.Rank; ++d) is >> t.Stride[d];
     for (int d=0; d<t.Rank; ++d) is >> t.Count[d];
     return is;
   }
@@ -277,7 +290,8 @@ H5MB_tree_type *H5MB_init(const char *filename) {
     H5MB_add : Add an object to the tree
 
 */
-bool H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, int rank, hssize_t *count)
+bool H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, 
+  int rank, hssize_t *dims, hssize_t *start, hssize_t *stride, hssize_t *count)
 {
   TreeClass *tree = reinterpret_cast<TreeClass *>(treestruct->TreePtr);
   if (!tree) return false;
@@ -294,7 +308,7 @@ bool H5MB_add(H5MB_tree_type *treestruct, const char *path, const char *type, in
     }
     else {
       if (it==(paths.end()-1)) {
-        parent = parent->insert(H5MB_info((*it).c_str(), type, rank, count)).node();
+        parent = parent->insert(H5MB_info((*it).c_str(), type, rank, dims, start, stride, count)).node();
       }
       else {
         parent = parent->insert(H5MB_info((*it).c_str(), 0, 0)).node();
@@ -419,7 +433,7 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
         // it's a leaf, so create a dataset
         H5MB_info   *data = it->get();
         hid_t     type_id = H5LTtext_to_dtype(data->DataType.c_str(), H5LT_DDL);
-        hid_t    space_id = H5Screate_simple(data->Rank, data->Count, NULL);
+        hid_t    space_id = H5Screate_simple(data->Rank, data->Dims, NULL);
 #if (!H5_USE_16_API_DEFAULT && ((H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))))
         data->hdf5_handle = H5Dcreate(location, data->get_text().c_str(), type_id, space_id, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
 #else
@@ -431,7 +445,7 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
         else {
           std::stringstream temp;
           temp << " {"; 
-          for (int i=0; i<data->Rank; i++) temp << data->Count[i] << ",";
+          for (int i=0; i<data->Rank; i++) temp << data->Dims[i] << ",";
           temp << "} ";
           Debug("creating dataset " << data->get_text().c_str() << " " << temp.str().c_str() << " returned handle " << data->hdf5_handle);
         }
