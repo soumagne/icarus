@@ -47,6 +47,7 @@
 #include "vtkCellArray.h"
 #include "vtkCellData.h"
 #include "vtkGenericCell.h"
+#include "vtkMath.h"
 //
 #include "vtkDSMManager.h"
 //
@@ -253,12 +254,24 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   grid.SetName(name);
   domain.Insert(&grid);
 
+  int UpdateExtent[6], WholeExtent[6];
+  dataset->GetUpdateExtent(UpdateExtent);
+  dataset->GetWholeExtent(WholeExtent);
+  int UsingPieces = false;
+  // if WholeEx inside (equals) UpdateEx, then we are not treating pieces
+  if (!vtkMath::ExtentIsWithinOtherExtent(WholeExtent, UpdateExtent)) {
+    UsingPieces = true;
+  }
+  
   //
   // File/DataGroup name
   //
   vtkstd::string hdf5name = this->BaseFileName + ".h5";
   vtkstd::stringstream hdf5group;
-  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep << XDMFW_GROUP_SEPARATOR << "Process_" << this->UpdatePiece;
+  hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep;
+  if (!UsingPieces) {
+    hdf5group << XDMFW_GROUP_SEPARATOR << "Process_" << this->UpdatePiece;
+  }
   if (index>=0) {
     hdf5group << XDMFW_GROUP_SEPARATOR << "Block_" << index;
   }
