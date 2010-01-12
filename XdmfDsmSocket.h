@@ -98,6 +98,13 @@ public:
   // -1 on error.
   const char* GetHostName();
 
+  // Description:
+  // Selects set of sockets. Returns 0 on timeout, -1 on error.
+  // 1 on success. Selected socket's index is returned through
+  // selected_index
+  static int SelectSockets(const int *sockets_to_select, int size,
+    unsigned long msec, int *selected_index);
+
   // ------ Communication API --- // Should never be used
   // Description:
   // These methods send data over the socket.

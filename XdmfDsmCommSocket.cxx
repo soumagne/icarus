@@ -39,7 +39,7 @@ XdmfDsmCommSocket::XdmfDsmCommSocket()
 XdmfDsmCommSocket::~XdmfDsmCommSocket()
 {
   for (int i=0; i<XDMF_DSM_MAX_SOCKET ;i++) {
-     if (this->InterComm[i]) delete this->InterComm;
+     if (this->InterComm[i]) delete this->InterComm[i];
      this->InterComm[i] = NULL;
    }
   if (this->DsmMasterSocket) delete this->DsmMasterSocket;
@@ -117,8 +117,16 @@ XdmfDsmCommSocket::Receive(XdmfDsmMsg *Msg)
     if (source >= 0) {
       this->InterComm[source]->Receive(Msg->Data, Msg->Length);
     } else {
-
-    // if ANY_SOURCE use select on the whole list of sockets descriptors
+      // TODO when modifying then dynamically the socket array, should be careful not to change it
+      // while doing a select on it
+      int selectedIndex;
+      int socketsToSelect[this->InterSize];
+      for (int i=0; i<this->InterSize; i++) {
+        socketsToSelect[i] = this->InterComm[i]->GetClientSocketDescriptor();
+      }
+      // if ANY_SOURCE use select on the whole list of sockets descriptors
+      this->InterComm[0]->SelectSockets(socketsToSelect, this->InterSize, 0, &selectedIndex);
+      this->InterComm[selectedIndex]->Receive(Msg->Data, Msg->Length);
     }
   }
   else {
@@ -265,8 +273,8 @@ XdmfInt32
 XdmfDsmCommSocket::RemoteCommDisconnect()
 {
   if (XdmfDsmComm::RemoteCommDisconnect() != XDMF_SUCCESS) return(XDMF_FAIL);
-  for (int i=0; i<XDMF_DSM_MAX_SOCKET ;i++) {
-    if (this->InterComm[i]) delete this->InterComm;
+  for (int i=0; i<XDMF_DSM_MAX_SOCKET; i++) {
+    if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;
   }
   this->CommChannel = XDMF_DSM_COMM_CHANNEL_LOCAL;

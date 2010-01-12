@@ -137,6 +137,44 @@ int XdmfDsmSocket::Bind(int port, const char *hostName)
 }
 
 //-----------------------------------------------------------------------------
+int XdmfDsmSocket::Select(unsigned long msec)
+{
+  int socketdescriptor = -1;
+  if (this->ClientSocketDescriptor < 0) {
+    socketdescriptor = this->SocketDescriptor;
+  } else {
+    socketdescriptor = this->ClientSocketDescriptor;
+  }
+
+  if (socketdescriptor < 0) {
+    // invalid socket descriptor.
+    return -1;
+  }
+
+  fd_set rset;
+  struct timeval tval;
+  struct timeval* tvalptr = 0;
+  if (msec > 0) {
+    tval.tv_sec = msec / 1000;
+    tval.tv_usec = (msec % 1000)*1000;
+    tvalptr = &tval;
+  }
+  FD_ZERO(&rset);
+  FD_SET(socketdescriptor, &rset);
+  int res = select(socketdescriptor + 1, &rset, 0, 0, tvalptr);
+  if(res == 0) {
+    return 0;//for time limit expire
+  }
+
+  if (res < 0 || !(FD_ISSET(socketdescriptor, &rset))) {
+    // Some error.
+    return -1;
+  }
+  // The indicated socket has some activity on it.
+  return 1;
+}
+
+//-----------------------------------------------------------------------------
 int XdmfDsmSocket::Accept()
 {
   struct sockaddr_in client;
@@ -224,6 +262,50 @@ const char* XdmfDsmSocket::GetHostName()
     return NULL;
   }
   return (const char*)inet_ntoa(sockinfo.sin_addr);
+}
+
+//-----------------------------------------------------------------------------
+int XdmfDsmSocket::SelectSockets(const int *sockets_to_select, int size,
+    unsigned long msec, int *selected_index)
+{
+  int i;
+  int max_fd = -1;
+  *selected_index = -1;
+  if (size <  0) {
+    return -1;
+  }
+
+  fd_set rset;
+  struct timeval tval;
+  struct timeval* tvalptr = 0;
+  if (msec > 0) {
+    tval.tv_sec = msec / 1000;
+    tval.tv_usec = msec % 1000;
+    tvalptr = &tval;
+  }
+  FD_ZERO(&rset);
+  for (i=0; i<size; i++) {
+    FD_SET(sockets_to_select[i],&rset);
+    max_fd = (sockets_to_select[i] > max_fd)? sockets_to_select[i] : max_fd;
+  }
+
+  int res = select(max_fd + 1, &rset, 0, 0, tvalptr);
+  if (res == 0) {
+    return 0; //Timeout
+  }
+  if (res < 0) {
+    // SelectSocket error.
+    return -1;
+  }
+
+  //check which socket has some activity.
+  for (i=0; i<size; i++) {
+    if (FD_ISSET(sockets_to_select[i],&rset)) {
+      *selected_index = i;
+      return 1;
+    }
+  }
+  return -1;
 }
 
 //-----------------------------------------------------------------------------
