@@ -184,21 +184,6 @@ void H5MBCallback::Synchronize()
       data_array->GetHyperSlab((XdmfInt64*)(start), (XdmfInt64*)(stride), (XdmfInt64*)(count));
       hid_t diskshape = H5Screate_simple(data_array->GetRank(), dims, NULL);
 
-      std::string H5MB_utility::TextVector(char *title, int rank, hsize_t *var);
-/*
-      std::stringstream temp;
-      temp << " Dimensions : {";
-      for (int i=0; i<rank; i++) temp << dims[i] << ",";
-      temp << "}\n Start : {"; 
-      for (int i=0; i<rank; i++) temp << start[i] << ",";
-      temp << "}\n Stride : {"; 
-      for (int i=0; i<rank; i++) temp << stride[i] << ",";
-      temp << "}\n Count : {"; 
-      for (int i=0; i<rank; i++) temp << count[i] << ",";
-      temp << "}\n END : {"; 
-      for (int i=0; i<rank; i++) temp << start[i]+count[i] << ",";
-      temp << "}" << std::ends;
-*/
       Debug("Hyperslab setup  using " 
         << H5MB_utility::TextVector("Dimensions", rank, dims).c_str()
         << H5MB_utility::TextVector("Start",      rank, start).c_str()
