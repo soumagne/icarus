@@ -137,6 +137,7 @@ XdmfInt32 H5MBCallback::DoClose(XdmfHeavyData *ds)
 XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
 {
   XdmfArray *newArray = new XdmfArray();
+  newArray->SetAllowAllocate(0);
   newArray->CopyShape(array);
   newArray->CopyType(array);
   newArray->CopySelection(array);
