@@ -178,10 +178,29 @@ void H5MBCallback::Synchronize()
       hsize_t  start[5] = { 0,0,0,0,0};
       hsize_t stride[5] = { 0,0,0,0,0};
       hsize_t  count[5] = { 0,0,0,0,0};
+      int rank = data_array->GetRank();
       data_array->GetShape((XdmfInt64*)(&dims[0]));
       data_array->GetHyperSlab((XdmfInt64*)(start), (XdmfInt64*)(stride), (XdmfInt64*)(count));
       hid_t diskshape = H5Screate_simple(data_array->GetRank(), dims, NULL);
+
+      std::stringstream temp;
+      temp << " Dimensions : {";
+      for (int i=0; i<rank; i++) temp << dims[i] << ",";
+      temp << "}\n Start : {"; 
+      for (int i=0; i<rank; i++) temp << start[i] << ",";
+      temp << "}\n Stride : {"; 
+      for (int i=0; i<rank; i++) temp << stride[i] << ",";
+      temp << "}\n Count : {"; 
+      for (int i=0; i<rank; i++) temp << count[i] << ",";
+      temp << "}\n END : {"; 
+      for (int i=0; i<rank; i++) temp << start[i]+count[i] << ",";
+      temp << "}" << std::ends;
+      Debug("Hyperslab setup  using " << temp.str().c_str());
+
       status = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET, start, stride, count, NULL);
+      if ( status < 0 ) {
+        Error("Hyperslab selection " << datasetpath);
+      }
       hid_t memshape  = H5Screate_simple(data_array->GetRank(), count, NULL);
       if ( status < 0 ) {
         Error("creating hyperslab " << datasetpath);
