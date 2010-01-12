@@ -37,6 +37,7 @@ extern "C" {
 //--------------------------------------------------------------------------
 class H5MB_info {
   public:
+    // Note that dims, start, stride, count should be in HDF/XMDF reverse dimension order
     H5MB_info(const char *text, const char *type, int rank, 
       hssize_t *dims=NULL, hssize_t *start=NULL, hssize_t *stride=NULL, hssize_t *count=NULL)
     {
@@ -173,13 +174,13 @@ namespace H5MB_utility
     }
   }
   //------------------------------------------------------------------------
-  int split(const char* str, const char* delim, 
+  size_t split(const char* str, const char* delim, 
     std::vector<std::string>& results, bool empties = true)
   {
     char* pstr = const_cast<char*>(str);
     char* r = NULL;
     r = strstr(pstr, delim);
-    int dlen = strlen(delim);
+    size_t dlen = strlen(delim);
     while( r != NULL ) {
       char* cp = new char[(r-pstr)+1];
       memcpy(cp, pstr, (r-pstr));
@@ -196,6 +197,19 @@ namespace H5MB_utility
       results.push_back(std::string(pstr));
     }
     return results.size();
+  }
+  //------------------------------------------------------------------------
+  std::string TextVector(char *title, int rank, hsize_t *var) {
+    std::stringstream temp;
+    temp << title << " {"; 
+    for (int i=0; i<rank; i++) {
+      temp << var[i];
+      if (i<rank-1) {
+        temp << ",";
+      }
+    }
+    temp << "} ";
+    return temp.str();
   }
 }
 //--------------------------------------------------------------------------
@@ -221,7 +235,7 @@ std::istream& operator>>(std::istream& is, TreeClass& t)
   //
   for (int i=0; i<childcount; ++i) { 
     // mark stream position because item is read once here
-    int pos = is.tellg();
+    std::streamoff pos = is.tellg();
     H5MB_info item("", 0, NULL);
     is >> item;
     TreeClass::iterator it = H5MB_utility::find(&t, item.get_text());
@@ -339,7 +353,7 @@ bool H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm)
   //
   // Do an exchange between all processes
   //
-  int len = data.str().size();
+  size_t len = data.str().size();
   Debug("size to send is " << len);
 
   // Collect all the trees into one big string

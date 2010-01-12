@@ -61,7 +61,7 @@ int main(int argc, char *argv[])
         << "/Proc#" << std::setw(5) << std::setfill('0') << rank
         << "/Grid#" << std::setw(5) << std::setfill('0') << i;
 
-      hssize_t count[3]  = { 100,100,3};
+      hssize_t count[3]  = { 3, 100, 100 }; // reverse order please
       H5MB_add(tree, data.str().c_str(), "H5T_STD_I32LE", 3, count);
     }
   }

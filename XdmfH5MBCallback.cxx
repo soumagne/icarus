@@ -174,10 +174,7 @@ void H5MBCallback::Synchronize()
 
     XdmfArray *data_array = it->second;
     if (data_array->GetSelectionType()==XDMF_HYPERSLAB) {
-      hsize_t   dims[5] = { 0,0,0,0,0};
-      hsize_t  start[5] = { 0,0,0,0,0};
-      hsize_t stride[5] = { 0,0,0,0,0};
-      hsize_t  count[5] = { 0,0,0,0,0};
+      hsize_t   dims[5], start[5], stride[5], count[5];
       int rank = data_array->GetRank();
       data_array->GetShape((XdmfInt64*)(&dims[0]));
       data_array->GetHyperSlab((XdmfInt64*)(start), (XdmfInt64*)(stride), (XdmfInt64*)(count));
