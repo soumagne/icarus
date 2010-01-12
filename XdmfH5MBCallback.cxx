@@ -157,6 +157,10 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
   return XDMF_SUCCESS;
 }
 //----------------------------------------------------------------------------
+namespace H5MB_utility {
+  extern std::string TextVector(char *title, int rank, hsize_t *var);
+};
+//----------------------------------------------------------------------------
 void H5MBCallback::Synchronize()
 {
   if (!this->tree) return;
@@ -180,6 +184,8 @@ void H5MBCallback::Synchronize()
       data_array->GetHyperSlab((XdmfInt64*)(start), (XdmfInt64*)(stride), (XdmfInt64*)(count));
       hid_t diskshape = H5Screate_simple(data_array->GetRank(), dims, NULL);
 
+      std::string H5MB_utility::TextVector(char *title, int rank, hsize_t *var);
+/*
       std::stringstream temp;
       temp << " Dimensions : {";
       for (int i=0; i<rank; i++) temp << dims[i] << ",";
@@ -192,7 +198,13 @@ void H5MBCallback::Synchronize()
       temp << "}\n END : {"; 
       for (int i=0; i<rank; i++) temp << start[i]+count[i] << ",";
       temp << "}" << std::ends;
-      Debug("Hyperslab setup  using " << temp.str().c_str());
+*/
+      Debug("Hyperslab setup  using " 
+        << H5MB_utility::TextVector("Dimensions", rank, dims).c_str()
+        << H5MB_utility::TextVector("Start",      rank, start).c_str()
+        << H5MB_utility::TextVector("Stride",     rank, stride).c_str()
+        << H5MB_utility::TextVector("Count",      rank, count).c_str()
+      );
 
       status = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET, start, stride, count, NULL);
       if ( status < 0 ) {
