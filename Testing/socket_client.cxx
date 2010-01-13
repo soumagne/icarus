@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
   strcpy(hostname, argv[1]);
   port = atoi(argv[2]);
 
+  sock.WinSockInit();
+
   if(sock.Create() < 0) {
     fprintf(stderr, "Unable to create socket\n");
     return EXIT_FAILURE;
@@ -60,6 +62,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   printf("ok\n");
+  sock.WinSockCleanup();
 
   return EXIT_SUCCESS;
 }

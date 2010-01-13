@@ -52,6 +52,11 @@ public:
   XdmfGetValueMacro(ClientSocketDescriptor, int);
 
   // Description:
+  // Initialize/Clean Windows Socket Library
+  int WinSockInit();
+  int WinSockCleanup();
+
+  // Description:
   // Creates an endpoint for communication and returns the descriptor.
   // -1 indicates error.
   int Create();
