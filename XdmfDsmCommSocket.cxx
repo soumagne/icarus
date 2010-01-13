@@ -120,13 +120,14 @@ XdmfDsmCommSocket::Receive(XdmfDsmMsg *Msg)
       // TODO when modifying then dynamically the socket array, should be careful not to change it
       // while doing a select on it
       int selectedIndex;
-      int socketsToSelect[this->InterSize];
+      int *socketsToSelect = new int[this->InterSize];
       for (int i=0; i<this->InterSize; i++) {
         socketsToSelect[i] = this->InterComm[i]->GetClientSocketDescriptor();
       }
       // if ANY_SOURCE use select on the whole list of sockets descriptors
       this->InterComm[0]->SelectSockets(socketsToSelect, this->InterSize, 0, &selectedIndex);
       this->InterComm[selectedIndex]->Receive(Msg->Data, Msg->Length);
+      delete []socketsToSelect;
     }
   }
   else {

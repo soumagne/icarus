@@ -71,6 +71,9 @@ XdmfDsmSocket::~XdmfDsmSocket()
 int XdmfDsmSocket::Create()
 {
   this->SocketDescriptor = socket(AF_INET, SOCK_STREAM, 0);
+  if (this->SocketDescriptor==INVALID_SOCKET) {
+    return -1;
+  }
   // Eliminate windows 0.2 second delay sending (buffering) data.
   int on = 1;
   if (setsockopt(this->SocketDescriptor, IPPROTO_TCP, TCP_NODELAY, (char*)&on, sizeof(on))) {
