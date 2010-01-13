@@ -274,6 +274,7 @@ XdmfInt32
 XdmfDsmCommSocket::RemoteCommDisconnect()
 {
   if (XdmfDsmComm::RemoteCommDisconnect() != XDMF_SUCCESS) return(XDMF_FAIL);
+  this->Barrier();
   for (int i=0; i<XDMF_DSM_MAX_SOCKET; i++) {
     if (this->InterComm[i]) delete this->InterComm[i];
     this->InterComm[i] = NULL;

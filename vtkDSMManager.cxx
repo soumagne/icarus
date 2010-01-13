@@ -243,7 +243,7 @@ bool vtkDSMManager::CreateDSM()
     vtkDebugMacro(<< "Using Socket Intercomm...");
     dynamic_cast<XdmfDsmCommSocket*> (this->DSMComm)->DupComm(mpiComm);
   }
-  this->DSMComm->DebugOn();
+  //this->DSMComm->DebugOn();
   this->DSMComm->Init();
   //
   // Create the DSM buffer
