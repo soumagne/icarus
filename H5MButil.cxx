@@ -199,7 +199,7 @@ namespace H5MB_utility
     return results.size();
   }
   //------------------------------------------------------------------------
-  std::string TextVector(char *title, int rank, hsize_t *var) {
+  std::string TextVector(const char *title, int rank, hsize_t *var) {
     std::stringstream temp;
     temp << title << " {"; 
     for (int i=0; i<rank; i++) {

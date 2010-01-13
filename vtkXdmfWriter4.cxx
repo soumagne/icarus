@@ -346,7 +346,6 @@ XdmfDOM *vtkXdmfWriter4::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
 
   cDOM->SetWorkingDirectory(this->WorkingDirectory.c_str());
   //
-  XdmfXmlNode     root = cDOM->GetRoot();
   XdmfXmlNode   domain = cDOM->FindElement("Domain");
   XdmfXmlNode gridNode = cDOM->FindElement("Grid", 0, domain);
   //
@@ -426,7 +425,7 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
           std::vector<char> buffer(recv_len+1);
           this->Controller->Receive(&buffer[0], recv_len+1, i, 2);
           buffer[recv_len] = 0;
-          XdmfXmlNode rgidtimeNode = timestep->InsertFromString(grid, &buffer[0]);
+          timestep->InsertFromString(grid, &buffer[0]);
         }
       }
     }
@@ -521,7 +520,7 @@ int vtkXdmfWriter4::RequestData(
     int index = 0;
     timeStepDOM = this->CreateEmptyCollection("vtkMultiBlock", "Spatial");
     for (iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextItem()) {
-      const char *dsname = mbinput->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
+      // const char *dsname = mbinput->GetMetaData(iter)->Get(vtkCompositeDataSet::NAME());
       dsinput = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
       bool StaticFlag = false;
       if (dsinput) {
@@ -538,10 +537,7 @@ int vtkXdmfWriter4::RequestData(
 
   this->Callback->Synchronize();
 
-  if (timeStepDOM) {
-    XdmfXmlNode domain = timeStepDOM->FindElement("Domain");
-    this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
-  }
+  if (timeStepDOM) this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
 
 #ifdef VTK_USE_MPI
   if (this->Controller) {
@@ -549,9 +545,7 @@ int vtkXdmfWriter4::RequestData(
   }
 #endif
 
-  if (timeStepDOM) {
-    delete timeStepDOM;
-  }
+  if (timeStepDOM) delete timeStepDOM;
 
   delete outputDOM;
   this->TimeStep++;

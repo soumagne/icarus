@@ -77,7 +77,7 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
 
   if (this->tree==NULL) {
     std::string filename = FileName;
-    herr_t status;
+    herr_t status = -1;
     this->AccessPlist = H5Pcreate(H5P_FILE_ACCESS);
     if (this->AccessPlist>=0) {
       Debug("property list created with Id " << this->AccessPlist);
@@ -158,7 +158,7 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
 }
 //----------------------------------------------------------------------------
 namespace H5MB_utility {
-  extern std::string TextVector(char *title, int rank, hsize_t *var);
+  extern std::string TextVector(const char *title, int rank, hsize_t *var);
 };
 //----------------------------------------------------------------------------
 void H5MBCallback::Synchronize()

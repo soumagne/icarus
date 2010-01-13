@@ -3224,7 +3224,6 @@ int vtkXdmfReader3Internal::RequestGridData(
     XdmfInt64  Dimensions[XDMF_MAX_DIMENSION];
     XdmfDataDesc *desc = Attribute->GetShapeDesc();       
     desc->GetShape(Dimensions);
-    int rank = desc->GetRank();
     switch (AttributeType) 
       {
       case XDMF_ATTRIBUTE_TYPE_TENSOR :
