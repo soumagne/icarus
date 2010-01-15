@@ -259,7 +259,7 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   dataset->GetWholeExtent(WholeExtent);
   int UsingPieces = false;
   // if WholeEx inside (equals) UpdateEx, then we are not treating pieces
-  if (!vtkMath::ExtentIsWithinOtherExtent(WholeExtent, UpdateExtent)) {
+  if (dataset->IsTypeOf("vtkImageData") && !vtkMath::ExtentIsWithinOtherExtent(WholeExtent, UpdateExtent)) {
     UsingPieces = true;
   }
   
