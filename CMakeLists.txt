@@ -55,8 +55,6 @@ FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
 )
 INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/DSMDump-1.8)
-
 #--------------------------------------------------
 # Set Definitions 
 #--------------------------------------------------
@@ -109,7 +107,6 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDsmDump.cxx 
  GUI_INTERFACES 
     ${DSM_IFACE}
   GUI_SOURCES
@@ -127,15 +124,10 @@ TARGET_LINK_LIBRARIES(
   CSCS_DSM
     ${PARAVIEW_HDF5_LIBRARIES} 
     Xdmf
-    CSCS_h5dump
     ${Boost_LIBRARIES}
 )
 
 ENDIF(PARAVIEW_BUILD_QT_GUI)
-#-------------------------------------------------
-# H5dump lib
-#------------------------------------------------
-ADD_SUBDIRECTORY(DSMDump-1.8)
 
 #--------------------------------------------------
 # Testing
