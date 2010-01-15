@@ -6,11 +6,12 @@
 #include <iostream>
 #include <iomanip>
 #include <sstream>
-#include <mpi.h>
 #include <cstdlib>
 #include <time.h>
+#include <mpi.h>
 //
 #include "H5MButil.h"
+#include "H5FDdsm.h"
 //
 #define JDEBUG
 #ifdef  JDEBUG
@@ -49,6 +50,8 @@ int main(int argc, char *argv[])
   H5MB_tree_type *tree = H5MB_init("/H5MB_Test.h5");
 #endif
 
+  H5FD_dsm_init();
+
   for (int r=0; r<rank; r++) srand( (unsigned)time( NULL ) );
   //
   int steps = 1 + rank; // + rand() % 3;
@@ -77,12 +80,14 @@ int main(int argc, char *argv[])
   std::cout << "\nCombined tree " << std::endl;
   H5MB_print(tree);
 
+  H5close();
+
 #ifdef WIN32
   // wait for input char to allow debugger to be connected
   MPI_Barrier(MPI_COMM_WORLD);
   if (rank==0) {
-    char ch;
-    std::cin >> ch;
+//    char ch;
+//    std::cin >> ch;
   }
 #endif
 
