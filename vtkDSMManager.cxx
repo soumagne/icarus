@@ -369,6 +369,7 @@ void vtkDSMManager::H5Dump()
   if (this->DSMBuffer) {
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->SetFileName("DSM.h5");
     myDsmDump->Dump();
     if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
     delete myDsmDump;
@@ -380,6 +381,7 @@ void vtkDSMManager::H5DumpLight()
   if (this->DSMBuffer) {
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpLight();
     if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
     delete myDsmDump;
@@ -392,6 +394,7 @@ void vtkDSMManager::H5DumpXML()
     std::ostringstream dumpStream;
     XdmfDsmDump *myDsmDump = new XdmfDsmDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpXML(dumpStream);
     if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
     this->DumpDescription = dumpStream.str();
