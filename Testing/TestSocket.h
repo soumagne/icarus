@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : TestSocket.h
-  Revision of last commit : $Rev: 1481 $
+  Revision of last commit : $Rev: 1512 $
   Author of last commit   : $Author: soumagne $
-  Date of last commit     : $Date:: 2009-12-11 16:30:26 +0100 #$
+  Date of last commit     : $Date:: 2010-01-13 14:45:20 +0100 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -58,6 +58,11 @@ public:
   GetValueMacro(ClientSocketDescriptor, int);
 
   // Description:
+  // Initialize/Clean Windows Socket Library
+  int WinSockInit();
+  int WinSockCleanup();
+
+  // Description:
   // Creates an endpoint for communication and returns the descriptor.
   // -1 indicates error.
   int Create();
@@ -98,6 +103,21 @@ public:
   // Returns the port to which the socket is connected.
   // -1 on error.
   int GetPort();
+
+  // Description:
+  // Returns the hostname to which the socket is connected.
+  // -1 on error.
+  const char* GetHostName();
+
+  const char* GetLocalHostName();
+  const char* GetLocalHostAddr();
+
+  // Description:
+  // Selects set of sockets. Returns 0 on timeout, -1 on error.
+  // 1 on success. Selected socket's index is returned through
+  // selected_index
+  static int SelectSockets(const int *sockets_to_select, int size,
+    unsigned long msec, int *selected_index);
 
   // ------ Communication API --- // Should never be used
   // Description:

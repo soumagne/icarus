@@ -16,7 +16,9 @@
 
 int main(int argc, char *argv[]) {
 
-  char *recvbuf1;
+  char sendbuf1[] = "Bonjour le monde!";
+  int sendLength1;
+  char *recvbuf1 = NULL;
   int recvLength1;
   int port; char *hostName = NULL;
 
@@ -55,7 +57,7 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
 
-  printf("Waiting now for connection on port %d...", port);
+  printf("Waiting now for connection on %s:%d...", sock.GetHostName(), sock.GetPort());
   fflush(stdout);
   if (sock.Accept() < 0) {
     fprintf(stderr, "Accept failed\n");
@@ -63,7 +65,9 @@ int main(int argc, char *argv[]) {
   }
   printf("ok\n");
 
-  printf("Receiving test message using sockets only...");
+  printf("%s(%s) is now connected\n", sock.GetLocalHostName(), sock.GetLocalHostAddr());
+
+  printf("Receiving test message from client...");
   fflush(stdout);
   if (sock.Receive(&recvLength1, sizeof(recvLength1)) < 0) {
       fprintf(stderr, "Error in Socket Receive\n");
@@ -76,6 +80,19 @@ int main(int argc, char *argv[]) {
   }
   printf("ok\nServer received: %s\n", recvbuf1);
   free(recvbuf1);
+
+  printf("Sending test message to client...");
+  fflush(stdout);
+  sendLength1 = strlen(sendbuf1)+1;
+  if (sock.Send(&sendLength1, sizeof(int)) < 0) {
+    fprintf(stderr, "Error in Socket Send\n");
+    return EXIT_FAILURE;
+  }
+  if (sock.Send(sendbuf1, sendLength1) < 0) {
+    fprintf(stderr, "Error in Socket Send\n");
+    return EXIT_FAILURE;
+  }
+  printf("ok\n");
   sock.WinSockCleanup();
 
   return EXIT_SUCCESS;

@@ -1,13 +1,17 @@
-CXX = mpicxx
-LIBS = -lmpich
+CXX = g++
+LIBS = 
 
-all: socket_mpi_client socket_mpi_server
+all: socket_client socket_server
 
-socket_mpi_client:	socket_mpi_client.cxx TestSocket.cxx TestSocket.h
-	${CXX} -DTESTSOCKET socket_mpi_client.cxx TestSocket.cxx -o $@ ${LIBS}
+socket_client:	socket_client.cxx TestSocket.cxx TestSocket.h
+	${CXX} -Wall -DTESTSOCKET socket_client.cxx TestSocket.cxx -o $@ ${LIBS}
 
-socket_mpi_server:      socket_mpi_server.cxx TestSocket.cxx TestSocket.h
-	${CXX} -DTESTSOCKET socket_mpi_server.cxx TestSocket.cxx -o $@ ${LIBS}
+socket_server:      socket_server.cxx TestSocket.cxx TestSocket.h
+	${CXX} -Wall -DTESTSOCKET socket_server.cxx TestSocket.cxx -o $@ ${LIBS}
 
 clean:
-	rm socket_mpi_client socket_mpi_server
+	rm *.o socket_client.p.* socket_server.p.*
+
+distclean:
+	rm *.o socket_client.p.* socket_server.p.* socket_client socket_server
+

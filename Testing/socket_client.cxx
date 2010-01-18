@@ -19,6 +19,8 @@ int main(int argc, char *argv[]) {
 
   char sendbuf1[] = "Hello World!";
   int sendLength1;
+  char *recvbuf1 = NULL;
+  int recvLength1;
   int port;
   char hostname[256];
 #ifndef TESTSOCKET
@@ -50,7 +52,9 @@ int main(int argc, char *argv[]) {
   }
   printf("ok\n");
 
-  printf("Sending test message using sockets only...");
+  printf("%s(%s) is now connected\n", sock.GetLocalHostName(), sock.GetLocalHostAddr());
+
+  printf("Sending test message to server...");
   fflush(stdout);
   sendLength1 = strlen(sendbuf1)+1;
   if (sock.Send(&sendLength1, sizeof(int)) < 0) {
@@ -62,6 +66,20 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   printf("ok\n");
+
+  printf("Receiving test message from server...");
+  fflush(stdout);
+  if (sock.Receive(&recvLength1, sizeof(recvLength1)) < 0) {
+      fprintf(stderr, "Error in Socket Receive\n");
+      return EXIT_FAILURE;
+    }
+  recvbuf1 = (char*) malloc(recvLength1);
+  if (sock.Receive(recvbuf1, recvLength1) < 0) {
+    fprintf(stderr, "Error in Socket Receive\n");
+    return EXIT_FAILURE;
+  }
+  printf("ok\nClient received: %s\n", recvbuf1);
+  free(recvbuf1);
   sock.WinSockCleanup();
 
   return EXIT_SUCCESS;
