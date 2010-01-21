@@ -403,11 +403,14 @@ void pqDSMViewerPanel::onTestDSM()
 
     pqSMAdaptor::setElementProperty(
         XdmfWriter->GetProperty("FileName"),
+        "stdin"
+/*
 #ifndef WIN32
         "/home/soumagne/test"
 #else
         "d:/test"
 #endif
+*/
     );
 
     pqSMAdaptor::setInputProperty(
