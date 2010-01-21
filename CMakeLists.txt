@@ -55,12 +55,22 @@ FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
 )
 INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+
 #--------------------------------------------------
 # Set Definitions 
 #--------------------------------------------------
 ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
 ADD_DEFINITIONS(-DCSCS_PARAVIEW_INTERNAL)
 ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+
+#-----------------------------------------------
+# Setup some convenience flags depending on machine
+#-----------------------------------------------
+SET(COMPUTERNAME $ENV{COMPUTERNAME})
+IF(COMPUTERNAME)
+  MESSAGE("Setting computername #DEFINE to MACHINE_$ENV{COMPUTERNAME}")
+  ADD_DEFINITIONS(-DMACHINE_$ENV{COMPUTERNAME})
+ENDIF(COMPUTERNAME)
 
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
