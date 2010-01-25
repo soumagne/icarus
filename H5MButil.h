@@ -65,8 +65,27 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
 #endif
 
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
-#ifdef JB_DEBUG__
+
+#define JB_DEBUG_MUTEX
+#define JB_DEBUG_NORMAL
+
+#ifdef JB_DEBUG_MUTEX
+  #include "XdmfObject.h"
+  #include <sstream>
+
+  #undef DebugMacro
+  #define DebugMacro(p,a)                           \
+  {                                                 \
+    std::stringstream vtkmsg;                       \
+    SimpleMutexLock::GlobalLock.Lock();             \
+    vtkmsg << "P(" << p << ") " << a;               \
+    std::cout << vtkmsg.str().c_str() << std::endl; \
+    SimpleMutexLock::GlobalLock.Unlock();           \
+  }
+
+  #define Debug(a) DebugMacro(0,a)
+  #define Error(a) DebugMacro(0,"Error " << a)
+#elif JB_DEBUG_NORMAL
   #include <sstream>
   #undef DebugMacro
   #define DebugMacro(p,a)                           \
@@ -82,4 +101,6 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
   #define Error(a) DebugMacro(a)
 #endif
 
-#endif
+
+//----------------------------------------------------------------------------
+#endif H5MButil_H
