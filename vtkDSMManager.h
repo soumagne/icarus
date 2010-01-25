@@ -85,6 +85,11 @@ public:
   vtkSetMacro(AcceptedConnection, int);
   int GetAcceptedConnection();
 
+  // Description:
+  // Only valid after a AcceptConnection call has been made.
+  vtkSetMacro(DsmUpdateReady, int);
+  int GetDsmUpdateReady();
+
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
 
@@ -154,6 +159,7 @@ protected:
     int             PublishedServerPort;
     //
     int             AcceptedConnection;
+    int             DsmUpdateReady;
     //
     char           *XMFDescriptionFilePath;
     std::string     DumpDescription;

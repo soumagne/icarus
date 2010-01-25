@@ -118,6 +118,15 @@ int vtkDSMManager::GetAcceptedConnection()
   return ret;
 }
 //----------------------------------------------------------------------------
+int vtkDSMManager::GetDsmUpdateReady()
+{
+  int ret = 0;
+  if (this->DSMBuffer) {
+    if (this->DSMBuffer->GetIsUpdateReady()) return 1;
+  }
+  return ret;
+}
+//----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
 {
 #ifdef VTK_USE_MPI

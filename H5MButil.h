@@ -85,7 +85,8 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
 
   #define Debug(a) DebugMacro(0,a)
   #define Error(a) DebugMacro(0,"Error " << a)
-#elif JB_DEBUG_NORMAL
+#else
+#ifdef JB_DEBUG_NORMAL
   #include <sstream>
   #undef DebugMacro
   #define DebugMacro(p,a)                           \
@@ -99,8 +100,8 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
 #else
   #define Debug(a) DebugMacro(a)
   #define Error(a) DebugMacro(a)
-#endif
-
+#endif // JB_DEBUG_NORMAL
+#endif // JB_DEBUG_MUTEX
 
 //----------------------------------------------------------------------------
-#endif H5MButil_H
+#endif // H5MButil_H
