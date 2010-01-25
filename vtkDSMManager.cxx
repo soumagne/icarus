@@ -49,19 +49,19 @@ typedef void* (*servicefn)(void *DsmObj) ;
 #ifdef NO_WIN32
   #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
 #else
-  #define OUTPUTTEXT(a) std::cout << (a) << "\n"; std::cout.flush();
+  #define OUTPUTTEXT(a) std::cout << (a) << std::endl;
 #endif
 
 #undef vtkDebugMacro
 #define vtkDebugMacro(a)  \
-    { \
-  vtkOStreamWrapper::EndlType endl; \
-  vtkOStreamWrapper::UseEndl(endl); \
-  vtkOStrStreamWrapper vtkmsg; \
-  vtkmsg a << "\n"; \
-  OUTPUTTEXT(vtkmsg.str()); \
-  vtkmsg.rdbuf()->freeze(0); \
-    }
+  { \
+    vtkOStreamWrapper::EndlType endl; \
+    vtkOStreamWrapper::UseEndl(endl); \
+    vtkOStrStreamWrapper vtkmsg; \
+    vtkmsg a << endl; \
+    OUTPUTTEXT(vtkmsg.str()); \
+    vtkmsg.rdbuf()->freeze(0); \
+  }
 
 #undef vtkErrorMacro
 #define vtkErrorMacro(a) vtkDebugMacro(a)
@@ -122,6 +122,7 @@ bool vtkDSMManager::DestroyDSM()
 {
 #ifdef VTK_USE_MPI
   if (this->DSMBuffer && this->UpdatePiece == 0) {
+    // @TODO watch out that all processes have empty message queues
     this->DSMBuffer->SendDone();
   }
 #endif
@@ -132,6 +133,7 @@ bool vtkDSMManager::DestroyDSM()
   }
 #elif HAVE_BOOST_THREADS
   if (this->ServiceThread) {
+    this->ServiceThread->join();
     delete this->ServiceThread;
     this->ServiceThread = NULL;
   }
@@ -243,13 +245,13 @@ bool vtkDSMManager::CreateDSM()
     vtkDebugMacro(<< "Using Socket Intercomm...");
     dynamic_cast<XdmfDsmCommSocket*> (this->DSMComm)->DupComm(mpiComm);
   }
-  //this->DSMComm->DebugOn();
+//  this->DSMComm->DebugOn();
   this->DSMComm->Init();
   //
   // Create the DSM buffer
   //
   this->DSMBuffer = new XdmfDsmBuffer();
-  this->DSMBuffer->DebugOn();
+//  this->DSMBuffer->DebugOn();
   this->DSMBuffer->SetServiceThreadUseCopy(0);
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->GetLocalBufferSizeMBytes()*1024*1024);
@@ -408,10 +410,10 @@ void vtkDSMManager::GenerateXMFDescription()
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
   if (this->DSMBuffer) {
-    xdmfGenerator->SetHdfFileName("DSM:test.h5");
+    xdmfGenerator->SetHdfFileName("DSM:DSM.h5");
   }
   else {
-    xdmfGenerator->SetHdfFileName("test.h5");
+    xdmfGenerator->SetHdfFileName("DSM.h5");
   }
   xdmfGenerator->GenerateHead();
   xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), this->DumpDescription.c_str());
