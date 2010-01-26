@@ -610,23 +610,28 @@ void pqDSMViewerPanel::FillDSMContents(QTreeWidgetItem *item, int node)
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUpdateTimeout()
 {
+  // make sure we only get one message at a time.
+  this->UpdateTimer->stop();
+
   // we don't want to create anything just to inspect it, so test flags only
-  if (!this->UI->ProxyCreated() || !this->UI->DSMInitialized) {
-    return;
-  }
-  if (this->DSMReady()) {
-    vtkSMIntVectorProperty *ur = vtkSMIntVectorProperty::SafeDownCast(
-      this->UI->DSMProxy->GetProperty("DsmUpdateReady"));
-    this->UI->DSMProxy->UpdatePropertyInformation(ur);
-    int ready = ur->GetElement(0);
-    if (ready != 0) {
-      this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-      QMessageBox msgBox(this);
-      msgBox.setIcon(QMessageBox::Information);
-      msgBox.setText("We have new data!");
-      msgBox.exec();
+  if (this->UI->ProxyCreated() && this->UI->DSMInitialized) {
+    if (this->DSMReady()) {
+      vtkSMIntVectorProperty *ur = vtkSMIntVectorProperty::SafeDownCast(
+        this->UI->DSMProxy->GetProperty("DsmUpdateReady"));
+      this->UI->DSMProxy->UpdatePropertyInformation(ur);
+      int ready = ur->GetElement(0);
+      if (ready != 0) {
+        QMessageBox msgBox(this);
+        msgBox.setIcon(QMessageBox::Information);
+        msgBox.setText("We have new data!");
+        msgBox.exec();
+        this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+      }
     }
   }
+
+  // restart the timer before we exit
+  this->UpdateTimer->start();
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::CreatePublishNameDialog()

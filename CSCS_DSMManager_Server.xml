@@ -106,6 +106,7 @@
       <IntVectorProperty
         name="DsmUpdateReady"
         command="GetDsmUpdateReady"
+        default_values="0"
         information_only="1"
         number_of_elements="1">
         <SimpleIntInformationHelper/>
