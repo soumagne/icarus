@@ -14,6 +14,7 @@ class pqServer;
 class QTreeWidgetItem;
 class QProgressDialog;
 class QTimer;
+class QButtonGroup;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -54,6 +55,9 @@ public slots:
   void TrackSource();
   void FillDSMContents(QTreeWidgetItem *item, int node);
 
+  void LoadSettings();
+  void SaveSettings();
+
 private slots:
 
 protected:
@@ -69,7 +73,7 @@ protected:
   bool             ConnectionFound;
   QTreeWidgetItem *DSMContentTree;
   int              DSMCommType;
-
+  QButtonGroup    *DSMServerGroup;
 protected slots:
 
 };

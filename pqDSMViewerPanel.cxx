@@ -29,6 +29,7 @@
 // ParaView includes
 #include "pqActiveServer.h"
 #include "pqApplicationCore.h"
+#include "pqSettings.h"
 #include "pqOutputPort.h"
 #include "pqPipelineSource.h"
 #include "pqPropertyLinks.h"
@@ -48,7 +49,8 @@
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel {
+class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel 
+{
 public:
   pqUI(pqDSMViewerPanel* p) : QObject(p)
   {
@@ -66,6 +68,7 @@ public:
     DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
     this->DSMProxy->UpdatePropertyInformation();
   }
+
   //
   bool ProxyCreated() { return this->DSMProxy!=NULL; }
   pqPropertyLinks            *Links;
@@ -168,10 +171,75 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->connect(this->UI->dsmContents,
       SIGNAL(itemChanged(QTreeWidgetItem *, int)),
       this, SLOT(FillDSMContents(QTreeWidgetItem *, int)));
+
+  //
+  // Button Group for Standalone/Server/Client buttons
+  //
+  DSMServerGroup = new QButtonGroup(this->UI);
+  DSMServerGroup->addButton(this->UI->dsmIsStandalone);
+  DSMServerGroup->addButton(this->UI->dsmIsServer);
+  DSMServerGroup->addButton(this->UI->dsmIsClient);
+  DSMServerGroup->setId(this->UI->dsmIsStandalone,0);
+  DSMServerGroup->setId(this->UI->dsmIsServer,1);
+  DSMServerGroup->setId(this->UI->dsmIsClient,2);
+  //
+  this->LoadSettings();
 }
 //----------------------------------------------------------------------------
 pqDSMViewerPanel::~pqDSMViewerPanel()
 {
+  this->SaveSettings();
+}
+//----------------------------------------------------------------------------
+void pqDSMViewerPanel::LoadSettings()
+{
+  pqSettings *settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("DSMManager");
+  int size = settings->beginReadArray("Servers");
+  if (size>0) {
+    this->UI->dsmServerName->clear();
+    for (int i=0; i<size; ++i) {
+      settings->setArrayIndex(i);
+      QString server = settings->value("server").toString();
+      this->UI->dsmServerName->addItem(server);
+    }
+  }
+  settings->endArray();
+  // Active server
+  this->UI->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
+  // Method
+  this->UI->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
+  // Port
+  this->UI->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
+  // Client/Server mode
+  int index = settings->value("ClientServerMode", 0).toInt();
+  if (index!=-1) this->DSMServerGroup->buttons()[index]->click();
+  //
+  settings->endGroup();
+}
+//----------------------------------------------------------------------------
+void pqDSMViewerPanel::SaveSettings()
+{
+  pqSettings *settings = pqApplicationCore::instance()->settings();
+  settings->beginGroup("DSMManager");
+  // servers
+  settings->beginWriteArray("Servers");
+  for (int i=0; i<this->UI->dsmServerName->model()->rowCount(); i++) {
+     settings->setArrayIndex(i);
+     settings->setValue("server", this->UI->dsmServerName->itemText(i));
+  }
+  settings->endArray();
+  // Active server
+  settings->setValue("Selected", this->UI->dsmServerName->currentIndex());
+  // Method
+  settings->setValue("Communication", this->UI->xdmfCommTypeComboBox->currentIndex());
+  // Port
+  settings->setValue("Port", this->UI->xdmfCommPort->value());
+  // Client/Server mode
+  int index = this->DSMServerGroup->checkedId();
+  settings->setValue("ClientServerMode", index);
+  //
+  settings->endGroup();
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
@@ -219,7 +287,7 @@ bool pqDSMViewerPanel::DSMReady()
                 this->UI->DSMProxy->GetProperty("DsmCommType"),
                 this->DSMCommType);
     }
-    if (this->UI->dsmIsServer->isChecked()) {
+    if (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked()) {
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("DsmIsServer"),
           1);
@@ -520,7 +588,7 @@ void pqDSMViewerPanel::TrackSource()
     {
       this->UI->ActiveSourceProxy = source->getProxy();
       this->UI->infoTextOutput->clear();
-      this->UI->infoTextOutput->insertPlainText(
+      this->UI->infoTextOutput->insert(
         this->UI->ActiveSourceProxy->GetVTKClassName()
         );
     }
