@@ -15,6 +15,7 @@ class QTreeWidgetItem;
 class QProgressDialog;
 class QTimer;
 class QButtonGroup;
+class QThread;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -42,6 +43,7 @@ public slots:
 
   void onConnectDSM();
   void onDisconnectDSM();
+  void onUpdateTimeout();
 
   void CreatePublishNameDialog();
   void TimeoutPublishName();
@@ -74,6 +76,8 @@ protected:
   QTreeWidgetItem *DSMContentTree;
   int              DSMCommType;
   QButtonGroup    *DSMServerGroup;
+  QThread         *UpdateThread;
+  QTimer          *UpdateTimer;
 protected slots:
 
 };

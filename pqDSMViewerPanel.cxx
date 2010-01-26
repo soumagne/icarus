@@ -14,6 +14,7 @@
 #include <QFileDialog>
 #include <QUrl>
 #include <QDesktopServices>
+#include <QThread>
 
 // VTK includes
 
@@ -93,6 +94,10 @@ pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
   this->ConnectionFound = false;
   this->DSMContentTree = NULL;
   this->DSMCommType = 0;
+  this->UpdateTimer = new QTimer(this);
+  this->UpdateTimer->setInterval(100);
+  connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
+  this->UpdateTimer->start();
 
   //
   // Link GUI object events to callbacks
@@ -601,6 +606,27 @@ void pqDSMViewerPanel::TrackSource()
 void pqDSMViewerPanel::FillDSMContents(QTreeWidgetItem *item, int node)
 {
   this->UI->dsmContents->insertTopLevelItem(node, item);
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onUpdateTimeout()
+{
+  // we don't want to create anything just to inspect it, so test flags only
+  if (!this->UI->ProxyCreated() || !this->UI->DSMInitialized) {
+    return;
+  }
+  if (this->DSMReady()) {
+    vtkSMIntVectorProperty *ur = vtkSMIntVectorProperty::SafeDownCast(
+      this->UI->DSMProxy->GetProperty("DsmUpdateReady"));
+    this->UI->DSMProxy->UpdatePropertyInformation(ur);
+    int ready = ur->GetElement(0);
+    if (ready != 0) {
+      this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+      QMessageBox msgBox(this);
+      msgBox.setIcon(QMessageBox::Information);
+      msgBox.setText("We have new data!");
+      msgBox.exec();
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::CreatePublishNameDialog()

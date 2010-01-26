@@ -89,6 +89,7 @@ public:
   // Only valid after a AcceptConnection call has been made.
   vtkSetMacro(DsmUpdateReady, int);
   int GetDsmUpdateReady();
+  void ClearDsmUpdateReady();
 
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);

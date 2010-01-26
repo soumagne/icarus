@@ -127,6 +127,13 @@ int vtkDSMManager::GetDsmUpdateReady()
   return ret;
 }
 //----------------------------------------------------------------------------
+void vtkDSMManager::ClearDsmUpdateReady()
+{
+  if (this->DSMBuffer) {
+    this->DSMBuffer->SetIsUpdateReady(0);
+  }
+}
+//----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
 {
 #ifdef VTK_USE_MPI
@@ -254,13 +261,13 @@ bool vtkDSMManager::CreateDSM()
     vtkDebugMacro(<< "Using Socket Intercomm...");
     dynamic_cast<XdmfDsmCommSocket*> (this->DSMComm)->DupComm(mpiComm);
   }
-//  this->DSMComm->DebugOn();
+  this->DSMComm->DebugOn();
   this->DSMComm->Init();
   //
   // Create the DSM buffer
   //
   this->DSMBuffer = new XdmfDsmBuffer();
-//  this->DSMBuffer->DebugOn();
+  this->DSMBuffer->DebugOn();
   this->DSMBuffer->SetServiceThreadUseCopy(0);
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->GetLocalBufferSizeMBytes()*1024*1024);

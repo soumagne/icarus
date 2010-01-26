@@ -51,7 +51,6 @@
         default_values="0">
       </IntVectorProperty>
       
-      
       <IntVectorProperty
         name="DsmCommType"
         command="SetDsmCommType"
@@ -103,6 +102,18 @@
         default_values="0">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
+
+      <IntVectorProperty
+        name="DsmUpdateReady"
+        command="GetDsmUpdateReady"
+        information_only="1"
+        number_of_elements="1">
+        <SimpleIntInformationHelper/>
+      </IntVectorProperty>
+
+      <Property name="ClearDsmUpdateReady"
+                command="ClearDsmUpdateReady">
+      </Property>      
 
     </Proxy>
 
