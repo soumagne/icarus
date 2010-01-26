@@ -287,15 +287,10 @@ bool pqDSMViewerPanel::DSMReady()
                 this->UI->DSMProxy->GetProperty("DsmCommType"),
                 this->DSMCommType);
     }
-    if (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked()) {
-      pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("DsmIsServer"),
-          1);
-    } else {
-      pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("DsmIsServer"),
-          0);
-    }
+    bool server = (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked());
+    pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("DsmIsServer"),
+        server);
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
