@@ -69,6 +69,8 @@ public:
     this->Links = new pqPropertyLinks;
     this->DSMInitialized   = 0;
     this->ActiveSourcePort = 0;
+    this->ActiveServer     = 0;
+    this->ActiveView       = 0;
   }
   //
   ~pqUI() {
@@ -159,6 +161,10 @@ QDockWidget("DSM Manager", p)
 
   this->connect(smModel, SIGNAL(serverAdded(pqServer*)),
     this, SLOT(onServerAdded(pqServer*)));
+
+  this->connect(&pqActiveObjects::instance(),
+    SIGNAL(serverChanged(pqServer*)),
+    this, SLOT(onActiveServerChanged(pqServer*)));
 
   this->connect(smModel, SIGNAL(aboutToRemoveServer(pqServer *)),
     this, SLOT(StartRemovingServer(pqServer *)));
@@ -268,7 +274,11 @@ void pqDSMViewerPanel::SaveSettings()
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
 {
-  //  this->ProxyReady();
+  this->UI->ActiveServer = server;
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onActiveServerChanged(pqServer* server)
+{
   this->UI->ActiveServer = server;
 }
 //----------------------------------------------------------------------------
@@ -285,10 +295,6 @@ void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->UI->ActiveView = renView;
-
-  // Update the "Display Style" GUI since it shows the representation in the
-  // active view.
-//  this->updateDisplayStyleGUI();
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LinkServerManagerProperties()
@@ -309,22 +315,23 @@ bool pqDSMViewerPanel::ProxyReady()
 bool pqDSMViewerPanel::DSMReady()
 {
   if (!this->ProxyReady()) return 0;
+  //
   if (!this->UI->DSMInitialized) {
-    if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
-      this->DSMCommType = XDMF_DSM_COMM_MPI;
-      pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("DsmCommType"),
-        this->DSMCommType);
-    }
-    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
-      this->DSMCommType = XDMF_DSM_COMM_SOCKET;
-      pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("DsmCommType"),
-        this->DSMCommType);
-    }
+    //
     bool server = (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked());
     pqSMAdaptor::setElementProperty(
       this->UI->DSMProxy->GetProperty("DsmIsServer"), server);
+    //
+    if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
+      this->DSMCommType = XDMF_DSM_COMM_MPI;
+    }
+    else {
+      this->DSMCommType = XDMF_DSM_COMM_SOCKET;
+    }
+    pqSMAdaptor::setElementProperty(
+      this->UI->DSMProxy->GetProperty("DsmCommType"),
+      this->DSMCommType);
+    //
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
     this->UI->DSMInitialized = 1;
@@ -481,7 +488,7 @@ void pqDSMViewerPanel::onTestDSM()
 
     XdmfWriter->UpdateVTKObjects();
     XdmfWriter->UpdatePipeline();
-
+/*
     if(!this->UI->xdmfFilePathLineEdit->text().isEmpty() &&
       (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description"))
       & (this->ConnectionFound)) {
@@ -492,19 +499,18 @@ void pqDSMViewerPanel::onTestDSM()
         this->UI->DSMProxy->UpdateVTKObjects();
         this->UI->DSMProxy->InvokeCommand("SendDSMXML");
     }
+*/
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisplayDSM()
 {
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
-    //
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfReader;
     XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
 
-    pqServer* server = this->UI->ActiveServer;
-    XdmfReader->SetConnectionID(server->GetConnectionID());
+    XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
 
     pm->RegisterProxy("sources", "DSM-Contents", XdmfReader);
@@ -516,16 +522,9 @@ void pqDSMViewerPanel::onDisplayDSM()
     pqSMAdaptor::setElementProperty(
       XdmfReader->GetProperty("FileName"), "stdin"
       );
-/*
-    if(this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
-    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
-      pqSMAdaptor::setElementProperty(
-        XdmfReader->GetProperty("FileName"),
-        this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
-    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
-      // TODO Call H5Dump / Get back new XML generated file
-    }
-*/
+
+    //
+    this->UI->DSMProxy->InvokeCommand("RequestLocalChannel");
 
     // update now so that when pipeline source is created, the representation can be setup correctly
     XdmfReader->UpdatePropertyInformation();
@@ -533,7 +532,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     XdmfReader->UpdatePipeline();
 
     vtkSMProxy* reprProxy = 0; 
-    reprProxy = this->UI->ActiveView->getViewProxy()->CreateDefaultRepresentation(XdmfReader, 0);
+    reprProxy = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(XdmfReader, 0);
 
     pqPipelineSource* source = pqApplicationCore::instance()->
       getServerManagerModel()->findItem<pqPipelineSource*>(XdmfReader);
@@ -561,6 +560,12 @@ void pqDSMViewerPanel::onDisplayDSM()
       {
       pqActiveObjects::instance().activeView()->render();
       }
+
+    //
+    if (!this->UI->dsmIsStandalone->isChecked()) {
+      this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
+    }
+    //
   }
 }
 //-----------------------------------------------------------------------------
@@ -735,3 +740,14 @@ void pqDSMViewerPanel::CancelPublishNameDialog()
     this->onUnpublishDSM(); // automatically unpublish DSM
   }
 }
+
+/*
+    if(this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
+    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
+      pqSMAdaptor::setElementProperty(
+        XdmfReader->GetProperty("FileName"),
+        this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+    } else if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
+      // TODO Call H5Dump / Get back new XML generated file
+    }
+*/

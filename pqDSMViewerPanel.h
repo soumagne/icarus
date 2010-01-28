@@ -34,6 +34,7 @@ signals:
 
 public slots:
   void onServerAdded(pqServer *server);
+  void onActiveServerChanged(pqServer *server);
   void StartRemovingServer(pqServer *server);
   void onActiveViewChanged(pqView* view);
 

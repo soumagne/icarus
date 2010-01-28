@@ -43,7 +43,14 @@
       <Property name="SendDSMXML"
                 command="SendDSMXML">
       </Property>
-      
+
+      <Property name="RequestLocalChannel"
+                command="RequestLocalChannel">
+      </Property>
+      <Property name="RequestRemoteChannel"
+                command="RequestRemoteChannel">
+      </Property>
+
       <IntVectorProperty
         name="DsmIsServer"
         command="SetDsmIsServer"

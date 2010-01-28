@@ -22,7 +22,6 @@
 //
 #include "vtkObjectFactory.h"
 //
-//
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
 #include <vtkstd/vector>
@@ -42,7 +41,6 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfDsmDump.h"
 #include "XdmfGenerator.h"
 
-typedef void* (*servicefn)(void *DsmObj) ;
 //----------------------------------------------------------------------------
 // #ifdef JB_DEBUG__
 //----------------------------------------------------------------------------
@@ -205,6 +203,7 @@ bool vtkDSMManager::CreateDSM()
 
   if (this->Controller->IsA("vtkDummyController"))
   {
+    vtkErrorMacro(<<"Running vtkDummyController : replacing it");
     int flag = 0;
     MPI_Initialized(&flag);
     if (flag == 0)
@@ -227,12 +226,13 @@ bool vtkDSMManager::CreateDSM()
           vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
         }
       }
-      vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
-      controller->Initialize(&argc, &_argv, 1);
-      this->SetController(controller);
-      vtkMPIController::SetGlobalController(controller);
     }
-
+    //
+    vtkErrorMacro(<<"Setting Global MPI controller");
+    vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
+//    controller->Initialize(&argc, &_argv, 1);
+    this->SetController(controller);
+    vtkMPIController::SetGlobalController(controller);
   }
 
 #ifdef VTK_USE_MPI
@@ -306,6 +306,16 @@ void vtkDSMManager::ClearDSM()
 {
   this->DSMBuffer->ClearStorage();
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "DSM cleared");
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::RequestLocalChannel()
+{
+  this->DSMBuffer->RequestLocalChannel();
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::RequestRemoteChannel()
+{
+  this->DSMBuffer->RequestRemoteChannel();
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::ConnectDSM()

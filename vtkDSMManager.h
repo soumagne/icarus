@@ -114,6 +114,8 @@ public:
   void   H5DumpXML();
   void   GenerateXMFDescription();
   void   SendDSMXML();
+  void   RequestLocalChannel();
+  void   RequestRemoteChannel();
 
 //BTX
   XdmfDsmBuffer *GetDSMHandle();
