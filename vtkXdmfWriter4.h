@@ -137,6 +137,8 @@ public:
   vtkGetMacro(TemporalCollection,int);
   vtkBooleanMacro(TemporalCollection,int);
 
+  void CloseHDFFile();
+
 protected:
    vtkXdmfWriter4();
   ~vtkXdmfWriter4();

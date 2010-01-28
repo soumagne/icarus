@@ -1594,6 +1594,11 @@ bool vtkXdmfReader3::ParseXML()
 
   // * Check if the XML file needs to be re-read.
   bool modified = true;
+  if (this->DSMManager && this->DSMManager->GetXMLStringReceive()) {
+    this->SetReadFromInputString(1);
+    this->SetInputString(this->DSMManager->GetXMLStringReceive());
+  }
+
   if (this->GetReadFromInputString())
     {
     const char* data=0;

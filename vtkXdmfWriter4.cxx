@@ -86,14 +86,13 @@ vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
   #endif
 
   #undef vtkDebugMacro
-  #define vtkDebugMacro(p,a)  \
-  { \
-  vtkOStreamWrapper::EndlType endl; \
-  vtkOStreamWrapper::UseEndl(endl); \
-  vtkOStrStreamWrapper vtkmsg; \
-  vtkmsg << "P(" << p << ") " << a << "\n"; \
-  OUTPUTTEXT(vtkmsg.str()); \
-  vtkmsg.rdbuf()->freeze(0); \
+  #define vtkDebugMacro(p,a)                           \
+  {                                                 \
+    std::stringstream vtkmsg;                       \
+    SimpleMutexLock::GlobalLock.Lock();             \
+    vtkmsg << "P(" << p << ") " << a;               \
+    std::cout << vtkmsg.str().c_str() << std::endl; \
+    SimpleMutexLock::GlobalLock.Unlock();           \
   }
   #define vtkXDRDebug(a) vtkDebugMacro(this->UpdatePiece,a)
   #define vtkXDRError(a) vtkDebugMacro(this->UpdatePiece,a)
@@ -190,6 +189,13 @@ void vtkXdmfWriter4::SetBuildModeToHeavy()
 void vtkXdmfWriter4::SetBuildModeToAll()
 {
   this->SetBuildMode(VTK_XDMF_BUILD_ALL);
+}
+//----------------------------------------------------------------------------
+void vtkXdmfWriter4::CloseHDFFile()
+{
+  if (this->Callback) {
+    this->Callback->CloseTree();
+  }
 }
 //----------------------------------------------------------------------------
 XdmfDOM *vtkXdmfWriter4::ParseExistingFile(const char* filename)
@@ -431,17 +437,28 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
     }
   }
 
-  // Add the Time key to xml
-  if (this->TemporalCollection != 0) {// Insert time info
-    vtkstd::stringstream temp;
-    temp << time;
-    XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
-    timestep->Set(timeNode, "TimeType", "Single");
-    timestep->Set(timeNode, "Value", temp.str().c_str());
-  }
+  // Only Process 0 needs to do the rest.
+  if (this->UpdatePiece==0) {
 
-  this->AddGridToCollection(outputDOM, timestep);
-  outputDOM->Write(this->XdmfFileName.c_str());
+    // Add the Time key to xml
+    if (this->TemporalCollection != 0) {
+      vtkstd::stringstream temp;
+      temp << time;
+      XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
+      timestep->Set(timeNode, "TimeType", "Single");
+      timestep->Set(timeNode, "Value", temp.str().c_str());
+    }
+
+    this->AddGridToCollection(outputDOM, timestep);
+
+    if (this->DSMManager) {
+      XdmfConstString xml = outputDOM->Serialize();
+      this->DSMManager->SetXMLStringSend(xml);
+    }
+    else {
+      outputDOM->Write(this->XdmfFileName.c_str());
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void vtkXdmfWriter4::SetXdmfArrayCallbacks(XdmfArray *data)
@@ -536,8 +553,13 @@ int vtkXdmfWriter4::RequestData(
   }
 
   this->Callback->Synchronize();
+  if (timeStepDOM) {
+    this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
+    if (this->DSMManager) {
+      this->DSMManager->SendDSMXML();
+    }
+  }
 
-  if (timeStepDOM) this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
 
 #ifdef VTK_USE_MPI
   if (this->Controller) {

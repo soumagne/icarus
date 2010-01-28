@@ -94,6 +94,14 @@ public:
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
 
+  // Description:
+  // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
+  // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
+  // object to see if a string is present
+  vtkSetStringMacro(XMLStringSend);
+  const char *GetXMLStringReceive();
+  void        ClearXMLStringReceive();
+
   bool   CreateDSM();
   bool   DestroyDSM();
   void   ClearDSM();
@@ -163,6 +171,7 @@ protected:
     int             DsmUpdateReady;
     //
     char           *XMFDescriptionFilePath;
+    char           *XMLStringSend;
     std::string     DumpDescription;
     std::string     GeneratedDescription;
 #endif

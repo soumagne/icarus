@@ -193,6 +193,7 @@
 
       <Hints>
         <Property name="FileName" show="0"/>
+        <Property name="DSMManager" show="0"/>
       </Hints>
       <!-- End of XdmfReader -->
     </SourceProxy>

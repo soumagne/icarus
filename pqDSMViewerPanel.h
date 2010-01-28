@@ -11,6 +11,7 @@ class QCheckBox;
 class QComboBox;
 class QPushButton;
 class pqServer;
+class pqView;
 class QTreeWidgetItem;
 class QProgressDialog;
 class QTimer;
@@ -34,6 +35,7 @@ signals:
 public slots:
   void onServerAdded(pqServer *server);
   void StartRemovingServer(pqServer *server);
+  void onActiveViewChanged(pqView* view);
 
   void onBrowseFile();
 
@@ -44,6 +46,7 @@ public slots:
   void onConnectDSM();
   void onDisconnectDSM();
   void onUpdateTimeout();
+  void DisplayDSMContents();
 
   void CreatePublishNameDialog();
   void TimeoutPublishName();

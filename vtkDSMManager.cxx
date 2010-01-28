@@ -95,6 +95,7 @@ vtkDSMManager::vtkDSMManager()
 #endif
 
   this->XMFDescriptionFilePath  = NULL;
+  this->XMLStringSend           = NULL;
   this->DumpDescription         = "";
   this->GeneratedDescription    = "";
 }
@@ -107,6 +108,9 @@ vtkDSMManager::~vtkDSMManager()
   this->SetController(NULL);
 #endif
   this->XMFDescriptionFilePath = NULL;
+  if (this->XMLStringSend) {
+    delete []this->XMLStringSend;
+  }
 }
 //----------------------------------------------------------------------------
 int vtkDSMManager::GetAcceptedConnection()
@@ -440,10 +444,21 @@ void vtkDSMManager::GenerateXMFDescription()
 //----------------------------------------------------------------------------
 void vtkDSMManager::SendDSMXML()
 {
-  if (this->GetXMFDescriptionFilePath() != NULL) {
+  if (this->XMLStringSend != NULL) {
     this->DSMBuffer->RequestXMLExchange();
-    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->GetXMFDescriptionFilePath());
+    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLStringSend);
   }
+}
+//----------------------------------------------------------------------------
+const char *vtkDSMManager::GetXMLStringReceive()
+{
+  if (this->DSMBuffer) return this->DSMBuffer->GetXMLDescription();
+  return NULL;
+}
+//----------------------------------------------------------------------------
+void vtkDSMManager::ClearXMLStringReceive()
+{
+  this->DSMBuffer->SetXMLDescription(NULL);
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
