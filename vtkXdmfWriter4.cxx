@@ -513,7 +513,7 @@ int vtkXdmfWriter4::RequestData(
   XdmfXmlNode staticnode = NULL;
   bool fileexists = vtksys::SystemTools::FileExists(this->XdmfFileName.c_str());
   if (fileexists && this->AppendMode != VTK_XDMF_APPEND_OVERWRITE) {
-    outputDOM = this->ParseExistingFile(this->XdmfFileName.c_str());
+//    outputDOM = this->ParseExistingFile(this->XdmfFileName.c_str());
   }
   //
   double current_time = this->TimeStep;
