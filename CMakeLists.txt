@@ -77,27 +77,25 @@ ENDIF(COMPUTERNAME)
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
 
-QT4_WRAP_CPP(
-  DSM_MOC_SRCS 
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.h
-)
+  QT4_WRAP_CPP(
+    DSM_MOC_SRCS 
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.h
+  )
 
-# invoke macro that adds the refinement and display controls panel
-ADD_PARAVIEW_DOCK_WINDOW(
-  DSM_IFACE 
-  DSM_IFACE_SRCS 
-  CLASS_NAME 
-    pqDSMViewerPanel 
-  DOCK_AREA 
-    Left Right Top Bottom
-)
+  # invoke macro that adds the refinement and display controls panel
+  ADD_PARAVIEW_DOCK_WINDOW(
+    DSM_IFACE 
+    DSM_IFACE_SRCS 
+    CLASS_NAME 
+      pqDSMViewerPanel 
+    DOCK_AREA 
+      Left Right Top Bottom
+  )
 
-IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_UI(
     DSM_UI_SOURCES
     pqDSMViewerPanel.ui
   )
-ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 #--------------------------------------------------
 # Define Plugin Panel
