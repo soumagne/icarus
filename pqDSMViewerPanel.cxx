@@ -205,13 +205,21 @@ QDockWidget("DSM Manager", p)
   //
   // Button Group for Standalone/Server/Client buttons
   //
-  DSMServerGroup = new QButtonGroup(this->UI);
-  DSMServerGroup->addButton(this->UI->dsmIsStandalone);
-  DSMServerGroup->addButton(this->UI->dsmIsServer);
-  DSMServerGroup->addButton(this->UI->dsmIsClient);
-  DSMServerGroup->setId(this->UI->dsmIsStandalone,0);
-  DSMServerGroup->setId(this->UI->dsmIsServer,1);
-  DSMServerGroup->setId(this->UI->dsmIsClient,2);
+  this->DSMServerGroup = new QButtonGroup(this->UI);
+  this->DSMServerGroup->addButton(this->UI->dsmIsStandalone);
+  this->DSMServerGroup->addButton(this->UI->dsmIsServer);
+  this->DSMServerGroup->addButton(this->UI->dsmIsClient);
+  this->DSMServerGroup->setId(this->UI->dsmIsStandalone,0);
+  this->DSMServerGroup->setId(this->UI->dsmIsServer,1);
+  this->DSMServerGroup->setId(this->UI->dsmIsClient,2);
+
+  this->connect(this->UI->dsmIsStandalone,
+      SIGNAL(clicked()), this, SLOT(onDsmIsStandalone()));
+  this->connect(this->UI->dsmIsServer,
+      SIGNAL(clicked()), this, SLOT(onDsmIsServer()));
+  this->connect(this->UI->dsmIsClient,
+      SIGNAL(clicked()), this, SLOT(onDsmIsClient()));
+
   //
   this->LoadSettings();
 }
@@ -219,6 +227,11 @@ QDockWidget("DSM Manager", p)
 pqDSMViewerPanel::~pqDSMViewerPanel()
 {
   this->SaveSettings();
+
+  if (this->UpdateTimer) delete this->UpdateTimer;
+  this->UpdateTimer = NULL;
+  if (this->DSMServerGroup) delete this->DSMServerGroup;
+  this->DSMServerGroup = NULL;
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LoadSettings()
@@ -227,11 +240,12 @@ void pqDSMViewerPanel::LoadSettings()
   settings->beginGroup("DSMManager");
   int size = settings->beginReadArray("Servers");
   if (size>0) {
-    this->UI->dsmServerName->clear();
     for (int i=0; i<size; ++i) {
       settings->setArrayIndex(i);
       QString server = settings->value("server").toString();
-      this->UI->dsmServerName->addItem(server);
+      if (this->UI->dsmServerName->findText(server) < 0) {
+        this->UI->dsmServerName->addItem(server);
+      }
     }
   }
   settings->endArray();
@@ -340,6 +354,57 @@ bool pqDSMViewerPanel::DSMReady()
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDsmIsStandalone()
+{
+  if (this->UI->publishDSM->isEnabled()) this->UI->publishDSM->setEnabled(false);
+  if (this->UI->unpublishDSM->isEnabled()) this->UI->unpublishDSM->setEnabled(false);
+
+  if (this->UI->connectDSM->isEnabled()) this->UI->connectDSM->setEnabled(false);
+  if (this->UI->disconnectDSM->isEnabled()) this->UI->disconnectDSM->setEnabled(false);
+
+  if (this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(false);
+  if (this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(false);
+
+  if (!this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(true);
+  if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
+  if (!this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(true);
+  if (!this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(true);
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDsmIsServer()
+{
+  if (!this->UI->publishDSM->isEnabled()) this->UI->publishDSM->setEnabled(true);
+  if (!this->UI->unpublishDSM->isEnabled()) this->UI->unpublishDSM->setEnabled(true);
+
+  if (this->UI->connectDSM->isEnabled()) this->UI->connectDSM->setEnabled(false);
+  if (this->UI->disconnectDSM->isEnabled()) this->UI->disconnectDSM->setEnabled(false);
+
+  if (this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(false);
+  if (this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(false);
+
+  if (this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(false);
+  if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
+  if (!this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(true);
+  if (!this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(true);
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDsmIsClient()
+{
+  if (this->UI->publishDSM->isEnabled()) this->UI->publishDSM->setEnabled(false);
+  if (this->UI->unpublishDSM->isEnabled()) this->UI->unpublishDSM->setEnabled(false);
+
+  if (!this->UI->connectDSM->isEnabled()) this->UI->connectDSM->setEnabled(true);
+  if (!this->UI->disconnectDSM->isEnabled()) this->UI->disconnectDSM->setEnabled(true);
+
+  if (!this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(true);
+  if (!this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(true);
+
+  if (!this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(true);
+  if (this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(false);
+  if (this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(false);
+  if (this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(false);
+}
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onBrowseFile()
 {

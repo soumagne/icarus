@@ -38,6 +38,10 @@ public slots:
   void StartRemovingServer(pqServer *server);
   void onActiveViewChanged(pqView* view);
 
+  void onDsmIsStandalone();
+  void onDsmIsServer();
+  void onDsmIsClient();
+
   void onBrowseFile();
 
   void onCreateDSM();

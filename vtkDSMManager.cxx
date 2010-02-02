@@ -209,11 +209,11 @@ bool vtkDSMManager::CreateDSM()
     if (flag == 0)
     {
       vtkErrorMacro(<<"Running without MPI, attempting to initialize ");
-      int argc = 1;
-      const char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
-      char **_argv = (char**) &argv;
+      //int argc = 1;
+      //const char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
+      //char **_argv = (char**) &argv;
       int provided, rank, size;
-      MPI_Init_thread(&argc, &_argv, MPI_THREAD_MULTIPLE, &provided);
+      MPI_Init_thread(NULL, NULL, MPI_THREAD_MULTIPLE, &provided);
       MPI_Comm_rank(MPI_COMM_WORLD, &rank);
       MPI_Comm_size(MPI_COMM_WORLD, &size);
       //
@@ -230,7 +230,7 @@ bool vtkDSMManager::CreateDSM()
     //
     vtkErrorMacro(<<"Setting Global MPI controller");
     vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
-//    controller->Initialize(&argc, &_argv, 1);
+    if (flag == 0) controller->Initialize(NULL, NULL, 1);
     this->SetController(controller);
     vtkMPIController::SetGlobalController(controller);
   }
@@ -454,10 +454,14 @@ void vtkDSMManager::GenerateXMFDescription()
 //----------------------------------------------------------------------------
 void vtkDSMManager::SendDSMXML()
 {
+  this->DSMBuffer->RequestXMLExchange();
   if (this->XMLStringSend != NULL) {
-    this->DSMBuffer->RequestXMLExchange();
-    this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLStringSend);
+    int commServerSize = this->DSMBuffer->GetEndServerId() - this->DSMBuffer->GetStartServerId() + 1;
+    for (int i=0; i<commServerSize; i++) {
+      this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLStringSend, i);
+    }
   }
+  this->DSMBuffer->GetComm()->Barrier();
 }
 //----------------------------------------------------------------------------
 const char *vtkDSMManager::GetXMLStringReceive()
