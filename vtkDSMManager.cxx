@@ -310,7 +310,8 @@ void vtkDSMManager::ClearDSM()
 //----------------------------------------------------------------------------
 void vtkDSMManager::RequestLocalChannel()
 {
-  this->DSMBuffer->RequestLocalChannel();
+  // Should never be called from server side
+  // this->DSMBuffer->RequestLocalChannel();
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::RequestRemoteChannel()

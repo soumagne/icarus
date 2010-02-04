@@ -258,6 +258,11 @@ void pqDSMViewerPanel::LoadSettings()
   // Client/Server mode
   int index = settings->value("ClientServerMode", 0).toInt();
   if (index!=-1) this->DSMServerGroup->buttons()[index]->click();
+  // Description file path
+  QString descFilePath = settings->value("DescriptionFilePath").toString();
+  if(!descFilePath.isEmpty()) {
+    this->UI->xdmfFilePathLineEdit->insert(descFilePath);
+  }
   //
   settings->endGroup();
 }
@@ -282,6 +287,8 @@ void pqDSMViewerPanel::SaveSettings()
   // Client/Server mode
   int index = this->DSMServerGroup->checkedId();
   settings->setValue("ClientServerMode", index);
+  // Description file path
+  settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
   //
   settings->endGroup();
 }
@@ -584,12 +591,23 @@ void pqDSMViewerPanel::onDisplayDSM()
       XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
       );
 
+    if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
+      if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
+        pqSMAdaptor::setElementProperty(
+            XdmfReader->GetProperty("FileName"),
+            this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+      }
+      if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
+        // do generate
+      }
+    } else {
     pqSMAdaptor::setElementProperty(
       XdmfReader->GetProperty("FileName"), "stdin"
       );
+    }
 
-    //
-    this->UI->DSMProxy->InvokeCommand("RequestLocalChannel");
+    // no longer needed
+    //this->UI->DSMProxy->InvokeCommand("RequestLocalChannel");
 
     // update now so that when pipeline source is created, the representation can be setup correctly
     XdmfReader->UpdatePropertyInformation();

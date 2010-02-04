@@ -1708,6 +1708,11 @@ int vtkXdmfReader3::RequestDataObject(vtkInformationVector *outputVector)
     return 0;
     }
 
+  if (this->DSMManager) {
+    this->EnableAllArrays();
+    this->EnableAllGrids();
+  }
+
   vtkDebugMacro(this->UpdatePiece, "My output is a "
     << vtkDataObjectTypes::GetClassNameFromTypeId(this->OutputVTKType));
 
