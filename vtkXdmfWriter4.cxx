@@ -411,48 +411,60 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
   if (this->Controller && (this->UpdateNumPieces>1)) {
     vtkXDRDebug("Gathering XML blocks");
     if (this->UpdatePiece != 0) { // Slave
-      int nb_blocks = timestep->GetNumberOfChildren(grid);// If more than one block per process
-      this->Controller->Send(&nb_blocks, 1, 0, 0);
-      XdmfXmlNode sub_grid = grid->children;
-      for (int i=0 ; i<nb_blocks ; i++) {// Can only insert block by block
-        XdmfConstString text = timestep->Serialize(sub_grid);
-        int text_len = (int)strlen(text);
-        this->Controller->Send(&text_len, 1, 0, 1);
-        this->Controller->Send(text, text_len+1, 0, 2);
-        sub_grid = sub_grid->next;
-      }
+      XdmfConstString text = timestep->Serialize(grid);
+      int text_len = (int)strlen(text);
+      this->Controller->Send(&text_len, 1, 0, 1);
+      this->Controller->Send(text, text_len+1, 0, 2);
     }
     else { // node 0
-      int recv_len, recv_nb_blocks;
+      XdmfDOM *spatialDOM = this->CreateEmptyCollection("vtkMultiBlock", "Spatial");
+      XdmfXmlNode   spatialDomain = spatialDOM->FindElement("Domain");
+      XdmfXmlNode     spatialGrid = spatialDOM->FindElement("Grid", 0, spatialDomain);
+      int recv_len;
       for (int i=1; i<this->UpdateNumPieces; i++) {
-        this->Controller->Receive(&recv_nb_blocks, 1, i, 0);
-        for (int j=0 ; j<recv_nb_blocks; j++) {
-          this->Controller->Receive(&recv_len, 1, i, 1);
-          std::vector<char> buffer(recv_len+1);
-          this->Controller->Receive(&buffer[0], recv_len+1, i, 2);
-          buffer[recv_len] = 0;
-          timestep->InsertFromString(grid, &buffer[0]);
-        }
+        this->Controller->Receive(&recv_len, 1, i, 1);
+        std::vector<char> buffer(recv_len+1);
+        this->Controller->Receive(&buffer[0], recv_len+1, i, 2);
+        buffer[recv_len] = 0;
+        spatialDOM->InsertFromString(spatialGrid, &buffer[0]);
       }
+      spatialDOM->InsertFromString(spatialGrid, timestep->Serialize(grid));
+
+      // Add the Time key to xml
+      if (this->TemporalCollection != 0) {
+        vtkstd::stringstream temp;
+        temp << time;
+        XdmfXmlNode timeNode = spatialDOM->InsertFromString(spatialGrid, "<Time />");
+        spatialDOM->Set(timeNode, "TimeType", "Single");
+        spatialDOM->Set(timeNode, "Value", temp.str().c_str());
+      }
+
+      this->AddGridToCollection(outputDOM, spatialDOM);
+
+      if (spatialDOM) delete spatialDOM;
+      spatialDOM = NULL;
+    }
+  } else {
+
+    // Only Process 0 needs to do the rest.
+    if (this->UpdatePiece==0) {
+
+      // Add the Time key to xml
+      if (this->TemporalCollection != 0) {
+        vtkstd::stringstream temp;
+        temp << time;
+        XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
+        timestep->Set(timeNode, "TimeType", "Single");
+        timestep->Set(timeNode, "Value", temp.str().c_str());
+      }
+      this->AddGridToCollection(outputDOM, timestep);
     }
   }
 
-  // Only Process 0 needs to do the rest.
   if (this->UpdatePiece==0) {
-
-    // Add the Time key to xml
-    if (this->TemporalCollection != 0) {
-      vtkstd::stringstream temp;
-      temp << time;
-      XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
-      timestep->Set(timeNode, "TimeType", "Single");
-      timestep->Set(timeNode, "Value", temp.str().c_str());
-    }
-
-    this->AddGridToCollection(outputDOM, timestep);
-
     if (this->DSMManager) {
       XdmfConstString xml = outputDOM->Serialize();
+      cerr << xml << endl;
       this->DSMManager->SetXMLStringSend(xml);
     }
     else {
