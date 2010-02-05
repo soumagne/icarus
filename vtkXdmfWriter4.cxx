@@ -464,7 +464,6 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
   if (this->UpdatePiece==0) {
     if (this->DSMManager) {
       XdmfConstString xml = outputDOM->Serialize();
-      cerr << xml << endl;
       this->DSMManager->SetXMLStringSend(xml);
     }
     else {
