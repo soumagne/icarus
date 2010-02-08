@@ -3,6 +3,8 @@
 
 #include <QDockWidget>
 
+#include <vtkSmartPointer.h>
+
 // For communicator selection, has to match XdmfDsmComm.h
 #define XDMF_DSM_COMM_MPI 0x10
 #define XDMF_DSM_COMM_SOCKET 0x11
@@ -17,6 +19,8 @@ class QProgressDialog;
 class QTimer;
 class QButtonGroup;
 class QThread;
+
+class vtkSMSourceProxy;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -86,6 +90,8 @@ protected:
   QButtonGroup    *DSMServerGroup;
   QThread         *UpdateThread;
   QTimer          *UpdateTimer;
+
+  vtkSmartPointer<vtkSMSourceProxy> XdmfReader;
 protected slots:
 
 };

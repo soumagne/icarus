@@ -377,6 +377,8 @@ void pqDSMViewerPanel::onDsmIsStandalone()
   if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
   if (!this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(true);
   if (!this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(true);
+
+  if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDsmIsServer()
@@ -394,6 +396,8 @@ void pqDSMViewerPanel::onDsmIsServer()
   if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
   if (!this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(true);
   if (!this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(true);
+
+  if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDsmIsClient()
@@ -411,6 +415,8 @@ void pqDSMViewerPanel::onDsmIsClient()
   if (this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(false);
   if (this->UI->clearDSM->isEnabled()) this->UI->clearDSM->setEnabled(false);
   if (this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(false);
+
+  if (this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(false);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onBrowseFile()
@@ -578,23 +584,25 @@ void pqDSMViewerPanel::onTestDSM()
 void pqDSMViewerPanel::onDisplayDSM()
 {
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
-    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
-    vtkSmartPointer<vtkSMSourceProxy> XdmfReader;
-    XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
 
-    XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-    XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
+    if (this->XdmfReader.GetPointer() == NULL || this->UI->storeDSMContents->isChecked()) {
+      if (this->XdmfReader.GetPointer() != NULL) this->XdmfReader.New();
+      vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
 
-    pm->RegisterProxy("sources", "DSM-Contents", XdmfReader);
+      this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+      this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
+      pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
+    }
 
     pqSMAdaptor::setProxyProperty(
-      XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
+        this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
       );
 
     if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
         pqSMAdaptor::setElementProperty(
-            XdmfReader->GetProperty("FileName"),
+            this->XdmfReader->GetProperty("FileName"),
             this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
       }
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
@@ -602,23 +610,20 @@ void pqDSMViewerPanel::onDisplayDSM()
       }
     } else {
     pqSMAdaptor::setElementProperty(
-      XdmfReader->GetProperty("FileName"), "stdin"
+        this->XdmfReader->GetProperty("FileName"), "stdin"
       );
     }
 
-    // no longer needed
-    //this->UI->DSMProxy->InvokeCommand("RequestLocalChannel");
-
     // update now so that when pipeline source is created, the representation can be setup correctly
-    XdmfReader->UpdatePropertyInformation();
-    XdmfReader->UpdateVTKObjects();
-    XdmfReader->UpdatePipeline();
+    this->XdmfReader->UpdatePropertyInformation();
+    this->XdmfReader->UpdateVTKObjects();
+    this->XdmfReader->UpdatePipeline();
 
     vtkSMProxy* reprProxy = 0; 
-    reprProxy = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(XdmfReader, 0);
+    reprProxy = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
 
     pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(XdmfReader);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
     //
     source->setModifiedState(pqProxy::UNMODIFIED);
 /*
