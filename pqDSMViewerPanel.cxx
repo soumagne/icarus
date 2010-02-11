@@ -584,6 +584,7 @@ void pqDSMViewerPanel::onTestDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisplayDSM()
 {
+  bool first_time = false;
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
@@ -593,11 +594,12 @@ void pqDSMViewerPanel::onDisplayDSM()
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
-    }
 
-    pqSMAdaptor::setProxyProperty(
-        this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
-    );
+      pqSMAdaptor::setProxyProperty(
+          this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
+        );
+
+    }
 
     if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
@@ -610,24 +612,27 @@ void pqDSMViewerPanel::onDisplayDSM()
       }
     } else {
       pqSMAdaptor::setElementProperty(
-          this->XdmfReader->GetProperty("FileName"), "stdin"
+        this->XdmfReader->GetProperty("FileName"), "stdin"
       );
     }
 
     // update now so that when pipeline source is created, the representation can be setup correctly
-
+    this->XdmfReader->InvokeCommand("Modified");
     this->XdmfReader->UpdatePropertyInformation();
     this->XdmfReader->UpdateVTKObjects();
     this->XdmfReader->UpdatePipeline();
 
-    if (!this->XdmfReaderReprProxy && !this->UI->storeDSMContents->isChecked()) {
-      this->XdmfReaderReprProxy = pqActiveObjects::instance().activeView()
-                ->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
+    if (!this->XdmfRepresentation && !this->UI->storeDSMContents->isChecked()) {
+      first_time = true;
+      this->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
     }
+    // Force an update if we got new data
+//    this->XdmfRepresentation->Modified();
 
+    // We create a pipeline source object if one does not exist
+    // but we set it to unmodified because we manually updated the pipeline above 
     pqPipelineSource* source = pqApplicationCore::instance()->
         getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
-    //
     source->setModifiedState(pqProxy::UNMODIFIED);
     static int i=0; // To be replaced with GetTimeStep from reader
     QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
@@ -635,18 +640,14 @@ void pqDSMViewerPanel::onDisplayDSM()
       scene->setAnimationTime(++i);
     }
 
-    //    pqDataRepresentation *repr = new pqDataRepresentation(
-    //    port->addRepresentation(
-    //    QList<pqView*> views = source->getViews();
-    //    if (views.size()>0) {
-    //      source->getRepresentation(views[0])->setVisible(1);
-    //    }
-    //    this->UI->ActiveView->
+    if (first_time) {
+      // We probably only need to turn on the visibility first time
+      pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
+      pqOutputPort *port = source->getOutputPort(0);
+      display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
+    }
 
-    pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
-    pqOutputPort *port = source->getOutputPort(0);
-    display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
-
+    // do a render : if modified, it should update
     if (pqActiveObjects::instance().activeView())
       {
       pqActiveObjects::instance().activeView()->render();

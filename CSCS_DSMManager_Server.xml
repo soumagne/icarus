@@ -178,6 +178,10 @@
         Reader to read HDF5 data using eXtensible Data Model and Format *(XDMF) files.
       </Documentation>
 
+      <Property name="Modified"
+                command="Modified">
+      </Property>
+
       <StringVectorProperty
         name="FileName"
         command="SetFileName"

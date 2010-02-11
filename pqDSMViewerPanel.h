@@ -92,8 +92,9 @@ protected:
   QThread         *UpdateThread;
   QTimer          *UpdateTimer;
 
-  vtkSmartPointer<vtkSMSourceProxy>  XdmfReader;
-  vtkSmartPointer<vtkSMRepresentationProxy> XdmfReaderReprProxy;
+  vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
+  vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
+
 protected slots:
 
 };
