@@ -54,6 +54,7 @@
 #include "pqDataRepresentation.h"
 #include "pqActiveObjects.h"
 #include "pqDisplayPolicy.h"
+#include "pqAnimationScene.h"
 
 //
 #include "ui_pqDSMViewerPanel.h"
@@ -584,12 +585,11 @@ void pqDSMViewerPanel::onTestDSM()
 void pqDSMViewerPanel::onDisplayDSM()
 {
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
+    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
-    if (this->XdmfReader.GetPointer() == NULL || this->UI->storeDSMContents->isChecked()) {
-      if (this->XdmfReader.GetPointer() != NULL) this->XdmfReader.New();
-      vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    if (!this->XdmfReader || this->UI->storeDSMContents->isChecked()) {
+      if (this->XdmfReader) this->XdmfReader.New();
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
-
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
@@ -597,7 +597,7 @@ void pqDSMViewerPanel::onDisplayDSM()
 
     pqSMAdaptor::setProxyProperty(
         this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
-      );
+    );
 
     if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
@@ -609,36 +609,39 @@ void pqDSMViewerPanel::onDisplayDSM()
         // do generate
       }
     } else {
-    pqSMAdaptor::setElementProperty(
-        this->XdmfReader->GetProperty("FileName"), "stdin"
+      pqSMAdaptor::setElementProperty(
+          this->XdmfReader->GetProperty("FileName"), "stdin"
       );
     }
 
     // update now so that when pipeline source is created, the representation can be setup correctly
+
     this->XdmfReader->UpdatePropertyInformation();
     this->XdmfReader->UpdateVTKObjects();
     this->XdmfReader->UpdatePipeline();
 
-    vtkSMProxy* reprProxy = 0; 
-    reprProxy = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
-
-    pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
-    //
-    source->setModifiedState(pqProxy::UNMODIFIED);
-/*
-    
-    pqDataRepresentation *repr = new pqDataRepresentation(
-
-    port->addRepresentation(
-
-    QList<pqView*> views = source->getViews();
-    if (views.size()>0) {
-      source->getRepresentation(views[0])->setVisible(1);
+    if (!this->XdmfReaderReprProxy && !this->UI->storeDSMContents->isChecked()) {
+      this->XdmfReaderReprProxy = pqActiveObjects::instance().activeView()
+                ->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
     }
 
-    this->UI->ActiveView->
-*/
+    pqPipelineSource* source = pqApplicationCore::instance()->
+        getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
+    //
+    source->setModifiedState(pqProxy::UNMODIFIED);
+    static int i=0; // To be replaced with GetTimeStep from reader
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      scene->setAnimationTime(++i);
+    }
+
+    //    pqDataRepresentation *repr = new pqDataRepresentation(
+    //    port->addRepresentation(
+    //    QList<pqView*> views = source->getViews();
+    //    if (views.size()>0) {
+    //      source->getRepresentation(views[0])->setVisible(1);
+    //    }
+    //    this->UI->ActiveView->
 
     pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
     pqOutputPort *port = source->getOutputPort(0);
@@ -648,7 +651,6 @@ void pqDSMViewerPanel::onDisplayDSM()
       {
       pqActiveObjects::instance().activeView()->render();
       }
-
     //
     if (!this->UI->dsmIsStandalone->isChecked()) {
       this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");

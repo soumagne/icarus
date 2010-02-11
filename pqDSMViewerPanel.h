@@ -21,6 +21,7 @@ class QButtonGroup;
 class QThread;
 
 class vtkSMSourceProxy;
+class vtkSMRepresentationProxy;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -91,7 +92,8 @@ protected:
   QThread         *UpdateThread;
   QTimer          *UpdateTimer;
 
-  vtkSmartPointer<vtkSMSourceProxy> XdmfReader;
+  vtkSmartPointer<vtkSMSourceProxy>  XdmfReader;
+  vtkSmartPointer<vtkSMRepresentationProxy> XdmfReaderReprProxy;
 protected slots:
 
 };
