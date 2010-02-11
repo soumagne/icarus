@@ -589,18 +589,26 @@ void pqDSMViewerPanel::onDisplayDSM()
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
     if (!this->XdmfReader || this->UI->storeDSMContents->isChecked()) {
+      //
+      // Create a new Reader proxy and register it with the system
+      //
       if (this->XdmfReader) this->XdmfReader.New();
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
 
+      //
+      // Connect our DSM manager to the reader
+      //
       pqSMAdaptor::setProxyProperty(
           this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
         );
-
     }
 
+    //
+    // If we are using an Xdmf XML file supplied manually or generated, get it
+    //
     if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
         pqSMAdaptor::setElementProperty(
@@ -616,42 +624,60 @@ void pqDSMViewerPanel::onDisplayDSM()
       );
     }
 
-    // update now so that when pipeline source is created, the representation can be setup correctly
+    //
+    // Update before setting up representation to ensure correct 'type' is created
+    // Remember that Xdmf supports many data types Regular/Unstructured/etc
+    //
     this->XdmfReader->InvokeCommand("Modified");
     this->XdmfReader->UpdatePropertyInformation();
     this->XdmfReader->UpdateVTKObjects();
     this->XdmfReader->UpdatePipeline();
 
+    //
+    // Create a representation if we need one : First time or if storing multiple datasets
+    //
     if (!this->XdmfRepresentation && !this->UI->storeDSMContents->isChecked()) {
       first_time = true;
       this->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
     }
-    // Force an update if we got new data
-//    this->XdmfRepresentation->Modified();
 
-    // We create a pipeline source object if one does not exist
-    // but we set it to unmodified because we manually updated the pipeline above 
+    //
+    // Create a pipeline source to appear in the GUI, 
+    // findItem creates a new one initially, thenafter returns the same object
+    // Mark the item as Unmodified since we manually updated the pipeline ourselves
+    //
     pqPipelineSource* source = pqApplicationCore::instance()->
-        getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
     source->setModifiedState(pqProxy::UNMODIFIED);
-    static int i=0; // To be replaced with GetTimeStep from reader
-    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-    foreach (pqAnimationScene *scene, scenes) {
-      scene->setAnimationTime(++i);
-    }
 
+    //
+    // on First creation, make the object visible.
+    //
     if (first_time) {
-      // We probably only need to turn on the visibility first time
       pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
       pqOutputPort *port = source->getOutputPort(0);
       display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
     }
 
-    // do a render : if modified, it should update
+    // 
+    // Increment the time as new steps appear.
+    // @TODO : To be replaced with GetTimeStep from reader
+    //
+    static int i=0; 
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      scene->setAnimationTime(++i);
+    }
+
+    //
+    // Trigger a render : if changed, everything should update as usual
     if (pqActiveObjects::instance().activeView())
-      {
+    {
       pqActiveObjects::instance().activeView()->render();
-      }
+    }
+
+    //
+    // To prevent deadlock, switch communicators if we are client and server
     //
     if (!this->UI->dsmIsStandalone->isChecked()) {
       this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
