@@ -14,6 +14,10 @@
 		Format="HDF">
 		DSM:test.h5:/PartType2/Acceleration</DataItem>
 	</Attribute>
+	<Attribute Name="ParticleIDs" AttributeType="Scalar" Center="Node">
+	    <DataItem Dimensions="20000" NumberType="Float" Precision="4" Format="HDF">
+		DSM:test.h5:/PartType2/ParticleIDs</DataItem>
+	</Attribute>
 	<Attribute Name="Potential" AttributeType="Scalar" Center="Node">
 	    <DataItem Dimensions="20000" NumberType="Float" Precision="4" Format="HDF">
 		DSM:test.h5:/PartType2/Potential</DataItem>

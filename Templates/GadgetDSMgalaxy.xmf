@@ -1,0 +1,63 @@
+<?xml version="1.0" ?>
+<!-- <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []> -->
+<Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="2.0">
+<Domain>
+<Grid GridType="Collection" CollectionType="Temporal">
+<Grid GridType="Collection" CollectionType="Spatial">
+<Grid Name="PartType1" Type="Uniform">
+<Topology Type="Polyvertex" NumberOfElements="40000 ">
+</Topology>
+<Geometry Type="XYZ">
+<DataItem Dimensions="40000 3" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType1/Coordinates</DataItem>
+</Geometry>
+<Attribute Name="Acceleration" AttributeType="Vector" Center="Node">
+<DataItem Dimensions="40000 3" NumberType="Float" Precision="4"
+Format="HDF">
+DSM:test.h5:/PartType1/Acceleration</DataItem>
+</Attribute>
+<Attribute Name="ParticleIDs" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="40000" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType1/ParticleIDs</DataItem>
+</Attribute>
+<Attribute Name="Potential" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="40000" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType1/Potential</DataItem>
+</Attribute>
+<Attribute Name="Velocities" AttributeType="Vector" Center="Node">
+<DataItem Dimensions="40000 3" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType1/Velocities</DataItem>
+</Attribute>
+</Grid>
+
+<Grid Name="PartType2" Type="Uniform">
+<Topology Type="Polyvertex" NumberOfElements="20000 ">
+</Topology>
+<Geometry Type="XYZ">
+<DataItem Dimensions="20000 3" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType2/Coordinates</DataItem>
+</Geometry>
+<Attribute Name="Acceleration" AttributeType="Vector" Center="Node">
+<DataItem Dimensions="20000 3" NumberType="Float" Precision="4"
+Format="HDF">
+DSM:test.h5:/PartType2/Acceleration</DataItem>
+</Attribute>
+<Attribute Name="ParticleIDs" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="20000" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType2/ParticleIDs</DataItem>
+</Attribute>
+<Attribute Name="Potential" AttributeType="Scalar" Center="Node">
+<DataItem Dimensions="20000" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType2/Potential</DataItem>
+</Attribute>
+<Attribute Name="Velocities" AttributeType="Vector" Center="Node">
+<DataItem Dimensions="20000 3" NumberType="Float" Precision="4" Format="HDF">
+DSM:test.h5:/PartType2/Velocities</DataItem>
+</Attribute>
+</Grid>
+
+<Time Value="0"/>
+</Grid>
+</Grid>
+</Domain>
+</Xdmf>
