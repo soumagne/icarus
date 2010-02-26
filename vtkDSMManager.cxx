@@ -308,12 +308,6 @@ void vtkDSMManager::ClearDSM()
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "DSM cleared");
 }
 //----------------------------------------------------------------------------
-void vtkDSMManager::RequestLocalChannel()
-{
-  // Should never be called from server side
-  // this->DSMBuffer->RequestLocalChannel();
-}
-//----------------------------------------------------------------------------
 void vtkDSMManager::RequestRemoteChannel()
 {
   this->DSMBuffer->RequestRemoteChannel();
@@ -431,7 +425,7 @@ void vtkDSMManager::H5DumpXML()
     myDsmDump->DumpXML(dumpStream);
     if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
     this->DumpDescription = dumpStream.str();
-    //if (this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
+    // if (this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
     delete myDsmDump;
   }
 }
@@ -441,15 +435,16 @@ void vtkDSMManager::GenerateXMFDescription()
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
   if (this->DSMBuffer) {
-    xdmfGenerator->SetHdfFileName("DSM:DSM.h5");
+    xdmfGenerator->SetHdfFileName("DSM:file.h5");
   }
   else {
-    xdmfGenerator->SetHdfFileName("DSM.h5");
+    xdmfGenerator->SetHdfFileName("file.h5");
   }
   xdmfGenerator->GenerateHead();
   xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), this->DumpDescription.c_str());
   this->GeneratedDescription = xdmfGenerator->GetGeneratedFile();
   if (this->UpdatePiece == 0) vtkDebugMacro(<< this->GeneratedDescription.c_str());
+  if (this->DSMBuffer) this->DSMBuffer->SetXMLDescription(this->GeneratedDescription.c_str());
   delete xdmfGenerator;
 }
 //----------------------------------------------------------------------------

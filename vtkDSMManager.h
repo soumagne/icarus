@@ -102,6 +102,7 @@ public:
   const char *GetXMLStringReceive();
   void        ClearXMLStringReceive();
 
+
   bool   CreateDSM();
   bool   DestroyDSM();
   void   ClearDSM();
@@ -114,7 +115,6 @@ public:
   void   H5DumpXML();
   void   GenerateXMFDescription();
   void   SendDSMXML();
-  void   RequestLocalChannel();
   void   RequestRemoteChannel();
 
 //BTX

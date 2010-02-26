@@ -259,6 +259,8 @@ void pqDSMViewerPanel::LoadSettings()
   // Client/Server mode
   int index = settings->value("ClientServerMode", 0).toInt();
   if (index!=-1) this->DSMServerGroup->buttons()[index]->click();
+  // Description file type
+  this->UI->xdmfFileTypeComboBox->setCurrentIndex(settings->value("DescriptionFileType", 0).toInt());
   // Description file path
   QString descFilePath = settings->value("DescriptionFilePath").toString();
   if(!descFilePath.isEmpty()) {
@@ -288,6 +290,8 @@ void pqDSMViewerPanel::SaveSettings()
   // Client/Server mode
   int index = this->DSMServerGroup->checkedId();
   settings->setValue("ClientServerMode", index);
+  // Description file type
+  settings->setValue("DescriptionFileType", this->UI->xdmfFileTypeComboBox->currentIndex());
   // Description file path
   settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
   //
@@ -585,8 +589,12 @@ void pqDSMViewerPanel::onTestDSM()
 void pqDSMViewerPanel::onDisplayDSM()
 {
   bool first_time = false;
+  static bool xdmf_description_generated = false;
+
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+
+    // this->onH5Dump();
 
     if (!this->XdmfReader || this->UI->storeDSMContents->isChecked()) {
       //
@@ -616,12 +624,23 @@ void pqDSMViewerPanel::onDisplayDSM()
             this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
       }
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
-        // do generate
+        if (!xdmf_description_generated) {
+          // Generate xdmf file for reading
+          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+          pqSMAdaptor::setElementProperty(
+              this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
+              this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+
+          this->UI->DSMProxy->UpdateVTKObjects();
+          this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
+          xdmf_description_generated = true;
+        }
+          pqSMAdaptor::setElementProperty(
+              this->XdmfReader->GetProperty("FileName"), "stdin");
       }
     } else {
       pqSMAdaptor::setElementProperty(
-        this->XdmfReader->GetProperty("FileName"), "stdin"
-      );
+        this->XdmfReader->GetProperty("FileName"), "stdin");
     }
 
     //
@@ -693,19 +712,19 @@ void pqDSMViewerPanel::onH5Dump()
     this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     //this->UI->DSMProxy->InvokeCommand("H5Dump");
   }
-  if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
-    // Do nothing
-  }
-  else if ((this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description"))
-    & (!this->UI->xdmfFilePathLineEdit->text().isEmpty())) {
-      // Tell to generate XML file
-      pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
-        this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
-
-      this->UI->DSMProxy->UpdateVTKObjects();
-      this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
-  }
+//  if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Full description")) {
+//    // Do nothing
+//  }
+//  else if ((this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description"))
+//    & (!this->UI->xdmfFilePathLineEdit->text().isEmpty())) {
+//      // Tell to generate XML file
+//      pqSMAdaptor::setElementProperty(
+//        this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
+//        this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+//
+//      this->UI->DSMProxy->UpdateVTKObjects();
+//      this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
+//  }
 
   this->UI->dsmContents->setColumnCount(1);
   if (this->DSMContentTree) delete this->DSMContentTree;
