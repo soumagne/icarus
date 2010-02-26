@@ -17,10 +17,16 @@ IF (ParaView_BINARY_DIR)
     ${PARAVIEW_KWSYS_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
     ${MPI_INCLUDE_PATH}
-    ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
-    ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2/libxml
-    ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
   )
+  IF (VTK_USE_SYSTEM_LIBXML2)
+    INCLUDE_DIRECTORIES(
+      ${LIBXML2_INCLUDE_DIR}
+    )
+  ELSE (VTK_USE_SYSTEM_LIBXML2)
+    INCLUDE_DIRECTORIES(
+      ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
+    )
+  ENDIF (VTK_USE_SYSTEM_LIBXML2)
 ELSE (ParaView_BINARY_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
