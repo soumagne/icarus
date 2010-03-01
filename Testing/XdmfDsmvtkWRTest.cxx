@@ -39,7 +39,7 @@
 
 #include "vtkMultiProcessController.h"
 #include "vtkDSMManager.h"
-#include "vtkXdmfReader.h"
+#include "vtkXdmfReaderOld.h"
 #include "vtkXdmfWriter2.h"
 #include "vtkXdmfWriter4.h"
 
@@ -60,7 +60,7 @@ WaitForAll(vtkMultiProcessController *controller, int rank, int value)
 }
 //----------------------------------------------------------------------------
 void
-printReaderInfos(vtkXdmfReader *reader)
+printReaderInfos(vtkXdmfReaderOld *reader)
 {
   cerr << "Number of Domains: " << reader->GetNumberOfDomains() << endl;
   cerr << "1st Domain name: " << reader->GetDomainName(0) << endl;
@@ -104,7 +104,7 @@ MyMain(vtkMultiProcessController *con, void *arg)
 
   // Read Xdmf first
   cout << "*** Reading from Disk ***" << endl;
-  vtkSmartPointer<vtkXdmfReader> reader = vtkSmartPointer<vtkXdmfReader>::New();
+  vtkSmartPointer<vtkXdmfReaderOld> reader = vtkSmartPointer<vtkXdmfReaderOld>::New();
   if (!reader->CanReadFile(xdmfFileName_in))
     {
       cerr << "Cannot read input xmf file" << endl;
@@ -189,7 +189,7 @@ MyMain(vtkMultiProcessController *con, void *arg)
 
     // Create a new reader and test reading from DSM
     cout << "*** Reading from DSM ***" << endl;
-    vtkSmartPointer<vtkXdmfReader> reader_test = vtkSmartPointer<vtkXdmfReader>::New();
+    vtkSmartPointer<vtkXdmfReaderOld> reader_test = vtkSmartPointer<vtkXdmfReaderOld>::New();
     reader_test->SetDsmBuffer(DSMManager->GetDSMHandle());
     strcat(xdmfFileName_dsm, ".xmf");
     reader_test->SetFileName(xdmfFileName_dsm);
