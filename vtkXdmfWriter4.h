@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : vtkXdmfWriter4.h
-  Revision of last commit : $Rev: 153 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
+  Revision of last commit : $Rev$
+  Author of last commit   : $Author$
+  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing

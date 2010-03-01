@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : vtkXdmfWriter3.h
-  Revision of last commit : $Rev: 598 $
-  Author of last commit   : $Author: soumagne $
-  Date of last commit     : $Date:: 2009-07-15 22:33:59 +0200 #$
+  Revision of last commit : $Rev$
+  Author of last commit   : $Author$
+  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -70,7 +70,7 @@
 #endif
 //
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkXdmfWriter3, "$Revision: 598 $");
+vtkCxxRevisionMacro(vtkXdmfWriter3, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter3);
 #ifdef VTK_USE_MPI
 vtkCxxSetObjectMacro(vtkXdmfWriter3, Controller, vtkMultiProcessController);

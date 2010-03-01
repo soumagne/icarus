@@ -2,9 +2,9 @@
 
   Project                 : vtkCSCS
   Module                  : vtkXdmfWriter4.h
-  Revision of last commit : $Rev: 598 $
-  Author of last commit   : $Author: soumagne $
-  Date of last commit     : $Date:: 2009-07-15 22:33:59 +0200 #$
+  Revision of last commit : $Rev$
+  Author of last commit   : $Author$
+  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -72,7 +72,7 @@
 #include "XdmfH5MBCallback.h"
 //
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision: 598 $");
+vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter4);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, Controller, vtkMultiProcessController);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);

@@ -3,8 +3,8 @@
   Program:   Visualization Toolkit
   Module:    $RCSfile: vtkXdmfReader3.cxx,v $
   Language:  C++
-  Date:      $Date: 2009-08-18 15:23:51 $
-  Version:   $Revision: 1.71 $
+  Date:      $Date$
+  Version:   $Revision$
 
 
   Copyright (c) 1993-2001 Ken Martin, Will Schroeder, Bill Lorensen  
@@ -94,7 +94,7 @@
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkXdmfReader3);
-vtkCxxRevisionMacro(vtkXdmfReader3, "$Revision: 1.71 $");
+vtkCxxRevisionMacro(vtkXdmfReader3, "$Revision$");
 
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkXdmfReader3,Controller,vtkMultiProcessController);

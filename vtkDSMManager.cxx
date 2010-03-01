@@ -425,7 +425,7 @@ void vtkDSMManager::H5DumpXML()
     myDsmDump->DumpXML(dumpStream);
     if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
     this->DumpDescription = dumpStream.str();
-    // if (this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< this->DumpDescription.c_str());
     delete myDsmDump;
   }
 }
