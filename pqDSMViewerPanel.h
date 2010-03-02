@@ -58,9 +58,9 @@ public slots:
   void onUpdateTimeout();
   void DisplayDSMContents();
 
-  void CreatePublishNameDialog();
-  void TimeoutPublishName();
-  void CancelPublishNameDialog();
+  //  void CreatePublishNameDialog();
+  //  void TimeoutPublishName();
+  //  void CancelPublishNameDialog();
   void onPublishDSM();
   void onUnpublishDSM();
 
@@ -81,12 +81,12 @@ protected:
 
   class pqUI;
   pqUI* UI;
-  QProgressDialog *PublishNameDialog;
-  QTimer          *PublishNameTimer;
-  int              PublishNameSteps;
+  //  QProgressDialog *PublishNameDialog;
+  //  QTimer          *PublishNameTimer;
+  //  int              PublishNameSteps;
   bool             PublishedNameFound;
   bool             ConnectionFound;
-  QTreeWidgetItem *DSMContentTree;
+  //  QTreeWidgetItem *DSMContentTree;
   int              DSMCommType;
   QButtonGroup    *DSMServerGroup;
   QThread         *UpdateThread;

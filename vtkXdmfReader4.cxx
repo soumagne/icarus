@@ -31,33 +31,6 @@ vtkCxxRevisionMacro(vtkXdmfReader4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfReader4);
 vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
-//#define JB_DEBUG__
-#ifdef JB_DEBUG__
-  #ifdef ___WIN32
-    #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
-  #else
-    #define OUTPUTTEXT(a) std::cout << a; std::cout.flush();
-  #endif
-
-  #undef vtkDebugMacro
-  #define vtkDebugMacro(p,a)                           \
-  {                                                 \
-    std::stringstream vtkmsg;                       \
-    SimpleMutexLock::GlobalLock.Lock();             \
-    vtkmsg << "P(" << p << ") " << a;               \
-    std::cout << vtkmsg.str().c_str() << std::endl; \
-    SimpleMutexLock::GlobalLock.Unlock();           \
-  }
-  #define vtkXDRDebug(a) vtkDebugMacro(this->UpdatePiece,a)
-  #define vtkXDRError(a) vtkDebugMacro(this->UpdatePiece,a)
-  //
-  #undef  vtkGenericWarningMacro
-  #define vtkGenericWarningMacro(a) vtkDebugMacro(-1,a)
-#else
-  #define vtkXDRDebug(a) vtkDebugMacro(a)
-  #define vtkXDRError(a) vtkDebugMacro(a)
-#endif
-//----------------------------------------------------------------------------
 vtkXdmfReader4::vtkXdmfReader4()
 {
   this->DSMManager = 0;

@@ -42,8 +42,8 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
-// #ifdef JB_DEBUG__
-//----------------------------------------------------------------------------
+#define JB_DEBUG__
+#ifdef JB_DEBUG__
 #ifdef NO_WIN32
   #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
 #else
@@ -63,7 +63,7 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 
 #undef vtkErrorMacro
 #define vtkErrorMacro(a) vtkDebugMacro(a)
-// #endif
+#endif
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDSMManager, "$Revision$");
 vtkStandardNewMacro(vtkDSMManager);
@@ -352,6 +352,9 @@ void vtkDSMManager::DisconnectDSM()
 void vtkDSMManager::PublishDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
+  if ((this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) && this->GetPublishedServerPort()) {
+    dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
+  }
   this->DSMBuffer->GetComm()->OpenPort();
 
   if (this->UpdatePiece == 0) {

@@ -18,8 +18,10 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-// .NAME vtkXdmfReader4 - Read Xdmf + HDF5 files from vtk input
+// .NAME vtkXdmfReader4 - Read Xdmf + HDF5 files using DSM manager
 // .SECTION Description
+// This reader reads data using the conventional vtkXdmreader but adds DSM
+// specific calls in order to use the DSM manager.
 
 #ifndef __vtkXdmfReader4_h
 #define __vtkXdmfReader4_h
