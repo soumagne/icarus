@@ -480,10 +480,18 @@ void pqDSMViewerPanel::onClearDSM()
 void pqDSMViewerPanel::onConnectDSM()
 {
   if (this->DSMReady() && !this->ConnectionFound) {
-    QString servername = this->UI->dsmServerName->currentText();
-    pqSMAdaptor::setElementProperty(
-      this->UI->DSMProxy->GetProperty("ServerHostName"),
-      servername.toStdString().c_str());
+    QString servername;
+    if (this->DSMCommType == XDMF_DSM_COMM_MPI) {
+      servername = QInputDialog::getText(this, tr("QInputDialog::getText()"),
+          tr("Please enter the MPI port name you want to connect to:"), QLineEdit::Normal);
+    } else {
+      servername = this->UI->dsmServerName->currentText();
+    }
+    if (!servername.isEmpty()) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("ServerHostName"),
+          servername.toStdString().c_str());
+    }
     //
     if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
       QString portnumber = this->UI->xdmfCommPort->text();
