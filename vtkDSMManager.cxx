@@ -352,8 +352,11 @@ void vtkDSMManager::DisconnectDSM()
 void vtkDSMManager::PublishDSM()
 {
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
-  if ((this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) && this->GetPublishedServerPort()) {
-    dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
+  if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
+    dynamic_cast<XdmfDsmCommSocket*>
+    (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
+    dynamic_cast<XdmfDsmCommSocket*>
+    (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
   }
   this->DSMBuffer->GetComm()->OpenPort();
 

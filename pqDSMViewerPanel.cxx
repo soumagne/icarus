@@ -118,12 +118,16 @@ QDockWidget("DSM Manager", p)
   //
   // Link GUI object events to callbacks
   //
+
   // XDMF XML Commands
   this->connect(this->UI->browseFile,
     SIGNAL(clicked()), this, SLOT(onBrowseFile()));
 
 
   // DSM Commands
+  this->connect(this->UI->addServerDSM,
+      SIGNAL(clicked()), this, SLOT(onAddServerDSM()));
+
   this->connect(this->UI->createDSM,
     SIGNAL(clicked()), this, SLOT(onCreateDSM()));
 
@@ -377,6 +381,7 @@ void pqDSMViewerPanel::onDsmIsStandalone()
 
   if (this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(false);
   if (this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(false);
+  if (this->UI->addServerDSM->isEnabled()) this->UI->addServerDSM->setEnabled(false);
 
   if (!this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(true);
   if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
@@ -395,7 +400,8 @@ void pqDSMViewerPanel::onDsmIsServer()
   if (this->UI->disconnectDSM->isEnabled()) this->UI->disconnectDSM->setEnabled(false);
 
   if (!this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(true);
-  if (this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(false);
+  if (!this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(true);
+  if (!this->UI->addServerDSM->isEnabled()) this->UI->addServerDSM->setEnabled(true);
 
   if (this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(false);
   if (!this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(true);
@@ -415,6 +421,7 @@ void pqDSMViewerPanel::onDsmIsClient()
 
   if (!this->UI->xdmfCommPort->isEnabled()) this->UI->xdmfCommPort->setEnabled(true);
   if (!this->UI->dsmServerName->isEnabled()) this->UI->dsmServerName->setEnabled(true);
+  if (!this->UI->addServerDSM->isEnabled()) this->UI->addServerDSM->setEnabled(true);
 
   if (!this->UI->testDSM->isEnabled()) this->UI->testDSM->setEnabled(true);
   if (this->UI->h5Dump->isEnabled()) this->UI->h5Dump->setEnabled(false);
@@ -422,6 +429,17 @@ void pqDSMViewerPanel::onDsmIsClient()
   if (this->UI->displayDSM->isEnabled()) this->UI->displayDSM->setEnabled(false);
 
   if (this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(false);
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onAddServerDSM()
+{
+  QString servername = QInputDialog::getText(this, tr("Add DSM Server"),
+            tr("Please enter the host name or IP address of a DSM server you want to add/remove:"), QLineEdit::Normal);
+  if (this->UI->dsmServerName->findText(servername) < 0) {
+    this->UI->dsmServerName->addItem(servername);
+  } else {
+    this->UI->dsmServerName->removeItem(this->UI->dsmServerName->findText(servername));
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onBrowseFile()
@@ -482,8 +500,9 @@ void pqDSMViewerPanel::onConnectDSM()
   if (this->DSMReady() && !this->ConnectionFound) {
     QString servername;
     if (this->DSMCommType == XDMF_DSM_COMM_MPI) {
-      servername = QInputDialog::getText(this, tr("QInputDialog::getText()"),
-          tr("Please enter the MPI port name you want to connect to:"), QLineEdit::Normal);
+      servername = QInputDialog::getText(this, tr("Connect to DSM using MPI"),
+          tr("Please enter the MPI port name you want to connect to:"),
+          QLineEdit::Normal);
     } else {
       servername = this->UI->dsmServerName->currentText();
     }
@@ -520,6 +539,11 @@ void pqDSMViewerPanel::onPublishDSM()
       //      this->PublishNameSteps = 0;
       //       this->CreatePublishNameDialog();
       if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+        QString hostname = this->UI->dsmServerName->currentText();
+        pqSMAdaptor::setElementProperty(
+            this->UI->DSMProxy->GetProperty("ServerHostName"),
+            hostname.toStdString().c_str());
+
         QString portnumber = this->UI->xdmfCommPort->text();
         pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("ServerPort"),

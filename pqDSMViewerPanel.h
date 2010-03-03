@@ -47,6 +47,8 @@ public slots:
   void onDsmIsServer();
   void onDsmIsClient();
 
+  void onAddServerDSM();
+
   void onBrowseFile();
 
   void onCreateDSM();
