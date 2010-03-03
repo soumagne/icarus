@@ -1,128 +1,128 @@
 <?xml version="1.0" ?>
 <!-- <!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []> -->
 <Xdmf xmlns:xi="http://www.w3.org/2001/XInclude" Version="2.0">
-<Domain Name="Asphodele">
-<Grid GridType="Collection" CollectionType="Temporal">
-<Grid GridType="Collection" CollectionType="Spatial">
+  <Domain Name="Asphodele">
+    <Grid GridType="Collection" CollectionType="Temporal">
+      <Grid GridType="Collection" CollectionType="Spatial">
 
-<Grid Name="Solid" Type="Uniform">
-<Topology Type="Polyvertex" Dimensions="480">
-</Topology>
-<Geometry Type="XYZ">
-<DataItem NumberType="Float" Dimensions="480 3" Precision="4" Format="HDF">
-DSM:output.0000.hdf5:/solid0/position
-</DataItem>
-</Geometry>
-<Attribute AttributeType="Scalar" Center="Node" Name="h">
-<DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
-DSM:output.0000.hdf5:/solid0/h
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="index">
-<DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
-DSM:output.0000.hdf5:/solid0/index
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="normals">
-<DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
-DSM:output.0000.hdf5:/solid0/normals
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="pressure">
-<DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
-DSM:output.0000.hdf5:/solid0/pressure
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="velocity">
-<DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
-DSM:output.0000.hdf5:/solid0/velocity
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="vmob">
-<DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
-DSM:output.0000.hdf5:/solid0/vmob
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="w">
-<DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
-DSM:output.0000.hdf5:/solid0/w
-</DataItem>
-</Attribute>
+	<Grid Name="Solid" Type="Uniform">
+	  <Topology Type="Polyvertex" Dimensions="480">
+	  </Topology>
+	  <Geometry Type="XYZ">
+	    <DataItem NumberType="Float" Dimensions="480 3" Precision="4" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/position
+	    </DataItem>
+	  </Geometry>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="h">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/h
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="index">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/index
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="normals">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/normals
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="pressure">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/pressure
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="velocity">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/velocity
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="vmob">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480 3" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/vmob
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="w">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="480" Format="HDF">
+	      DSM:output.0000.hdf5:/solid0/w
+	    </DataItem>
+	  </Attribute>
 
-</Grid>
+	</Grid>
 
-<Grid Name="Fluid" Type="Uniform">
-<Topology Type="Polyvertex" Dimensions="1800">
-</Topology>
-<Geometry Type="XYZ">
-<DataItem NumberType="Float" Dimensions="1800 3" Precision="4" Format="HDF">
-DSM:output.0000.hdf5:/fluid/position
-</DataItem>
-</Geometry>
-<Attribute AttributeType="Scalar" Center="Node" Name="density">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
-DSM:output.0000.hdf5:/fluid/density
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="gradP">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/gradP
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="gradRHO">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/gradRHO
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="gradVX">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/gradVX
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="gradVY">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/gradVY
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="gradVZ">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/gradVZ
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="h">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
-DSM:output.0000.hdf5:/fluid/h
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="index">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
-DSM:output.0000.hdf5:/fluid/index
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="pressure">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
-DSM:output.0000.hdf5:/fluid/pressure
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="velocity">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/velocity
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Vector" Center="Node" Name="vmob">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
-DSM:output.0000.hdf5:/fluid/vmob
-</DataItem>
-</Attribute>
-<Attribute AttributeType="Scalar" Center="Node" Name="w">
-<DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
-DSM:output.0000.hdf5:/fluid/w
-</DataItem>
-</Attribute>
-</Grid>
+	<Grid Name="Fluid" Type="Uniform">
+	  <Topology Type="Polyvertex" Dimensions="1800">
+	  </Topology>
+	  <Geometry Type="XYZ">
+	    <DataItem NumberType="Float" Dimensions="1800 3" Precision="4" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/position
+	    </DataItem>
+	  </Geometry>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="density">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/density
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="gradP">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/gradP
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="gradRHO">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/gradRHO
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="gradVX">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/gradVX
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="gradVY">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/gradVY
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="gradVZ">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/gradVZ
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="h">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/h
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="index">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/index
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="pressure">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/pressure
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="velocity">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/velocity
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Vector" Center="Node" Name="vmob">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800 3" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/vmob
+	    </DataItem>
+	  </Attribute>
+	  <Attribute AttributeType="Scalar" Center="Node" Name="w">
+	    <DataItem NumberType="Float" Precision="4" Dimensions="1800" Format="HDF">
+	      DSM:output.0000.hdf5:/fluid/w
+	    </DataItem>
+	  </Attribute>
+	</Grid>
 
-<Time Value="0"/>
-</Grid>
-</Grid>
-</Domain>
+	<Time Value="0"/>
+      </Grid>
+    </Grid>
+  </Domain>
 </Xdmf>

@@ -8,7 +8,7 @@
 	<DataItem>/PartType2/Coordinates</DataItem>
       </Geometry>
       <Attribute>
-        <DataItem>/PartType2/ParticleIDs</DataItem>
+	<DataItem>/PartType2/ParticleIDs</DataItem>
       </Attribute>
       <Attribute>
 	<DataItem>/PartType2/Acceleration</DataItem>

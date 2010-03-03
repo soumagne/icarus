@@ -159,7 +159,8 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
       // Set Attribute Name
       vtksys::RegularExpression reName("/([^/]*)$");
       reName.find(attributePath);
-      attribute->SetName(reName.match(1).c_str());
+      std::string tmpName = std::string("attribute_") + reName.match(1).c_str();
+      attribute->SetName(tmpName.c_str());
       // Set node center by default at the moment
       attribute->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
       // Set Atrribute Type
