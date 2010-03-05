@@ -112,7 +112,7 @@ vtkCxxSetObjectMacro(vtkXdmfReader3, DSMManager, vtkDSMManager);
 
 #define PRINT_EXTENT(x) "[" << (x)[0] << " " << (x)[1] << " " << (x)[2] << " " << (x)[3] << " " << (x)[4] << " " << (x)[5] << "]" 
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
+//#define JB_DEBUG__
 #if defined (JB_DEBUG__)
   #define OUTPUTTEXT(a) vtkstd::cout << (a); vtkstd::cout.flush();
 
@@ -1312,7 +1312,7 @@ int vtkXdmfReader3::UpdateDomains()
 //----------------------------------------------------------------------------
 void vtkXdmfReader3::UpdateRootGrid()
 {
-  cout << "UpdateRootGrid" << endl;
+  vtkXDRDebug("UpdateRootGrid");
   if (!this->DomainName && this->GetNumberOfDomains() > 0)
     {
     vtkstd::string curDomain = this->GetDomainName(0);
@@ -1335,9 +1335,9 @@ void vtkXdmfReader3::UpdateRootGrid()
     this->Internals->Data = ptr;
     }
   this->Internals->DeleteChildren(ptr);
-  cout << "UpdateGrids Start" << endl;
+  vtkXDRDebug("UpdateGrids Start");
   this->UpdateGrids(ptr, domain);
-  cout << "UpdateGrids End" << endl;
+  vtkXDRDebug("UpdateGrids End");
   int nchildren = ptr->Children.size();
   //vtkXDRDebug("Created " << nchildren << " top level grids.");
   this->OutputTemporal = 0;
@@ -1580,7 +1580,7 @@ int vtkXdmfReader3::ProcessRequest(vtkInformation* request,
 //----------------------------------------------------------------------------
 bool vtkXdmfReader3::ParseXML()
 {
-  cout << "Begin Parsing" << endl;
+  vtkXDRDebug("Begin Parsing");
   // * Ensure that the required objects have been instantiated.
   if (!this->DOM)
     {
@@ -1605,7 +1605,7 @@ bool vtkXdmfReader3::ParseXML()
     unsigned int data_length=0;
     if (this->InputArray)
       {
-      vtkDebugMacro(this->UpdatePiece, "Reading from InputArray");
+      vtkXDRDebug("Reading from InputArray");
       data = this->InputArray->GetPointer(0);
       data_length = static_cast<unsigned int>(
         this->InputArray->GetNumberOfTuples()*
@@ -1627,11 +1627,11 @@ bool vtkXdmfReader3::ParseXML()
       STRNCASECMP(data, this->Internals->InputString, data_length) == 0)
       {
       modified = false;
-      vtkDebugMacro(this->UpdatePiece, "Input Text Unchanged ... skipping re-parse()");
+      vtkXDRDebug("Input Text Unchanged ... skipping re-parse()");
       }
     else
       {
-      vtkDebugMacro(this->UpdatePiece, "Input Text Changed ...  re-parseing");
+      vtkXDRDebug("Input Text Changed ...  re-parseing");
       delete this->Internals->Data;
       this->Internals->Data = 0;
       delete [] this->Internals->InputString;
@@ -1665,12 +1665,12 @@ bool vtkXdmfReader3::ParseXML()
     if (this->DOM->GetInputFileName() &&
       STRCASECMP(this->DOM->GetInputFileName(), this->FileName) == 0)
       {
-      vtkDebugMacro(this->UpdatePiece, "Filename Unchanged ... skipping re-parse()");
+      vtkXDRDebug("Filename Unchanged ... skipping re-parse()");
       modified = false;
       }
     else
       {
-      vtkDebugMacro(this->UpdatePiece, "Parsing file: " << this->FileName);
+      vtkXDRDebug("Parsing file: " << this->FileName);
 
       //Tell the parser what the working directory is.
       vtkstd::string directory =
@@ -1686,11 +1686,11 @@ bool vtkXdmfReader3::ParseXML()
       this->DOM->Parse(this->FileName);
       }
     }
-  cout << "Done Parsing" << endl;
+  vtkXDRDebug("Done Parsing");
 
   if (modified)
     {
-    cout << "ParseXML" << endl;
+    vtkXDRDebug("ParseXML");
     // Since the DOM was re-parsed we need to update the cache for domains
     // and re-populate the grids.
     this->UpdateDomains();
@@ -1702,7 +1702,7 @@ bool vtkXdmfReader3::ParseXML()
 //----------------------------------------------------------------------------
 int vtkXdmfReader3::RequestDataObject(vtkInformationVector *outputVector)
 {
-  cout << "RequestDataObject: " << endl;
+  vtkXDRDebug("RequestDataObject");
   if (!this->ParseXML())
     {
     return 0;
@@ -1713,7 +1713,7 @@ int vtkXdmfReader3::RequestDataObject(vtkInformationVector *outputVector)
     this->EnableAllGrids();
   }
 
-  vtkDebugMacro(this->UpdatePiece, "My output is a "
+  vtkXDRDebug("My output is a "
     << vtkDataObjectTypes::GetClassNameFromTypeId(this->OutputVTKType));
 
   //Look at the in memory structures and create an empty vtkDataObject of the
@@ -2245,8 +2245,8 @@ int vtkXdmfReader3Internal::RequestGridData(
         // if((this->ParallelLevel != grid) ||
         //     ((this->ParallelLevel == grid) && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
         // {
-        if(!IsParallel ||
-            (IsParallel && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
+        //if(!IsParallel ||
+        //    (IsParallel && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
         {
         vtkDataObject *soutput=
            vtkDataObjectTypes::NewDataObject(child->vtkType);
@@ -2274,10 +2274,10 @@ int vtkXdmfReader3Internal::RequestGridData(
           lprogressE
           );
         soutput->Delete();
-        } else {
-          outMB->SetBlock(outputGrid, static_cast<vtkDataSet*>(NULL));
+        } //else {
+          //outMB->SetBlock(outputGrid, static_cast<vtkDataSet*>(NULL));
           //outMB->SetMetaData(outputGrid, grid->GetInformation());
-          }
+          //}
         outputGrid++;
         }
     if (totalProgFrac>0.1)

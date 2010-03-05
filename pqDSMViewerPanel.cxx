@@ -625,7 +625,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       // Create a new Reader proxy and register it with the system
       //
       if (this->XdmfReader) this->XdmfReader.New();
-      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
+      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
