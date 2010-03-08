@@ -89,7 +89,6 @@ vtkDSMManager::vtkDSMManager()
   this->DsmIsServer             = 1;
   this->PublishedServerHostName = NULL;
   this->PublishedServerPort     = 0;
-  this->AcceptedConnection      = 0;
 #endif
 
   this->XMFDescriptionFilePath  = NULL;
@@ -382,19 +381,16 @@ void vtkDSMManager::PublishDSM()
 
 void vtkDSMManager::UnpublishDSM()
 {
-  //if (this->AcceptedConnection == false) {
-  // Make terminate the thread by forcing the accept
-  // TODO Should simply add a signal to the socket
-  //}
-  if (this->GetPublishedServerHostName() != NULL) {
-    this->DSMBuffer->GetComm()->ClosePort();
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Closing port...");
+  this->DSMBuffer->GetComm()->ClosePort();
 
-    if (this->UpdatePiece == 0) {
+  if (this->UpdatePiece == 0) {
+    if (this->GetPublishedServerHostName() != NULL) {
       this->SetPublishedServerHostName(NULL);
       this->SetPublishedServerPort(0);
     }
   }
-  this->SetAcceptedConnection(0);
+  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Port closed");
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::H5Dump()

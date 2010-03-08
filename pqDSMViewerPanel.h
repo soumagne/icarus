@@ -86,8 +86,7 @@ protected:
   //  QProgressDialog *PublishNameDialog;
   //  QTimer          *PublishNameTimer;
   //  int              PublishNameSteps;
-  bool             PublishedNameFound;
-  bool             ConnectionFound;
+  bool             Connected;
   //  QTreeWidgetItem *DSMContentTree;
   int              DSMCommType;
   QButtonGroup    *DSMServerGroup;

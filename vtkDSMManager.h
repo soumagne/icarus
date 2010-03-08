@@ -82,7 +82,6 @@ public:
 
   // Description:
   // Only valid after a AcceptConnection call has been made.
-  vtkSetMacro(AcceptedConnection, int);
   int GetAcceptedConnection();
 
   // Description:
@@ -169,7 +168,6 @@ protected:
     char           *PublishedServerHostName;
     int             PublishedServerPort;
     //
-    int             AcceptedConnection;
     int             DsmUpdateReady;
     //
     char           *XMFDescriptionFilePath;

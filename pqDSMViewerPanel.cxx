@@ -106,8 +106,7 @@ QDockWidget("DSM Manager", p)
   //  this->PublishNameDialog = NULL;
   //  this->PublishNameTimer = NULL;
   //  this->PublishNameSteps = 0;
-  this->PublishedNameFound = false;
-  this->ConnectionFound = false;
+  this->Connected = false;
   //  this->DSMContentTree = NULL;
   this->DSMCommType = 0;
   this->UpdateTimer = new QTimer(this);
@@ -497,7 +496,7 @@ void pqDSMViewerPanel::onClearDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onConnectDSM()
 {
-  if (this->DSMReady() && !this->ConnectionFound) {
+  if (this->DSMReady() && !this->Connected) {
     QString servername;
     if (this->DSMCommType == XDMF_DSM_COMM_MPI) {
       servername = QInputDialog::getText(this, tr("Connect to DSM using MPI"),
@@ -520,63 +519,45 @@ void pqDSMViewerPanel::onConnectDSM()
     }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("ConnectDSM");
-    this->ConnectionFound = true;
+    this->Connected = true;
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisconnectDSM()
 {
-  if (this->DSMReady() && this->ConnectionFound) {
+  if (this->DSMReady() && this->Connected) {
     this->UI->DSMProxy->InvokeCommand("DisconnectDSM");
-    this->ConnectionFound = false;
+    this->Connected = false;
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPublishDSM()
 {
-  if (this->DSMReady()) {
-    if (!this->PublishedNameFound && !this->ConnectionFound) {
-      //      this->PublishNameSteps = 0;
-      //       this->CreatePublishNameDialog();
-      if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
-        QString hostname = this->UI->dsmServerName->currentText();
-        pqSMAdaptor::setElementProperty(
-            this->UI->DSMProxy->GetProperty("ServerHostName"),
-            hostname.toStdString().c_str());
+  if (this->DSMReady() && !this->Connected) {
+    //      this->PublishNameSteps = 0;
+    //       this->CreatePublishNameDialog();
+    if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+      QString hostname = this->UI->dsmServerName->currentText();
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("ServerHostName"),
+          hostname.toStdString().c_str());
 
-        QString portnumber = this->UI->xdmfCommPort->text();
-        pqSMAdaptor::setElementProperty(
+      QString portnumber = this->UI->xdmfCommPort->text();
+      pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("ServerPort"),
           portnumber.toStdString().c_str());
-      }
-      this->UI->DSMProxy->UpdateVTKObjects();
-      this->UI->DSMProxy->InvokeCommand("PublishDSM");
-    } else {
-      QMessageBox msgBox(this);
-      msgBox.setIcon(QMessageBox::Warning);
-      msgBox.setText("DSM already connected!");
-      msgBox.exec();
     }
+    this->UI->DSMProxy->UpdateVTKObjects();
+    this->UI->DSMProxy->InvokeCommand("PublishDSM");
+    this->Connected = true;
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUnpublishDSM()
 {
-  if (this->DSMReady()) {
-    if (this->PublishedNameFound == false) {
-      QMessageBox msgBox(this);
-      msgBox.setIcon(QMessageBox::Warning);
-      msgBox.setText("No DSM published name found!");
-      msgBox.exec();
-    } else {
-      QMessageBox msgBox(this);
+  if (this->DSMReady() && this->Connected) {
       this->UI->DSMProxy->InvokeCommand("UnpublishDSM");
-      this->PublishedNameFound = false;
-      this->ConnectionFound = false;
-      msgBox.setIcon(QMessageBox::Information);
-      msgBox.setText("DSM name unpublished");
-      msgBox.exec();
-    }
+      this->Connected = false;
   }
 }
 //-----------------------------------------------------------------------------
@@ -615,6 +596,7 @@ void pqDSMViewerPanel::onTestDSM()
 void pqDSMViewerPanel::onDisplayDSM()
 {
   bool first_time = false;
+  static int current_time = 0;
   static bool xdmf_description_generated = false;
 
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
@@ -624,11 +606,14 @@ void pqDSMViewerPanel::onDisplayDSM()
       //
       // Create a new Reader proxy and register it with the system
       //
+      char proxyName[256];
+
       if (this->XdmfReader) this->XdmfReader.New();
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
-      pm->RegisterProxy("sources", "DSM-Contents", this->XdmfReader);
+      sprintf(proxyName, "DSM-Contents_%d", current_time);
+      pm->RegisterProxy("sources", proxyName, this->XdmfReader);
 
       //
       // Connect our DSM manager to the reader
@@ -671,7 +656,6 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
     //
-    this->XdmfReader->InvokeCommand("Modified");
     this->XdmfReader->UpdatePropertyInformation();
     this->XdmfReader->UpdateVTKObjects();
     this->XdmfReader->UpdatePipeline();
@@ -679,7 +663,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     //
     // Create a representation if we need one : First time or if storing multiple datasets
     //
-    if (!this->XdmfRepresentation && !this->UI->storeDSMContents->isChecked()) {
+    if (!this->XdmfRepresentation || this->UI->storeDSMContents->isChecked()) {
       first_time = true;
       this->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
     }
@@ -706,10 +690,9 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Increment the time as new steps appear.
     // @TODO : To be replaced with GetTimeStep from reader
     //
-    static int i=0; 
     QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
     foreach (pqAnimationScene *scene, scenes) {
-      scene->setAnimationTime(++i);
+      scene->setAnimationTime(++current_time);
     }
 
     //
