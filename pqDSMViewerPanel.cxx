@@ -597,7 +597,7 @@ void pqDSMViewerPanel::onDisplayDSM()
 {
   bool first_time = false;
   static int current_time = 0;
-  static bool xdmf_description_generated = false;
+  static std::string xdmf_description_file_path;
 
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
@@ -633,16 +633,17 @@ void pqDSMViewerPanel::onDisplayDSM()
             this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
       }
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
-        if (!xdmf_description_generated) {
+        // Only re-generate if the description file path has changed
+        if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString()) {
+          xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
           // Generate xdmf file for reading
           this->UI->DSMProxy->InvokeCommand("H5DumpXML");
           pqSMAdaptor::setElementProperty(
               this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
-              this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+              xdmf_description_file_path.c_str());
 
           this->UI->DSMProxy->UpdateVTKObjects();
           this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
-          xdmf_description_generated = true;
         }
           pqSMAdaptor::setElementProperty(
               this->XdmfReader->GetProperty("FileName"), "stdin");
@@ -656,6 +657,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
     //
+    this->XdmfReader->InvokeCommand("Modified");
     this->XdmfReader->UpdatePropertyInformation();
     this->XdmfReader->UpdateVTKObjects();
     this->XdmfReader->UpdatePipeline();
