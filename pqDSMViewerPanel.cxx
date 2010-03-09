@@ -595,9 +595,11 @@ void pqDSMViewerPanel::onTestDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisplayDSM()
 {
-  bool first_time = false;
+  bool force_generate     = false;
+  static bool first_time  = true;
   static int current_time = 0;
-  static std::string xdmf_description_file_path;
+  static std::string xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
+
 
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
@@ -608,6 +610,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       //
       char proxyName[256];
 
+      if (!first_time) first_time = true;
       if (this->XdmfReader) this->XdmfReader.New();
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
@@ -633,8 +636,9 @@ void pqDSMViewerPanel::onDisplayDSM()
             this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
       }
       if (this->UI->xdmfFileTypeComboBox->currentText() == QString("Pseudo description")) {
-        // Only re-generate if the description file path has changed
-        if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString()) {
+        force_generate = (this->UI->forceXdmfGeneration->isChecked()) ? true : false;
+        // Only re-generate if the description file path has changed or if force is set to true
+        if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
           xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
           // Generate xdmf file for reading
           this->UI->DSMProxy->InvokeCommand("H5DumpXML");
@@ -666,7 +670,6 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Create a representation if we need one : First time or if storing multiple datasets
     //
     if (!this->XdmfRepresentation || this->UI->storeDSMContents->isChecked()) {
-      first_time = true;
       this->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
     }
 
@@ -711,6 +714,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
     }
     //
+    if (first_time) first_time = false;
   }
 }
 //-----------------------------------------------------------------------------
@@ -781,7 +785,13 @@ void pqDSMViewerPanel::onUpdateTimeout()
       int ready = ur->GetElement(0);
       if (ready != 0) {
         this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+        if (this->UI->autoDisplayDSM->isChecked()) {
         this->onDisplayDSM();
+        } else {
+          if (!this->UI->dsmIsStandalone->isChecked()) {
+            this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
+          }
+        }
       }
     }
   }
