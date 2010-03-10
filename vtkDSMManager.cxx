@@ -274,7 +274,12 @@ bool vtkDSMManager::CreateDSM()
   this->DSMBuffer->SetServiceThreadUseCopy(0);
   // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
   this->DSMBuffer->ConfigureUniform(this->DSMComm, this->GetLocalBufferSizeMBytes()*1024*1024);
-
+  if (this->UpdatePiece == 0) {
+    vtkDebugMacro(<< "Length set: " << this->DSMBuffer->GetLength() <<
+       ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
+       ", startServerId set: " << this->DSMBuffer->GetStartServerId() <<
+       ", endServerId set: " << this->DSMBuffer->GetEndServerId());
+  }
   //
   // setup service thread
   //
