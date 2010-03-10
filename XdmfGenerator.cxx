@@ -271,7 +271,7 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfXmlNode hdfDatasetNode, Xdmf
       "Format=\"HDF\">" +
       this->HdfFileName + std::string(dataPath) +
       "</DataItem>";
-  XdmfString dataItemStr = new char[dataItem.length()];
+  XdmfString dataItemStr = new char[dataItem.length()+1];
   strcpy(dataItemStr, dataItem.c_str());
   return (XdmfConstString)dataItemStr;
 }
