@@ -195,6 +195,11 @@
                </property>
                <item>
                 <property name="text">
+                 <string>default</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
                  <string>agno.staff.cscs.ch</string>
                 </property>
                </item>
