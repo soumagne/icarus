@@ -255,6 +255,8 @@ void pqDSMViewerPanel::LoadSettings()
   settings->endArray();
   // Active server
   this->UI->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
+  // Size
+  this->UI->dsmSizeSpinBox->setValue(settings->value("Size", 0).toInt());
   // Method
   this->UI->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
   // Port
@@ -286,6 +288,8 @@ void pqDSMViewerPanel::SaveSettings()
   settings->endArray();
   // Active server
   settings->setValue("Selected", this->UI->dsmServerName->currentIndex());
+  // Size
+  settings->setValue("Size", this->UI->dsmSizeSpinBox->value());
   // Method
   settings->setValue("Communication", this->UI->xdmfCommTypeComboBox->currentIndex());
   // Port
@@ -360,6 +364,10 @@ bool pqDSMViewerPanel::DSMReady()
     pqSMAdaptor::setElementProperty(
       this->UI->DSMProxy->GetProperty("DsmCommType"),
       this->DSMCommType);
+    //
+    pqSMAdaptor::setElementProperty(
+      this->UI->DSMProxy->GetProperty("DsmLocalBufferSize"),
+      this->UI->dsmSizeSpinBox->value());
     //
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("CreateDSM");
@@ -512,10 +520,9 @@ void pqDSMViewerPanel::onConnectDSM()
     }
     //
     if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
-      QString portnumber = this->UI->xdmfCommPort->text();
       pqSMAdaptor::setElementProperty(
         this->UI->DSMProxy->GetProperty("ServerPort"),
-        portnumber.toStdString().c_str());
+        this->UI->xdmfCommPort->value());
     }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("ConnectDSM");
@@ -542,10 +549,9 @@ void pqDSMViewerPanel::onPublishDSM()
           this->UI->DSMProxy->GetProperty("ServerHostName"),
           hostname.toStdString().c_str());
 
-      QString portnumber = this->UI->xdmfCommPort->text();
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("ServerPort"),
-          portnumber.toStdString().c_str());
+          this->UI->xdmfCommPort->value());
     }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("PublishDSM");

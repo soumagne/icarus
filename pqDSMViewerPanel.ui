@@ -28,8 +28,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>426</width>
-         <height>671</height>
+         <width>408</width>
+         <height>700</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -53,49 +53,49 @@
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
             <layout class="QGridLayout" name="gridLayout">
-             <item row="10" column="0">
+             <item row="12" column="0">
               <widget class="QPushButton" name="createDSM">
                <property name="text">
                 <string>CreateDSM</string>
                </property>
               </widget>
              </item>
-             <item row="10" column="1">
+             <item row="12" column="1">
               <widget class="QPushButton" name="destroyDSM">
                <property name="text">
                 <string>DestroyDSM</string>
                </property>
               </widget>
              </item>
-             <item row="10" column="2">
+             <item row="12" column="2">
               <widget class="QPushButton" name="clearDSM">
                <property name="text">
                 <string>ClearDSM</string>
                </property>
               </widget>
              </item>
-             <item row="11" column="0">
+             <item row="13" column="0">
               <widget class="QPushButton" name="h5Dump">
                <property name="text">
                 <string>H5Dump</string>
                </property>
               </widget>
              </item>
-             <item row="11" column="1">
+             <item row="13" column="1">
               <widget class="QPushButton" name="testDSM">
                <property name="text">
                 <string>TestDSM</string>
                </property>
               </widget>
              </item>
-             <item row="11" column="2">
+             <item row="13" column="2">
               <widget class="QPushButton" name="displayDSM">
                <property name="text">
                 <string>DisplayDSM</string>
                </property>
               </widget>
              </item>
-             <item row="4" column="0">
+             <item row="6" column="0">
               <widget class="QPushButton" name="unpublishDSM">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -108,7 +108,7 @@
                </property>
               </widget>
              </item>
-             <item row="3" column="0">
+             <item row="5" column="0">
               <widget class="QPushButton" name="publishDSM">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
@@ -121,7 +121,7 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="0" colspan="3">
+             <item row="11" column="0" colspan="3">
               <spacer name="horizontalSpacer">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -134,7 +134,7 @@
                </property>
               </spacer>
              </item>
-             <item row="3" column="2">
+             <item row="5" column="2">
               <widget class="QPushButton" name="connectDSM">
                <property name="layoutDirection">
                 <enum>Qt::LeftToRight</enum>
@@ -144,14 +144,14 @@
                </property>
               </widget>
              </item>
-             <item row="4" column="2">
+             <item row="6" column="2">
               <widget class="QPushButton" name="disconnectDSM">
                <property name="text">
                 <string>DisconnectDSM</string>
                </property>
               </widget>
              </item>
-             <item row="2" column="2">
+             <item row="4" column="2">
               <widget class="QComboBox" name="xdmfCommTypeComboBox">
                <property name="currentIndex">
                 <number>1</number>
@@ -168,7 +168,7 @@
                </item>
               </widget>
              </item>
-             <item row="1" column="2">
+             <item row="2" column="2">
               <widget class="QSpinBox" name="xdmfCommPort">
                <property name="maximum">
                 <number>65535</number>
@@ -181,14 +181,14 @@
                </property>
               </widget>
              </item>
-             <item row="2" column="0" colspan="2">
+             <item row="4" column="0" colspan="2">
               <widget class="QLabel" name="xdmfCommTypeLabel">
                <property name="text">
                 <string>DSM InterCommunication</string>
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
+             <item row="2" column="0">
               <widget class="QComboBox" name="dsmServerName">
                <property name="currentIndex">
                 <number>0</number>
@@ -249,7 +249,7 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="2" column="1">
               <widget class="QToolButton" name="addServerDSM">
                <property name="enabled">
                 <bool>true</bool>
@@ -263,14 +263,14 @@
                </property>
               </widget>
              </item>
-             <item row="5" column="0" colspan="3">
+             <item row="7" column="0" colspan="3">
               <widget class="QCheckBox" name="storeDSMContents">
                <property name="text">
                 <string>Store DSM contents</string>
                </property>
               </widget>
              </item>
-             <item row="7" column="0" colspan="3">
+             <item row="9" column="0" colspan="3">
               <widget class="QCheckBox" name="autoDisplayDSM">
                <property name="text">
                 <string>Display DSM content automatically</string>
@@ -280,10 +280,27 @@
                </property>
               </widget>
              </item>
-             <item row="6" column="0" colspan="3">
+             <item row="8" column="0" colspan="3">
               <widget class="QCheckBox" name="forceXdmfGeneration">
                <property name="text">
                 <string>Force XDMF generation</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QLabel" name="dsmSizeLabel">
+               <property name="text">
+                <string>DSM Local Buffer Size (in MB)</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="2">
+              <widget class="QSpinBox" name="dsmSizeSpinBox">
+               <property name="maximum">
+                <number>65535</number>
+               </property>
+               <property name="value">
+                <number>128</number>
                </property>
               </widget>
              </item>

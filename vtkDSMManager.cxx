@@ -87,8 +87,8 @@ vtkDSMManager::vtkDSMManager()
   this->DSMComm                 = NULL;
   this->DsmCommType             = XDMF_DSM_COMM_MPI;
   this->DsmIsServer             = 1;
-  this->PublishedServerHostName = NULL;
-  this->PublishedServerPort     = 0;
+  this->ServerHostName          = NULL;
+  this->ServerPort              = 0;
 #endif
 
   this->XMFDescriptionFilePath  = NULL;
@@ -166,7 +166,7 @@ bool vtkDSMManager::DestroyDSM()
     vtkDebugMacro(<<"DSM destroyed on " << this->UpdatePiece);
   }
 
-  if (this->PublishedServerHostName) this->PublishedServerHostName = NULL;
+  if (this->ServerHostName) this->ServerHostName = NULL;
 
   return true;
 }
@@ -322,8 +322,8 @@ void vtkDSMManager::ConnectDSM()
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");
 
   if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
-    if (this->GetPublishedServerHostName() != NULL) {
-      dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
+    if (this->GetServerHostName() != NULL) {
+      dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
       if (this->UpdatePiece == 0) {
         vtkDebugMacro(<< "Initializing connection to "
             << dynamic_cast<XdmfDsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
@@ -331,9 +331,9 @@ void vtkDSMManager::ConnectDSM()
     }
   }
   else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
-    if ((this->GetPublishedServerHostName() != NULL) && (this->GetPublishedServerPort() != 0)) {
-      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
-      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
+    if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
+      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
+      dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
       if (this->UpdatePiece == 0) {
         vtkDebugMacro(<< "Initializing connection to "
             << dynamic_cast<XdmfDsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
@@ -358,25 +358,25 @@ void vtkDSMManager::PublishDSM()
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
   if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
     dynamic_cast<XdmfDsmCommSocket*>
-    (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetPublishedServerHostName());
+    (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
     dynamic_cast<XdmfDsmCommSocket*>
-    (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetPublishedServerPort());
+    (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
   }
   this->DSMBuffer->GetComm()->OpenPort();
 
   if (this->UpdatePiece == 0) {
     if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
-      this->SetPublishedServerHostName(dynamic_cast<XdmfDsmCommMpi*>
+      this->SetServerHostName(dynamic_cast<XdmfDsmCommMpi*>
          (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-         vtkDebugMacro(<< "Server PortName: " << this->GetPublishedServerHostName());
+         vtkDebugMacro(<< "Server PortName: " << this->GetServerHostName());
     }
     else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
-      this->SetPublishedServerHostName(dynamic_cast<XdmfDsmCommSocket*>
+      this->SetServerHostName(dynamic_cast<XdmfDsmCommSocket*>
       (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      this->SetPublishedServerPort(dynamic_cast<XdmfDsmCommSocket*>
+      this->SetServerPort(dynamic_cast<XdmfDsmCommSocket*>
       (this->DSMBuffer->GetComm())->GetDsmMasterPort());
-      vtkDebugMacro(<< "Server HostName: " << this->GetPublishedServerHostName()
-          << ", Server port: " << this->GetPublishedServerPort());
+      vtkDebugMacro(<< "Server HostName: " << this->GetServerHostName()
+          << ", Server port: " << this->GetServerPort());
     }
   }
   //
@@ -390,9 +390,9 @@ void vtkDSMManager::UnpublishDSM()
   this->DSMBuffer->GetComm()->ClosePort();
 
   if (this->UpdatePiece == 0) {
-    if (this->GetPublishedServerHostName() != NULL) {
-      this->SetPublishedServerHostName(NULL);
-      this->SetPublishedServerPort(0);
+    if (this->GetServerHostName() != NULL) {
+      this->SetServerHostName(NULL);
+      this->SetServerPort(0);
     }
   }
   if (this->UpdatePiece == 0) vtkDebugMacro(<< "Port closed");

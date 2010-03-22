@@ -70,15 +70,15 @@ public:
 
   // Description:
   // Set/Get the published host name of our connection.
-  // Only valid after a PublishDSM call has been made.
-  vtkSetStringMacro(PublishedServerHostName);
-  vtkGetStringMacro(PublishedServerHostName);
+  // Real value valid after a PublishDSM call has been made.
+  vtkSetStringMacro(ServerHostName);
+  vtkGetStringMacro(ServerHostName);
 
   // Description:
   // Set/Get the published port of our connection.
-  // Only valid after a PublishDSM call has been made.
-  vtkSetMacro(PublishedServerPort, int);
-  vtkGetMacro(PublishedServerPort, int);
+  // Real value valid after a PublishDSM call has been made.
+  vtkSetMacro(ServerPort, int);
+  vtkGetMacro(ServerPort, int);
 
   // Description:
   // Only valid after a AcceptConnection call has been made.
@@ -165,8 +165,8 @@ protected:
     //
     int             DsmIsServer;
     int             DsmCommType;
-    char           *PublishedServerHostName;
-    int             PublishedServerPort;
+    char           *ServerHostName;
+    int             ServerPort;
     //
     int             DsmUpdateReady;
     //

@@ -65,9 +65,16 @@
         default_values="0">
       </IntVectorProperty>
       
+      <IntVectorProperty
+        name="DsmLocalBufferSize"
+        command="SetLocalBufferSizeMBytes"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+      
       <StringVectorProperty
         name="PublishedServerHostName"
-        command="GetPublishedServerHostName"
+        command="GetServerHostName"
         information_only="1"
         number_of_elements="1">
         <SimpleStringInformationHelper/>
@@ -75,7 +82,7 @@
       
       <IntVectorProperty
         name="PublishedServerPort"
-        command="GetPublishedServerPort"
+        command="GetServerPort"
         information_only="1"
         number_of_elements="1"
         default_values="0">
@@ -84,13 +91,13 @@
       
       <StringVectorProperty
         name="ServerHostName"
-        command="SetPublishedServerHostName"
+        command="SetServerHostName"
         number_of_elements="1">
       </StringVectorProperty>
       
       <IntVectorProperty
         name="ServerPort"
-        command="SetPublishedServerPort"
+        command="SetServerPort"
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
