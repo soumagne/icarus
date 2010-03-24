@@ -57,11 +57,11 @@ ENDIF(Boost_FOUND)
 #--------------------------------------------------
 # Set project include directories 
 #--------------------------------------------------
-FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
-  ${ParaView_SOURCE_DIR}/CSCS/vtkCSCSCommon
-  ${CMAKE_CURRENT_SOURCE_DIR}/../../vtkCSCSCommon
-)
-INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
+#FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
+#  ${ParaView_SOURCE_DIR}/CSCS/vtkCSCSCommon
+#  ${CMAKE_CURRENT_SOURCE_DIR}/../../vtkCSCSCommon
+#)
+#INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 #--------------------------------------------------
@@ -155,7 +155,7 @@ ADD_SUBDIRECTORY(Testing)
 # Converter
 #--------------------------------------------------
 
-SET(Converter_LIBS CSCS_DSM CSCS_Common)
+SET(Converter_LIBS CSCS_DSM)
 
 IF(CSCS_PLUGIN_CFX)
   MESSAGE("Xdmf converter supporting CFX " ${CSCS_CFX_DIR})
