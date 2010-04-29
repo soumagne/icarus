@@ -172,8 +172,7 @@ protected:
     //
     char           *XMFDescriptionFilePath;
     char           *XMLStringSend;
-    std::string     DumpDescription;
-    std::string     GeneratedDescription;
+    char           *DumpDescription;
 #endif
     //ETX
 

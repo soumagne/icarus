@@ -2245,8 +2245,8 @@ int vtkXdmfReader3Internal::RequestGridData(
         // if((this->ParallelLevel != grid) ||
         //     ((this->ParallelLevel == grid) && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
         // {
-        //if(!IsParallel ||
-        //    (IsParallel && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
+        if(!IsParallel ||
+            (IsParallel && ((outputGrid % this->UpdateNumPieces) == this->UpdatePiece)))
         {
         vtkDataObject *soutput=
            vtkDataObjectTypes::NewDataObject(child->vtkType);

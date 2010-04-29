@@ -179,7 +179,7 @@
     </WriterProxy>
 
     <!-- ================================================================= -->
-    <SourceProxy name="XdmfReader3" class="vtkXdmfReader3">
+    <SourceProxy name="XdmfReader4" class="vtkXdmfReader4">
       <Documentation
         short_help="Read data from Xdmf/HDF5 files.">
         Reader to read HDF5 data using eXtensible Data Model and Format *(XDMF) files.

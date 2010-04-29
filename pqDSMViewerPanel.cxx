@@ -618,7 +618,7 @@ void pqDSMViewerPanel::onDisplayDSM()
 
       if (!first_time) first_time = true;
       if (this->XdmfReader) this->XdmfReader.New();
-      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader3")));
+      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       sprintf(proxyName, "DSM-Contents_%d", current_time);
