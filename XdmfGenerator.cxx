@@ -121,6 +121,19 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
     //XdmfXmlNode   timeNode       = this->LXdmfDOM->FindElement("Time", 0, gridNode);
 
     grid.SetDOM(this->GeneratedDOM);
+    // Set grid name
+    XdmfXmlNode gridInfoDINode = this->LXdmfDOM->FindElement("DataItem", 0, topologyNode);
+    if (gridInfoDINode == NULL) {
+      gridInfoDINode = this->LXdmfDOM->FindElement("DataItem", 0, geometryNode);
+    }
+    if (gridInfoDINode != NULL) {
+      XdmfConstString gridInfoPath = this->LXdmfDOM->GetCData(gridInfoDINode);
+      vtksys::RegularExpression gridName("^/([^/]*)/*");
+      gridName.find(gridInfoPath);
+      XdmfDebug("Grid name: " << gridName.match(1).c_str());
+      grid.SetName(gridName.match(1).c_str());
+    }
+
     domain.Insert(&grid);
 
     // Look for Topology
@@ -160,6 +173,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
       vtksys::RegularExpression reName("/([^/]*)$");
       reName.find(attributePath);
       std::string tmpName = std::string("attribute_") + reName.match(1).c_str();
+      XdmfDebug("Attribute name: " << tmpName.c_str());
       attribute->SetName(tmpName.c_str());
       // Set node center by default at the moment
       attribute->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
