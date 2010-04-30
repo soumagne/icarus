@@ -1,0 +1,728 @@
+<?xml version="1.0" ?>
+<Xdmf>
+  <Domain>
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid0/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid0/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid0/w</DataItem>
+      </Attribute>
+    </Grid>
+
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid1/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid1/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid1/w</DataItem>
+      </Attribute>
+    </Grid>   
+
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid2/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid2/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid2/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid3/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid3/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid3/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid4/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid4/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid4/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid5/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid5/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid5/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid6/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid6/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid6/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid7/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid7/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid7/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid8/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid8/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid8/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid9/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid9/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid9/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid10/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid10/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid10/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid11/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid11/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid11/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid12/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid12/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid12/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid13/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid13/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid13/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid14/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid14/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid14/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid15/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid15/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid15/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid16/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid16/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid16/w</DataItem>
+      </Attribute>
+      </Grid>    
+      
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid17/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid17/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid17/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid18/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid18/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid18/w</DataItem>
+      </Attribute>
+    </Grid>
+
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid19/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid19/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid19/w</DataItem>
+      </Attribute>
+      </Grid>   
+
+      <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/solid20/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/solid20/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/normals</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/solid20/w</DataItem>
+      </Attribute>
+    </Grid>
+
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/virtFluid/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/virtFluid/density</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/gradP</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/gradRHO</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/gradVX</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/gradVY</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/gradVZ</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/virtFluid/w</DataItem>
+      </Attribute>
+    </Grid>
+
+   <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/fluid/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/fluid/density</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/gradP</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/gradRHO</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/gradVX</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/gradVY</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/gradVZ</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/fluid/w</DataItem>
+      </Attribute>
+    </Grid>
+
+    <Grid>
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="XYZ">
+	<DataItem>/inlet0/position</DataItem>
+      </Geometry>
+      <Attribute>
+	<DataItem>/inlet0/h</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/inlet0/index</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/inlet0/pressure</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/inlet0/velocity</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/inlet0/vmob</DataItem>
+      </Attribute>
+      <Attribute>
+	<DataItem>/inlet0/w</DataItem>
+      </Attribute>
+    </Grid>
+
+  </Domain>
+</Xdmf>
