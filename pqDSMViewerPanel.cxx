@@ -110,7 +110,7 @@ QDockWidget("DSM Manager", p)
   //  this->DSMContentTree = NULL;
   this->DSMCommType = 0;
   this->UpdateTimer = new QTimer(this);
-  this->UpdateTimer->setInterval(100);
+  this->UpdateTimer->setInterval(0);
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
 

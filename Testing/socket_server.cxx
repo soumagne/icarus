@@ -21,6 +21,8 @@ int main(int argc, char *argv[]) {
   char *recvbuf1 = NULL;
   int recvLength1;
   int port; char *hostName = NULL;
+  char *big_chunk;
+  int big_chunk_size = 1024*1024*1024;
 
 #ifndef TESTSOCKET
   XdmfDsmSocket sock;
@@ -93,7 +95,21 @@ int main(int argc, char *argv[]) {
     return EXIT_FAILURE;
   }
   printf("ok\n");
+  
+  big_chunk = (char*) malloc(big_chunk_size);
+  while(1) {
+  int ret;
+  
+  printf("Receiving big chunk test from client...");
+  fflush(stdout);
+  ret = sock.Receive(big_chunk, big_chunk_size);
+  if (ret < 0) {
+	  fprintf(stderr, "Error in Socket Receive\n");
+	  return EXIT_FAILURE;
+  }
+  printf("ok\n");
+  }
+  free(big_chunk);
   sock.WinSockCleanup();
-
   return EXIT_SUCCESS;
 }
