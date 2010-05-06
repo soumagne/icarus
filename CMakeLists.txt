@@ -176,16 +176,16 @@ ENDIF(CSCS_PLUGIN_Fluent)
 
 ADD_EXECUTABLE(
   ConvertToXdmf
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/vtkSubdivideUnstructuredGrid.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/vtkSplitBlocksFilter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/vtkRedistributeBlocksFilter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/ConvertToXdmf.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkSubdivideUnstructuredGrid.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkSplitBlocksFilter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkRedistributeBlocksFilter.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/ConvertToXdmf.cxx
 )
 
-ADD_EXECUTABLE(
-  TreeTest
-  ${CMAKE_CURRENT_SOURCE_DIR}/../Tools/TreeTest.cpp
-)
+#ADD_EXECUTABLE(
+#  TreeTest
+#  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TreeTest.cpp
+#)
 
 TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 
