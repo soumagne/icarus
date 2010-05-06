@@ -72,6 +72,8 @@
 #include "XdmfH5MBCallback.h"
 //
 //----------------------------------------------------------------------------
+SimpleMutexLock SimpleMutexLock::GlobalLock;
+//----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter4);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, Controller, vtkMultiProcessController);
