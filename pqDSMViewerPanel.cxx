@@ -202,9 +202,9 @@ QDockWidget("DSM Manager", p)
   //
   ////////////
   // pqTree connect SLOT // useless
-  this->connect(this->UI->dsmContents,
-    SIGNAL(itemChanged(QTreeWidgetItem *, int)),
-    this, SLOT(FillDSMContents(QTreeWidgetItem *, int)));
+//  this->connect(this->UI->dsmContents,
+//    SIGNAL(itemChanged(QTreeWidgetItem *, int)),
+//    this, SLOT(FillDSMContents(QTreeWidgetItem *, int)));
 
   //
   // Button Group for Standalone/Server/Client buttons
@@ -271,6 +271,11 @@ void pqDSMViewerPanel::LoadSettings()
   if(!descFilePath.isEmpty()) {
     this->UI->xdmfFilePathLineEdit->insert(descFilePath);
   }
+  // Config file path
+  QString configFilePath = settings->value("ConfigFilePath").toString();
+   if(!configFilePath.isEmpty()) {
+     this->UI->dsmConfigFilePathLineEdit->insert(configFilePath);
+   }
   //
   settings->endGroup();
 }
@@ -301,6 +306,8 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("DescriptionFileType", this->UI->xdmfFileTypeComboBox->currentIndex());
   // Description file path
   settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
+  // Config File path
+  settings->setValue("ConfigFilePath", this->UI->dsmConfigFilePathLineEdit->text());
   //
   settings->endGroup();
 }
@@ -553,6 +560,11 @@ void pqDSMViewerPanel::onPublishDSM()
           this->UI->DSMProxy->GetProperty("ServerPort"),
           this->UI->xdmfCommPort->value());
     }
+    if (!this->UI->dsmConfigFilePathLineEdit->text().isEmpty()) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("DsmConfigFilePath"),
+          this->UI->dsmConfigFilePathLineEdit->text().toStdString().c_str());
+    }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("PublishDSM");
     this->Connected = true;
@@ -774,7 +786,7 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::FillDSMContents(QTreeWidgetItem *item, int node)
 {
-  this->UI->dsmContents->insertTopLevelItem(node, item);
+//  this->UI->dsmContents->insertTopLevelItem(node, item);
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUpdateTimeout()

@@ -89,6 +89,7 @@ vtkDSMManager::vtkDSMManager()
   this->DsmIsServer             = 1;
   this->ServerHostName          = NULL;
   this->ServerPort              = 0;
+  this->DsmConfigFilePath       = NULL;
 #endif
 
   this->XMFDescriptionFilePath  = NULL;
@@ -103,6 +104,7 @@ vtkDSMManager::~vtkDSMManager()
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
+  this->DsmConfigFilePath = NULL;
   this->XMFDescriptionFilePath = NULL;
   if (this->XMLStringSend) {
     delete []this->XMLStringSend;
@@ -370,18 +372,37 @@ void vtkDSMManager::PublishDSM()
   this->DSMBuffer->GetComm()->OpenPort();
 
   if (this->UpdatePiece == 0) {
+    XdmfDsmIniFile dsmConfigFile;
+    std::string fullDsmConfigFilePath;
+
+    if (this->GetDsmConfigFilePath()) {
+      fullDsmConfigFilePath = std::string(this->GetDsmConfigFilePath()) +
+          std::string("/.dsm_config");
+      dsmConfigFile.Create(fullDsmConfigFilePath);
+      dsmConfigFile.AddSection("Comm", fullDsmConfigFilePath);
+    }
     if (this->GetDsmCommType() == XDMF_DSM_COMM_MPI) {
       this->SetServerHostName(dynamic_cast<XdmfDsmCommMpi*>
-         (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-         vtkDebugMacro(<< "Server PortName: " << this->GetServerHostName());
-    }
-    else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
+      (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
+      vtkDebugMacro(<< "Server PortName: " << this->GetServerHostName());
+      if (this->GetDsmConfigFilePath()) {
+        dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullDsmConfigFilePath);
+        dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
+      }
+    } else if (this->GetDsmCommType() == XDMF_DSM_COMM_SOCKET) {
       this->SetServerHostName(dynamic_cast<XdmfDsmCommSocket*>
       (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
       this->SetServerPort(dynamic_cast<XdmfDsmCommSocket*>
       (this->DSMBuffer->GetComm())->GetDsmMasterPort());
       vtkDebugMacro(<< "Server HostName: " << this->GetServerHostName()
           << ", Server port: " << this->GetServerPort());
+      if (this->GetDsmConfigFilePath()) {
+        char serverPort[32];
+        sprintf(serverPort, "%d", this->GetServerPort());
+        dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullDsmConfigFilePath);
+        dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
+        dsmConfigFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullDsmConfigFilePath);
+      }
     }
   }
   //

@@ -31,6 +31,7 @@
 #include "XdmfDsm.h"         // Xdmf DSM objects
 #include "XdmfDsmBuffer.h"   // Xdmf DSM objects
 #include "XdmfDsmCommMpi.h"  // Xdmf DSM objects
+#include "XdmfDsmIniFile.h"
 #include "XdmfDOM.h"
 
 #ifndef WIN32
@@ -81,15 +82,26 @@ public:
   vtkGetMacro(ServerPort, int);
 
   // Description:
+  // Set/Get the DSM configuration file path.
+  // If set correctly before calling PublishDSM, communicator parameters will be
+  // saved into the given configuration file.
+  vtkSetStringMacro(DsmConfigFilePath);
+  vtkGetStringMacro(DsmConfigFilePath);
+
+  // Description:
   // Only valid after a AcceptConnection call has been made.
   int GetAcceptedConnection();
 
   // Description:
-  // Only valid after a AcceptConnection call has been made.
+  // Get/Set the update ready flag which triggers the VTK pipeline update and the
+  // display of DSM objects.
   vtkSetMacro(DsmUpdateReady, int);
   int GetDsmUpdateReady();
   void ClearDsmUpdateReady();
 
+  // Description:
+  // Set/Get the file path pointing either to an XDMF description file
+  // or to the XDMF template used to generate a proper XDMF file.
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
 
@@ -167,6 +179,7 @@ protected:
     int             DsmCommType;
     char           *ServerHostName;
     int             ServerPort;
+    char           *DsmConfigFilePath;
     //
     int             DsmUpdateReady;
     //

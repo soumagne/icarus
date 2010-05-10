@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>444</width>
-    <height>714</height>
+    <width>463</width>
+    <height>639</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,8 +28,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>408</width>
-         <height>700</height>
+         <width>445</width>
+         <height>596</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -53,42 +53,42 @@
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
             <layout class="QGridLayout" name="gridLayout">
-             <item row="12" column="0">
+             <item row="14" column="0">
               <widget class="QPushButton" name="createDSM">
                <property name="text">
                 <string>CreateDSM</string>
                </property>
               </widget>
              </item>
-             <item row="12" column="1">
+             <item row="14" column="1">
               <widget class="QPushButton" name="destroyDSM">
                <property name="text">
                 <string>DestroyDSM</string>
                </property>
               </widget>
              </item>
-             <item row="12" column="2">
+             <item row="14" column="2">
               <widget class="QPushButton" name="clearDSM">
                <property name="text">
                 <string>ClearDSM</string>
                </property>
               </widget>
              </item>
-             <item row="13" column="0">
+             <item row="15" column="0">
               <widget class="QPushButton" name="h5Dump">
                <property name="text">
                 <string>H5Dump</string>
                </property>
               </widget>
              </item>
-             <item row="13" column="1">
+             <item row="15" column="1">
               <widget class="QPushButton" name="testDSM">
                <property name="text">
                 <string>TestDSM</string>
                </property>
               </widget>
              </item>
-             <item row="13" column="2">
+             <item row="15" column="2">
               <widget class="QPushButton" name="displayDSM">
                <property name="text">
                 <string>DisplayDSM</string>
@@ -121,7 +121,7 @@
                </property>
               </widget>
              </item>
-             <item row="11" column="0" colspan="3">
+             <item row="13" column="0" colspan="3">
               <spacer name="horizontalSpacer">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
@@ -263,14 +263,14 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="0" colspan="3">
+             <item row="9" column="0" colspan="3">
               <widget class="QCheckBox" name="storeDSMContents">
                <property name="text">
                 <string>Store DSM contents</string>
                </property>
               </widget>
              </item>
-             <item row="9" column="0" colspan="3">
+             <item row="11" column="0" colspan="3">
               <widget class="QCheckBox" name="autoDisplayDSM">
                <property name="text">
                 <string>Display DSM content automatically</string>
@@ -280,7 +280,7 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="0" colspan="3">
+             <item row="10" column="0" colspan="3">
               <widget class="QCheckBox" name="forceXdmfGeneration">
                <property name="text">
                 <string>Force XDMF generation</string>
@@ -301,6 +301,20 @@
                </property>
                <property name="value">
                 <number>128</number>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="1" colspan="2">
+              <widget class="QLineEdit" name="dsmConfigFilePathLineEdit">
+               <property name="text">
+                <string/>
+               </property>
+              </widget>
+             </item>
+             <item row="8" column="0">
+              <widget class="QLabel" name="dsmConfigFileLabel">
+               <property name="text">
+                <string>DSM configuration file path</string>
                </property>
               </widget>
              </item>
@@ -375,36 +389,6 @@
           </layout>
          </widget>
         </item>
-        <item>
-         <widget class="pqTreeWidget" name="dsmContents">
-          <property name="sizePolicy">
-           <sizepolicy hsizetype="Ignored" vsizetype="MinimumExpanding">
-            <horstretch>0</horstretch>
-            <verstretch>1</verstretch>
-           </sizepolicy>
-          </property>
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>150</height>
-           </size>
-          </property>
-          <property name="rootIsDecorated">
-           <bool>false</bool>
-          </property>
-          <attribute name="headerVisible">
-           <bool>true</bool>
-          </attribute>
-          <attribute name="headerVisible">
-           <bool>true</bool>
-          </attribute>
-          <column>
-           <property name="text">
-            <string>Contents</string>
-           </property>
-          </column>
-         </widget>
-        </item>
        </layout>
       </widget>
      </widget>
@@ -412,13 +396,6 @@
    </layout>
   </widget>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>pqTreeWidget</class>
-   <extends>QTreeWidget</extends>
-   <header>pqTreeWidget.h</header>
-  </customwidget>
- </customwidgets>
  <resources/>
  <connections/>
 </ui>
