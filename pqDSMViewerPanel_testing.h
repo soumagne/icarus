@@ -1,5 +1,5 @@
-#ifndef _pqDSMViewerPanel_h
-#define _pqDSMViewerPanel_h
+#ifndef _pqDSMViewerPanel_testing_h
+#define _pqDSMViewerPanel_testing_h
 
 #include <QDockWidget>
 
@@ -9,21 +9,28 @@
 #define XDMF_DSM_COMM_MPI 0x10
 #define XDMF_DSM_COMM_SOCKET 0x11
 
+class QCheckBox;
+class QComboBox;
+class QPushButton;
 class pqServer;
 class pqView;
+class QTreeWidgetItem;
+class QProgressDialog;
 class QTimer;
+class QButtonGroup;
+class QThread;
 
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
 
-class pqDSMViewerPanel : public QDockWidget
+class pqDSMViewerPanel_testing : public QDockWidget
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqDSMViewerPanel(QWidget* p = NULL);
- ~pqDSMViewerPanel();
+  pqDSMViewerPanel_testing(QWidget* p = NULL);
+ ~pqDSMViewerPanel_testing();
 
   bool ProxyReady();
   bool DSMReady();
@@ -36,17 +43,34 @@ public slots:
   void StartRemovingServer(pqServer *server);
   void onActiveViewChanged(pqView* view);
 
+  void onDsmIsStandalone();
+  void onDsmIsServer();
+  void onDsmIsClient();
+
   void onAddServerDSM();
 
   void onBrowseFile();
 
-  void onUpdateTimeout();
+  void onCreateDSM();
+  void onDestroyDSM();
+  void onClearDSM();
 
+  void onConnectDSM();
+  void onDisconnectDSM();
+  void onUpdateTimeout();
+  void DisplayDSMContents();
+
+  //  void CreatePublishNameDialog();
+  //  void TimeoutPublishName();
+  //  void CancelPublishNameDialog();
   void onPublishDSM();
   void onUnpublishDSM();
 
+  void onH5Dump();
+  void onTestDSM();
   void onDisplayDSM();
   void TrackSource();
+  void FillDSMContents(QTreeWidgetItem *item, int node);
 
   void LoadSettings();
   void SaveSettings();
@@ -59,8 +83,14 @@ protected:
 
   class pqUI;
   pqUI* UI;
+  //  QProgressDialog *PublishNameDialog;
+  //  QTimer          *PublishNameTimer;
+  //  int              PublishNameSteps;
   bool             Connected;
+  //  QTreeWidgetItem *DSMContentTree;
   int              DSMCommType;
+  QButtonGroup    *DSMServerGroup;
+  QThread         *UpdateThread;
   QTimer          *UpdateTimer;
 
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;

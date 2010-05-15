@@ -84,65 +84,69 @@ ENDIF(COMPUTERNAME)
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
+  OPTION(CSCS_DSM_BUILD_TESTING "Build testing DSM viewer panel" OFF)
+  IF(CSCS_DSM_BUILD_TESTING)
+    SET(DSM_PANEL_CLASS pqDSMViewerPanel_testing)
+  ELSE(CSCS_DSM_BUILD_TESTING)
+    SET(DSM_PANEL_CLASS pqDSMViewerPanel)
+  ENDIF(CSCS_DSM_BUILD_TESTING)
 
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.h
   )
-
   # invoke macro that adds the refinement and display controls panel
   ADD_PARAVIEW_DOCK_WINDOW(
     DSM_IFACE 
     DSM_IFACE_SRCS 
     CLASS_NAME 
-      pqDSMViewerPanel 
+      ${DSM_PANEL_CLASS}
     DOCK_AREA 
       Left Right Top Bottom
   )
-
   QT4_WRAP_UI(
     DSM_UI_SOURCES
-    pqDSMViewerPanel.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
   )
 
-#--------------------------------------------------
-# Define Plugin Panel
-#--------------------------------------------------
-ADD_PARAVIEW_PLUGIN(
-  CSCS_DSM
-  "1.0" 
+  #--------------------------------------------------
+  # Define Plugin Panel
+  #--------------------------------------------------
+  ADD_PARAVIEW_PLUGIN(
+    CSCS_DSM
+    "1.0" 
 
-  SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
-  SERVER_MANAGER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
-  SERVER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
- GUI_INTERFACES 
-    ${DSM_IFACE}
-  GUI_SOURCES
-    pqDSMViewerPanel.cxx
-    ${DSM_IFACE_SRCS}
-    ${DSM_MOC_SRCS}
-    ${DSM_UI_SOURCES}
-  GUI_RESOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager.qrc
-  GUI_RESOURCE_FILES
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDSMViewerPanel.ui
-)
+    SERVER_MANAGER_XML 
+      ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
+    SERVER_MANAGER_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
+    SERVER_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+    GUI_INTERFACES 
+      ${DSM_IFACE}
+    GUI_SOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
+      ${DSM_IFACE_SRCS}
+      ${DSM_MOC_SRCS}
+      ${DSM_UI_SOURCES}
+    GUI_RESOURCES
+      ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager.qrc
+    GUI_RESOURCE_FILES
+      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
+  )
 
-TARGET_LINK_LIBRARIES(
-  CSCS_DSM
-    ${PARAVIEW_HDF5_LIBRARIES} 
-    Xdmf
-    ${Boost_LIBRARIES}
-)
+  TARGET_LINK_LIBRARIES(
+    CSCS_DSM
+      ${PARAVIEW_HDF5_LIBRARIES} 
+      Xdmf
+      ${Boost_LIBRARIES}
+  )
 
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
