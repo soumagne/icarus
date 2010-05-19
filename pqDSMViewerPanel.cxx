@@ -429,7 +429,8 @@ void pqDSMViewerPanel::onDisplayDSM()
         if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
           xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
           // Generate xdmf file for reading
-          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+// No need to do H5dump here any more since done in Generator now
+          //          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
           pqSMAdaptor::setElementProperty(
               this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
               xdmf_description_file_path.c_str());

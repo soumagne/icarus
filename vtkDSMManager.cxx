@@ -94,7 +94,6 @@ vtkDSMManager::vtkDSMManager()
 
   this->XMFDescriptionFilePath  = NULL;
   this->XMLStringSend           = NULL;
-  this->DumpDescription         = NULL;
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
@@ -110,11 +109,6 @@ vtkDSMManager::~vtkDSMManager()
     delete []this->XMLStringSend;
   }
   this->XMLStringSend = NULL;
-
-  if (this->DumpDescription) {
-    delete []this->DumpDescription;
-  }
-  this->DumpDescription = NULL;
 }
 //----------------------------------------------------------------------------
 int vtkDSMManager::GetAcceptedConnection()
@@ -451,28 +445,14 @@ void vtkDSMManager::H5DumpLight()
 void vtkDSMManager::H5DumpXML()
 {
   if (this->DSMBuffer) {
-    int dumpDescLength;
     std::ostringstream dumpStream;
-    XdmfDsmDump *myDsmDump = NULL;
-
-    if (this->UpdatePiece == 0) {
-      myDsmDump = new XdmfDsmDump();
-      myDsmDump->SetDsmBuffer(this->DSMBuffer);
-      myDsmDump->SetFileName("DSM.h5");
-      myDsmDump->DumpXML(dumpStream);
-      vtkDebugMacro(<< "Dump XML done");
-      dumpDescLength = dumpStream.str().length();
-    }
-
-    this->Controller->Broadcast(&dumpDescLength, 1, 0);
-    if (this->DumpDescription) delete []this->DumpDescription;
-    this->DumpDescription = new char[dumpDescLength + 1];
-    if (this->UpdatePiece == 0) strcpy(this->DumpDescription, dumpStream.str().c_str());
-    this->Controller->Broadcast(this->DumpDescription, dumpDescLength + 1, 0);
-
-    vtkDebugMacro(<< this->DumpDescription);
-
-    if (this->UpdatePiece == 0) delete myDsmDump;
+    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->SetFileName("DSM.h5");
+    myDsmDump->DumpXML(dumpStream);
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
+    delete myDsmDump;
   }
 }
 //----------------------------------------------------------------------------
@@ -481,13 +461,12 @@ void vtkDSMManager::GenerateXMFDescription()
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
   if (this->DSMBuffer) {
-    xdmfGenerator->SetHdfFileName("DSM:file.h5");
+    xdmfGenerator->SetDsmBuffer(this->DSMBuffer);
+    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "DSM:file.h5");
   }
   else {
-    xdmfGenerator->SetHdfFileName("file.h5");
+    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "file.h5");
   }
-  xdmfGenerator->GenerateHead();
-  xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), this->DumpDescription);
 
   vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
 

@@ -24,8 +24,13 @@
 
 #include "H5MButil.h"     // for DSM_DLL
 #include "XdmfLightData.h"
-#include "XdmfDOM.h"
-#include "XdmfHDFDOM.h"
+
+class XdmfDOM;
+class XdmfHDFDOM;
+class XdmfRoot;
+class XdmfDomain;
+class XdmfGrid;
+class XdmfDsmBuffer;
 
 #include <sstream>
 #include <string>
@@ -36,45 +41,49 @@ public:
   XdmfGenerator();
   ~XdmfGenerator();
 
-  // Set/Get HDF file name used with h5dump and where heavy data is stored
-  void SetHdfFileName(XdmfConstString);
-
-  // Generated DOM put into an XDMF DOM
+  // Get generated DOM
   XdmfDOM         *GetGeneratedDOM();
 
-  // Generated XML file put into a String
+  // Get generated XML string from generated DOM
   XdmfConstString  GetGeneratedFile();
 
-  // Generate the XML header of the being generated file
-  XdmfInt32        GenerateHead();
+  // Set DSM Buffer
+  void SetDsmBuffer(XdmfDsmBuffer* _arg);
 
-  // Generate an XDMF File from a template file and the H5dump XML output
-  // Puts the result into an XDMF DOM
-  XdmfInt32        Generate(XdmfConstString, XdmfConstString);
+  // Generate an XDMF File from a template file and a list of HDF files
+  // Put the result into an XDMF DOM and generate a temporal collection
+  XdmfInt32        GenerateTemporalCollection(XdmfConstString lXdmfFile,
+      XdmfConstString anHdfFile);
+
+  // Generate an XDMF File from a template file and an HDF file
+  // Put the result into an XDMF DOM
+  XdmfInt32        Generate(XdmfConstString lXdmfFile, XdmfConstString hdfFileName,
+      XdmfGrid *temporalGrid=NULL);
 
 protected:
 
   // Convert written light XDMF Dataset path into HDF XML XPath and return
   // corresponding XML Node from the HDF DOM
-  XdmfXmlNode      FindConvertHDFPath(XdmfConstString);
+  XdmfXmlNode      FindConvertHDFPath(XdmfHDFDOM *hdfDOM, XdmfConstString path);
 
   // Find the number of cells using the Topology Node
   // from HDF DOM and topology type
-  XdmfInt32        FindNumberOfCells(XdmfXmlNode, XdmfConstString);
+  XdmfInt32        FindNumberOfCells(XdmfHDFDOM *hdfDOM,
+      XdmfXmlNode hdfTopologyNode, XdmfConstString topologyTypeStr);
 
   // Find DataItem structure information from a given dataset node of the HDF DOM
   // and the path of this node as defined in the light XDMF template
-  XdmfConstString  FindDataItemInfo(XdmfXmlNode, XdmfConstString);
+  XdmfConstString  FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
+      XdmfConstString hdfFileName, XdmfConstString dataPath);
 
   // Find attribute type from a given dataset node of the HDF DOM
-  XdmfInt32        FindAttributeType(XdmfXmlNode);
+  XdmfInt32        FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode);
 
-  std::string         HdfFileName;
   XdmfDOM            *GeneratedDOM;
-  std::ostringstream  GeneratedFileStream;
   std::string        *GeneratedFile;
-  XdmfDOM            *LXdmfDOM;
-  XdmfHDFDOM         *HdfDOM;
+  XdmfRoot           *GeneratedRoot;
+  XdmfDomain         *GeneratedDomain;
+  XdmfDsmBuffer      *DsmBuffer;
 };
 
 #endif /* XDMFGENERATOR_H */

@@ -185,7 +185,6 @@ protected:
     //
     char           *XMFDescriptionFilePath;
     char           *XMLStringSend;
-    char           *DumpDescription;
 #endif
     //ETX
 

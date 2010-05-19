@@ -29,26 +29,22 @@
 int main(int argc, char *argv[])
 {
   if (argc != 3) {
-    std::cout << "Usage: " << argv[0] << " <HDF file path>"
-    << " <XDMF template file path>" << endl;
+    std::cout << "Usage: " << argv[0] <<
+        " <XDMF template file path>" <<
+        " <HDF file path>" <<
+        endl;
     return EXIT_FAILURE;
   }
 
-  std::ostringstream  dumpStream;
   XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
-  XdmfDsmDump        *xdmfDsmDump = new XdmfDsmDump();
-  const char         *hdfFileName = argv[1];
-  const char         *lxdmfFileName = argv[2];
+  const char         *lxdmfFileName = argv[1];
+  const char         *hdfFileName = argv[2];
 
-  xdmfDsmDump->SetFileName(hdfFileName);
-  xdmfDsmDump->DumpXML(dumpStream);
-  xdmfGenerator->SetHdfFileName(hdfFileName);
-  xdmfGenerator->GenerateHead();
-  xdmfGenerator->Generate(lxdmfFileName, dumpStream.str().c_str());
+  //  xdmfGenerator->Generate(lxdmfFileName, hdfFileName);
+  xdmfGenerator->GenerateTemporalCollection(lxdmfFileName, hdfFileName);
   std::cout << xdmfGenerator->GetGeneratedFile() << std::endl;
 
   delete xdmfGenerator;
-  delete xdmfDsmDump;
 
   return EXIT_SUCCESS;
 }

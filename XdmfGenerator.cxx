@@ -22,6 +22,8 @@
 //
 #include <vtksys/RegularExpression.hxx>
 //
+#include "XdmfDOM.h"
+#include "XdmfHDFDOM.h"
 #include "XdmfRoot.h"
 #include "XdmfDomain.h"
 #include "XdmfGrid.h"
@@ -31,28 +33,31 @@
 #include "XdmfAttribute.h"
 #include "XdmfDataItem.h"
 
+#include "XdmfDsmDump.h"
+#include "XdmfDsmBuffer.h"
+
 #include <cstdlib>
 //----------------------------------------------------------------------------
 XdmfGenerator::XdmfGenerator()
 {
   this->GeneratedDOM  = new XdmfDOM();
   this->GeneratedFile = new std::string();
-  this->LXdmfDOM      = new XdmfDOM();
-  this->HdfDOM        = new XdmfHDFDOM();
+
+  // Start Building new DOM
+  this->GeneratedRoot = new XdmfRoot();
+  this->GeneratedDomain = new XdmfDomain();
+  this->GeneratedRoot->SetDOM(this->GeneratedDOM);
+  this->GeneratedRoot->Build();
+  this->GeneratedRoot->Insert(this->GeneratedDomain);
+  this->GeneratedRoot->Build();
 }
 //----------------------------------------------------------------------------
 XdmfGenerator::~XdmfGenerator()
 {
   if (this->GeneratedDOM) delete this->GeneratedDOM;
   if (this->GeneratedFile) delete this->GeneratedFile;
-  if (this->LXdmfDOM) delete LXdmfDOM;
-  if (this->HdfDOM) delete HdfDOM;
-}
-//----------------------------------------------------------------------------
-void XdmfGenerator::SetHdfFileName(XdmfConstString fileName)
-{
-  // To fit XDMF dataset path convention
-  this->HdfFileName = std::string(fileName) + std::string(":");
+  if (this->GeneratedRoot) delete this->GeneratedRoot;
+  if (this->GeneratedDomain) delete this->GeneratedDomain;
 }
 //----------------------------------------------------------------------------
 XdmfDOM *XdmfGenerator::GetGeneratedDOM()
@@ -62,112 +67,151 @@ XdmfDOM *XdmfGenerator::GetGeneratedDOM()
 //----------------------------------------------------------------------------
 XdmfConstString XdmfGenerator::GetGeneratedFile()
 {
-  *this->GeneratedFile = this->GeneratedFileStream.str();
+  std::ostringstream  generatedFileStream;
+  generatedFileStream << "<?xml version=\"1.0\" ?>" << endl
+      << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << endl
+      << this->GeneratedDOM->Serialize();
+  *this->GeneratedFile = generatedFileStream.str();
   return this->GeneratedFile->c_str();
 }
 //----------------------------------------------------------------------------
-XdmfInt32 XdmfGenerator::GenerateHead()
+void XdmfGenerator::SetDsmBuffer(XdmfDsmBuffer *dsmBuffer)
 {
- this->GeneratedFileStream << "<?xml version=\"1.0\" ?>" << endl
-        << "<!DOCTYPE Xdmf SYSTEM \"Xdmf.dtd\" []>" << endl ;
- return XDMF_SUCCESS;
+    this->DsmBuffer = dsmBuffer;
 }
 //----------------------------------------------------------------------------
-XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dumpHdfDescription)
+XdmfInt32 XdmfGenerator::GenerateTemporalCollection(XdmfConstString lXdmfFile,
+    XdmfConstString anHdfFile)
 {
-  XdmfRoot           root;
-  XdmfDomain         domain;
-  XdmfXmlNode        domainNode;
+  XdmfGrid *temporalGrid = new XdmfGrid();
+  temporalGrid->SetGridType(XDMF_GRID_COLLECTION);
+  temporalGrid->SetCollectionType(XDMF_GRID_COLLECTION_TEMPORAL);
+  this->GeneratedDomain->Insert(temporalGrid);
+  // Build the temporal grid
+  temporalGrid->Build();
 
-  if (this->HdfFileName == "") {
-    XdmfErrorMessage("HdfFileName must be set before generating");
+  std::string currentHdfFile = anHdfFile;
+
+  for (int i=0; i<3; i++) {
+    this->Generate(lXdmfFile, currentHdfFile.c_str(), temporalGrid);
+  }
+  delete temporalGrid;
+  return(XDMF_SUCCESS);
+}
+//----------------------------------------------------------------------------
+XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdfFileName,
+    XdmfGrid *temporalGrid)
+{
+  XdmfXmlNode         domainNode;
+  XdmfDOM            *lXdmfDOM = new XdmfDOM();
+  XdmfHDFDOM         *hdfDOM = new XdmfHDFDOM();
+  XdmfDsmDump        *hdfFileDump = new XdmfDsmDump();
+  XdmfGrid           *spatialGrid = new XdmfGrid();
+  XdmfTime           *timeInfo;
+  std::ostringstream  hdfFileDumpStream;
+  static int          timeValue = 0;
+
+  if (!hdfFileName) {
+    XdmfErrorMessage("HDF file name must be set before generating");
     return(XDMF_FAIL);
   }
 
-  // Start Building new DOM
-  root.SetDOM(this->GeneratedDOM);
-  domain.SetDOM(this->GeneratedDOM);
-  root.Build();
-  root.Insert(&domain);
-  root.Build();
+  if (temporalGrid) {
+    // Use a spatial grid collection to store the subgrids
+    spatialGrid->SetGridType(XDMF_GRID_COLLECTION);
+    spatialGrid->SetCollectionType(XDMF_GRID_COLLECTION_SPATIAL);
+    temporalGrid->Insert(spatialGrid);
+  }
 
   // Fill LXdmfDOM
-  if (this->LXdmfDOM->Parse(lXdmfFile) != XDMF_SUCCESS) {
+  if (lXdmfDOM->Parse(lXdmfFile) != XDMF_SUCCESS) {
     XdmfErrorMessage("Unable to parse light XDMF xml file");
     return(XDMF_FAIL);
   }
 
+  // Dump HDF file
+  hdfFileDump->SetFileName(hdfFileName);
+  if (this->DsmBuffer) {
+    hdfFileDump->SetDsmBuffer(this->DsmBuffer);
+  }
+  hdfFileDump->DumpXML(hdfFileDumpStream);
+
   // Fill HDF DOM
-  if (this->HdfDOM->Parse(dumpHdfDescription) != XDMF_SUCCESS) {
+  if (hdfDOM->Parse(hdfFileDumpStream.str().c_str()) != XDMF_SUCCESS) {
     XdmfErrorMessage("Unable to parse HDF xml file");
     return(XDMF_FAIL);
   }
-  XdmfDebug(this->HdfDOM->Serialize());
+  XdmfDebug(hdfDOM->Serialize());
 
   //Find domain element
-  domainNode = this->LXdmfDOM->FindElement("Domain");
+  domainNode = lXdmfDOM->FindElement("Domain");
 
   // Fill the GeneratedDOM
-  int numberOfGrids = this->LXdmfDOM->FindNumberOfElements("Grid", domainNode);
+  int numberOfGrids = lXdmfDOM->FindNumberOfElements("Grid", domainNode);
   for (int currentGridIndex=0; currentGridIndex<numberOfGrids; currentGridIndex++) {
     XdmfGrid      grid;
     XdmfTopology *topology;
     XdmfGeometry *geometry;
-    XdmfTime     *timeInfo;
-    XdmfXmlNode   gridNode       = this->LXdmfDOM->FindElement("Grid", currentGridIndex, domainNode);
-    XdmfXmlNode   topologyNode   = this->LXdmfDOM->FindElement("Topology", 0, gridNode);
-    XdmfXmlNode   geometryNode   = this->LXdmfDOM->FindElement("Geometry", 0, gridNode);
+    XdmfXmlNode   gridNode       = lXdmfDOM->FindElement("Grid", currentGridIndex, domainNode);
+    XdmfXmlNode   topologyNode   = lXdmfDOM->FindElement("Topology", 0, gridNode);
+    XdmfXmlNode   geometryNode   = lXdmfDOM->FindElement("Geometry", 0, gridNode);
     // TODO Use timeNode
-    //XdmfXmlNode   timeNode       = this->LXdmfDOM->FindElement("Time", 0, gridNode);
+    //XdmfXmlNode   timeNode       = lXdmfDOM->FindElement("Time", 0, gridNode);
 
-    grid.SetDOM(this->GeneratedDOM);
+    //grid.SetDOM(this->GeneratedDOM);
     // Set grid name
-    XdmfXmlNode gridInfoDINode = this->LXdmfDOM->FindElement("DataItem", 0, topologyNode);
+    XdmfXmlNode gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, topologyNode);
     if (gridInfoDINode == NULL) {
-      gridInfoDINode = this->LXdmfDOM->FindElement("DataItem", 0, geometryNode);
+      gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, geometryNode);
     }
     if (gridInfoDINode != NULL) {
-      XdmfConstString gridInfoPath = this->LXdmfDOM->GetCData(gridInfoDINode);
+      XdmfConstString gridInfoPath = lXdmfDOM->GetCData(gridInfoDINode);
       vtksys::RegularExpression gridName("^/([^/]*)/*");
       gridName.find(gridInfoPath);
       XdmfDebug("Grid name: " << gridName.match(1).c_str());
       grid.SetName(gridName.match(1).c_str());
     }
 
-    domain.Insert(&grid);
+    if (temporalGrid) {
+      spatialGrid->Insert(&grid);
+      // Build the spatial grid
+      spatialGrid->Build();
+    } else {
+      this->GeneratedDomain->Insert(&grid);
+    }
 
     // Look for Topology
     topology = grid.GetTopology();
-    topology->SetTopologyTypeFromString(this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType"));
-    XdmfXmlNode topologyDINode = this->LXdmfDOM->FindElement("DataItem", 0, topologyNode);
+    topology->SetTopologyTypeFromString(lXdmfDOM->GetAttribute(topologyNode, "TopologyType"));
+    XdmfXmlNode topologyDINode = lXdmfDOM->FindElement("DataItem", 0, topologyNode);
     if(topologyDINode != NULL) {
-      XdmfConstString topologyPath = this->LXdmfDOM->GetCData(topologyDINode);
-      XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(topologyPath);
-      topology->SetNumberOfElements(this->FindNumberOfCells(hdfTopologyNode,
-          this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
-      topology->SetDataXml(this->FindDataItemInfo(hdfTopologyNode, topologyPath));
+      XdmfConstString topologyPath = lXdmfDOM->GetCData(topologyDINode);
+      XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(hdfDOM, topologyPath);
+      topology->SetNumberOfElements(this->FindNumberOfCells(hdfDOM, hdfTopologyNode,
+          lXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
+      topology->SetDataXml(this->FindDataItemInfo(hdfDOM, hdfTopologyNode, hdfFileName, topologyPath));
     }
 
     // Look for Geometry
     geometry = grid.GetGeometry();
-    geometry->SetGeometryTypeFromString(this->LXdmfDOM->GetAttribute(geometryNode, "GeometryType"));
-    XdmfXmlNode geometryDINode = this->LXdmfDOM->FindElement("DataItem", 0, geometryNode);
-    XdmfConstString geometryPath = this->LXdmfDOM->GetCData(geometryDINode);
-    XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(geometryPath);
+    geometry->SetGeometryTypeFromString(lXdmfDOM->GetAttribute(geometryNode, "GeometryType"));
+    XdmfXmlNode geometryDINode = lXdmfDOM->FindElement("DataItem", 0, geometryNode);
+    XdmfConstString geometryPath = lXdmfDOM->GetCData(geometryDINode);
+    XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(hdfDOM, geometryPath);
     if(topologyDINode == NULL) {
-      topology->SetNumberOfElements(this->FindNumberOfCells(hdfGeometryNode,
-          this->LXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
+      topology->SetNumberOfElements(this->FindNumberOfCells(hdfDOM, hdfGeometryNode,
+          lXdmfDOM->GetAttribute(topologyNode, "TopologyType")));
     }
-    geometry->SetDataXml(this->FindDataItemInfo(hdfGeometryNode, geometryPath));
+    geometry->SetDataXml(this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath));
 
     // Look for Attributes
-    int numberOfAttributes = LXdmfDOM->FindNumberOfElements("Attribute", gridNode);
+    int numberOfAttributes = lXdmfDOM->FindNumberOfElements("Attribute", gridNode);
     for(int currentAttributeIndex=0; currentAttributeIndex<numberOfAttributes; currentAttributeIndex++) {
       XdmfAttribute  *attribute        = new XdmfAttribute();
-      XdmfXmlNode     attributeNode    = LXdmfDOM->FindElement("Attribute", currentAttributeIndex, gridNode);
-      XdmfXmlNode     attributeDINode  = this->LXdmfDOM->FindElement("DataItem", 0, attributeNode);
-      XdmfConstString attributePath    = this->LXdmfDOM->GetCData(attributeDINode);
-      XdmfXmlNode     hdfAttributeNode = this->FindConvertHDFPath(attributePath);
+      XdmfXmlNode     attributeNode    = lXdmfDOM->FindElement("Attribute", currentAttributeIndex, gridNode);
+      XdmfXmlNode     attributeDINode  = lXdmfDOM->FindElement("DataItem", 0, attributeNode);
+      XdmfConstString attributePath    = lXdmfDOM->GetCData(attributeDINode);
+      XdmfXmlNode     hdfAttributeNode = this->FindConvertHDFPath(hdfDOM, attributePath);
 
       // Set Attribute Name
       vtksys::RegularExpression reName("/([^/]*)$");
@@ -178,29 +222,34 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString dum
       // Set node center by default at the moment
       attribute->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
       // Set Atrribute Type
-      attribute->SetAttributeType(this->FindAttributeType(hdfAttributeNode));
+      attribute->SetAttributeType(this->FindAttributeType(hdfDOM, hdfAttributeNode));
 
-      attribute->SetDataXml(this->FindDataItemInfo(hdfAttributeNode, attributePath));
+      attribute->SetDataXml(this->FindDataItemInfo(hdfDOM, hdfAttributeNode, hdfFileName, attributePath));
       grid.Insert(attribute);
       attribute->SetDeleteOnGridDelete(1);
     }
-
+    grid.Build();
+  }
+  if (temporalGrid) {
     // Look for Time
     // TODO Add Time Node / enhancements??
     timeInfo = new XdmfTime();
     timeInfo->SetTimeType(XDMF_TIME_SINGLE);
-    timeInfo->SetValue(0);
-    grid.Insert(timeInfo);
+    timeInfo->SetValue(timeValue);
+    timeValue++; // Blindly increment the time value for now
+    spatialGrid->Insert(timeInfo);
     timeInfo->SetDeleteOnGridDelete(1);
-
-    grid.Build();
+    timeInfo->Build();
   }
+  delete hdfDOM;
+  delete lXdmfDOM;
+  delete hdfFileDump;
+  delete spatialGrid;
 
-  this->GeneratedFileStream << this->GeneratedDOM->Serialize();
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
-XdmfXmlNode XdmfGenerator::FindConvertHDFPath(XdmfConstString path)
+XdmfXmlNode XdmfGenerator::FindConvertHDFPath(XdmfHDFDOM *hdfDOM, XdmfConstString path)
 {
   std::string newPath = "/HDF5-File/RootGroup/";
   std::string currentBlockName = "";
@@ -221,11 +270,12 @@ XdmfXmlNode XdmfGenerator::FindConvertHDFPath(XdmfConstString path)
   }
 
   newPath += "Dataset[@Name=\"" + currentBlockName + "\"]";
-  node = this->HdfDOM->FindElementByPath(newPath.c_str());
+  node = hdfDOM->FindElementByPath(newPath.c_str());
   return node;
 }
 //----------------------------------------------------------------------------
-XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfXmlNode hdfTopologyNode, XdmfConstString topologyTypeStr)
+XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfHDFDOM *hdfDOM,
+    XdmfXmlNode hdfTopologyNode, XdmfConstString topologyTypeStr)
 {
   XdmfInt32   numberOfCells = 0;
   std::string topologyType = topologyTypeStr;
@@ -233,9 +283,9 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfXmlNode hdfTopologyNode, XdmfCons
     topologyType[i] = toupper(topologyType[i]);
   }
 
-  XdmfXmlNode hdfDataspaceNode = this->HdfDOM->FindElement("Dataspace", 0, hdfTopologyNode);
-  XdmfInt32   dimSize = atoi(this->HdfDOM->GetAttribute(
-      this->HdfDOM->GetChild(0, this->HdfDOM->GetChild(0, hdfDataspaceNode)),
+  XdmfXmlNode hdfDataspaceNode = hdfDOM->FindElement("Dataspace", 0, hdfTopologyNode);
+  XdmfInt32   dimSize = atoi(hdfDOM->GetAttribute(
+      hdfDOM->GetChild(0, hdfDOM->GetChild(0, hdfDataspaceNode)),
       "DimSize"));
 
   // TODO Do other topology types
@@ -249,22 +299,23 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfXmlNode hdfTopologyNode, XdmfCons
   return numberOfCells;
 }
 //----------------------------------------------------------------------------
-XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfXmlNode hdfDatasetNode, XdmfConstString dataPath)
+XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
+    XdmfConstString hdfFileName, XdmfConstString dataPath)
 {
-  XdmfXmlNode hdfDataspaceNode = this->HdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
-  XdmfInt32 nDims = atoi(this->HdfDOM->GetAttribute(this->HdfDOM->GetChild(0, hdfDataspaceNode), "Ndims"));
+  XdmfXmlNode hdfDataspaceNode = hdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
+  XdmfInt32 nDims = atoi(hdfDOM->GetAttribute(hdfDOM->GetChild(0, hdfDataspaceNode), "Ndims"));
   std::string dimSize;
   for (int i=0; i<nDims; i++) {
-    dimSize += this->HdfDOM->GetAttribute(
-        this->HdfDOM->GetChild(i, this->HdfDOM->GetChild(0, hdfDataspaceNode)),
+    dimSize += hdfDOM->GetAttribute(
+        hdfDOM->GetChild(i, hdfDOM->GetChild(0, hdfDataspaceNode)),
         "DimSize"
     );
     if (i != (nDims-1)) dimSize += " ";
   }
 
-  XdmfXmlNode hdfDatatypeNode = this->HdfDOM->FindElement("DataType", 0, hdfDatasetNode);
-  std::string hdfDataType = this->HdfDOM->GetElementName(
-      this->HdfDOM->GetChild(0, this->HdfDOM->GetChild(0, hdfDatatypeNode)));
+  XdmfXmlNode hdfDatatypeNode = hdfDOM->FindElement("DataType", 0, hdfDatasetNode);
+  std::string hdfDataType = hdfDOM->GetElementName(
+      hdfDOM->GetChild(0, hdfDOM->GetChild(0, hdfDatatypeNode)));
 
   std::string dataType;
   // Float | Int | UInt | Char | UChar
@@ -273,8 +324,8 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfXmlNode hdfDatasetNode, Xdmf
   else if (hdfDataType == "FloatType")
     dataType = "Float";
 
-  std::string dataPrecision = this->HdfDOM->GetAttribute(
-      this->HdfDOM->GetChild(0, this->HdfDOM->GetChild(0, hdfDatatypeNode)),
+  std::string dataPrecision = hdfDOM->GetAttribute(
+      hdfDOM->GetChild(0, hdfDOM->GetChild(0, hdfDatatypeNode)),
       "Size");
 
   // TODO Instead of using a string, maybe replace this by using XdmfDataItem
@@ -283,18 +334,18 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfXmlNode hdfDatasetNode, Xdmf
       "NumberType=\"" + dataType + "\" " +
       "Precision=\"" + dataPrecision + "\" " +
       "Format=\"HDF\">" +
-      this->HdfFileName + std::string(dataPath) +
+      std::string(hdfFileName) + ":" + std::string(dataPath) +
       "</DataItem>";
   XdmfString dataItemStr = new char[dataItem.length()+1];
   strcpy(dataItemStr, dataItem.c_str());
   return (XdmfConstString)dataItemStr;
 }
 //----------------------------------------------------------------------------
-XdmfInt32 XdmfGenerator::FindAttributeType(XdmfXmlNode hdfDatasetNode)
+XdmfInt32 XdmfGenerator::FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode)
 {
   XdmfInt32 type;
-  XdmfXmlNode hdfDataspaceNode = this->HdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
-  XdmfInt32 nDims = atoi(this->HdfDOM->GetAttribute(this->HdfDOM->GetChild(0, hdfDataspaceNode), "Ndims"));
+  XdmfXmlNode hdfDataspaceNode = hdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
+  XdmfInt32 nDims = atoi(hdfDOM->GetAttribute(hdfDOM->GetChild(0, hdfDataspaceNode), "Ndims"));
 
   // TODO Do other Xdmf Attribute types
   switch(nDims) {
