@@ -1,11 +1,5 @@
 /*=========================================================================
 
-  Program:   Visualization Toolkit
-  Module:    $RCSfile: vtkXdmfReader3.h,v $
-  Language:  C++
-  Date:      $Date$
-  Version:   $Revision$
-
   Copyright (c) 1993-2002 Ken Martin, Will Schroeder, Bill Lorensen
   All rights reserved.
   See Copyright.txt or http://www.kitware.com/Copyright.htm for details.

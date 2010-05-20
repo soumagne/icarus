@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : TestGenerator.h
+  Module                  : XdmfDump.cxx
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -15,32 +15,34 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+#ifndef __XdmfDump_h
+#define __XdmfDump_h
 
-#include <cstdlib>
-#include <iostream>
+#include "XdmfObject.h"
+
+class XdmfDsmBuffer;
+
+#include <cstring>
 #include <sstream>
 
-#include <XdmfGenerator.h>
+class XDMF_EXPORT XdmfDump : public XdmfObject {
 
-int main(int argc, char *argv[])
-{
-  if (argc != 3) {
-    std::cout << "Usage: " << argv[0] <<
-        " <XDMF template file path>" <<
-        " <HDF file path>" <<
-        endl;
-    return EXIT_FAILURE;
-  }
+    public :
+        XdmfDump();
+        ~XdmfDump();
 
-  XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
-  const char         *lxdmfFileName = argv[1];
-  const char         *hdfFileName = argv[2];
+        XdmfSetStringMacro(FileName);
+        XdmfGetStringMacro(FileName);
 
-  //  xdmfGenerator->Generate(lxdmfFileName, hdfFileName);
-  xdmfGenerator->GenerateTemporalCollection(lxdmfFileName, hdfFileName);
-  std::cout << xdmfGenerator->GetGeneratedFile() << std::endl;
+        void Dump();
+        void DumpLight();
+        void DumpXML(std::ostringstream &);
 
-  delete xdmfGenerator;
+        void SetDsmBuffer(XdmfDsmBuffer* _arg);
 
-  return EXIT_SUCCESS;
-}
+    protected:
+        XdmfDsmBuffer *DsmBuffer;
+        XdmfString     FileName;
+};
+
+#endif // __XdmfDump_h

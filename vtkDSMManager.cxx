@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : vtkDSMManager.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing 
@@ -34,11 +31,12 @@
 #include "vtkMPICommunicator.h"
 vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #endif
-
+//
 #include "H5FDdsmCommSocket.h"
 #include "H5FDdsmCommMpi.h"
 #include "H5FDdsmMsg.h"
-//#include "H5FDdsmDump.h"
+//
+#include "XdmfDump.h"
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
@@ -94,7 +92,6 @@ vtkDSMManager::vtkDSMManager()
 
   this->XMFDescriptionFilePath  = NULL;
   this->XMLStringSend           = NULL;
-  this->DumpDescription         = NULL;
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
@@ -110,11 +107,6 @@ vtkDSMManager::~vtkDSMManager()
     delete []this->XMLStringSend;
   }
   this->XMLStringSend = NULL;
-
-  if (this->DumpDescription) {
-    delete []this->DumpDescription;
-  }
-  this->DumpDescription = NULL;
 }
 //----------------------------------------------------------------------------
 int vtkDSMManager::GetAcceptedConnection()
@@ -427,7 +419,7 @@ void vtkDSMManager::UnpublishDSM()
 void vtkDSMManager::H5Dump()
 {  
   if (this->DSMBuffer) {
-    H5FDdsmDump *myDsmDump = new H5FDdsmDump();
+    XdmfDump *myDsmDump = new XdmfDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->Dump();
@@ -439,7 +431,7 @@ void vtkDSMManager::H5Dump()
 void vtkDSMManager::H5DumpLight()
 {  
   if (this->DSMBuffer) {
-    H5FDdsmDump *myDsmDump = new H5FDdsmDump();
+    XdmfDump *myDsmDump = new XdmfDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpLight();
@@ -451,28 +443,14 @@ void vtkDSMManager::H5DumpLight()
 void vtkDSMManager::H5DumpXML()
 {
   if (this->DSMBuffer) {
-    int dumpDescLength;
     std::ostringstream dumpStream;
-    H5FDdsmDump *myDsmDump = NULL;
-
-    if (this->UpdatePiece == 0) {
-      myDsmDump = new H5FDdsmDump();
-      myDsmDump->SetDsmBuffer(this->DSMBuffer);
-      myDsmDump->SetFileName("DSM.h5");
-      myDsmDump->DumpXML(dumpStream);
-      vtkDebugMacro(<< "Dump XML done");
-      dumpDescLength = dumpStream.str().length();
-    }
-
-    this->Controller->Broadcast(&dumpDescLength, 1, 0);
-    if (this->DumpDescription) delete []this->DumpDescription;
-    this->DumpDescription = new char[dumpDescLength + 1];
-    if (this->UpdatePiece == 0) strcpy(this->DumpDescription, dumpStream.str().c_str());
-    this->Controller->Broadcast(this->DumpDescription, dumpDescLength + 1, 0);
-
-    vtkDebugMacro(<< this->DumpDescription);
-
-    if (this->UpdatePiece == 0) delete myDsmDump;
+    XdmfDump *myDsmDump = new XdmfDump();
+    myDsmDump->SetDsmBuffer(this->DSMBuffer);
+    myDsmDump->SetFileName("DSM.h5");
+    myDsmDump->DumpXML(dumpStream);
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
+    if (this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
+    delete myDsmDump;
   }
 }
 //----------------------------------------------------------------------------
@@ -481,13 +459,12 @@ void vtkDSMManager::GenerateXMFDescription()
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
   if (this->DSMBuffer) {
-    xdmfGenerator->SetHdfFileName("DSM:file.h5");
+    xdmfGenerator->SetDsmBuffer(this->DSMBuffer);
+    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "DSM:file.h5");
   }
   else {
-    xdmfGenerator->SetHdfFileName("file.h5");
+    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "file.h5");
   }
-  xdmfGenerator->GenerateHead();
-  xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), this->DumpDescription);
 
   vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
 

@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : TestSocket.h
-  Revision of last commit : $Rev: 1512 $
-  Author of last commit   : $Author: soumagne $
-  Date of last commit     : $Date:: 2010-01-13 14:45:20 +0100 #$
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing

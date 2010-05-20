@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : vtkCSCS
-  Module                  : vtkXdmfReader4.h
+  Module                  : XdmfDump.cxx
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -15,45 +15,49 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
-#include "vtkXdmfReader4.h"
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkObjectFactory.h"
-#include "vtkMultiProcessController.h"
-//
-#include "vtkDSMManager.h"
-//
-//----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkXdmfReader4, "$Revision$");
-vtkStandardNewMacro(vtkXdmfReader4);
-vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
-//----------------------------------------------------------------------------
-vtkXdmfReader4::vtkXdmfReader4()
-{
-  this->DSMManager = 0;
-}
-//----------------------------------------------------------------------------
-vtkXdmfReader4::~vtkXdmfReader4()
-{
-}
-//----------------------------------------------------------------------------
-void vtkXdmfReader4::SetDSMManager(vtkDSMManager* dsmmanager)
-{
-  this->DSMManager = dsmmanager;
-  this->SetDsmBuffer(dsmmanager->GetDSMHandle());
-}
-//----------------------------------------------------------------------------
-bool vtkXdmfReader4::PrepareDsmBufferDocument()
-{
-  if (this->DSMManager && this->DSMManager->GetXMLStringReceive()) {
-    this->SetReadFromInputString(1);
-    this->SetInputString(this->DSMManager->GetXMLStringReceive());
-  }
-  return true;
-}
-//----------------------------------------------------------------------------
-void vtkXdmfReader4::PrintSelf(ostream& os, vtkIndent indent)
-{
-  this->Superclass::PrintSelf(os,indent);
-}
+#include "h5dump.h"
 
+#include "XdmfDsmBuffer.h"
+#include "XdmfDump.h"
+
+//----------------------------------------------------------------------------
+XdmfDump::XdmfDump()
+{
+    this->DsmBuffer = NULL;
+    this->FileName = NULL;
+}
+//----------------------------------------------------------------------------
+XdmfDump::~XdmfDump()
+{
+    if (this->FileName) delete this->FileName;
+    this->FileName = NULL;
+}
+//----------------------------------------------------------------------------
+void
+XdmfDump::SetDsmBuffer(XdmfDsmBuffer *dsmBuffer)
+{
+    this->DsmBuffer = dsmBuffer;
+}
+//----------------------------------------------------------------------------
+void
+XdmfDump::Dump()
+{
+    H5dump_dsm(this->FileName, this->DsmBuffer);
+}
+//----------------------------------------------------------------------------
+void
+XdmfDump::DumpLight()
+{
+    H5dump_dsm_light(this->FileName, this->DsmBuffer);
+}
+//----------------------------------------------------------------------------
+void
+XdmfDump::DumpXML(std::ostringstream &stream)
+{
+  if (this->DsmBuffer) {
+    H5dump_dsm_xml(this->FileName, stream, this->DsmBuffer);
+  } else {
+    H5dump_xml(this->FileName, stream);
+  }
+}
+//----------------------------------------------------------------------------

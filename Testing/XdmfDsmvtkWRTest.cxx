@@ -2,9 +2,6 @@
 
  Project                 : vtkCSCS
  Module                  : XdmfDsmvtkWRTest.cxx
- Revision of last commit : $Rev: 586 $
- Author of last commit   : $Author: soumagne $
- Date of last commit     : $Date:: 2009-07-07 18:21:36 +0200 #$
 
  Copyright (C) CSCS - Swiss National Supercomputing Centre.
  You may use modify and and distribute this code freely providing

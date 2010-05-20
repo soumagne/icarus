@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : vtkXdmfReader4.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
