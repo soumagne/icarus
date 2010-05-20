@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : vtkDSMManager.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing 
@@ -38,7 +35,7 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfDsmCommSocket.h"
 #include "XdmfDsmCommMpi.h"
 #include "XdmfDsmMsg.h"
-#include "XdmfDsmDump.h"
+#include "XdmfDump.h"
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
@@ -421,7 +418,7 @@ void vtkDSMManager::UnpublishDSM()
 void vtkDSMManager::H5Dump()
 {  
   if (this->DSMBuffer) {
-    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    XdmfDump *myDsmDump = new XdmfDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->Dump();
@@ -433,7 +430,7 @@ void vtkDSMManager::H5Dump()
 void vtkDSMManager::H5DumpLight()
 {  
   if (this->DSMBuffer) {
-    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    XdmfDump *myDsmDump = new XdmfDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpLight();
@@ -446,7 +443,7 @@ void vtkDSMManager::H5DumpXML()
 {
   if (this->DSMBuffer) {
     std::ostringstream dumpStream;
-    XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+    XdmfDump *myDsmDump = new XdmfDump();
     myDsmDump->SetDsmBuffer(this->DSMBuffer);
     myDsmDump->SetFileName("DSM.h5");
     myDsmDump->DumpXML(dumpStream);

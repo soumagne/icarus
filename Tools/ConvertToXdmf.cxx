@@ -72,7 +72,6 @@
 // Xdmf/DSM features 
 #include "H5FDdsm.h"
 #include "vtkDSMManager.h"
-#include "XdmfDsmDump.h"
 
 // Sys
 #include <sstream>

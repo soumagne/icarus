@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : XdmfGenerator.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -33,7 +30,7 @@
 #include "XdmfAttribute.h"
 #include "XdmfDataItem.h"
 
-#include "XdmfDsmDump.h"
+#include "XdmfDump.h"
 #include "XdmfDsmBuffer.h"
 
 #include <cstdlib>
@@ -105,7 +102,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
   XdmfXmlNode         domainNode;
   XdmfDOM            *lXdmfDOM = new XdmfDOM();
   XdmfHDFDOM         *hdfDOM = new XdmfHDFDOM();
-  XdmfDsmDump        *hdfFileDump = new XdmfDsmDump();
+  XdmfDump           *hdfFileDump = new XdmfDump();
   XdmfGrid           *spatialGrid = new XdmfGrid();
   XdmfTime           *timeInfo;
   std::ostringstream  hdfFileDumpStream;

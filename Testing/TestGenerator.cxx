@@ -2,9 +2,6 @@
 
   Project                 : vtkCSCS
   Module                  : TestGenerator.h
-  Revision of last commit : $Rev$
-  Author of last commit   : $Author$
-  Date of last commit     : $Date::                            $
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -23,7 +20,6 @@
 #include <iostream>
 #include <sstream>
 
-#include <XdmfDsmDump.h>
 #include <XdmfGenerator.h>
 
 int main(int argc, char *argv[])

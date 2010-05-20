@@ -16,7 +16,7 @@
 #endif
 
 #include "Xdmf.h"
-#include "XdmfDsmDump.h"
+#include "XdmfDump.h"
 #include "hdf5.h"
 #include "H5FDdsm.h"
 
@@ -457,14 +457,14 @@ main(int argc, char *argv[])
     }
 
     if (dump && dsm) {
-      XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+      XdmfDump *myDsmDump = new XdmfDump();
       myDsmDump->SetDsmBuffer(MyDsm);
       myDsmDump->Dump();
       delete myDsmDump;
     }
 
     if (ldump && dsm) {
-      XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+      XdmfDump *myDsmDump = new XdmfDump();
       myDsmDump->SetDsmBuffer(MyDsm);
       myDsmDump->DumpLight();
       delete myDsmDump;

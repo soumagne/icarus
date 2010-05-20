@@ -62,7 +62,8 @@ ENDIF(Boost_FOUND)
 #  ${CMAKE_CURRENT_SOURCE_DIR}/../../vtkCSCSCommon
 #)
 #INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/H5dump)
 
 #--------------------------------------------------
 # Set Definitions 
@@ -128,6 +129,15 @@ IF(PARAVIEW_BUILD_QT_GUI)
       ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5dump.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_str.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_utils.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_ref.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_type.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5trav.cxx
+      
     GUI_INTERFACES 
       ${DSM_IFACE}
     GUI_SOURCES
