@@ -16,7 +16,7 @@
 #endif
 
 #include "Xdmf.h"
-#include "XdmfDsmDump.h"
+#include "H5FDdsmDump.h"
 #include "hdf5.h"
 #include "H5FDdsm.h"
 
@@ -39,7 +39,7 @@ using std::endl;
 class DSMServiceThread
 {
 public:
-  DSMServiceThread(XdmfDsmBuffer *dsmObject)
+  DSMServiceThread(H5FDdsmBuffer *dsmObject)
   {
     this->DSMObject = dsmObject;
   }
@@ -48,7 +48,7 @@ public:
     this->DSMObject->ServiceThread();
   }
   //
-  XdmfDsmBuffer *DSMObject;
+  H5FDdsmBuffer *DSMObject;
 };
 //----------------------------------------------------------------------------
 
@@ -68,8 +68,8 @@ main(int argc, char *argv[])
   int             dsm = 0, local = 0, dump = 0, ldump = 0, test = 1;
   int             nwrite = 1;
 
-  XdmfDsmBuffer  *MyDsm = NULL;
-  XdmfDsmCommMpi *MyComm = NULL;
+  H5FDdsmBuffer  *MyDsm = NULL;
+  H5FDdsmCommMpi *MyComm = NULL;
 
   std::string     dsm_port_name;
 
@@ -141,8 +141,8 @@ main(int argc, char *argv[])
   }
 
   if (dsm == 1) {
-    MyDsm = new XdmfDsmBuffer();
-    MyComm = new XdmfDsmCommMpi();
+    MyDsm = new H5FDdsmBuffer();
+    MyComm = new H5FDdsmCommMpi();
 
     MyComm->Init();
     // New Communicator for Xdmf Transactions
@@ -151,7 +151,7 @@ main(int argc, char *argv[])
     if (!local) {
       MyDsm->SetIsServer(0);
       if (dsm_port_name.length() > 0) {
-        dynamic_cast<XdmfDsmCommMpi*> (MyDsm->GetComm())->SetDsmMasterHostName(dsm_port_name.c_str());
+        dynamic_cast<H5FDdsmCommMpi*> (MyDsm->GetComm())->SetDsmMasterHostName(dsm_port_name.c_str());
       }
       //MyDsm->DebugOn();
       //MyComm->DebugOn();
@@ -161,7 +161,7 @@ main(int argc, char *argv[])
 
     // Start another thread to handle DSM requests from other nodes
 #ifdef HAVE_PTHREADS
-    pthread_create(&ServiceThread, NULL, &XdmfDsmBufferServiceThread, (void *) MyDsm);
+    pthread_create(&ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) MyDsm);
 #elif HAVE_BOOST_THREADS
     DSMServiceThread MyDSMServiceThread(MyDsm);
     ServiceThread = new boost::thread(MyDSMServiceThread);
@@ -457,14 +457,14 @@ main(int argc, char *argv[])
     }
 
     if (dump && dsm) {
-      XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+      H5FDdsmDump *myDsmDump = new H5FDdsmDump();
       myDsmDump->SetDsmBuffer(MyDsm);
       myDsmDump->Dump();
       delete myDsmDump;
     }
 
     if (ldump && dsm) {
-      XdmfDsmDump *myDsmDump = new XdmfDsmDump();
+      H5FDdsmDump *myDsmDump = new H5FDdsmDump();
       myDsmDump->SetDsmBuffer(MyDsm);
       myDsmDump->DumpLight();
       delete myDsmDump;

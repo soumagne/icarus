@@ -11,7 +11,7 @@
 #include <mpi.h>
 
 #ifndef TESTSOCKET
-#include "XdmfDsmSocket.h"
+#include "H5FDdsmSocket.h"
 #else
 #include "TestSocket.h"
 #endif
@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
   int port;
   char hostname[MPI_MAX_PROCESSOR_NAME];
 #ifndef TESTSOCKET
-  XdmfDsmSocket sock;
+  H5FDdsmSocket sock;
 #else
   TestSocket sock;
 #endif

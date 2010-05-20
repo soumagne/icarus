@@ -28,10 +28,10 @@
 #include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkObject.h"       // Base class
 
-#include "XdmfDsm.h"         // Xdmf DSM objects
-#include "XdmfDsmBuffer.h"   // Xdmf DSM objects
-#include "XdmfDsmCommMpi.h"  // Xdmf DSM objects
-#include "XdmfDsmIniFile.h"
+#include "H5FDdsm.h"         // Xdmf DSM objects
+#include "H5FDdsmBuffer.h"   // Xdmf DSM objects
+#include "H5FDdsmCommMpi.h"  // Xdmf DSM objects
+#include "H5FDdsmIniFile.h"
 #include "XdmfDOM.h"
 
 #ifndef WIN32
@@ -129,7 +129,7 @@ public:
   void   RequestRemoteChannel();
 
 //BTX
-  XdmfDsmBuffer *GetDSMHandle();
+  H5FDdsmBuffer *GetDSMHandle();
 //ETX
 
 //BTX
@@ -172,8 +172,8 @@ protected:
     //ETX
     vtkMultiProcessController* Controller;
     //BTX
-    XdmfDsmBuffer  *DSMBuffer;
-    XdmfDsmComm    *DSMComm;
+    H5FDdsmBuffer  *DSMBuffer;
+    H5FDdsmComm    *DSMComm;
     //
     int             DsmIsServer;
     int             DsmCommType;

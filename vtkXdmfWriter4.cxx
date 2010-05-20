@@ -70,9 +70,8 @@
   #include "vtkMPI.h"
 #endif
 #include "XdmfH5MBCallback.h"
-//
 //----------------------------------------------------------------------------
-SimpleMutexLock SimpleMutexLock::GlobalLock;
+//SimpleMutexLock SimpleMutexLock::GlobalLock;
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter4);

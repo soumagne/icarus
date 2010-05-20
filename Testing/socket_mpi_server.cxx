@@ -10,7 +10,7 @@
 #include <mpi.h>
 
 #ifndef TESTSOCKET
-#include "XdmfDsmSocket.h"
+#include "H5FDdsmSocket.h"
 #else
 #include "TestSocket.h"
 #endif
@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
   MPI_Status status;
   int port; char *hostName = NULL;
 #ifndef TESTSOCKET
-  XdmfDsmSocket sock;
+  H5FDdsmSocket sock;
 #else
   TestSocket sock;
 #endif

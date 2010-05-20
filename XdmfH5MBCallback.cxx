@@ -6,7 +6,6 @@
 #include "XdmfArray.h"
 #include "XdmfHDF.h"
 #include "hdf5_hl.h"
-#include "H5FDdsm.h"
 #include "vtkDSMManager.h"
 
 typedef std::pair<std::string, XdmfArray *> HeavyType;
@@ -142,7 +141,8 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
   newArray->CopyType(array);
   newArray->CopySelection(array);
   newArray->SetDataPointer(array->GetDataPointer());
-  array->DropDataPointer();
+  Error("array->DropDataPointer() has been skipped, please check memory usage here");
+  
   //
   HeavyDataMap::iterator it = this->dataArrays->datamap.find(ds->GetPath());
   if (it!=this->dataArrays->datamap.end()) {

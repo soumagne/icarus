@@ -23,7 +23,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <XdmfDsmDump.h>
+#include <H5FDdsmDump.h>
 #include <XdmfGenerator.h>
 
 int main(int argc, char *argv[])
@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
 
   std::ostringstream  dumpStream;
   XdmfGenerator      *xdmfGenerator = new XdmfGenerator();
-  XdmfDsmDump        *xdmfDsmDump = new XdmfDsmDump();
+  H5FDdsmDump        *xdmfDsmDump = new H5FDdsmDump();
   const char         *hdfFileName = argv[1];
   const char         *lxdmfFileName = argv[2];
 

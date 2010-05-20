@@ -41,7 +41,7 @@ class vtkXdmfReader3Internal;
 class vtkXdmfReader3Grid;
 class vtkDSMManager;
 //BTX
-class XdmfDsmBuffer;
+class H5FDdsmBuffer;
 class XdmfDOM;
 //ETX
 

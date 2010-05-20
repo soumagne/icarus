@@ -77,11 +77,12 @@ DSM_DLL void            H5MB_print(const H5MB_tree_type *treestruct);
   #define DebugMacro(p,a)                           \
   {                                                 \
     std::stringstream vtkmsg;                       \
-    SimpleMutexLock::GlobalLock.Lock();             \
     vtkmsg << "P(" << p << ") " << a;               \
     std::cout << vtkmsg.str().c_str() << std::endl; \
-    SimpleMutexLock::GlobalLock.Unlock();           \
   }
+
+//    SimpleMutexLock::GlobalLock.Lock();             \
+//    SimpleMutexLock::GlobalLock.Unlock();           \
 
   #define Debug(a) DebugMacro(0,a)
   #define Error(a) DebugMacro(0,"Error " << a)

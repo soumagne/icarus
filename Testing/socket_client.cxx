@@ -10,7 +10,7 @@
 #include <cstdlib>
 
 #ifndef TESTSOCKET
-#include "XdmfDsmSocket.h"
+#include "H5FDdsmSocket.h"
 #else
 #include "TestSocket.h"
 #endif
@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
   int big_chunk_size = 1024*1024*1024;
 
 #ifndef TESTSOCKET
-  XdmfDsmSocket sock;
+  H5FDdsmSocket sock;
 #else
   TestSocket sock;
 #endif

@@ -328,7 +328,7 @@ public:
   vtkXdmfReader3Grid *LargestLevel;
   vtkXdmfReader3* Reader;
   XdmfDataItem *DataItem;
-  XdmfDsmBuffer *DsmBuffer;
+  H5FDdsmBuffer *DsmBuffer;
   char *InputString;
   unsigned int InputStringLength;
   unsigned int mostChildren;

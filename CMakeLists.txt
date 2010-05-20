@@ -10,6 +10,7 @@ ENDIF(COMMAND CMAKE_POLICY)
 # Find and Use ParaView
 #--------------------------------------------------
 IF (ParaView_BINARY_DIR)
+#  INCLUDE(${ParaView_DIR}/ParaViewConfig.cmake)  
   INCLUDE(${QT_USE_FILE}) 
   INCLUDE_DIRECTORIES(
     ${PARAVIEW_INCLUDE_DIRS}
@@ -27,6 +28,10 @@ IF (ParaView_BINARY_DIR)
       ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
     )
   ENDIF (VTK_USE_SYSTEM_LIBXML2)
+  INCLUDE_DIRECTORIES(
+    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+  )
 ELSE (ParaView_BINARY_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
@@ -34,6 +39,8 @@ ELSE (ParaView_BINARY_DIR)
     ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
     ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
     ${ParaView_DIR}/VTK/Utilities/vtklibxml2
+    ${ParaView_SOURCE_DIR}/Utilities/H5FDdsm
+    ${ParaView_DIR}/Utilities/H5FDdsm
   )
 ENDIF (ParaView_BINARY_DIR)
 
@@ -143,8 +150,9 @@ IF(PARAVIEW_BUILD_QT_GUI)
 
   TARGET_LINK_LIBRARIES(
     CSCS_DSM
-      ${PARAVIEW_HDF5_LIBRARIES} 
+      H5FDdsm    
       Xdmf
+      ${PARAVIEW_HDF5_LIBRARIES} 
       ${Boost_LIBRARIES}
   )
 
