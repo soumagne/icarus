@@ -20,7 +20,7 @@
 
 #include "XdmfObject.h"
 
-class XdmfDsmBuffer;
+class H5FDdsmBuffer;
 
 #include <cstring>
 #include <sstream>
@@ -38,10 +38,10 @@ class XDMF_EXPORT XdmfDump : public XdmfObject {
         void DumpLight();
         void DumpXML(std::ostringstream &);
 
-        void SetDsmBuffer(XdmfDsmBuffer* _arg);
+        void SetDsmBuffer(H5FDdsmBuffer* _arg);
 
     protected:
-        XdmfDsmBuffer *DsmBuffer;
+        H5FDdsmBuffer *DsmBuffer;
         XdmfString     FileName;
 };
 

@@ -15,10 +15,11 @@
 #  include <boost/thread/thread.hpp> // Boost Threads
 #endif
 
-#include "Xdmf.h"
-#include "XdmfDump.h"
 #include "hdf5.h"
 #include "H5FDdsm.h"
+#include "H5FDdsmBuffer.h"
+#include "H5FDdsmCommMpi.h"
+#include "XdmfDump.h"
 
 using std::cerr;
 using std::cout;

@@ -27,7 +27,7 @@ class XdmfHDFDOM;
 class XdmfRoot;
 class XdmfDomain;
 class XdmfGrid;
-class XdmfDsmBuffer;
+class H5FDdsmBuffer;
 
 #include <sstream>
 #include <string>
@@ -45,7 +45,7 @@ public:
   XdmfConstString  GetGeneratedFile();
 
   // Set DSM Buffer
-  void SetDsmBuffer(XdmfDsmBuffer* _arg);
+  void SetDsmBuffer(H5FDdsmBuffer* _arg);
 
   // Generate an XDMF File from a template file and a list of HDF files
   // Put the result into an XDMF DOM and generate a temporal collection
@@ -80,7 +80,7 @@ protected:
   std::string        *GeneratedFile;
   XdmfRoot           *GeneratedRoot;
   XdmfDomain         *GeneratedDomain;
-  XdmfDsmBuffer      *DsmBuffer;
+  H5FDdsmBuffer      *DsmBuffer;
 };
 
 #endif /* XDMFGENERATOR_H */

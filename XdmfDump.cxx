@@ -17,7 +17,7 @@
 =========================================================================*/
 #include "h5dump.h"
 
-#include "XdmfDsmBuffer.h"
+#include "H5FDdsmBuffer.h"
 #include "XdmfDump.h"
 
 //----------------------------------------------------------------------------
@@ -34,7 +34,7 @@ XdmfDump::~XdmfDump()
 }
 //----------------------------------------------------------------------------
 void
-XdmfDump::SetDsmBuffer(XdmfDsmBuffer *dsmBuffer)
+XdmfDump::SetDsmBuffer(H5FDdsmBuffer *dsmBuffer)
 {
     this->DsmBuffer = dsmBuffer;
 }

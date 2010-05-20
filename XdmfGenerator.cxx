@@ -30,8 +30,8 @@
 #include "XdmfAttribute.h"
 #include "XdmfDataItem.h"
 
+#include "H5FDdsmBuffer.h"
 #include "XdmfDump.h"
-#include "XdmfDsmBuffer.h"
 
 #include <cstdlib>
 //----------------------------------------------------------------------------
@@ -72,7 +72,7 @@ XdmfConstString XdmfGenerator::GetGeneratedFile()
   return this->GeneratedFile->c_str();
 }
 //----------------------------------------------------------------------------
-void XdmfGenerator::SetDsmBuffer(XdmfDsmBuffer *dsmBuffer)
+void XdmfGenerator::SetDsmBuffer(H5FDdsmBuffer *dsmBuffer)
 {
     this->DsmBuffer = dsmBuffer;
 }

@@ -525,7 +525,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         DSMManager->SetDsmIsServer(0);
       }
       DSMManager->SetController(controller);
-      DSMManager->SetDsmCommType(XDMF_DSM_COMM_SOCKET);
+      DSMManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
       DSMManager->SetServerPort(default_port_number);
       DSMManager->SetServerHostName(server_name.c_str());
       DSMManager->CreateDSM();
