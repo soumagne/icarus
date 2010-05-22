@@ -22,10 +22,11 @@
 #include "H5MButil.h"     // for DSM_DLL
 #include "XdmfLightData.h"
 
-class XdmfDOM;
+#include "XdmfDOM.h"
+#include "XdmfRoot.h"
+#include "XdmfDomain.h"
+
 class XdmfHDFDOM;
-class XdmfRoot;
-class XdmfDomain;
 class XdmfGrid;
 class H5FDdsmBuffer;
 
@@ -48,14 +49,16 @@ public:
   void SetDsmBuffer(H5FDdsmBuffer* _arg);
 
   // Generate an XDMF File from a template file and a list of HDF files
+  // the list of HDF files is generated using a specified file and a pattern
+  // corresponding to all the matching files contained in the same directory
   // Put the result into an XDMF DOM and generate a temporal collection
   XdmfInt32        GenerateTemporalCollection(XdmfConstString lXdmfFile,
-      XdmfConstString anHdfFile);
+      XdmfConstString anHdfFile, XdmfConstString fileNamePattern = NULL);
 
   // Generate an XDMF File from a template file and an HDF file
   // Put the result into an XDMF DOM
   XdmfInt32        Generate(XdmfConstString lXdmfFile, XdmfConstString hdfFileName,
-      XdmfGrid *temporalGrid=NULL);
+      XdmfGrid *temporalGrid=NULL, XdmfInt32 timeValue=0);
 
 protected:
 
@@ -76,10 +79,10 @@ protected:
   // Find attribute type from a given dataset node of the HDF DOM
   XdmfInt32        FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode);
 
-  XdmfDOM            *GeneratedDOM;
-  std::string        *GeneratedFile;
-  XdmfRoot           *GeneratedRoot;
-  XdmfDomain         *GeneratedDomain;
+  XdmfDOM             GeneratedDOM;
+  std::string         GeneratedFile;
+  XdmfRoot            GeneratedRoot;
+  XdmfDomain          GeneratedDomain;
   H5FDdsmBuffer      *DsmBuffer;
 };
 

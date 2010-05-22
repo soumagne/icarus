@@ -29,8 +29,7 @@ XdmfDump::XdmfDump()
 //----------------------------------------------------------------------------
 XdmfDump::~XdmfDump()
 {
-    if (this->FileName) delete this->FileName;
-    this->FileName = NULL;
+    this->SetFileName(NULL);
 }
 //----------------------------------------------------------------------------
 void

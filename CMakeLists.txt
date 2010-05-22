@@ -136,6 +136,7 @@ IF(PARAVIEW_BUILD_QT_GUI)
       ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+      ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5dump.cxx
       ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools.cxx

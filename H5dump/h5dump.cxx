@@ -6064,6 +6064,7 @@ xml_dump_group(hid_t gid, const char *name)
     else
         printf("</%sGroup>\n" , xmlnsprefix);
     free(tmp);
+    free(par);
 }
 
 /*-------------------------------------------------------------------------
