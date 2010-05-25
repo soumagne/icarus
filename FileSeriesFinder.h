@@ -16,12 +16,6 @@
 #ifndef FILESERIESFINDER_H
 #define FILESERIESFINDER_H
 
-#if defined(CSCSCommon_plugin_EXPORTS)
-  #define vtkCSCSCommon_EXPORT VTK_ABI_EXPORT
-#else
-  #define vtkCSCSCommon_EXPORT VTK_ABI_IMPORT
-#endif
-
 #include <vtkstd/string>
 #include <vtkstd/vector>
 #include <vtkstd/map>
@@ -36,7 +30,7 @@
 typedef vtkstd::vector<vtkstd::string> stringlist;
 typedef vtkstd::pair< vtkstd::string, vtkstd::string > maptype;
 //
-class vtkCSCSCommon_EXPORT FileSeriesFinder {
+class VTK_EXPORT FileSeriesFinder {
   public:
     FileSeriesFinder(vtkstd::string filenamepattern);
     FileSeriesFinder();

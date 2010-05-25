@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 #if defined(WIN32)
-#  if defined(CSCS_h5dump_EXPORTS) || defined(Xdmf_EXPORTS)
+#  if defined(CSCS_h5dump_EXPORTS) || defined(CSCS_DSM_EXPORTS)
 #    define H5DUMP_EXPORT __declspec( dllexport )
 #  else
 #    define H5DUMP_EXPORT __declspec( dllimport )
