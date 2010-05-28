@@ -40,28 +40,11 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
-#define JB_DEBUG__
-#ifdef JB_DEBUG__
-#ifdef NO_WIN32
-  #define OUTPUTTEXT(a) vtkOutputWindowDisplayText(a);
-#else
-  #define OUTPUTTEXT(a) std::cout << (a) << std::endl;
-#endif
+#undef  vtkDebugMacro
+#define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
 
-#undef vtkDebugMacro
-#define vtkDebugMacro(a)  \
-  { \
-    vtkOStreamWrapper::EndlType endl; \
-    vtkOStreamWrapper::UseEndl(endl); \
-    vtkOStrStreamWrapper vtkmsg; \
-    vtkmsg a << endl; \
-    OUTPUTTEXT(vtkmsg.str()); \
-    vtkmsg.rdbuf()->freeze(0); \
-  }
-
-#undef vtkErrorMacro
-#define vtkErrorMacro(a) vtkDebugMacro(a)
-#endif
+#undef  vtkErrorMacro
+#define vtkErrorMacro(a) H5FDdsmExternalError(a)
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDSMManager, "$Revision$");
 vtkStandardNewMacro(vtkDSMManager);
@@ -366,7 +349,10 @@ void vtkDSMManager::PublishDSM()
   if (this->UpdatePiece == 0) {
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
-
+    const char *dsm_env = getenv("DSM_CONFIG_PATH");
+    if (dsm_env && !this->GetDsmConfigFilePath()) {
+      this->SetDsmConfigFilePath(dsm_env);
+    }
     if (this->GetDsmConfigFilePath()) {
       fullDsmConfigFilePath = std::string(this->GetDsmConfigFilePath()) +
           std::string("/.dsm_config");
@@ -493,6 +479,34 @@ const char *vtkDSMManager::GetXMLStringReceive()
 void vtkDSMManager::ClearXMLStringReceive()
 {
   this->DSMBuffer->SetXMLDescription(NULL);
+}
+//----------------------------------------------------------------------------
+bool vtkDSMManager::ReadDSMConfigFile()
+{
+  H5FDdsmIniFile config;
+  std::string configPath;
+  const char *dsm_env = getenv("DSM_CONFIG_PATH");
+  if (dsm_env) {
+    configPath = std::string(dsm_env) + std::string("/.dsm_config");
+  }
+  else {
+    // Parse DSM configuration file
+    configPath = std::string(H5FDdsm_CONFIG_PATH) + std::string("/.dsm_config");
+  }
+  if (vtksys::SystemTools::FileExists(configPath.c_str())) {
+    std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
+    std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
+    std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
+    if (mode == "socket") {
+      this->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
+      this->SetServerPort(atoi(port.c_str()));
+    } else if (mode == "mpi") {
+      this->SetDsmCommType(H5FD_DSM_COMM_MPI);
+    }
+    this->SetServerHostName(host.c_str());
+    return true;
+  }
+  return false;
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
