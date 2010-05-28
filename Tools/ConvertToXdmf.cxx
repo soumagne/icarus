@@ -89,7 +89,7 @@ typedef std::vector<double>::size_type itype;
 
 #ifdef MACHINE_DINO
   #define server "agno.staff.cscs.ch"
-  #define client "dino.staff.cscs.ch"
+  #define client "agno.staff.cscs.ch"
   #define PORT 22000
 #endif
 
@@ -505,6 +505,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     // Limit time steps for testing to 3 so we don't wait all day
     //-------------------------------------------------------------
     itype t0=0, t1=TimeSteps.size();
+    t1=10000;
+    TimeSteps.assign(t1, 1);
 //    t1 = TimeSteps.size()>3 ? 3 : TimeSteps.size();
 
     //
@@ -525,9 +527,16 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         DSMManager->SetDsmIsServer(0);
       }
       DSMManager->SetController(controller);
-      DSMManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
-      DSMManager->SetServerPort(default_port_number);
-      DSMManager->SetServerHostName(server_name.c_str());
+      //
+      // Load .dsm_config
+      //
+      if (!DSMManager->ReadDSMConfigFile()) {
+        std::cout << ".dsm_config file read failed \n";
+        DSMManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
+        DSMManager->SetServerPort(default_port_number);
+        DSMManager->SetServerHostName(server_name.c_str());
+      }
+      //
       DSMManager->CreateDSM();
       if (DSMserver) {
         DSMManager->PublishDSM();
@@ -536,6 +545,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
         DSMManager->ConnectDSM();
       }     
       if (DSMclient || DSMstandalone) {
+        std::cout << "Setting dsm buffer \n";
         writer->SetDSMManager(DSMManager);
       }
     }
@@ -604,7 +614,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     }
 
     //
-    // DSM Client needs to disply contents of what it has received
+    // DSM Server needs to display contents of what it has received
     //
     if (DSMserver || DSMstandalone) {
       if (myId==0) {
