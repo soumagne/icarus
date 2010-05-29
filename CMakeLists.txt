@@ -205,12 +205,20 @@ ADD_EXECUTABLE(
   ${CMAKE_CURRENT_SOURCE_DIR}/Tools/ConvertToXdmf.cxx
 )
 
+TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
+
+ADD_EXECUTABLE(
+  TestDSMListener  
+  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TestDSMListener.cxx
+)
+
+TARGET_LINK_LIBRARIES(TestDSMListener ${Converter_LIBS})
+
 #ADD_EXECUTABLE(
 #  TreeTest
 #  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TreeTest.cpp
 #)
 
-TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
 
 #--------------------------------------------------
 # Testing, pull in the test from ParaView/Utilities/Xdmf2/vtk/Testing/Cxx

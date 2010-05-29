@@ -141,7 +141,8 @@ XdmfInt32 H5MBCallback::DoWrite(XdmfHeavyData* ds, XdmfArray* array)
   newArray->CopyType(array);
   newArray->CopySelection(array);
   newArray->SetDataPointer(array->GetDataPointer());
-  Error("array->DropDataPointer() has been skipped, please check memory usage here");
+  array->DropDataPointer();
+//  Error("array->DropDataPointer() has been skipped, please check memory usage here");
   
   //
   HeavyDataMap::iterator it = this->dataArrays->datamap.find(ds->GetPath());
@@ -228,7 +229,11 @@ void H5MBCallback::Synchronize()
   this->dataArrays->datamap.clear();
 
   // finished this timestep, close everything, but reuse tree/file
-  H5MB_close(this->tree, true);
+  herr_t status = H5MB_close(this->tree, true);
+  Debug("tree closed returning " << (status<0 ? "Fail" : "OK"));
+  if ( status < 0 ) {
+    Error("closing tree ");
+  }
 }
 //----------------------------------------------------------------------------
 void H5MBCallback::CloseTree()
@@ -237,12 +242,11 @@ void H5MBCallback::CloseTree()
   //
   // finished this timestep, close and delete everything
   herr_t status = H5Pclose(this->AccessPlist);
-  Debug("property list closed returning " << status);
   if ( status < 0 ) {
     Error("closing property list");
   }
   status = H5MB_close(this->tree, false);
-  Debug("tree closed returning " << status);
+  Debug("tree closed returning " << (status<0 ? "Fail" : "OK"));
   if ( status < 0 ) {
     Error("closing tree ");
   }
