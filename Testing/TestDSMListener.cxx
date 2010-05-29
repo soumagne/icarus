@@ -134,7 +134,7 @@ std::string usage = "\n"\
     "  -DSM Write to self contained DSM \n";
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-void ThreadExecute(void *dsm, Int64 &counter) {
+void ThreadExecute(void *dsm, vtkTypeInt64 &counter) {
   vtkDSMManager *DSM = (vtkDSMManager*)dsm;
   if (DSM->GetDsmUpdateReady()) {
     DSM->H5DumpLight();
@@ -202,7 +202,7 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
       test->AddArgument(args->argv[c]);
     }
     //
-    bool DSMserver = true;
+    //bool DSMserver = true;
 
     //
     // Start of pipeline (unused now)
@@ -247,8 +247,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 //    ServiceThread = new boost::thread(MyDSMListenThread);
 //#endif
 
-    Int64          Counter = 0;
-    Int64          UpdatesCounter = 0;
+    vtkTypeInt64   Counter = 0;
+    vtkTypeInt64   UpdatesCounter = 0;
     bool           good = true;  
     while(good) {
       UpdatesCounter ++;
