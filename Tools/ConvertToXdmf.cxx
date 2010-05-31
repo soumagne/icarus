@@ -15,7 +15,9 @@
 // For Testing DSM
 // Machine a=dino) -D C:\data\xdmf\other -F cav_DSM_Test.xmf -Client
 // Machine b=agno) -Server
-
+//
+// cd D:\cmakebuild\pv-shared\bin\RelWithDebInfo
+// mpiexec -localonly -channel mt -n 1 D:\cmakebuild\cscs-plugins\bin\RelWithDebInfo\ConvertToXdmf.exe -D D:\data\xdmf -F damBreakMarin.xmf -Client
 //----------------------------------------------------------------------------
 #include "vtkXdmfWriter4.h"
 #include "vtkSmartPointer.h"
@@ -505,9 +507,11 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     // Limit time steps for testing to 3 so we don't wait all day
     //-------------------------------------------------------------
     itype t0=0, t1=TimeSteps.size();
-    t1=10000;
-    TimeSteps.assign(t1, 1);
+    if (t1<2) {
+      t1=10;
+      TimeSteps.assign(t1, 1);
 //    t1 = TimeSteps.size()>3 ? 3 : TimeSteps.size();
+    }
 
     //
     // Create the Xdmf Writer
