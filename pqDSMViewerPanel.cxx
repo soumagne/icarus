@@ -15,6 +15,7 @@
 #include <QUrl>
 #include <QDesktopServices>
 #include <QThread>
+#include <QTime>
 
 // VTK includes
 
@@ -446,6 +447,10 @@ void pqDSMViewerPanel::onDisplayDSM()
         this->XdmfReader->GetProperty("FileName"), "stdin");
     }
 
+    QTime dieTime = QTime::currentTime().addMSecs(10);
+    while( QTime::currentTime() < dieTime ) {
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+    }
     //
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
