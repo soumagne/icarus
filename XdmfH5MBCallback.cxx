@@ -35,6 +35,7 @@ void  H5MBCallback::SetDSMManager(vtkDSMManager *dsmmanager)
 //----------------------------------------------------------------------------
 XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfConstString access)
 {
+  //
   XdmfConstString lastcolon;
   XdmfConstString firstcolon;
   std::string Domain, FileName, Path;
@@ -164,6 +165,7 @@ namespace H5MB_utility {
 //----------------------------------------------------------------------------
 void H5MBCallback::Synchronize()
 {
+  //
   if (!this->tree) return;
   //
   H5MB_collect(this->tree, this->Communicator);
@@ -223,7 +225,7 @@ void H5MBCallback::Synchronize()
     else {
       Debug("written " << datasetpath);
     }
-  
+    delete data_array;
   }
   // remove all 
   this->dataArrays->datamap.clear();
