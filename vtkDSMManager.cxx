@@ -350,7 +350,7 @@ void vtkDSMManager::PublishDSM()
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
     const char *dsm_env = getenv("DSM_CONFIG_PATH");
-    if (dsm_env && !this->GetDsmConfigFilePath()) {
+    if (dsm_env /*&& !this->GetDsmConfigFilePath()*/) {
       this->SetDsmConfigFilePath(dsm_env);
     }
     if (this->GetDsmConfigFilePath()) {
@@ -358,6 +358,9 @@ void vtkDSMManager::PublishDSM()
           std::string("/.dsm_config");
       dsmConfigFile.Create(fullDsmConfigFilePath);
       dsmConfigFile.AddSection("Comm", fullDsmConfigFilePath);
+
+      std::cout << "Written " << fullDsmConfigFilePath.c_str() << std::endl;
+
     }
     if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
       this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*>

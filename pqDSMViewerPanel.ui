@@ -29,7 +29,7 @@
          <x>0</x>
          <y>0</y>
          <width>394</width>
-         <height>508</height>
+         <height>511</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -281,6 +281,11 @@
                <item>
                 <property name="text">
                  <string>XDMF template format</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Use Sent XML</string>
                 </property>
                </item>
               </widget>

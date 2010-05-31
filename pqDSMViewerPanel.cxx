@@ -424,38 +424,35 @@ void pqDSMViewerPanel::onDisplayDSM()
     //
     // If we are using an Xdmf XML file supplied manually or generated, get it
     //
-    if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
-      if (this->UI->xdmfFileTypeComboBox->currentIndex() == 0) { // Original XDMF File
-        pqSMAdaptor::setElementProperty(
-            this->XdmfReader->GetProperty("FileName"),
-            this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
-      }
-      if (this->UI->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
-        force_generate = (this->UI->forceXdmfGeneration->isChecked()) ? true : false;
-        // Only re-generate if the description file path has changed or if force is set to true
-        if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
-          xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
-          // Generate xdmf file for reading
-          // No need to do H5dump here any more since done in Generator now
-          //          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+    if (this->UI->xdmfFileTypeComboBox->currentIndex() != 2) { //if not use sent XML
+      if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
+        if (this->UI->xdmfFileTypeComboBox->currentIndex() == 0) { // Original XDMF File
           pqSMAdaptor::setElementProperty(
-              this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
-              xdmf_description_file_path.c_str());
+              this->XdmfReader->GetProperty("FileName"),
+              this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+        }
+        if (this->UI->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
+          force_generate = (this->UI->forceXdmfGeneration->isChecked()) ? true : false;
+          // Only re-generate if the description file path has changed or if force is set to true
+          if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
+            xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
+            // Generate xdmf file for reading
+            // No need to do H5dump here any more since done in Generator now
+            //          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+            pqSMAdaptor::setElementProperty(
+                this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
+                xdmf_description_file_path.c_str());
 
-          this->UI->DSMProxy->UpdateVTKObjects();
-          this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
+            this->UI->DSMProxy->UpdateVTKObjects();
+            this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
+          }
         }
       }
     }
-
-#ifdef JB_XML
-    // "TODO, fix XML so that if passed by simulation, generator is skipped
-    // JB needs the line below for ConvertToXdmf Test app which sends XML
-    {
+    else {
       pqSMAdaptor::setElementProperty(
         this->XdmfReader->GetProperty("FileName"), "stdin");
     }
-#endif
 
     QTime dieTime = QTime::currentTime().addMSecs(10);
     while( QTime::currentTime() < dieTime ) {
