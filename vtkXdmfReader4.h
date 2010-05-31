@@ -32,7 +32,7 @@ class VTK_EXPORT vtkXdmfReader4 : public vtkXdmfReader
 {
 public:
   static vtkXdmfReader4 *New();
-  vtkTypeRevisionMacro(vtkXdmfReader4,vtkXdmfReader);
+  vtkTypeMacro(vtkXdmfReader4,vtkXdmfReader);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

@@ -24,17 +24,18 @@
 #include "vtkDSMManager.h"
 //
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkXdmfReader4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfReader4);
 vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 vtkXdmfReader4::vtkXdmfReader4()
 {
+  this->Controller = NULL;
   this->DSMManager = 0;
 }
 //----------------------------------------------------------------------------
 vtkXdmfReader4::~vtkXdmfReader4()
 {
+  this->SetController(NULL);
 }
 //----------------------------------------------------------------------------
 void vtkXdmfReader4::SetDSMManager(vtkDSMManager* dsmmanager)
