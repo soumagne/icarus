@@ -393,12 +393,18 @@ void pqDSMViewerPanel::onDisplayDSM()
   if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
+#ifdef DISABLE_DISPLAY
+    if (this->DSMReady()) {
+      this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+    }
+#else
     if (!this->XdmfReader || this->UI->storeDSMContents->isChecked()) {
       //
       // Create a new Reader proxy and register it with the system
       //
       char proxyName[256];
 
+      // When creating reader, make sure first_time is true
       if (!first_time) first_time = true;
       if (this->XdmfReader) this->XdmfReader.New();
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
@@ -430,7 +436,7 @@ void pqDSMViewerPanel::onDisplayDSM()
         if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
           xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
           // Generate xdmf file for reading
-// No need to do H5dump here any more since done in Generator now
+          // No need to do H5dump here any more since done in Generator now
           //          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
           pqSMAdaptor::setElementProperty(
               this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
@@ -439,18 +445,23 @@ void pqDSMViewerPanel::onDisplayDSM()
           this->UI->DSMProxy->UpdateVTKObjects();
           this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
         }
-          pqSMAdaptor::setElementProperty(
-              this->XdmfReader->GetProperty("FileName"), "stdin");
       }
-    } else {
+    }
+
+#ifdef JB_XML
+    // "TODO, fix XML so that if passed by simulation, generator is skipped
+    // JB needs the line below for ConvertToXdmf Test app which sends XML
+    {
       pqSMAdaptor::setElementProperty(
         this->XdmfReader->GetProperty("FileName"), "stdin");
     }
+#endif
 
     QTime dieTime = QTime::currentTime().addMSecs(10);
     while( QTime::currentTime() < dieTime ) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
     }
+
     //
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
@@ -483,6 +494,8 @@ void pqDSMViewerPanel::onDisplayDSM()
       pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
       pqOutputPort *port = source->getOutputPort(0);
       display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
+      //
+      first_time = false;
     }
 
     // 
@@ -494,19 +507,22 @@ void pqDSMViewerPanel::onDisplayDSM()
       scene->setAnimationTime(++current_time);
     }
 
+    dieTime = QTime::currentTime().addMSecs(10);
+    while( QTime::currentTime() < dieTime )
+	    QCoreApplication::processEvents(QEventLoop::AllEvents, 10);
+
     //
     // Trigger a render : if changed, everything should update as usual
     if (pqActiveObjects::instance().activeView())
     {
       pqActiveObjects::instance().activeView()->render();
     }
+#endif DISABLE_DISPLAY
 
     //
     // To prevent deadlock, switch communicators if we are client and server
     //
     this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
-    //
-    if (first_time) first_time = false;
   }
 }
 //-----------------------------------------------------------------------------
