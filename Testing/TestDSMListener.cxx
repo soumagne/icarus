@@ -51,6 +51,7 @@
 #include "vtkXMLPImageDataReader.h"
 #include "vtkPVDReader.h"
 #include "vtkXdmfReader.h"
+#include "vtkXdmfReader3.h"
 #include "vtkXdmfReader4.h"
 
 #ifndef WIN32
@@ -166,8 +167,8 @@ class DSMListenThread {
     }
     //
     vtkDSMManager *DSMManager;
-    Int64          Counter;
-    Int64          UpdatesCounter;
+    H5FDdsmInt64   Counter;
+    H5FDdsmInt64   UpdatesCounter;
 };
 #endif
 //----------------------------------------------------------------------------
@@ -247,22 +248,33 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
 //    ServiceThread = new boost::thread(MyDSMListenThread);
 //#endif
 
-    vtkTypeInt64   Counter = 0;
-    vtkTypeInt64   UpdatesCounter = 0;
+    H5FDdsmInt64   Counter = 0;
+    H5FDdsmInt64   UpdatesCounter = 0;
+    vtkSmartPointer<vtkXdmfReader4> XdmfReader = vtkSmartPointer<vtkXdmfReader4>::New();
+    XdmfReader->SetController(controller);
+    XdmfReader->SetDSMManager(DSMManager);
+    XdmfReader->SetFileName("stdin");
+
     bool           good = true;  
     while(good) {
       UpdatesCounter ++;
       if (DSMManager->GetDsmUpdateReady()) {
         std::cout << UpdatesCounter << " : " << ++Counter << std::endl;
+        // H5Dump
         DSMManager->H5DumpLight();
+        // Xdmf
+        XdmfReader->Update();
+        vtkDataObject *data = XdmfReader->GetOutputDataObject(0);
+        data->PrintSelf(std::cout, vtkIndent(0));
+        // Clean up for next step
         controller->Barrier();
         DSMManager->ClearDsmUpdateReady();
         DSMManager->RequestRemoteChannel();
         if (Counter>=10000) {
           good = false;
         }
-//        ::Sleep(100);
       }
+
       //if (UpdatesCounter%10000 == 0) {
       //  std::cout << UpdatesCounter << " : " << Counter << std::endl;
       //  std::cout.flush();
