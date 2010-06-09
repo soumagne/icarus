@@ -87,10 +87,8 @@ vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
   #define vtkDebugMacro(p,a)                           \
   {                                                 \
     std::stringstream vtkmsg;                       \
-    SimpleMutexLock::GlobalLock.Lock();             \
     vtkmsg << "P(" << p << ") " << a;               \
     std::cout << vtkmsg.str().c_str() << std::endl; \
-    SimpleMutexLock::GlobalLock.Unlock();           \
   }
   #define vtkXDRDebug(a) vtkDebugMacro(this->UpdatePiece,a)
   #define vtkXDRError(a) vtkDebugMacro(this->UpdatePiece,a)

@@ -514,7 +514,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     {
       pqActiveObjects::instance().activeView()->render();
     }
-#endif DISABLE_DISPLAY
+#endif //DISABLE_DISPLAY
 
     //
     // To prevent deadlock, switch communicators if we are client and server
