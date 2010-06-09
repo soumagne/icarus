@@ -10,8 +10,9 @@ ENDIF(COMMAND CMAKE_POLICY)
 # Find and Use ParaView
 #--------------------------------------------------
 IF (ParaView_BINARY_DIR)
-#  INCLUDE(${ParaView_DIR}/ParaViewConfig.cmake)  
-  INCLUDE(${QT_USE_FILE}) 
+  IF (PARAVIEW_BUILD_QT_GUI)
+    INCLUDE(${QT_USE_FILE})
+  ENDIF (PARAVIEW_BUILD_QT_GUI)
   INCLUDE_DIRECTORIES(
     ${PARAVIEW_INCLUDE_DIRS}
     ${PARAVIEW_GUI_INCLUDE_DIRS}
@@ -116,58 +117,57 @@ IF(PARAVIEW_BUILD_QT_GUI)
     DSM_UI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
   )
-
-  #--------------------------------------------------
-  # Define Plugin Panel
-  #--------------------------------------------------
-  ADD_PARAVIEW_PLUGIN(
-    CSCS_DSM
-    "1.0" 
-
-    SERVER_MANAGER_XML 
-      ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
-    SERVER_MANAGER_SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
-    SERVER_SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5dump.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_str.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_utils.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_ref.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_type.cxx
-      ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5trav.cxx
-      
-    GUI_INTERFACES 
-      ${DSM_IFACE}
-    GUI_SOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
-      ${DSM_IFACE_SRCS}
-      ${DSM_MOC_SRCS}
-      ${DSM_UI_SOURCES}
-    GUI_RESOURCES
-      ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager.qrc
-    GUI_RESOURCE_FILES
-      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
-  )
-
-  TARGET_LINK_LIBRARIES(
-    CSCS_DSM
-      H5FDdsm    
-      Xdmf
-      ${PARAVIEW_HDF5_LIBRARIES} 
-      ${Boost_LIBRARIES}
-  )
-
 ENDIF(PARAVIEW_BUILD_QT_GUI)
+
+#--------------------------------------------------
+# Define Plugin
+#--------------------------------------------------
+ADD_PARAVIEW_PLUGIN(
+  CSCS_DSM
+  "1.0" 
+
+  SERVER_MANAGER_XML 
+    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager_Server.xml
+  SERVER_MANAGER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
+  SERVER_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5dump.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_str.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_utils.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_ref.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_type.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5trav.cxx
+    
+  GUI_INTERFACES 
+    ${DSM_IFACE}
+  GUI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
+    ${DSM_IFACE_SRCS}
+    ${DSM_MOC_SRCS}
+    ${DSM_UI_SOURCES}
+  GUI_RESOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/CSCS_DSMManager.qrc
+  GUI_RESOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
+)
+
+TARGET_LINK_LIBRARIES(
+  CSCS_DSM
+    H5FDdsm    
+    Xdmf
+    ${PARAVIEW_HDF5_LIBRARIES} 
+    ${Boost_LIBRARIES}
+)
 
 #--------------------------------------------------
 # Testing
