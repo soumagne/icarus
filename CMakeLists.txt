@@ -9,12 +9,17 @@ ENDIF(COMMAND CMAKE_POLICY)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
-IF (ParaView_BINARY_DIR)
+IF(NOT PARAVIEW_LOADED)
+  FIND_PACKAGE(ParaView REQUIRED)
+  INCLUDE(${PARAVIEW_USE_FILE})
+  SET(PARAVIEW_LOADED 1)
+ELSE(NOT PARAVIEW_LOADED)
   IF (PARAVIEW_BUILD_QT_GUI)
     INCLUDE(${QT_USE_FILE})
   ENDIF (PARAVIEW_BUILD_QT_GUI)
   INCLUDE_DIRECTORIES(
     ${PARAVIEW_INCLUDE_DIRS}
+    ${ParaView_SOURCE_DIR}/VTK/Geovis
     ${PARAVIEW_GUI_INCLUDE_DIRS}
     ${PARAVIEW_KWSYS_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
@@ -33,17 +38,7 @@ IF (ParaView_BINARY_DIR)
     ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
     ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
   )
-ELSE (ParaView_BINARY_DIR)
-  FIND_PACKAGE(ParaView REQUIRED)
-  INCLUDE(${PARAVIEW_USE_FILE})
-  INCLUDE_DIRECTORIES(
-    ${ParaView_SOURCE_DIR}/VTK/Utilities/vtklibxml2/include
-    ${ParaView_DIR}/VTK/Utilities/vtklibxml2/libxml
-    ${ParaView_DIR}/VTK/Utilities/vtklibxml2
-    ${ParaView_SOURCE_DIR}/Utilities/H5FDdsm
-    ${ParaView_DIR}/Utilities/H5FDdsm
-  )
-ENDIF (ParaView_BINARY_DIR)
+ENDIF(NOT PARAVIEW_LOADED)
 
 #--------------------------------------------------
 # Find and Use Boost
