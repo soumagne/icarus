@@ -10,6 +10,12 @@ ENDIF(COMMAND CMAKE_POLICY)
 # Find and Use ParaView
 #--------------------------------------------------
 IF(NOT PARAVIEW_LOADED)
+  IF (ParaView_BINARY_DIR)
+    INCLUDE_DIRECTORIES(
+      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+    )
+  ENDIF(ParaView_BINARY_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
   SET(PARAVIEW_LOADED 1)
