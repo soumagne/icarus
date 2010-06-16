@@ -101,13 +101,7 @@
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
-      
-      <StringVectorProperty
-        name="DsmConfigFilePath"
-        command="SetDsmConfigFilePath"
-        number_of_elements="1">
-      </StringVectorProperty>
-      
+            
       <StringVectorProperty
         name="XMFDescriptionFilePath"
         command="SetXMFDescriptionFilePath"

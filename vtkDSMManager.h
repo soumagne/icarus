@@ -79,13 +79,6 @@ public:
   vtkGetMacro(ServerPort, int);
 
   // Description:
-  // Set/Get the DSM configuration file path.
-  // If set correctly before calling PublishDSM, communicator parameters will be
-  // saved into the given configuration file.
-  vtkSetStringMacro(DsmConfigFilePath);
-  vtkGetStringMacro(DsmConfigFilePath);
-
-  // Description:
   // Only valid after a AcceptConnection call has been made.
   int GetAcceptedConnection();
 
@@ -185,7 +178,6 @@ protected:
     int             DsmCommType;
     char           *ServerHostName;
     int             ServerPort;
-    char           *DsmConfigFilePath;
     //
     int             DsmUpdateReady;
     //

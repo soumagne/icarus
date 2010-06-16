@@ -213,11 +213,8 @@ void pqDSMViewerPanel::LoadSettings()
   if(!descFilePath.isEmpty()) {
     this->UI->xdmfFilePathLineEdit->insert(descFilePath);
   }
-  // Config file path
-  QString configFilePath = settings->value("ConfigFilePath").toString();
-   if(!configFilePath.isEmpty()) {
-     this->UI->dsmConfigFilePathLineEdit->insert(configFilePath);
-   }
+  // Force XDMF Generation
+  this->UI->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
   //
   settings->endGroup();
 }
@@ -245,8 +242,8 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("DescriptionFileType", this->UI->xdmfFileTypeComboBox->currentIndex());
   // Description file path
   settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
-  // Config File path
-  settings->setValue("ConfigFilePath", this->UI->dsmConfigFilePathLineEdit->text());
+  // Force XDMF Generation
+  settings->setValue("ForceXDMFGeneration", this->UI->forceXdmfGeneration->isChecked());
   //
   settings->endGroup();
 }
@@ -362,11 +359,6 @@ void pqDSMViewerPanel::onPublishDSM()
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("ServerPort"),
           this->UI->xdmfCommPort->value());
-    }
-    if (!this->UI->dsmConfigFilePathLineEdit->text().isEmpty()) {
-      pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("DsmConfigFilePath"),
-          this->UI->dsmConfigFilePathLineEdit->text().toStdString().c_str());
     }
     this->UI->DSMProxy->UpdateVTKObjects();
     this->UI->DSMProxy->InvokeCommand("PublishDSM");
