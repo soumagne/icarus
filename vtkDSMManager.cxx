@@ -182,12 +182,12 @@ bool vtkDSMManager::CreateDSM()
 
   if (this->Controller->IsA("vtkDummyController"))
   {
-    vtkErrorMacro(<<"Running vtkDummyController : replacing it");
+    vtkDebugMacro(<<"Running vtkDummyController : replacing it");
     int flag = 0;
     MPI_Initialized(&flag);
     if (flag == 0)
     {
-      vtkErrorMacro(<<"Running without MPI, attempting to initialize ");
+      vtkDebugMacro(<<"Running without MPI, attempting to initialize ");
       //int argc = 1;
       //const char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
       //char **_argv = (char**) &argv;
@@ -207,7 +207,7 @@ bool vtkDSMManager::CreateDSM()
       }
     }
     //
-    vtkErrorMacro(<<"Setting Global MPI controller");
+    vtkDebugMacro(<<"Setting Global MPI controller");
     vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
     if (flag == 0) controller->Initialize(NULL, NULL, 1);
     this->SetController(controller);
@@ -347,7 +347,8 @@ void vtkDSMManager::PublishDSM()
   if (this->UpdatePiece == 0) {
     H5FDdsmIniFile dsmConfigFile;
     std::string fullDsmConfigFilePath;
-    const char *dsmEnvPath = getenv("DSM_CONFIG_PATH");
+    const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
     if (dsmEnvPath) {
       fullDsmConfigFilePath = std::string(dsmEnvPath) + std::string("/.dsm_config");
       dsmConfigFile.Create(fullDsmConfigFilePath);
@@ -481,9 +482,10 @@ bool vtkDSMManager::ReadDSMConfigFile()
 {
   H5FDdsmIniFile config;
   std::string configPath;
-  const char *dsm_env = getenv("H5FD_DSM_CONFIG_PATH");
-  if (dsm_env) {
-    configPath = std::string(dsm_env) + std::string("/.dsm_config");
+  const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
+  if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
+  if (dsmEnvPath) {
+    configPath = std::string(dsmEnvPath) + std::string("/.dsm_config");
   }
   if (vtksys::SystemTools::FileExists(configPath.c_str())) {
     std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);

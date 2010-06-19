@@ -610,50 +610,6 @@
       </Attribute>
     </Grid>
 
-    <Grid>
-      <Topology TopologyType="Polyvertex">
-      </Topology>
-      <Geometry GeometryType="XYZ">
-	<DataItem>/virtFluid/position</DataItem>
-      </Geometry>
-      <Attribute>
-	<DataItem>/virtFluid/density</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/gradP</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/gradRHO</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/gradVX</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/gradVY</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/gradVZ</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/h</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/index</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/pressure</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/velocity</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/vmob</DataItem>
-      </Attribute>
-      <Attribute>
-	<DataItem>/virtFluid/w</DataItem>
-      </Attribute>
-    </Grid>
-
    <Grid>
       <Topology TopologyType="Polyvertex">
       </Topology>
