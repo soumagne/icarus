@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>421</width>
+    <width>428</width>
     <height>551</height>
    </rect>
   </property>
@@ -28,27 +28,18 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>404</width>
-         <height>490</height>
+         <width>410</width>
+         <height>508</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QFrame" name="frame_2">
+         <widget class="QGroupBox" name="groupBox_2">
           <property name="enabled">
            <bool>true</bool>
           </property>
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Sunken</enum>
-          </property>
-          <property name="lineWidth">
-           <number>1</number>
-          </property>
-          <property name="midLineWidth">
-           <number>0</number>
+          <property name="title">
+           <string>DSM Settings and Controls</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_3">
            <item>
@@ -221,18 +212,15 @@
          </widget>
         </item>
         <item>
-         <widget class="QFrame" name="frame">
+         <widget class="QGroupBox" name="groupBox">
           <property name="minimumSize">
            <size>
             <width>0</width>
             <height>0</height>
            </size>
           </property>
-          <property name="frameShape">
-           <enum>QFrame::StyledPanel</enum>
-          </property>
-          <property name="frameShadow">
-           <enum>QFrame::Sunken</enum>
+          <property name="title">
+           <string>Description File Settings</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_2">
            <item>
@@ -292,11 +280,11 @@
              </item>
             </layout>
            </item>
-           <item>
-            <widget class="QLineEdit" name="infoTextOutput"/>
-           </item>
           </layout>
          </widget>
+        </item>
+        <item>
+         <widget class="QLineEdit" name="infoTextOutput"/>
         </item>
        </layout>
       </widget>
