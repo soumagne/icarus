@@ -27,7 +27,9 @@
 #include "XdmfAttribute.h"
 #include "XdmfDataItem.h"
 
+#ifdef USE_H5FD_DSM
 #include "H5FDdsmBuffer.h"
+#endif
 #include "XdmfDump.h"
 
 #include "FileSeriesFinder.h"

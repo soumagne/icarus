@@ -19,7 +19,7 @@
 #ifndef XDMFGENERATOR_H
 #define XDMFGENERATOR_H
 
-#include "H5MButil.h"     // for DSM_DLL
+#include "XdmfUtilconfig.h"
 #include "XdmfLightData.h"
 
 #include "XdmfDOM.h"
@@ -33,7 +33,7 @@ class H5FDdsmBuffer;
 #include <sstream>
 #include <string>
 
-class DSM_DLL XdmfGenerator : public XdmfObject
+class XDMF_EXPORT XdmfGenerator : public XdmfObject
 {
 public:
   XdmfGenerator();

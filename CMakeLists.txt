@@ -10,14 +10,14 @@ ENDIF(COMMAND CMAKE_POLICY)
 # Find and Use ParaView
 #--------------------------------------------------
 IF(NOT PARAVIEW_LOADED)
-  IF (ParaView_BINARY_DIR)
-    INCLUDE_DIRECTORIES(
-      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
-      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
-    )
-  ENDIF(ParaView_BINARY_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
+  IF (ParaView_BINARY_DIR)
+  INCLUDE_DIRECTORIES(
+    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+  )
+  ENDIF(ParaView_BINARY_DIR)
   SET(PARAVIEW_LOADED 1)
 ELSE(NOT PARAVIEW_LOADED)
   IF (PARAVIEW_BUILD_QT_GUI)
@@ -66,13 +66,10 @@ ENDIF(Boost_FOUND)
 #--------------------------------------------------
 # Set project include directories 
 #--------------------------------------------------
-#FIND_PATH(CSCSCommon_SOURCE_DIR vtkStreamUtils.h
-#  ${ParaView_SOURCE_DIR}/CSCS/vtkCSCSCommon
-#  ${CMAKE_CURRENT_SOURCE_DIR}/../../vtkCSCSCommon
-#)
-#INCLUDE_DIRECTORIES(${CSCSCommon_SOURCE_DIR})
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/..)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/H5dump)
+INCLUDE_DIRECTORIES(
+  ${CMAKE_CURRENT_SOURCE_DIR}/XdmfUtil
+  ${CMAKE_CURRENT_BINARY_DIR}/XdmfUtil
+  )
 
 #--------------------------------------------------
 # Set Definitions 
@@ -135,20 +132,8 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
   SERVER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5dump.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_str.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_utils.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_ref.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5tools_type.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5dump/h5trav.cxx
-    
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx    
   GUI_INTERFACES 
     ${DSM_IFACE}
   GUI_SOURCES
@@ -166,9 +151,17 @@ TARGET_LINK_LIBRARIES(
   CSCS_DSM
     H5FDdsm    
     Xdmf
+    XdmfUtil
     ${PARAVIEW_HDF5_LIBRARIES} 
     ${Boost_LIBRARIES}
 )
+
+#--------------------------------------------------
+# XdmfUtil
+#--------------------------------------------------
+# USE_H5FD_DSM must be defined to enable DSM suppport in XdmfUtil
+SET(USE_H5FD_DSM 1)
+ADD_SUBDIRECTORY(XdmfUtil)
 
 #--------------------------------------------------
 # Testing

@@ -1,7 +1,5 @@
 # Define the source files that should be built
 SET (DSMManager_SRCS 
-  ${DSMManager_SOURCE_DIR}/XdmfGenerator.cxx
-  ${DSMManager_SOURCE_DIR}/XdmfHDFDOM.cxx
   ${DSMManager_SOURCE_DIR}/H5MButil.cxx
   ${DSMManager_SOURCE_DIR}/XdmfH5MBCallback.cxx
 )

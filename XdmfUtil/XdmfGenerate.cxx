@@ -21,7 +21,7 @@
 #include <iostream>
 #include <sstream>
 
-#include <XdmfGenerator.h>
+#include "XdmfGenerator.h"
 
 int main(int argc, char *argv[])
 {

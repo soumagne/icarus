@@ -48,8 +48,9 @@
 extern "C" {
 #include "H5private.h"
 }
-
+#ifdef USE_H5FD_DSM
 #include "H5FDdsm.h"
+#endif
 
 #define SANITY_CHECK
 
@@ -484,6 +485,7 @@ h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmB
             if(drivernum)
                 *drivernum = MPIPOSIX_IDX;
         } /* end if */
+#ifdef USE_H5FD_DSM
     }
     else if (!strcmp(driver, drivernames[DSM_IDX]) && dsmBuffer) {
         /* DSM Driver */
@@ -499,6 +501,7 @@ h5tools_get_fapl(hid_t fapl, const char *driver, unsigned *drivernum, void *dsmB
             if(drivernum)
                 *drivernum = DSM_IDX;
         } /* end if */
+#endif /* USE_H5FD_DSM */
 #endif /* H5_HAVE_PARALLEL */
     }
     else {

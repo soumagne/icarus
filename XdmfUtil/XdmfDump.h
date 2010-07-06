@@ -18,6 +18,7 @@
 #ifndef __XdmfDump_h
 #define __XdmfDump_h
 
+#include "XdmfUtilconfig.h"
 #include "XdmfObject.h"
 
 class H5FDdsmBuffer;
