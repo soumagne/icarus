@@ -1,7 +1,11 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
-  Module                  : XdmfHDFDOM.h
+  Project                 : XdmfUtil
+  Module                  : XdmfHDFDOM.cxx
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -14,7 +18,38 @@
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
 =========================================================================*/
+
+/*=========================================================================
+  This code is derived from an earlier work and is distributed
+  with permission from, and thanks to ...
+=========================================================================*/
+
+/*******************************************************************/
+/*                               XDMF                              */
+/*                   eXtensible Data Model and Format              */
+/*                                                                 */
+/*                                                                 */
+/*  Author:                                                        */
+/*     Jerry A. Clarke                                             */
+/*     clarke@arl.army.mil                                         */
+/*     US Army Research Laboratory                                 */
+/*     Aberdeen Proving Ground, MD                                 */
+/*                                                                 */
+/*     Copyright @ 2007 US Army Research Laboratory                */
+/*     All Rights Reserved                                         */
+/*     See Copyright.txt or http://www.arl.hpc.mil/ice for details */
+/*                                                                 */
+/*     This software is distributed WITHOUT ANY WARRANTY; without  */
+/*     even the implied warranty of MERCHANTABILITY or FITNESS     */
+/*     FOR A PARTICULAR PURPOSE.  See the above copyright notice   */
+/*     for more information.                                       */
+/*                                                                 */
+/*******************************************************************/
+
 #include "XdmfHDFDOM.h"
 
 #include <libxml/globals.h>
