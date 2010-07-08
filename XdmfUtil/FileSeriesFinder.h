@@ -16,6 +16,7 @@
 #ifndef FILESERIESFINDER_H
 #define FILESERIESFINDER_H
 
+#include "XdmfUtilconfig.h"
 #include <vtkstd/string>
 #include <vtkstd/vector>
 #include <vtkstd/map>

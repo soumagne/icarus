@@ -36,6 +36,7 @@
 #ifndef H5TOOLS_ERROR_H_
 #define H5TOOLS_ERROR_H_
 
+#include "XdmfUtilconfig.h"
 extern "C" {
 #include "H5Epublic.h"
 }

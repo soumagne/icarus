@@ -33,6 +33,7 @@
 #ifndef H5TOOLS_REF_H__
 #define H5TOOLS_REF_H__
 
+#include "XdmfUtilconfig.h"
 #include "hdf5.h"
 
 extern "C" {

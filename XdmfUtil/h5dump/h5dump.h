@@ -35,7 +35,11 @@
 #ifndef H5DUMP_H__
 #define H5DUMP_H__
 
+#include "XdmfUtilconfig.h"
+
+#ifdef USE_MPI
 #include "mpi.h"
+#endif
 
 extern "C" {
 #include "hdf5.h"
@@ -48,7 +52,7 @@ extern "C" {
 #endif
 
 #if defined(WIN32)
-#  if defined(CSCS_h5dump_EXPORTS) || defined(CSCS_DSM_EXPORTS)
+#  if defined(XdmfUtil_EXPORTS)
 #    define H5DUMP_EXPORT __declspec( dllexport )
 #  else
 #    define H5DUMP_EXPORT __declspec( dllimport )

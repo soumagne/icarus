@@ -53,6 +53,7 @@
 #ifndef XDMFHDFDOM_H
 #define XDMFHDFDOM_H
 
+#include "XdmfUtilconfig.h"
 #include "XdmfLightData.h"
 
 class XdmfHDFDOM : public XdmfLightData {

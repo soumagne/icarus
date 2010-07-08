@@ -20,9 +20,12 @@
 #ifndef H5TOOLS_REDIRECT_H__
 #define H5TOOLS_REDIRECT_H__
 
+#include "XdmfUtilconfig.h"
 extern "C" {
 #include "H5Fprivate.h"
 }
+#include <cstdarg>
+#include <cassert>
 #include <cstdio>
 #include <iostream>
 #include <sstream>

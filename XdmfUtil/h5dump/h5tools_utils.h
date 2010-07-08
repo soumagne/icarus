@@ -39,7 +39,10 @@
 #ifndef H5TOOLS_UTILS_H__
 #define H5TOOLS_UTILS_H__
 
+#include "XdmfUtilconfig.h"
+#ifdef USE_MPI
 #include "mpi.h"
+#endif
 
 extern "C" {
 #include "hdf5.h"

@@ -12,6 +12,7 @@ ENDIF(COMMAND CMAKE_POLICY)
 IF(NOT PARAVIEW_LOADED)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
+  INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
   IF (ParaView_BINARY_DIR)
   INCLUDE_DIRECTORIES(
     ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
@@ -160,6 +161,9 @@ TARGET_LINK_LIBRARIES(
 # XdmfUtil
 #--------------------------------------------------
 # USE_H5FD_DSM must be defined to enable DSM suppport in XdmfUtil
+IF(VTK_USE_MPI)
+  SET(USE_MPI 1)
+ENDIF(VTK_USE_MPI)
 SET(USE_H5FD_DSM 1)
 ADD_SUBDIRECTORY(XdmfUtil)
 
