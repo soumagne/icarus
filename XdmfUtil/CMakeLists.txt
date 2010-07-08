@@ -49,6 +49,9 @@ IF(NOT USE_H5FD_DSM)
       )
     ENDIF (VTK_USE_SYSTEM_LIBXML2)
   ENDIF(NOT PARAVIEW_LOADED)
+  # temporary here but will be removed when next versions of ParaView integrate hdf5-1.8
+  FIND_PATH(HDF5_SOURCE_DIR "path to the source directory of HDF5")
+  INCLUDE_DIRECTORIES(${HDF5_SOURCE_DIR})
 ENDIF(NOT USE_H5FD_DSM)
 
 INCLUDE_DIRECTORIES(
@@ -92,8 +95,17 @@ TARGET_LINK_LIBRARIES(XdmfGenerate XdmfUtil)
 #--------------------------------------------------
 INSTALL(
   TARGETS
-    XdmfUtil XdmfGenerate
+    XdmfGenerate
   DESTINATION 
-    "${CMAKE_INSTALL_PREFIX}"
+    "${CMAKE_INSTALL_PREFIX}/bin"
 )
+
+INSTALL(
+  TARGETS
+    XdmfUtil
+  DESTINATION 
+    "${CMAKE_INSTALL_PREFIX}/lib"
+)
+
+
 
