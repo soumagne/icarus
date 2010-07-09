@@ -19,6 +19,15 @@ IF(NOT USE_H5FD_DSM)
         ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/libsrc
         ${ParaView_BINARY_DIR}/Utilities/Xdmf2/libsrc
       )
+    IF (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(
+        ${LIBXML2_INCLUDE_DIR}
+      )
+    ELSE (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(
+        ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
+      )
+    ENDIF (VTK_USE_SYSTEM_LIBXML2)
     ENDIF(ParaView_BINARY_DIR)
     IF(VTK_USE_MPI)
       SET(USE_MPI 1)
@@ -33,6 +42,8 @@ IF(NOT USE_H5FD_DSM)
       ${PARAVIEW_KWSYS_INCLUDE_DIRS}
       ${VTK_INCLUDE_DIR}
       ${MPI_INCLUDE_PATH}
+      ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/libsrc
+      ${ParaView_BINARY_DIR}/Utilities/Xdmf2/libsrc
     )
     IF(VTK_USE_MPI)
       SET(USE_MPI 1)
@@ -44,8 +55,6 @@ IF(NOT USE_H5FD_DSM)
     ELSE (VTK_USE_SYSTEM_LIBXML2)
       INCLUDE_DIRECTORIES(
         ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
-        ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/libsrc
-        ${ParaView_BINARY_DIR}/Utilities/Xdmf2/libsrc
       )
     ENDIF (VTK_USE_SYSTEM_LIBXML2)
   ENDIF(NOT PARAVIEW_LOADED)
@@ -104,7 +113,7 @@ INSTALL(
   TARGETS
     XdmfUtil
   DESTINATION 
-    "${CMAKE_INSTALL_PREFIX}/lib"
+    "${CMAKE_INSTALL_PREFIX}/lib/paraview-${PARAVIEW_VERSION_MAJOR}.${PARAVIEW_VERSION_MINOR}"
 )
 
 
