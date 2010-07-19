@@ -32,11 +32,6 @@
 vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #endif
 //
-#include "H5FDdsmCommSocket.h"
-#include "H5FDdsmCommMpi.h"
-#include "H5FDdsmMsg.h"
-//
-#include "XdmfDump.h"
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
@@ -53,133 +48,38 @@ vtkDSMManager::vtkDSMManager()
 {
   this->UpdatePiece             = 0;
   this->UpdateNumPieces         = 0;
-  this->LocalBufferSizeMBytes   = 128;
-#ifdef HAVE_PTHREADS
-  this->ServiceThread           = 0;
-#elif HAVE_BOOST_THREADS
-  this->ServiceThread           = NULL;
-#endif
-
   //
 #ifdef VTK_USE_MPI
   this->Controller              = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
-  this->DSMBuffer               = NULL;
-  this->DSMComm                 = NULL;
-  this->DsmCommType             = H5FD_DSM_COMM_MPI;
-  this->DsmIsServer             = 1;
-  this->ServerHostName          = NULL;
-  this->ServerPort              = 0;
 #endif
-
   this->XMFDescriptionFilePath  = NULL;
-  this->XMLStringSend           = NULL;
+  this->SteeringCommand         = NULL;
+  this->DsmManager              = new H5FDdsmManager();
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
 { 
-  this->DestroyDSM();
+  if (this->DsmManager) delete this->DsmManager;
+  this->DsmManager = NULL;
 
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
-  this->XMFDescriptionFilePath = NULL;
-  if (this->XMLStringSend) {
-    delete []this->XMLStringSend;
+
+  if (this->SteeringCommand) {
+    delete []this->SteeringCommand;
   }
-  this->XMLStringSend = NULL;
-}
-//----------------------------------------------------------------------------
-int vtkDSMManager::GetAcceptedConnection()
-{
-  int ret = 0;
-  if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsConnected()) return 1;
-  }
-  return ret;
-}
-//----------------------------------------------------------------------------
-int vtkDSMManager::GetDsmUpdateReady()
-{
-  int ret = 0;
-  if (this->DSMBuffer) {
-    if (this->DSMBuffer->GetIsUpdateReady()) return 1;
-  }
-  return ret;
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::ClearDsmUpdateReady()
-{
-  if (this->DSMBuffer) {
-    this->DSMBuffer->SetIsUpdateReady(0);
-  }
+  this->SteeringCommand = NULL;
 }
 //----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
 {
-#ifdef VTK_USE_MPI
-  if (this->DSMBuffer && this->UpdatePiece == 0) {
-    // @TODO watch out that all processes have empty message queues
-    this->DSMBuffer->SendDone();
-  }
-#endif
-#ifdef HAVE_PTHREADS
-  if (this->ServiceThread) {
-    pthread_join(this->ServiceThread, NULL);
-    this->ServiceThread = 0;
-  }
-#elif HAVE_BOOST_THREADS
-  if (this->ServiceThread) {
-    this->ServiceThread->join();
-    delete this->ServiceThread;
-    this->ServiceThread = NULL;
-  }
-#endif
-
-  if (this->DSMComm) {
-    delete this->DSMComm;
-    this->DSMComm = NULL;
-  }
-  if (this->DSMBuffer) {
-    delete this->DSMBuffer;
-    this->DSMBuffer = NULL;
-    vtkDebugMacro(<<"DSM destroyed on " << this->UpdatePiece);
-  }
-
-  if (this->ServerHostName) this->ServerHostName = NULL;
-
-  return true;
+  return this->DsmManager->DestroyDSM();
 }
-//----------------------------------------------------------------------------
-H5FDdsmBuffer *vtkDSMManager::GetDSMHandle()
-{
-  return DSMBuffer;
-}
-//----------------------------------------------------------------------------
-#ifdef HAVE_PTHREADS
-// nothing at the moment
-#elif HAVE_BOOST_THREADS
-class DSMServiceThread 
-{
-public:
-  DSMServiceThread(H5FDdsmBuffer *dsmObject)
-  {
-    this->DSMObject = dsmObject;
-  }
-  void operator()() {
-    this->DSMObject->ServiceThread();
-  }
-  //
-  H5FDdsmBuffer *DSMObject;
-};
-#endif
 //----------------------------------------------------------------------------
 bool vtkDSMManager::CreateDSM()
 {
-  if (this->DSMBuffer) {
-    return true;
-  }
-
   if (this->Controller->IsA("vtkDummyController"))
   {
     vtkDebugMacro(<<"Running vtkDummyController : replacing it");
@@ -214,6 +114,13 @@ bool vtkDSMManager::CreateDSM()
     vtkMPIController::SetGlobalController(controller);
   }
 
+  //
+  // Get the raw MPI_Comm handle
+  //
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  this->DsmManager->SetCommunicator(*communicator->GetMPIComm()->GetHandle());
+
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
   this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
@@ -224,225 +131,15 @@ bool vtkDSMManager::CreateDSM()
   return 0;
 #endif
 
-  //
-  // Get the raw MPI_Comm handle
-  //
-  vtkMPICommunicator *communicator
-  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
-
-  //
-  // Create Xdmf DSM communicator
-  //
-  if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
-    this->DSMComm = new H5FDdsmCommMpi();
-    vtkDebugMacro(<< "Using MPI Intercomm...");
-    dynamic_cast<H5FDdsmCommMpi*> (this->DSMComm)->DupComm(mpiComm);
-  }
-  else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
-    this->DSMComm = new H5FDdsmCommSocket();
-    vtkDebugMacro(<< "Using Socket Intercomm...");
-    dynamic_cast<H5FDdsmCommSocket*> (this->DSMComm)->DupComm(mpiComm);
-  }
-  // this->DSMComm->DebugOn();
-  this->DSMComm->Init();
-  //
-  // Create the DSM buffer
-  //
-  this->DSMBuffer = new H5FDdsmBuffer();
-  // this->DSMBuffer->DebugOn();
-  this->DSMBuffer->SetServiceThreadUseCopy(0);
-  // Uniform Dsm : every node has a buffer the same size. (Addresses are sequential)
-  this->DSMBuffer->ConfigureUniform(this->DSMComm, ((long long) this->GetLocalBufferSizeMBytes())*1024*1024);
-  if (this->UpdatePiece == 0) {
-    vtkDebugMacro(<< "Length set: " << this->DSMBuffer->GetLength() <<
-       ", totalLength set: " << this->DSMBuffer->GetTotalLength() <<
-       ", startServerId set: " << this->DSMBuffer->GetStartServerId() <<
-       ", endServerId set: " << this->DSMBuffer->GetEndServerId());
-  }
-  //
-  // setup service thread
-  //
-  if (this->DsmIsServer == 1) {
-    vtkDebugMacro(<< "Creating service thread...");
-#ifdef HAVE_PTHREADS
-    // Start another thread to handle DSM requests from other nodes
-    pthread_create(&this->ServiceThread, NULL, &H5FDdsmBufferServiceThread, (void *) this->DSMBuffer);
-#elif HAVE_BOOST_THREADS
-    DSMServiceThread MyDSMServiceThread(this->DSMBuffer);
-    this->ServiceThread = new boost::thread(MyDSMServiceThread);
-#endif
-
-    // Wait for DSM to be ready
-    while (!this->DSMBuffer->GetThreadDsmReady()) {
-      // Spin until service initialized
-    }
-    this->DSMBuffer->SetIsServer(true);
-    vtkDebugMacro(<<"DSM Service Ready on " << this->UpdatePiece);
-  } else {
-    this->DSMBuffer->SetIsServer(false);
-  }
-
-  return true;
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::ClearDSM()
-{
-  this->DSMBuffer->ClearStorage();
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "DSM cleared");
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::RequestRemoteChannel()
-{
-  this->DSMBuffer->RequestRemoteChannel();
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::ConnectDSM()
-{
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Connect DSM");
-
-  if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
-    if (this->GetServerHostName() != NULL) {
-      dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-      if (this->UpdatePiece == 0) {
-        vtkDebugMacro(<< "Initializing connection to "
-            << dynamic_cast<H5FDdsmCommMpi*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      }
-    }
-  }
-  else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
-    if ((this->GetServerHostName() != NULL) && (this->GetServerPort() != 0)) {
-      dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-      dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-      if (this->UpdatePiece == 0) {
-        vtkDebugMacro(<< "Initializing connection to "
-            << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterHostName()
-            << ":"
-            << dynamic_cast<H5FDdsmCommSocket*> (this->DSMBuffer->GetComm())->GetDsmMasterPort());
-      }
-    }
-  }
-  else {
-    if (this->UpdatePiece == 0) vtkErrorMacro(<< "NULL port");
-  }
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::DisconnectDSM()
-{
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Disconnect DSM");
-  this->DSMBuffer->RequestDisconnection(); // Go back to normal channel
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::PublishDSM()
-{
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Opening port...");
-  if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
-    dynamic_cast<H5FDdsmCommSocket*>
-    (this->DSMBuffer->GetComm())->SetDsmMasterHostName(this->GetServerHostName());
-    dynamic_cast<H5FDdsmCommSocket*>
-    (this->DSMBuffer->GetComm())->SetDsmMasterPort(this->GetServerPort());
-  }
-  this->DSMBuffer->GetComm()->OpenPort();
-
-  if (this->UpdatePiece == 0) {
-    H5FDdsmIniFile dsmConfigFile;
-    std::string fullDsmConfigFilePath;
-    const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-    if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-    if (dsmEnvPath) {
-      fullDsmConfigFilePath = std::string(dsmEnvPath) + std::string("/.dsm_config");
-      dsmConfigFile.Create(fullDsmConfigFilePath);
-      dsmConfigFile.AddSection("Comm", fullDsmConfigFilePath);
-      std::cout << "Written " << fullDsmConfigFilePath.c_str() << std::endl;
-    }
-    if (this->GetDsmCommType() == H5FD_DSM_COMM_MPI) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommMpi*>
-      (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      vtkDebugMacro(<< "Server PortName: " << this->GetServerHostName());
-      if (dsmEnvPath) {
-        dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "mpi", "Comm", fullDsmConfigFilePath);
-        dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
-      }
-    }
-    else if (this->GetDsmCommType() == H5FD_DSM_COMM_SOCKET) {
-      this->SetServerHostName(dynamic_cast<H5FDdsmCommSocket*>
-      (this->DSMBuffer->GetComm())->GetDsmMasterHostName());
-      this->SetServerPort(dynamic_cast<H5FDdsmCommSocket*>
-      (this->DSMBuffer->GetComm())->GetDsmMasterPort());
-      vtkDebugMacro(<< "Server HostName: " << this->GetServerHostName()
-          << ", Server port: " << this->GetServerPort());
-      if (dsmEnvPath) {
-        char serverPort[32];
-        sprintf(serverPort, "%d", this->GetServerPort());
-        dsmConfigFile.SetValue("DSM_COMM_SYSTEM", "socket", "Comm", fullDsmConfigFilePath);
-        dsmConfigFile.SetValue("DSM_BASE_HOST", this->GetServerHostName(), "Comm", fullDsmConfigFilePath);
-        dsmConfigFile.SetValue("DSM_BASE_PORT", serverPort, "Comm", fullDsmConfigFilePath);
-      }
-    }
-  }
-  //
-  this->DSMBuffer->RequestRemoteChannel();
-}
-//----------------------------------------------------------------------------
-
-void vtkDSMManager::UnpublishDSM()
-{
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Closing port...");
-  this->DSMBuffer->GetComm()->ClosePort();
-
-  if (this->UpdatePiece == 0) {
-    if (this->GetServerHostName() != NULL) {
-      this->SetServerHostName(NULL);
-      this->SetServerPort(0);
-    }
-  }
-  if (this->UpdatePiece == 0) vtkDebugMacro(<< "Port closed");
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::H5Dump()
-{  
-  if (this->DSMBuffer) {
-    XdmfDump *myDsmDump = new XdmfDump();
-    myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->Dump();
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump done");
-    delete myDsmDump;
-  }
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::H5DumpLight()
-{  
-  if (this->DSMBuffer) {
-    XdmfDump *myDsmDump = new XdmfDump();
-    myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->DumpLight();
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump light done");
-    delete myDsmDump;
-  }
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::H5DumpXML()
-{
-  if (this->DSMBuffer) {
-    std::ostringstream dumpStream;
-    XdmfDump *myDsmDump = new XdmfDump();
-    myDsmDump->SetDsmBuffer(this->DSMBuffer);
-    myDsmDump->SetFileName("DSM.h5");
-    myDsmDump->DumpXML(dumpStream);
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< "Dump XML done");
-    if (this->UpdatePiece == 0) vtkDebugMacro(<< dumpStream.str().c_str());
-    delete myDsmDump;
-  }
+  return this->DsmManager->CreateDSM();
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::GenerateXMFDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
-  if (this->DSMBuffer) {
-    xdmfGenerator->SetDsmBuffer(this->DSMBuffer);
+  if (this->GetDSMHandle()) {
+    xdmfGenerator->SetDsmBuffer(this->GetDSMHandle());
     xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "DSM:file.h5");
   }
   else {
@@ -451,56 +148,27 @@ void vtkDSMManager::GenerateXMFDescription()
 
   vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
 
-  if (this->DSMBuffer) this->DSMBuffer->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
+  if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
 }
 //----------------------------------------------------------------------------
-void vtkDSMManager::SendDSMXML()
+void vtkDSMManager::SetSteeringCommand(char *command)
 {
-  this->DSMBuffer->RequestXMLExchange();
-  if (this->XMLStringSend != NULL) {
-    int commServerSize = this->DSMBuffer->GetEndServerId() - this->DSMBuffer->GetStartServerId() + 1;
-    for (int i=0; i<commServerSize; i++) {
-      this->DSMBuffer->GetComm()->RemoteCommSendXML(this->XMLStringSend, i);
-    }
+
+  std::cerr << "cmd: " << command << std::endl;
+  if (this->SteeringCommand && command && (!strcmp(this->SteeringCommand,command))) { return;}
+  if (this->SteeringCommand) { delete [] this->SteeringCommand; }
+  if (command) {
+    size_t n = strlen(command) + 1;
+    char *cp1 =  new char[n];
+    const char *cp2 = (command);
+    this->SteeringCommand = cp1;
+    do { *cp1++ = *cp2++; } while ( --n );
   }
-  this->DSMBuffer->GetComm()->Barrier();
-}
-//----------------------------------------------------------------------------
-const char *vtkDSMManager::GetXMLStringReceive()
-{
-  if (this->DSMBuffer) return this->DSMBuffer->GetXMLDescription();
-  return NULL;
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::ClearXMLStringReceive()
-{
-  this->DSMBuffer->SetXMLDescription(NULL);
-}
-//----------------------------------------------------------------------------
-bool vtkDSMManager::ReadDSMConfigFile()
-{
-  H5FDdsmIniFile config;
-  std::string configPath;
-  const char *dsmEnvPath = getenv("H5FD_DSM_CONFIG_PATH");
-  if (!dsmEnvPath) dsmEnvPath = getenv("HOME");
-  if (dsmEnvPath) {
-    configPath = std::string(dsmEnvPath) + std::string("/.dsm_config");
+  else {
+    this->SteeringCommand = 0;
   }
-  if (vtksys::SystemTools::FileExists(configPath.c_str())) {
-    std::string mode = config.GetValue("DSM_COMM_SYSTEM", "Comm", configPath);
-    std::string host = config.GetValue("DSM_BASE_HOST",   "Comm", configPath);
-    std::string port = config.GetValue("DSM_BASE_PORT",   "Comm", configPath);
-    if (mode == "socket") {
-      this->SetDsmCommType(H5FD_DSM_COMM_SOCKET);
-      this->SetServerPort(atoi(port.c_str()));
-    } else if (mode == "mpi") {
-      this->SetDsmCommType(H5FD_DSM_COMM_MPI);
-    }
-    this->SetServerHostName(host.c_str());
-    return true;
-  }
-  return false;
+
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)

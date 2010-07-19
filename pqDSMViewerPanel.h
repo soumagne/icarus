@@ -45,6 +45,10 @@ public slots:
   void onPublishDSM();
   void onUnpublishDSM();
 
+  void onSCRestart();
+  void onSCPause();
+  void onSCPlay();
+
   void onDisplayDSM();
   void TrackSource();
 

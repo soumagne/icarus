@@ -130,6 +130,16 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->unpublishDSM,
     SIGNAL(clicked()), this, SLOT(onUnpublishDSM()));
 
+  // Steering commands
+  this->connect(this->UI->scRestart,
+      SIGNAL(clicked()), this, SLOT(onSCRestart()));
+
+  this->connect(this->UI->scPause,
+      SIGNAL(clicked()), this, SLOT(onSCPause()));
+
+  this->connect(this->UI->scPlay,
+      SIGNAL(clicked()), this, SLOT(onSCPlay()));
+
   //
   // Link paraview events to callbacks
   //
@@ -373,6 +383,49 @@ void pqDSMViewerPanel::onUnpublishDSM()
       this->Connected = false;
   }
 }
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onSCPause()
+{
+  if (this->DSMReady()) {
+    const char *steeringCmd = "pause";
+    pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        steeringCmd);
+    this->UI->infoCurrentSteeringCommand->clear();
+    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+
+void pqDSMViewerPanel::onSCPlay()
+{
+  if (this->DSMReady()) {
+    const char *steeringCmd = "play";
+    pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        steeringCmd);
+    this->UI->infoCurrentSteeringCommand->clear();
+    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+
+void pqDSMViewerPanel::onSCRestart()
+{
+  if (this->DSMReady()) {
+    const char *steeringCmd = "restart";
+    pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        steeringCmd);
+    this->UI->infoCurrentSteeringCommand->clear();
+    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisplayDSM()
 {

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>428</width>
-    <height>551</height>
+    <height>695</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
          <x>0</x>
          <y>0</y>
          <width>410</width>
-         <height>508</height>
+         <height>652</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -235,16 +235,6 @@
                </property>
               </widget>
              </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="xdmfFilePathLabel">
-               <property name="text">
-                <string>Description File Path</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="xdmfFilePathLineEdit"/>
-             </item>
              <item row="0" column="1">
               <widget class="QComboBox" name="xdmfFileTypeComboBox">
                <item>
@@ -264,17 +254,27 @@
                </item>
               </widget>
              </item>
-             <item row="3" column="0" colspan="2">
-              <widget class="QCheckBox" name="forceXdmfGeneration">
+             <item row="1" column="0">
+              <widget class="QLabel" name="xdmfFilePathLabel">
                <property name="text">
-                <string>Force XDMF generation</string>
+                <string>Description File Path</string>
                </property>
               </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="xdmfFilePathLineEdit"/>
              </item>
              <item row="2" column="0" colspan="2">
               <widget class="QPushButton" name="browseFile">
                <property name="text">
                 <string>Browse...</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="0" colspan="2">
+              <widget class="QCheckBox" name="forceXdmfGeneration">
+               <property name="text">
+                <string>Force XDMF generation</string>
                </property>
               </widget>
              </item>
@@ -284,7 +284,73 @@
          </widget>
         </item>
         <item>
-         <widget class="QLineEdit" name="infoTextOutput"/>
+         <widget class="QGroupBox" name="groupBox_3">
+          <property name="title">
+           <string>Active Source Object</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_5">
+           <item>
+            <widget class="QLineEdit" name="infoTextOutput">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="groupBox_4">
+          <property name="title">
+           <string>Steering Controls</string>
+          </property>
+          <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <layout class="QGridLayout" name="gridLayout_2">
+             <item row="0" column="1">
+              <widget class="QToolButton" name="scPause">
+               <property name="text">
+                <string>pause</string>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>:/pqWidgets/Icons/pqVcrPause24.png</normaloff>:/pqWidgets/Icons/pqVcrPause24.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QToolButton" name="scPlay">
+               <property name="text">
+                <string>play</string>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QToolButton" name="scRestart">
+               <property name="text">
+                <string>restart</string>
+               </property>
+               <property name="icon">
+                <iconset>
+                 <normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</iconset>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item>
+            <widget class="QLineEdit" name="infoCurrentSteeringCommand">
+             <property name="readOnly">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </item>
        </layout>
       </widget>

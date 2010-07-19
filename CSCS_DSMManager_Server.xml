@@ -128,7 +128,13 @@
 
       <Property name="ClearDsmUpdateReady"
                 command="ClearDsmUpdateReady">
-      </Property>      
+      </Property>    
+      
+      <StringVectorProperty
+        name="SteeringCommand"
+        command="SetSteeringCommand"
+        number_of_elements="1">
+      </StringVectorProperty>  
 
     </Proxy>
 
