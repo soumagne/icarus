@@ -22,8 +22,20 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
+const char 
+tt[] = "     <DataItem Name=\"X\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  " \
+       "       ./s15e_00150.h5:/segments/04/geometry/x                                           "  \
+       "     </DataItem>                                                                         "  \
+       "     <DataItem Name=\"Y\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  "  \
+       "       ./s15e_00150.h5:/segments/04/geometry/y                                           "  \
+       "     </DataItem>                                                                         "  \
+       "     <DataItem Name=\"Z\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  "  \
+       "       ./s15e_00150.h5:/segments/04/geometry/z                                           "  \
+       "     </DataItem>                                                                         ";
 
+#include <libxml/tree.h>
 #include "XdmfGenerator.h"
+#include "XdmfArray.h"
 //
 #include <vtksys/RegularExpression.hxx>
 //
@@ -34,6 +46,7 @@
 #include "XdmfTime.h"
 #include "XdmfAttribute.h"
 #include "XdmfDataItem.h"
+#include "XdmfDataDesc.h"
 
 #ifdef USE_H5FD_DSM
 #include "H5FDdsmBuffer.h"
@@ -153,11 +166,14 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
   }
   hdfFileDump->DumpXML(hdfFileDumpStream);
 
+//  std::cout << hdfFileDumpStream.str().c_str() << std::endl;
+
   // Fill HDF DOM
   if (hdfDOM->Parse(hdfFileDumpStream.str().c_str()) != XDMF_SUCCESS) {
     XdmfErrorMessage("Unable to parse HDF xml file");
     return(XDMF_FAIL);
   }
+//  hdfDOM->SetGlobalDebug(1);
   XdmfDebug(hdfDOM->Serialize());
 
   //Find domain element
@@ -222,15 +238,28 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     geometry->SetGeometryTypeFromString(geometryTypeStr);
     if (geometryTypeStr) free(geometryTypeStr);
     geometryDINode = lXdmfDOM->FindElement("DataItem", 0, geometryNode);
-    if (geometryDINode != NULL) {
+
+    // we might need to read multiple items for x/y/z sizes (2-3 or more dimensions)
+    std::vector<XdmfInt64> numcells;
+    std::string geomXML = "<Geometry>";
+    while (geometryDINode != NULL) {
       XdmfConstString geometryPath = lXdmfDOM->GetCData(geometryDINode);
       XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(hdfDOM, geometryPath);
       XdmfConstString geometryData = this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath);
-      if(topologyDINode == NULL) {
-        topology->SetNumberOfElements(this->FindNumberOfCells(hdfDOM, hdfGeometryNode, topologyTypeStr));
+      if (geometryData) {
+        geomXML += geometryData;
+        delete []geometryData;
       }
-      geometry->SetDataXml(geometryData);
-      if (geometryData) delete []geometryData;
+      XdmfInt64 N = this->FindNumberOfCells(hdfDOM, hdfGeometryNode, topologyTypeStr);
+      numcells.push_back(N);
+      //
+      geometryDINode = geometryDINode->next;
+    }
+    geomXML += "</Geometry>";
+    geometry->SetDataXml(geomXML.c_str());
+    //
+    if (topologyDINode == NULL) {
+      topology->GetShapeDesc()->SetShape(numcells.size(), &numcells[0]);
     }
     if (topologyTypeStr) free(topologyTypeStr);
 
@@ -262,6 +291,30 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       attribute->SetDeleteOnGridDelete(1);
     }
     grid->Build();
+
+    //
+    // After Grid build has been called, our geometry tag is wrong since we added a composite
+    // XML tag instead of a simple one, so delete one level of xml nodes
+    //
+    XdmfXmlNode   domainNode2     = this->GeneratedDOM.FindElement("Domain");
+    XdmfXmlNode   gridNode2       = this->GeneratedDOM.FindElement("Grid", 0, domainNode2);
+    XdmfXmlNode   geometryNode2   = this->GeneratedDOM.FindElement("Geometry", 0, gridNode2);
+    XdmfXmlNode   tmp = geometryNode2->children;
+    geometryNode2->children = geometryNode2->children->children;
+    tmp->children = NULL;
+    xmlFreeNode(tmp);
+
+/*
+    if (geomXML.size()>0) {
+      std::cout << geomXML.c_str() << std::endl;
+      geometry->SetDataXml((XDMF_CHAR *)NULL);
+      geometry->SetDataXml((XDMF_CHAR *)geomXML.c_str());
+      geometry->SetInsertedDataXml((XDMF_CHAR *)NULL);
+      geometry->SetInsertedDataXml((XDMF_CHAR *)geomXML.c_str());
+//      geometry->Build();
+    }
+*/
+    //
     if (!temporalGrid) delete grid;
   }
   if (temporalGrid) {
@@ -332,6 +385,9 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfHDFDOM *hdfDOM,
   else if (topologyType == "POLYVERTEX") {
     numberOfCells = dimSize;
   }
+  else if (topologyType == "3DRECTMESH") {
+    numberOfCells = dimSize;
+  }
 
   return numberOfCells;
 }
@@ -374,9 +430,12 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
   dataPrecision = dataPrecisionStr;
   if (dataPrecisionStr) free(dataPrecisionStr);
 
+  std::string name = vtksys::SystemTools::GetFilenameName(dataPath);
   // TODO Instead of using a string, may replace this by using XdmfDataItem
   dataItem =
-      "<DataItem Dimensions=\"" + dimSize + "\" " +
+      std::string("<DataItem ") +
+      "Name=\"" + name + "\" " +
+      "Dimensions=\"" + dimSize + "\" " +
       "NumberType=\"" + dataType + "\" " +
       "Precision=\"" + dataPrecision + "\" " +
       "Format=\"HDF\">" +

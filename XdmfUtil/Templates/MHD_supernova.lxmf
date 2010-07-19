@@ -1,0 +1,22 @@
+<?xml version="1.0" ?>
+<Xdmf>
+  <Domain>
+
+   <Grid Name="MHD_Test">
+     <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem>/segments/04/geometry/x</DataItem>
+        <DataItem>/segments/04/geometry/y</DataItem>
+        <DataItem>/segments/04/geometry/z</DataItem>
+      </Geometry>
+
+      <Attribute>
+        <DataItem>/segments/04/scalar</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/segments/04/vector</DataItem>
+      </Attribute>
+    </Grid>
+
+  </Domain>
+</Xdmf>
