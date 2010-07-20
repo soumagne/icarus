@@ -56,6 +56,7 @@ tt[] = "     <DataItem Name=\"X\" NumberType=\"Float\" Precision=\"4\" Dimension
 #include "FileSeriesFinder.h"
 
 #include <cstdlib>
+#include <stack>
 //----------------------------------------------------------------------------
 XdmfGenerator::XdmfGenerator()
 {
@@ -292,28 +293,41 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     }
     grid->Build();
 
+    std::cout << grid->GetDOM()->Serialize() << std::endl;
     //
     // After Grid build has been called, our geometry tag is wrong since we added a composite
-    // XML tag instead of a simple one, so delete one level of xml nodes
+    // XML tag instead of a simple one, so delete one level of xml nodes from 
+    // each valid Geometry tag (if there are multiple blocks etc)
     //
-    XdmfXmlNode   domainNode2     = this->GeneratedDOM.FindElement("Domain");
-    XdmfXmlNode   gridNode2       = this->GeneratedDOM.FindElement("Grid", 0, domainNode2);
-    XdmfXmlNode   geometryNode2   = this->GeneratedDOM.FindElement("Geometry", 0, gridNode2);
-    XdmfXmlNode   tmp = geometryNode2->children;
-    geometryNode2->children = geometryNode2->children->children;
-    tmp->children = NULL;
-    xmlFreeNode(tmp);
-
-/*
-    if (geomXML.size()>0) {
-      std::cout << geomXML.c_str() << std::endl;
-      geometry->SetDataXml((XDMF_CHAR *)NULL);
-      geometry->SetDataXml((XDMF_CHAR *)geomXML.c_str());
-      geometry->SetInsertedDataXml((XDMF_CHAR *)NULL);
-      geometry->SetInsertedDataXml((XDMF_CHAR *)geomXML.c_str());
-//      geometry->Build();
+    XdmfXmlNode domainNode2 = this->GeneratedDOM.FindElement("Domain");
+    XdmfXmlNode   gridNode2 = this->GeneratedDOM.FindElement("Grid", 0, domainNode2);
+    std::stack<XdmfXmlNode> nodestack;
+    nodestack.push(gridNode2);
+    XdmfXmlNode node;
+    while (!nodestack.empty()) {
+      node = nodestack.top();
+      nodestack.pop();
+      // Does this grid have child grids, if so push onto stack
+      XdmfXmlNode child = this->GeneratedDOM.FindElement("Grid", 0, node);
+      if (child) nodestack.push(child);
+      // Does this grid have sibling grids, if so push onto stack
+      XdmfXmlNode sibling = this->GeneratedDOM.FindNextElement("Grid", node);
+      while (sibling) {
+        nodestack.push(sibling);
+        sibling = this->GeneratedDOM.FindNextElement("Grid", sibling);
+      }
+      // Does the node have a Geometry node?
+      XdmfXmlNode geometryNode2 = this->GeneratedDOM.FindElement("Geometry", 0, node);
+      if (geometryNode2) {
+        // replace the Geometry node with its (real) child Geometry node
+        XdmfXmlNode tmp = geometryNode2->children;
+        if (tmp && !xmlStrcmp(tmp->name, BAD_CAST("Geometry"))) {
+          geometryNode2->children = geometryNode2->children->children;
+          tmp->children = NULL;
+          xmlFreeNode(tmp);
+        }
+      }
     }
-*/
     //
     if (!temporalGrid) delete grid;
   }
