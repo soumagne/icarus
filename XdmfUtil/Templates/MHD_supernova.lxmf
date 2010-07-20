@@ -2,21 +2,65 @@
 <Xdmf>
   <Domain>
 
-   <Grid Name="MHD_Test">
-     <Topology TopologyType="3DRectMesh" />
-      <Geometry GeometryType="VXVYVZ">
-        <DataItem>/segments/04/geometry/x</DataItem>
-        <DataItem>/segments/04/geometry/y</DataItem>
-        <DataItem>/segments/04/geometry/z</DataItem>
-      </Geometry>
+      <Grid Name="Segment_01">
+        <Topology TopologyType="3DRectMesh" />
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem>/segments/01/geometry/x</DataItem>
+          <DataItem>/segments/01/geometry/y</DataItem>
+          <DataItem>/segments/01/geometry/z</DataItem>
+        </Geometry>
+        <Attribute>
+          <DataItem>/segments/01/scalar</DataItem>
+        </Attribute>
+      </Grid>
 
-      <Attribute>
-        <DataItem>/segments/04/scalar</DataItem>
-      </Attribute>
-      <Attribute>
-        <DataItem>/segments/04/vector</DataItem>
-      </Attribute>
-    </Grid>
+      <Grid Name="Segment_02">
+        <Topology TopologyType="3DRectMesh" />
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem>/segments/02/geometry/x</DataItem>
+          <DataItem>/segments/02/geometry/y</DataItem>
+          <DataItem>/segments/02/geometry/z</DataItem>
+        </Geometry>
+        <Attribute>
+          <DataItem>/segments/02/scalar</DataItem>
+        </Attribute>
+      </Grid>
+
+      <Grid Name="Segment_03">
+        <Topology TopologyType="3DRectMesh" />
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem>/segments/03/geometry/x</DataItem>
+          <DataItem>/segments/03/geometry/y</DataItem>
+          <DataItem>/segments/03/geometry/z</DataItem>
+        </Geometry>
+        <Attribute>
+          <DataItem>/segments/03/scalar</DataItem>
+        </Attribute>
+      </Grid>
+
+      <Grid Name="Segment_04">
+        <Topology TopologyType="3DRectMesh" />
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem>/segments/04/geometry/x</DataItem>
+          <DataItem>/segments/04/geometry/y</DataItem>
+          <DataItem>/segments/04/geometry/z</DataItem>
+        </Geometry>
+        <Attribute>
+          <DataItem>/segments/04/scalar</DataItem>
+        </Attribute>
+      </Grid>
+
+      <Grid Name="dov">
+        <Topology TopologyType="3DRectMesh" />
+        <Geometry GeometryType="VXVYVZ">
+          <DataItem>/segments/dov/geometry/x</DataItem>
+          <DataItem>/segments/dov/geometry/y</DataItem>
+          <DataItem>/segments/dov/geometry/z</DataItem>
+        </Geometry>
+        <Attribute>
+          <DataItem>/segments/dov/scalar</DataItem>
+        </Attribute>
+      </Grid>
 
   </Domain>
 </Xdmf>
