@@ -22,17 +22,6 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-const char 
-tt[] = "     <DataItem Name=\"X\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  " \
-       "       ./s15e_00150.h5:/segments/04/geometry/x                                           "  \
-       "     </DataItem>                                                                         "  \
-       "     <DataItem Name=\"Y\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  "  \
-       "       ./s15e_00150.h5:/segments/04/geometry/y                                           "  \
-       "     </DataItem>                                                                         "  \
-       "     <DataItem Name=\"Z\" NumberType=\"Float\" Precision=\"4\" Dimensions=\"120\" Format=\"HDF\">  "  \
-       "       ./s15e_00150.h5:/segments/04/geometry/z                                           "  \
-       "     </DataItem>                                                                         ";
-
 #include <libxml/tree.h>
 #include "XdmfGenerator.h"
 #include "XdmfArray.h"
@@ -293,11 +282,10 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     }
     grid->Build();
 
-    std::cout << grid->GetDOM()->Serialize() << std::endl;
     //
     // After Grid build has been called, our geometry tag is wrong since we added a composite
-    // XML tag instead of a simple one, so delete one level of xml nodes from 
-    // each valid Geometry tag (if there are multiple blocks etc)
+    // {x,y,z} XML tag instead of a simple one, so delete one level of xml nodes from 
+    // each valid Geometry tag (use stack to handle multiple blocks etc)
     //
     XdmfXmlNode domainNode2 = this->GeneratedDOM.FindElement("Domain");
     XdmfXmlNode   gridNode2 = this->GeneratedDOM.FindElement("Grid", 0, domainNode2);
@@ -312,10 +300,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       if (child) nodestack.push(child);
       // Does this grid have sibling grids, if so push onto stack
       XdmfXmlNode sibling = this->GeneratedDOM.FindNextElement("Grid", node);
-      while (sibling) {
-        nodestack.push(sibling);
-        sibling = this->GeneratedDOM.FindNextElement("Grid", sibling);
-      }
+      if (sibling) nodestack.push(sibling);
       // Does the node have a Geometry node?
       XdmfXmlNode geometryNode2 = this->GeneratedDOM.FindElement("Geometry", 0, node);
       if (geometryNode2) {
