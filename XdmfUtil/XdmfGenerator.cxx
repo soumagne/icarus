@@ -190,16 +190,22 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     //XdmfXmlNode   timeNode       = lXdmfDOM->FindElement("Time", 0, gridNode);
 
     // Set grid name
-    gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, topologyNode);
-    if (gridInfoDINode == NULL) {
-      gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, geometryNode);
+    XdmfConstString gridName = lXdmfDOM->GetAttribute(gridNode, "Name");
+    if (gridName) {
+      grid->SetName(gridName);
     }
-    if (gridInfoDINode != NULL) {
-      XdmfConstString gridInfoPath = lXdmfDOM->GetCData(gridInfoDINode);
-      vtksys::RegularExpression gridName("^/([^/]*)/*");
-      gridName.find(gridInfoPath);
-      XdmfDebug("Grid name: " << gridName.match(1).c_str());
-      grid->SetName(gridName.match(1).c_str());
+    else {
+      gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, topologyNode);
+      if (gridInfoDINode == NULL) {
+        gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, geometryNode);
+      }
+      if (gridInfoDINode != NULL) {
+        XdmfConstString gridInfoPath = lXdmfDOM->GetCData(gridInfoDINode);
+        vtksys::RegularExpression gridName("^/([^/]*)/*");
+        gridName.find(gridInfoPath);
+        XdmfDebug("Grid name: " << gridName.match(1).c_str());
+        grid->SetName(gridName.match(1).c_str());
+      }
     }
 
     if (temporalGrid) {

@@ -2,7 +2,7 @@
 <Xdmf>
   <Domain>
 
-    <Grid Name="Segment_01">
+    <Grid Name="X-Slice">
       <Topology TopologyType="3DRectMesh" />
       <!-- Writing from Fortran {x,y,z} are reversed to {z,y,x} -->
       <Geometry GeometryType="VXVYVZ">
@@ -10,94 +10,97 @@
         <DataItem Name="y">/segments/01/geometry/y</DataItem>
         <DataItem Name="z">/segments/01/geometry/x</DataItem>
       </Geometry>
-      <Attribute Name="Entropy">
+      <Attribute Name="Density">
         <DataItem>/segments/01/scalar_01</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Entropy">
         <DataItem>/segments/01/scalar_02</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Electron Fraction">
         <DataItem>/segments/01/scalar_03</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Gravitational Potential">
         <DataItem>/segments/01/scalar_04</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Debug">
         <DataItem>/segments/01/scalar_05</DataItem>
       </Attribute>
     </Grid>
-<!--
-    <Grid Name="Segment_02">
+
+    <Grid Name="Y-Slice">
       <Topology TopologyType="3DRectMesh" />
+      <!-- Writing from Fortran {x,y,z} are reversed to {z,y,x} -->
       <Geometry GeometryType="VXVYVZ">
-        <DataItem>/segments/02/geometry/x</DataItem>
-        <DataItem>/segments/02/geometry/y</DataItem>
-        <DataItem>/segments/02/geometry/z</DataItem>
+        <DataItem Name="x">/segments/02/geometry/z</DataItem>
+        <DataItem Name="y">/segments/02/geometry/y</DataItem>
+        <DataItem Name="z">/segments/02/geometry/x</DataItem>
       </Geometry>
-      <Attribute>
+      <Attribute Name="Density">
         <DataItem>/segments/02/scalar_01</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Entropy">
         <DataItem>/segments/02/scalar_02</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Electron Fraction">
         <DataItem>/segments/02/scalar_03</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Gravitational Potential">
         <DataItem>/segments/02/scalar_04</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Debug">
         <DataItem>/segments/02/scalar_05</DataItem>
       </Attribute>
     </Grid>
 
-    <Grid Name="Segment_03">
+    <Grid Name="Z-Slice">
       <Topology TopologyType="3DRectMesh" />
+      <!-- Writing from Fortran {x,y,z} are reversed to {z,y,x} -->
       <Geometry GeometryType="VXVYVZ">
-        <DataItem>/segments/03/geometry/x</DataItem>
-        <DataItem>/segments/03/geometry/y</DataItem>
-        <DataItem>/segments/03/geometry/z</DataItem>
+        <DataItem Name="x">/segments/03/geometry/z</DataItem>
+        <DataItem Name="y">/segments/03/geometry/y</DataItem>
+        <DataItem Name="z">/segments/03/geometry/x</DataItem>
       </Geometry>
-      <Attribute>
+      <Attribute Name="Density">
         <DataItem>/segments/03/scalar_01</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Entropy">
         <DataItem>/segments/03/scalar_02</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Electron Fraction">
         <DataItem>/segments/03/scalar_03</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Gravitational Potential">
         <DataItem>/segments/03/scalar_04</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Debug">
         <DataItem>/segments/03/scalar_05</DataItem>
       </Attribute>
     </Grid>
 
-    <Grid Name="Segment_04">
+    <Grid Name="Core">
       <Topology TopologyType="3DRectMesh" />
+      <!-- Writing from Fortran {x,y,z} are reversed to {z,y,x} -->
       <Geometry GeometryType="VXVYVZ">
-        <DataItem>/segments/04/geometry/x</DataItem>
-        <DataItem>/segments/04/geometry/y</DataItem>
-        <DataItem>/segments/04/geometry/z</DataItem>
+        <DataItem Name="x">/segments/04/geometry/z</DataItem>
+        <DataItem Name="y">/segments/04/geometry/y</DataItem>
+        <DataItem Name="z">/segments/04/geometry/x</DataItem>
       </Geometry>
-      <Attribute>
+      <Attribute Name="Density">
         <DataItem>/segments/04/scalar_01</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Entropy">
         <DataItem>/segments/04/scalar_02</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Electron Fraction">
         <DataItem>/segments/04/scalar_03</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Gravitational Potential">
         <DataItem>/segments/04/scalar_04</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Debug">
         <DataItem>/segments/04/scalar_05</DataItem>
       </Attribute>
     </Grid>
--->
+
   </Domain>
 </Xdmf>
