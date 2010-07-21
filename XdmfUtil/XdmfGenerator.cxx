@@ -22,6 +22,9 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
+#ifdef USE_VLD_MEMORY_LEAK_DETECTION
+ #include "vld.h"
+#endif
 #include <libxml/tree.h>
 #include "XdmfGenerator.h"
 #include "XdmfArray.h"
@@ -216,7 +219,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     if(topologyDINode != NULL) {
       XdmfConstString topologyPath = lXdmfDOM->GetCData(topologyDINode);
       XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(hdfDOM, topologyPath);
-      XdmfConstString topologyData = this->FindDataItemInfo(hdfDOM, hdfTopologyNode, hdfFileName, topologyPath);
+      XdmfConstString topologyData = this->FindDataItemInfo(hdfDOM, hdfTopologyNode, hdfFileName, topologyPath, lXdmfDOM, topologyDINode);
       topology->SetNumberOfElements(this->FindNumberOfCells(hdfDOM, hdfTopologyNode, topologyTypeStr));
       topology->SetDataXml(topologyData);
       if (topologyData) delete []topologyData;
@@ -235,13 +238,14 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     while (geometryDINode != NULL) {
       XdmfConstString geometryPath = lXdmfDOM->GetCData(geometryDINode);
       XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(hdfDOM, geometryPath);
-      XdmfConstString geometryData = this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath);
+      XdmfConstString geometryData = this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath, lXdmfDOM, geometryDINode);
       if (geometryData) {
         geomXML += geometryData;
         delete []geometryData;
       }
+      // Xdmf dimensions are in reverse order, so add each dimension to start of array, not end
       XdmfInt64 N = this->FindNumberOfCells(hdfDOM, hdfGeometryNode, topologyTypeStr);
-      numcells.push_back(N);
+      numcells.insert(numcells.begin(),N);
       //
       geometryDINode = geometryDINode->next;
     }
@@ -263,18 +267,25 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       XdmfXmlNode     hdfAttributeNode = this->FindConvertHDFPath(hdfDOM, attributePath);
       XdmfConstString attributeData    = NULL;
 
-      // Set Attribute Name
-      vtksys::RegularExpression reName("/([^/]*)$");
-      reName.find(attributePath);
-      std::string tmpName = std::string("attribute_") + reName.match(1).c_str();
-      XdmfDebug("Attribute name: " << tmpName.c_str());
-      attribute->SetName(tmpName.c_str());
+      // Set Attribute Name, use one from template if it exists
+      XdmfConstString attributeName = lXdmfDOM->GetAttribute(attributeNode, "Name");
+      if (attributeName) {
+        attribute->SetName(attributeName);
+      }
+      else {
+        vtksys::RegularExpression reName("/([^/]*)$");
+        reName.find(attributePath);
+        std::string tmpName = std::string("attribute_") + reName.match(1).c_str();
+        XdmfDebug("Attribute name: " << tmpName.c_str());
+        attribute->SetName(tmpName.c_str());
+      }
+
       // Set node center by default at the moment
       attribute->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
       // Set Atrribute Type
       attribute->SetAttributeType(this->FindAttributeType(hdfDOM, hdfAttributeNode));
 
-      attributeData = this->FindDataItemInfo(hdfDOM, hdfAttributeNode, hdfFileName, attributePath);
+      attributeData = this->FindDataItemInfo(hdfDOM, hdfAttributeNode, hdfFileName, attributePath, lXdmfDOM, attributeDINode);
       attribute->SetDataXml(attributeData);
       if (attributeData) delete []attributeData;
       grid->Insert(attribute);
@@ -392,7 +403,7 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfHDFDOM *hdfDOM,
 }
 //----------------------------------------------------------------------------
 XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
-    XdmfConstString hdfFileName, XdmfConstString dataPath)
+    XdmfConstString hdfFileName, XdmfConstString dataPath, XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode)
 {
   XdmfXmlNode hdfDataspaceNode, hdfDatatypeNode;
   XdmfString nDimsStr, dataPrecisionStr, dataItemStr;
@@ -429,11 +440,19 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
   dataPrecision = dataPrecisionStr;
   if (dataPrecisionStr) free(dataPrecisionStr);
 
+  std::string diName = "";
   std::string name = vtksys::SystemTools::GetFilenameName(dataPath);
+  if (templateNode) {
+    XdmfConstString nodeName = lXdmfDOM->GetAttribute(templateNode, "Name");
+    if (nodeName) {
+      diName = "Name=\"" + std::string(nodeName) + "\" ";
+    }
+  }
+
   // TODO Instead of using a string, may replace this by using XdmfDataItem
   dataItem =
       std::string("<DataItem ") +
-      "Name=\"" + name + "\" " +
+      diName + 
       "Dimensions=\"" + dimSize + "\" " +
       "NumberType=\"" + dataType + "\" " +
       "Precision=\"" + dataPrecision + "\" " +
@@ -467,7 +486,7 @@ XdmfInt32 XdmfGenerator::FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDa
     type = XDMF_ATTRIBUTE_TYPE_VECTOR;
     break;
   default:
-    type = XDMF_ATTRIBUTE_TYPE_NONE;
+    type = XDMF_ATTRIBUTE_TYPE_SCALAR;
     break;
   }
   return type;

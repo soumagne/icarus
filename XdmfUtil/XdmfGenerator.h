@@ -81,7 +81,8 @@ protected:
   // Find DataItem structure information from a given dataset node of the HDF DOM
   // and the path of this node as defined in the light XDMF template
   XdmfConstString  FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
-      XdmfConstString hdfFileName, XdmfConstString dataPath);
+      XdmfConstString hdfFileName, XdmfConstString dataPath,
+      XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode);
 
   // Find attribute type from a given dataset node of the HDF DOM
   XdmfInt32        FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode);
