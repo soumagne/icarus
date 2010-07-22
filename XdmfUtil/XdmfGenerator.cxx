@@ -104,7 +104,7 @@ XdmfInt32 XdmfGenerator::GenerateTemporalCollection(XdmfConstString lXdmfFile,
   temporalGrid.Build();
 
   // default file type: output.0000.h5
-  fileFinder->SetPrefixRegEx("(.*\\.)");
+  fileFinder->SetPrefixRegEx("(.*)?");
   fileFinder->SetTimeRegEx("([0-9]+)");
   fileFinder->Scan(anHdfFile);
   // TODO use time values of files eventually
@@ -137,15 +137,6 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     return(XDMF_FAIL);
   }
 
-  if (temporalGrid) {
-    // Use a spatial grid collection to store the subgrids
-    spatialGrid = new XdmfGrid();
-    spatialGrid->SetGridType(XDMF_GRID_COLLECTION);
-    spatialGrid->SetCollectionType(XDMF_GRID_COLLECTION_SPATIAL);
-    temporalGrid->Insert(spatialGrid);
-    spatialGrid->SetDeleteOnGridDelete(1);
-  }
-
   // Fill LXdmfDOM
   if (lXdmfDOM->Parse(lXdmfFile) != XDMF_SUCCESS) {
     XdmfErrorMessage("Unable to parse light XDMF xml file");
@@ -167,15 +158,35 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     return(XDMF_FAIL);
   }
 //  hdfDOM->SetGlobalDebug(1);
-  XdmfDebug(hdfDOM->Serialize());
+//  std::cout << (hdfDOM->Serialize()) << std::endl;
 
   //Find domain element
   domainNode = lXdmfDOM->FindElement("Domain");
 
-  // Fill the GeneratedDOM
+  //
+  // If the template has multiple grids, create a spatial grid 
+  // to hold the multi-block structure
+  //
   int numberOfGrids = lXdmfDOM->FindNumberOfElements("Grid", domainNode);
+  if (numberOfGrids>1) {
+    // Use a spatial grid collection to store the subgrids
+    spatialGrid = new XdmfGrid();
+    spatialGrid->SetGridType(XDMF_GRID_COLLECTION);
+    spatialGrid->SetCollectionType(XDMF_GRID_COLLECTION_SPATIAL);
+    if (temporalGrid) {
+      temporalGrid->Insert(spatialGrid);
+    }
+    else {
+      this->GeneratedDomain.Insert(spatialGrid);
+    }
+    spatialGrid->SetDeleteOnGridDelete(1);
+    spatialGrid->Build();
+  }
+
+  // Fill the GeneratedDOM
+  XdmfGrid *grid = NULL;
   for (int currentGridIndex=0; currentGridIndex<numberOfGrids; currentGridIndex++) {
-    XdmfGrid     *grid = new XdmfGrid();
+    grid = new XdmfGrid();
     XdmfTopology *topology;
     XdmfGeometry *geometry;
     XdmfXmlNode   gridNode       = lXdmfDOM->FindElement("Grid", currentGridIndex, domainNode);
@@ -190,9 +201,10 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     //XdmfXmlNode   timeNode       = lXdmfDOM->FindElement("Time", 0, gridNode);
 
     // Set grid name
-    XdmfConstString gridName = lXdmfDOM->GetAttribute(gridNode, "Name");
+    XdmfString gridName = (XdmfString) lXdmfDOM->GetAttribute(gridNode, "Name");
     if (gridName) {
       grid->SetName(gridName);
+      free(gridName);
     }
     else {
       gridInfoDINode = lXdmfDOM->FindElement("DataItem", 0, topologyNode);
@@ -206,15 +218,6 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
         XdmfDebug("Grid name: " << gridName.match(1).c_str());
         grid->SetName(gridName.match(1).c_str());
       }
-    }
-
-    if (temporalGrid) {
-      spatialGrid->Insert(grid);
-      grid->SetDeleteOnGridDelete(1);
-      // Build the spatial grid
-      spatialGrid->Build();
-    } else {
-      this->GeneratedDomain.Insert(grid);
     }
 
     // Look for Topology
@@ -263,6 +266,18 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     }
     if (topologyTypeStr) free(topologyTypeStr);
 
+    if (spatialGrid) {
+      spatialGrid->Insert(grid);
+      grid->SetDeleteOnGridDelete(1);
+    }
+    else if (temporalGrid) {
+      temporalGrid->Insert(grid);
+      grid->SetDeleteOnGridDelete(1);
+    }
+    else {
+      this->GeneratedDomain.Insert(grid);
+    }
+
     // Look for Attributes
     int numberOfAttributes = lXdmfDOM->FindNumberOfElements("Attribute", gridNode);
     for(int currentAttributeIndex=0; currentAttributeIndex<numberOfAttributes; currentAttributeIndex++) {
@@ -274,9 +289,10 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       XdmfConstString attributeData    = NULL;
 
       // Set Attribute Name, use one from template if it exists
-      XdmfConstString attributeName = lXdmfDOM->GetAttribute(attributeNode, "Name");
+      XdmfString attributeName = (XdmfString) lXdmfDOM->GetAttribute(attributeNode, "Name");
       if (attributeName) {
         attribute->SetName(attributeName);
+        free(attributeName);
       }
       else {
         vtksys::RegularExpression reName("/([^/]*)$");
@@ -288,15 +304,17 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
 
       // Set node center by default at the moment
       attribute->SetAttributeCenter(XDMF_ATTRIBUTE_CENTER_NODE);
-      // Set Atrribute Type
-      attribute->SetAttributeType(this->FindAttributeType(hdfDOM, hdfAttributeNode));
 
+      // Get Attribute info
       attributeData = this->FindDataItemInfo(hdfDOM, hdfAttributeNode, hdfFileName, attributePath, lXdmfDOM, attributeDINode);
       attribute->SetDataXml(attributeData);
+      attribute->SetAttributeType(this->FindAttributeType(hdfDOM, hdfAttributeNode, lXdmfDOM, attributeNode));
+
       if (attributeData) delete []attributeData;
       grid->Insert(attribute);
       attribute->SetDeleteOnGridDelete(1);
     }
+    
     grid->Build();
 
     //
@@ -330,8 +348,12 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
         }
       }
     }
-    //
-    if (!temporalGrid) delete grid;
+
+    // Normally container deletes the grid, if no container, we must do it
+    if (!spatialGrid && !temporalGrid) {
+      delete grid;
+    }
+
   }
   if (temporalGrid) {
     // Look for Time
@@ -339,7 +361,8 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     timeInfo = new XdmfTime();
     timeInfo->SetTimeType(XDMF_TIME_SINGLE);
     timeInfo->SetValue(timeValue);
-    spatialGrid->Insert(timeInfo);
+    if (spatialGrid) spatialGrid->Insert(timeInfo);
+    else if (grid) grid->Insert(timeInfo);
     timeInfo->Build();
     delete timeInfo;
   }
@@ -421,10 +444,12 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
   nDims = atoi(nDimsStr);
   if (nDimsStr) free(nDimsStr);
 
+  // The attribute type (Scalar/Vector/Tensor/None) should be detected from the 
+  // size of the first dimension - so 3x64x64x64 is a cube(64) of vectors
+  // and 1x32x32 is a plane of scalars
   for (int i=0; i<nDims; i++) {
     XdmfString dimSizeStr = (XdmfString) hdfDOM->GetAttribute(
-        hdfDOM->GetChild(i, hdfDOM->GetChild(0, hdfDataspaceNode)),
-        "DimSize");
+        hdfDOM->GetChild(i, hdfDOM->GetChild(0, hdfDataspaceNode)), "DimSize");
     dimSize += dimSizeStr;
     if (i != (nDims-1)) dimSize += " ";
     if (dimSizeStr) free(dimSizeStr);
@@ -455,6 +480,14 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
     }
   }
 
+  // 1) Never use windows stye slashes in hdf paths
+  // 2) Only use the relative file name, drop the path 
+  // otherwise as you can't copy hdf5 + xml files between locations
+  std::string unixname = hdfFileName;
+  std::replace(unixname.begin(), unixname.end(), '\\', '/');
+  size_t found = unixname.find_last_of("/\\");
+  unixname = unixname.substr(found+1);
+
   // TODO Instead of using a string, may replace this by using XdmfDataItem
   dataItem =
       std::string("<DataItem ") +
@@ -463,7 +496,7 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
       "NumberType=\"" + dataType + "\" " +
       "Precision=\"" + dataPrecision + "\" " +
       "Format=\"HDF\">" +
-      std::string(hdfFileName) + ":" + std::string(dataPath) +
+      unixname + ":" + std::string(dataPath) +
       "</DataItem>";
   dataItemStr = new char[dataItem.length()+1];
   strcpy(dataItemStr, dataItem.c_str());
@@ -471,31 +504,39 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
   return (XdmfConstString)dataItemStr;
 }
 //----------------------------------------------------------------------------
-XdmfInt32 XdmfGenerator::FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode)
+XdmfInt32 XdmfGenerator::FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode, XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode)
 {
-  XdmfInt32 type;
   XdmfXmlNode hdfDataspaceNode;
   XdmfInt32 nDims;
-  XdmfString nDimsStr;
+  XdmfString nDimsStr, attrType;
 
+  // if the template has defined the attribute type, use it
+  attrType = (XdmfString) lXdmfDOM->GetAttribute(templateNode, "AttributeType");
+  if (attrType) {
+    XdmfInt32 aType = XDMF_ATTRIBUTE_TYPE_NONE;
+    if      (!strcmp(attrType,"Scalar")) aType = XDMF_ATTRIBUTE_TYPE_SCALAR;
+    else if (!strcmp(attrType,"Vector")) aType = XDMF_ATTRIBUTE_TYPE_VECTOR;
+    else if (!strcmp(attrType,"Tensor")) aType = XDMF_ATTRIBUTE_TYPE_TENSOR;
+    if (attrType) free(attrType);
+    return aType;
+  }
+
+  // Otherwise, we can't be sure, but if only one dimentsion, it must be scalar
   hdfDataspaceNode = hdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
   nDimsStr = (XdmfString) hdfDOM->GetAttribute(hdfDOM->GetChild(0, hdfDataspaceNode), "Ndims");
   nDims = atoi(nDimsStr);
   if (nDimsStr) free(nDimsStr);
 
-  // TODO Do other Xdmf Attribute types
-  switch(nDims) {
-  case 1:
-    type = XDMF_ATTRIBUTE_TYPE_SCALAR;
-    break;
-  case 2:
-    type = XDMF_ATTRIBUTE_TYPE_VECTOR;
-    break;
-  default:
-    type = XDMF_ATTRIBUTE_TYPE_SCALAR;
-    break;
+  // This is unreliable, if ndims==1 then scalar is correct, otherwise we are guessing.
+  switch (nDims) {
+    case 1:
+      return XDMF_ATTRIBUTE_TYPE_SCALAR;
+    case 2:
+      return XDMF_ATTRIBUTE_TYPE_VECTOR;
+    default:
+      return XDMF_ATTRIBUTE_TYPE_NONE;
   }
-  return type;
+  return XDMF_ATTRIBUTE_TYPE_NONE;
 }
 //----------------------------------------------------------------------------
 

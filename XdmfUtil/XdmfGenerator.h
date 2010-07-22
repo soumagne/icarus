@@ -85,7 +85,8 @@ protected:
       XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode);
 
   // Find attribute type from a given dataset node of the HDF DOM
-  XdmfInt32        FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode);
+  XdmfInt32 FindAttributeType(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
+      XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode);
 
   XdmfDOM             GeneratedDOM;
   std::string         GeneratedFile;
