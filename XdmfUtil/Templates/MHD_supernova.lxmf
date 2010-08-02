@@ -2,65 +2,157 @@
 <Xdmf>
   <Domain>
 
-      <Grid Name="Segment_01">
-        <Topology TopologyType="3DRectMesh" />
-        <Geometry GeometryType="VXVYVZ">
-          <DataItem>/segments/01/geometry/x</DataItem>
-          <DataItem>/segments/01/geometry/y</DataItem>
-          <DataItem>/segments/01/geometry/z</DataItem>
-        </Geometry>
-        <Attribute>
-          <DataItem>/segments/01/scalar</DataItem>
-        </Attribute>
-      </Grid>
+    <Grid Name="X-Slice">
+      <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem Name="x">/segments/01/geometry/x</DataItem>
+        <DataItem Name="y">/segments/01/geometry/y</DataItem>
+        <DataItem Name="z">/segments/01/geometry/z</DataItem>
+      </Geometry>
+      <Attribute Name="Density" AttributeType="Scalar" >
+        <DataItem>/segments/01/scalar_01</DataItem>
+      </Attribute>
+      <Attribute Name="Entropy" AttributeType="Scalar" >
+        <DataItem>/segments/01/scalar_02</DataItem>
+      </Attribute>
+      <Attribute Name="Electron Fraction" AttributeType="Scalar" >
+        <DataItem>/segments/01/scalar_03</DataItem>
+      </Attribute>
+      <Attribute Name="Gravitational Potential" AttributeType="Scalar" >
+        <DataItem>/segments/01/scalar_04</DataItem>
+      </Attribute>
+      <Attribute Name="Divergence" AttributeType="Scalar" >
+        <DataItem>/segments/01/scalar_05</DataItem>
+      </Attribute>
+      <Attribute Name="Momentum" AttributeType="Vector" >
+        <DataItem>/segments/01/vector_01</DataItem>
+      </Attribute>
+      <Attribute Name="Magnetic Field" AttributeType="Vector" >
+        <DataItem>/segments/01/vector_02</DataItem>
+      </Attribute>
+    </Grid>
 
-      <Grid Name="Segment_02">
-        <Topology TopologyType="3DRectMesh" />
-        <Geometry GeometryType="VXVYVZ">
-          <DataItem>/segments/02/geometry/x</DataItem>
-          <DataItem>/segments/02/geometry/y</DataItem>
-          <DataItem>/segments/02/geometry/z</DataItem>
-        </Geometry>
-        <Attribute>
-          <DataItem>/segments/02/scalar</DataItem>
-        </Attribute>
-      </Grid>
+    <!-- Writing from Fortran {x,y,z} are reversed to {z,y,x} -->
 
-      <Grid Name="Segment_03">
-        <Topology TopologyType="3DRectMesh" />
-        <Geometry GeometryType="VXVYVZ">
-          <DataItem>/segments/03/geometry/x</DataItem>
-          <DataItem>/segments/03/geometry/y</DataItem>
-          <DataItem>/segments/03/geometry/z</DataItem>
-        </Geometry>
-        <Attribute>
-          <DataItem>/segments/03/scalar</DataItem>
-        </Attribute>
-      </Grid>
+    <Grid Name="Y-Slice">
+      <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem Name="x">/segments/02/geometry/x</DataItem>
+        <DataItem Name="y">/segments/02/geometry/y</DataItem>
+        <DataItem Name="z">/segments/02/geometry/z</DataItem>
+      </Geometry>
+      <Attribute Name="Density" AttributeType="Scalar" >
+        <DataItem>/segments/02/scalar_01</DataItem>
+      </Attribute>
+      <Attribute Name="Entropy" AttributeType="Scalar" >
+        <DataItem>/segments/02/scalar_02</DataItem>
+      </Attribute>
+      <Attribute Name="Electron Fraction" AttributeType="Scalar" >
+        <DataItem>/segments/02/scalar_03</DataItem>
+      </Attribute>
+      <Attribute Name="Gravitational Potential" AttributeType="Scalar" >
+        <DataItem>/segments/02/scalar_04</DataItem>
+      </Attribute>
+      <Attribute Name="Divergence" AttributeType="Scalar" >
+        <DataItem>/segments/02/scalar_05</DataItem>
+      </Attribute>
+      <Attribute Name="Momentum" AttributeType="Vector" >
+        <DataItem>/segments/02/vector_01</DataItem>
+      </Attribute>
+      <Attribute Name="Magnetic Field" AttributeType="Vector" >
+        <DataItem>/segments/02/vector_02</DataItem>
+      </Attribute>
+    </Grid>
 
-      <Grid Name="Segment_04">
-        <Topology TopologyType="3DRectMesh" />
-        <Geometry GeometryType="VXVYVZ">
-          <DataItem>/segments/04/geometry/x</DataItem>
-          <DataItem>/segments/04/geometry/y</DataItem>
-          <DataItem>/segments/04/geometry/z</DataItem>
-        </Geometry>
-        <Attribute>
-          <DataItem>/segments/04/scalar</DataItem>
-        </Attribute>
-      </Grid>
+    <Grid Name="Z-Slice">
+      <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem Name="x">/segments/03/geometry/x</DataItem>
+        <DataItem Name="y">/segments/03/geometry/y</DataItem>
+        <DataItem Name="z">/segments/03/geometry/z</DataItem>
+      </Geometry>
+      <Attribute Name="Density" AttributeType="Scalar" >
+        <DataItem>/segments/03/scalar_01</DataItem>
+      </Attribute>
+      <Attribute Name="Entropy" AttributeType="Scalar" >
+        <DataItem>/segments/03/scalar_02</DataItem>
+      </Attribute>
+      <Attribute Name="Electron Fraction" AttributeType="Scalar" >
+        <DataItem>/segments/03/scalar_03</DataItem>
+      </Attribute>
+      <Attribute Name="Gravitational Potential" AttributeType="Scalar" >
+        <DataItem>/segments/03/scalar_04</DataItem>
+      </Attribute>
+      <Attribute Name="Divergence" AttributeType="Scalar" >
+        <DataItem>/segments/03/scalar_05</DataItem>
+      </Attribute>
+      <Attribute Name="Momentum" AttributeType="Vector" >
+        <DataItem>/segments/03/vector_01</DataItem>
+      </Attribute>
+      <Attribute Name="Magnetic Field" AttributeType="Vector" >
+        <DataItem>/segments/03/vector_02</DataItem>
+      </Attribute>
+    </Grid>
 
-      <Grid Name="dov">
-        <Topology TopologyType="3DRectMesh" />
-        <Geometry GeometryType="VXVYVZ">
-          <DataItem>/segments/dov/geometry/x</DataItem>
-          <DataItem>/segments/dov/geometry/y</DataItem>
-          <DataItem>/segments/dov/geometry/z</DataItem>
-        </Geometry>
-        <Attribute>
-          <DataItem>/segments/dov/scalar</DataItem>
-        </Attribute>
-      </Grid>
+    <Grid Name="Core">
+      <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem Name="x">/segments/04/geometry/x</DataItem>
+        <DataItem Name="y">/segments/04/geometry/y</DataItem>
+        <DataItem Name="z">/segments/04/geometry/z</DataItem>
+      </Geometry>
+      <Attribute Name="Density" AttributeType="Scalar" >
+        <DataItem>/segments/04/scalar_01</DataItem>
+      </Attribute>
+      <Attribute Name="Entropy" AttributeType="Scalar" >
+        <DataItem>/segments/04/scalar_02</DataItem>
+      </Attribute>
+      <Attribute Name="Electron Fraction" AttributeType="Scalar" >
+        <DataItem>/segments/04/scalar_03</DataItem>
+      </Attribute>
+      <Attribute Name="Gravitational Potential" AttributeType="Scalar" >
+        <DataItem>/segments/04/scalar_04</DataItem>
+      </Attribute>
+      <Attribute Name="Divergence" AttributeType="Scalar" >
+        <DataItem>/segments/04/scalar_05</DataItem>
+      </Attribute>
+      <Attribute Name="Momentum" AttributeType="Vector" >
+        <DataItem>/segments/04/vector_01</DataItem>
+      </Attribute>
+      <Attribute Name="Magnetic Field" AttributeType="Vector" >
+        <DataItem>/segments/04/vector_02</DataItem>
+      </Attribute>
+    </Grid>
+
+    <Grid Name="Domain Overview">
+      <Topology TopologyType="3DRectMesh" />
+      <Geometry GeometryType="VXVYVZ">
+        <DataItem Name="x">/segments/dov/geometry/x</DataItem>
+        <DataItem Name="y">/segments/dov/geometry/y</DataItem>
+        <DataItem Name="z">/segments/dov/geometry/z</DataItem>
+      </Geometry>
+      <Attribute Name="Density" AttributeType="Scalar" >
+        <DataItem>/segments/dov/scalar_01</DataItem>
+      </Attribute>
+      <Attribute Name="Entropy" AttributeType="Scalar" >
+        <DataItem>/segments/dov/scalar_02</DataItem>
+      </Attribute>
+      <Attribute Name="Electron Fraction" AttributeType="Scalar" >
+        <DataItem>/segments/dov/scalar_03</DataItem>
+      </Attribute>
+      <Attribute Name="Gravitational Potential" AttributeType="Scalar" >
+        <DataItem>/segments/dov/scalar_04</DataItem>
+      </Attribute>
+      <Attribute Name="Divergence" AttributeType="Scalar" >
+        <DataItem>/segments/dov/scalar_05</DataItem>
+      </Attribute>
+      <Attribute Name="Momentum" AttributeType="Vector" >
+        <DataItem>/segments/dov/vector_01</DataItem>
+      </Attribute>
+      <Attribute Name="Magnetic Field" AttributeType="Vector" >
+        <DataItem>/segments/dov/vector_02</DataItem>
+      </Attribute>
+    </Grid>
 
   </Domain>
 </Xdmf>
