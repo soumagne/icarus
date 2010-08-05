@@ -45,6 +45,9 @@ public slots:
   void onPublishDSM();
   void onUnpublishDSM();
 
+  void onAutoDisplayDSM();
+  void onDSMWriteDisk();
+
   void onSCRestart();
   void onSCPause();
   void onSCPlay();

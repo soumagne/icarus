@@ -10,43 +10,51 @@
       <Property name="CreateDSM"
                 command="CreateDSM">
       </Property>      
+      
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
+      
       <Property name="ClearDSM"
                 command="ClearDSM">
       </Property>
+      
       <Property name="ConnectDSM"
                 command="ConnectDSM">
       </Property>
+      
       <Property name="DisconnectDSM"
                 command="DisconnectDSM">
       </Property>
+      
       <Property name="PublishDSM"
                 command="PublishDSM">
       </Property>
+      
       <Property name="UnpublishDSM"
                 command="UnpublishDSM">
       </Property>
+      
       <Property name="H5Dump"
                 command="H5Dump">
       </Property>
+      
       <Property name="H5DumpLight"
                 command="H5DumpLight">
       </Property>
+      
       <Property name="H5DumpXML"
                 command="H5DumpXML">
       </Property>
+      
       <Property name="GenerateXMFDescription"
                 command="GenerateXMFDescription">
       </Property>
+      
       <Property name="SendDSMXML"
                 command="SendDSMXML">
       </Property>
-
-      <Property name="RequestLocalChannel"
-                command="RequestLocalChannel">
-      </Property>
+      
       <Property name="RequestRemoteChannel"
                 command="RequestRemoteChannel">
       </Property>
@@ -129,6 +137,13 @@
       <Property name="ClearDsmUpdateReady"
                 command="ClearDsmUpdateReady">
       </Property>    
+      
+      <IntVectorProperty
+        name="DsmWriteDisk"
+        command="SetDsmWriteDisk"
+        default_values="0"
+        number_of_elements="1">
+      </IntVectorProperty>
       
       <StringVectorProperty
         name="SteeringCommand"

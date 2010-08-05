@@ -198,7 +198,7 @@ main(int argc, char *argv[])
       // Initialize the DSM VFL driver
       H5FD_dsm_init();
       //}
-      H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
+      H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, MyDsm);
     } else {
       if (size > 1) {
         // Check for Parallel HDF5 ... MPI must already be initialized
@@ -317,7 +317,7 @@ main(int argc, char *argv[])
     // Initialize the DSM VFL driver
     H5FD_dsm_init();
     //}
-    H5Pset_fapl_dsm(fapl, H5FD_DSM_INCREMENT, MyDsm);
+    H5Pset_fapl_dsm(fapl, MPI_COMM_WORLD, MyDsm);
   } else {
     if (size > 1) {
       // Check for Parallel HDF5 ... MPI must already be initialized

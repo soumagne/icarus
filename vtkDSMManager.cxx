@@ -54,7 +54,6 @@ vtkDSMManager::vtkDSMManager()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   this->XMFDescriptionFilePath  = NULL;
-  this->SteeringCommand         = NULL;
   this->DsmManager              = new H5FDdsmManager();
 }
 //----------------------------------------------------------------------------
@@ -66,11 +65,6 @@ vtkDSMManager::~vtkDSMManager()
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
-
-  if (this->SteeringCommand) {
-    delete []this->SteeringCommand;
-  }
-  this->SteeringCommand = NULL;
 }
 //----------------------------------------------------------------------------
 bool vtkDSMManager::DestroyDSM()
@@ -150,25 +144,6 @@ void vtkDSMManager::GenerateXMFDescription()
 
   if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
-}
-//----------------------------------------------------------------------------
-void vtkDSMManager::SetSteeringCommand(char *command)
-{
-
-  std::cerr << "cmd: " << command << std::endl;
-  if (this->SteeringCommand && command && (!strcmp(this->SteeringCommand,command))) { return;}
-  if (this->SteeringCommand) { delete [] this->SteeringCommand; }
-  if (command) {
-    size_t n = strlen(command) + 1;
-    char *cp1 =  new char[n];
-    const char *cp2 = (command);
-    this->SteeringCommand = cp1;
-    do { *cp1++ = *cp2++; } while ( --n );
-  }
-  else {
-    this->SteeringCommand = 0;
-  }
-
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)

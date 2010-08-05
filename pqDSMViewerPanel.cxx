@@ -130,6 +130,12 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->unpublishDSM,
     SIGNAL(clicked()), this, SLOT(onUnpublishDSM()));
 
+  this->connect(this->UI->autoDisplayDSM,
+      SIGNAL(clicked()), this, SLOT(onAutoDisplayDSM()));
+
+  this->connect(this->UI->dsmWriteDisk,
+      SIGNAL(clicked()), this, SLOT(onDSMWriteDisk()));
+
   // Steering commands
   this->connect(this->UI->scRestart,
       SIGNAL(clicked()), this, SLOT(onSCRestart()));
@@ -384,6 +390,32 @@ void pqDSMViewerPanel::onUnpublishDSM()
   }
 }
 //-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onAutoDisplayDSM()
+{
+  if (this->DSMReady()) {
+    if (this->UI->autoDisplayDSM->isChecked()) {
+      if (this->UI->dsmWriteDisk->isChecked()) {
+        this->UI->dsmWriteDisk->setChecked(false);
+        this->onDSMWriteDisk();
+      }
+      if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
+    }
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDSMWriteDisk()
+{
+  if (this->DSMReady()) {
+    if (this->UI->dsmWriteDisk->isChecked()) {
+      if (this->UI->autoDisplayDSM->isChecked()) this->UI->autoDisplayDSM->setChecked(false);
+      if (this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(false);
+    }
+    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("DsmWriteDisk"),
+        (int) this->UI->dsmWriteDisk->isChecked());
+    this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onSCPause()
 {
   if (this->DSMReady()) {
@@ -396,7 +428,7 @@ void pqDSMViewerPanel::onSCPause()
     this->UI->DSMProxy->UpdateVTKObjects();
   }
 }
-
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onSCPlay()
 {
   if (this->DSMReady()) {
@@ -409,7 +441,7 @@ void pqDSMViewerPanel::onSCPlay()
     this->UI->DSMProxy->UpdateVTKObjects();
   }
 }
-
+//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onSCRestart()
 {
   if (this->DSMReady()) {
@@ -455,7 +487,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
       this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
-      sprintf(proxyName, "DSM-Contents_%d", current_time);
+      sprintf(proxyName, "DSMDataSource%d", current_time);
       pm->RegisterProxy("sources", proxyName, this->XdmfReader);
 
       //

@@ -76,6 +76,19 @@ public:
   void ClearDsmUpdateReady() { return DsmManager->ClearDsmUpdateReady(); }
 
   // Description:
+  // Get/Set the "write to disk" flag, in this case data is written to disk
+  // using the HDF MPIO parallel driver
+  void SetDsmWriteDisk(int enable) { DsmManager->SetDsmWriteDisk(enable); }
+  int GetDsmWriteDisk() { return DsmManager->GetDsmWriteDisk(); }
+
+  // Description:
+  // Set/Get the current given steering command.
+  // The command isthen passed to the simulation.
+  // vtkSetStringMacro(SteeringCommand);
+  void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
+  const char *GetSteeringCommand() { return DsmManager->GetSteeringCommand(); }
+
+  // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
   // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
   // object to see if a string is present
@@ -86,13 +99,6 @@ public:
   // Description:
   // Get the associated DSM buffer handle
   H5FDdsmBuffer *GetDSMHandle() { return DsmManager->GetDSMHandle(); }
-
-  // Description:
-  // Set/Get the current given steering command.
-  // The command is either passed to the simulation or is printed into the GUI.
-  // vtkSetStringMacro(SteeringCommand);
-  void SetSteeringCommand(char *command);
-  vtkGetStringMacro(SteeringCommand);
 
   // Description:
   // Get the associated H5FDdsmManager
@@ -158,7 +164,6 @@ protected:
     //BTX
     //
     char           *XMFDescriptionFilePath;
-    char           *SteeringCommand;
     //
     H5FDdsmManager *DsmManager;
 #endif
