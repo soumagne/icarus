@@ -393,25 +393,20 @@ void pqDSMViewerPanel::onUnpublishDSM()
 void pqDSMViewerPanel::onAutoDisplayDSM()
 {
   if (this->DSMReady()) {
-    if (this->UI->autoDisplayDSM->isChecked()) {
-      if (this->UI->dsmWriteDisk->isChecked()) {
-        this->UI->dsmWriteDisk->setChecked(false);
-        this->onDSMWriteDisk();
-      }
-      if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
-    }
+//    if (this->UI->autoDisplayDSM->isChecked()) {
+//      if (this->UI->dsmWriteDisk->isChecked()) {
+//        this->UI->dsmWriteDisk->setChecked(false);
+//        this->onDSMWriteDisk();
+//      }
+//      if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
+//    }
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDSMWriteDisk()
 {
   if (this->DSMReady()) {
-    if (this->UI->dsmWriteDisk->isChecked()) {
-      if (this->UI->autoDisplayDSM->isChecked()) this->UI->autoDisplayDSM->setChecked(false);
-      if (this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(false);
-    }
-    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("DsmWriteDisk"),
-        (int) this->UI->dsmWriteDisk->isChecked());
+    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("DsmWriteDisk"), 1);
     this->UI->DSMProxy->UpdateVTKObjects();
   }
 }

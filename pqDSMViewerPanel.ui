@@ -189,17 +189,10 @@
                </property>
               </widget>
              </item>
-             <item row="7" column="1" colspan="2">
-              <widget class="QCheckBox" name="dsmWriteDisk">
-               <property name="text">
-                <string>Write to Disk</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0">
+             <item row="7" column="0" colspan="3">
               <widget class="QCheckBox" name="autoDisplayDSM">
                <property name="text">
-                <string>Display Data</string>
+                <string>Refresh Data Display</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -344,6 +337,13 @@
                <property name="icon">
                 <iconset>
                  <normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</iconset>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QToolButton" name="dsmWriteDisk">
+               <property name="text">
+                <string>disk</string>
                </property>
               </widget>
              </item>
