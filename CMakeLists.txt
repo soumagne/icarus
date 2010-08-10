@@ -14,10 +14,19 @@ IF(NOT PARAVIEW_LOADED)
   INCLUDE(${PARAVIEW_USE_FILE})
   INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
   IF (ParaView_BINARY_DIR)
-  INCLUDE_DIRECTORIES(
-    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
-    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
-  )
+    IF (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(
+        ${LIBXML2_INCLUDE_DIR}
+      )
+    ELSE (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(
+        ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
+      )
+    ENDIF (VTK_USE_SYSTEM_LIBXML2)
+    INCLUDE_DIRECTORIES(
+      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+    )
   ENDIF(ParaView_BINARY_DIR)
   SET(PARAVIEW_LOADED 1)
 ELSE(NOT PARAVIEW_LOADED)
