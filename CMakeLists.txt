@@ -56,6 +56,15 @@ ELSE(NOT PARAVIEW_LOADED)
   )
 ENDIF(NOT PARAVIEW_LOADED)
 
+IF (ParaView_BINARY_DIR)
+INCLUDE_DIRECTORIES(
+  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+  ${ParaView_CMAKE_DIR}/../Utilities/hdf5/hl/src
+ )
+ENDIF(ParaView_BINARY_DIR)
+
+
 #--------------------------------------------------
 # Find and Use Boost
 #--------------------------------------------------
@@ -159,7 +168,8 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
-    H5FDdsm    
+    H5FDdsm
+    hdf5_hl
     Xdmf
     XdmfUtil
     ${PARAVIEW_HDF5_LIBRARIES} 
@@ -185,7 +195,7 @@ ADD_SUBDIRECTORY(Testing)
 # Converter
 #--------------------------------------------------
 
-SET(Converter_LIBS CSCS_DSM)
+SET(Converter_LIBS CSCS_DSM hdf5_hl)
 
 IF(CSCS_PLUGIN_CFX)
   MESSAGE("Xdmf converter supporting CFX " ${CSCS_CFX_DIR})
