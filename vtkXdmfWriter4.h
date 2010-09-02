@@ -29,7 +29,7 @@
 
 #include "vtkToolkits.h"     // For VTK_USE_MPI
 #include "vtkSmartPointer.h" // For vtkSmartPointer
-#include "vtkXdmfWriter2.h"
+#include "vtkXdmfWriter.h"
 #include <vtkstd/string>
 
 class vtkMultiProcessController;
@@ -44,11 +44,11 @@ class vtkDSMManager;
 class H5MBCallback;
 //ETX
 
-class VTK_EXPORT vtkXdmfWriter4 : public vtkXdmfWriter2
+class VTK_EXPORT vtkXdmfWriter4 : public vtkXdmfWriter
 {
 public:
   static vtkXdmfWriter4 *New();
-  vtkTypeRevisionMacro(vtkXdmfWriter4,vtkXdmfWriter2);
+  vtkTypeRevisionMacro(vtkXdmfWriter4,vtkXdmfWriter);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

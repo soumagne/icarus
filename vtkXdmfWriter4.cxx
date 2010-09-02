@@ -99,6 +99,7 @@ vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
   #define vtkXDRDebug(a) vtkDebugMacro(a)
   #define vtkXDRError(a) vtkDebugMacro(a)
 #endif
+#define XDMFW_GROUP_SEPARATOR "__"
 //----------------------------------------------------------------------------
 vtkXdmfWriter4::vtkXdmfWriter4()
 {
@@ -294,8 +295,8 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   vtkIdType PRank = 3;
   vtkIdType PDims[3];
 
-  this->vtkXdmfWriter2::CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
-  this->vtkXdmfWriter2::CreateGeometry(dataset, &grid, staticnode);
+  this->vtkXdmfWriter::CreateTopology(dataset, &grid, PDims, CDims, PRank, CRank, staticnode);
+  this->vtkXdmfWriter::CreateGeometry(dataset, &grid, staticnode);
 
   this->WriteArrays(dataset->GetFieldData(), &grid,XDMF_ATTRIBUTE_CENTER_GRID, FRank, FDims, "Field");
   this->WriteArrays(dataset->GetCellData(),  &grid,XDMF_ATTRIBUTE_CENTER_CELL, CRank, CDims, "Cell");
