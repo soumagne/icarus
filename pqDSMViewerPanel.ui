@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>428</width>
+    <width>446</width>
     <height>695</height>
    </rect>
   </property>
@@ -27,9 +27,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-90</y>
          <width>410</width>
-         <height>652</height>
+         <height>742</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -305,6 +305,9 @@
            <string>Steering Controls</string>
           </property>
           <layout class="QVBoxLayout" name="verticalLayout_6">
+           <item>
+            <widget class="QGraphicsView" name="dsmHTMView"/>
+           </item>
            <item>
             <layout class="QGridLayout" name="gridLayout_2">
              <item row="0" column="1">

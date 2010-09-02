@@ -111,6 +111,13 @@ QDockWidget("DSM Manager", p)
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
 
+  this->HTMScene = new QGraphicsScene();
+  this->UI->dsmHTMView->setScene(this->HTMScene);
+  this->HTMScene->addText("HTM view to be displayed here!");
+
+  QGraphicsView view(this->HTMScene);
+  view.show();
+
   //
   // Link GUI object events to callbacks
   //
@@ -133,10 +140,10 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->autoDisplayDSM,
       SIGNAL(clicked()), this, SLOT(onAutoDisplayDSM()));
 
-  this->connect(this->UI->dsmWriteDisk,
-      SIGNAL(clicked()), this, SLOT(onDSMWriteDisk()));
-
   // Steering commands
+//  this->connect(this->UI->_simulation_manager, SIGNAL(currentDateChanged(const EPSN::PointDate &, const EPSN::PointDate &)),
+//          this,                SLOT(updateBoxes()));
+
   this->connect(this->UI->scRestart,
       SIGNAL(clicked()), this, SLOT(onSCRestart()));
 
@@ -145,6 +152,9 @@ QDockWidget("DSM Manager", p)
 
   this->connect(this->UI->scPlay,
       SIGNAL(clicked()), this, SLOT(onSCPlay()));
+
+  this->connect(this->UI->dsmWriteDisk,
+      SIGNAL(clicked()), this, SLOT(onDSMWriteDisk()));
 
   //
   // Link paraview events to callbacks
@@ -197,6 +207,9 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 
   if (this->UpdateTimer) delete this->UpdateTimer;
   this->UpdateTimer = NULL;
+
+  if (this->HTMScene) delete this->HTMScene;
+  this->HTMScene = NULL;
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LoadSettings()

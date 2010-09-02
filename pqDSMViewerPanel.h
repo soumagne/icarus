@@ -12,6 +12,7 @@
 class pqServer;
 class pqView;
 class QTimer;
+class QGraphicsScene;
 
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
@@ -69,6 +70,9 @@ protected:
   bool             Connected;
   int              DSMCommType;
   QTimer          *UpdateTimer;
+
+  // For HTM drawing
+  QGraphicsScene  *HTMScene;
 
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
