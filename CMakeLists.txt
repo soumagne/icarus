@@ -58,9 +58,9 @@ ENDIF(NOT PARAVIEW_LOADED)
 
 IF (ParaView_BINARY_DIR)
 INCLUDE_DIRECTORIES(
-  ${ParaView_CMAKE_DIR}/../Utilities/h5fddsm
-  ${ParaView_BINARY_DIR}/Utilities/h5fddsm
-  ${ParaView_CMAKE_DIR}/../Utilities/hdf5/hl/src
+  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
+  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+  ${ParaView_CMAKE_DIR}/../Utilities/hdf5-1.8/hl/src
  )
 ENDIF(ParaView_BINARY_DIR)
 
