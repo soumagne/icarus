@@ -148,7 +148,6 @@ ADD_PARAVIEW_PLUGIN(
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
-    ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/vtk/vtkXdmfWriter2.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
   SERVER_SOURCES
