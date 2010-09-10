@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<!DOCTYPE Xdmf SYSTEM "Xdmf.dtd" []>
+<Xdmf xmlns:xi="http://www.w3.org/2003/XInclude" Version="2.1">
+  <Domain>
+    <Grid Name="PartType2" GridType="Uniform">
+      <Topology TopologyType="Polyvertex" Dimensions="20000"/>
+      <Geometry GeometryType="XYZ">
+        <DataItem Dimensions="20000 3" NumberType="Float" Precision="4" Format="HDF">output.0000.h5:/PartType2/Coordinates</DataItem>
+      </Geometry>
+      <Attribute Name="attribute_Acceleration" AttributeType="Vector" Center="Node">
+        <DataItem Dimensions="20000 3" NumberType="Float" Precision="4" Format="HDF">output.0000.h5:/PartType2/Acceleration</DataItem>
+      </Attribute>
+      <Attribute Name="attribute_Potential" AttributeType="Scalar" Center="Node">
+        <DataItem Dimensions="20000" NumberType="Float" Precision="4" Format="HDF">output.0000.h5:/PartType2/Potential</DataItem>
+      </Attribute>
+      <Attribute Name="attribute_Velocities" AttributeType="Vector" Center="Node">
+        <DataItem Dimensions="20000 3" NumberType="Float" Precision="4" Format="HDF">output.0000.h5:/PartType2/Velocities</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>
