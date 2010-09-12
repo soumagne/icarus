@@ -24,8 +24,8 @@ IF(NOT PARAVIEW_LOADED)
       )
     ENDIF (VTK_USE_SYSTEM_LIBXML2)
     INCLUDE_DIRECTORIES(
-      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
-      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
+      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
     )
   ENDIF(ParaView_BINARY_DIR)
   SET(PARAVIEW_LOADED 1)
@@ -51,15 +51,15 @@ ELSE(NOT PARAVIEW_LOADED)
     )
   ENDIF (VTK_USE_SYSTEM_LIBXML2)
   INCLUDE_DIRECTORIES(
-    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
-    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
+    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
   )
 ENDIF(NOT PARAVIEW_LOADED)
 
 IF (ParaView_BINARY_DIR)
 INCLUDE_DIRECTORIES(
-  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm
-  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm
+  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
+  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
   ${ParaView_CMAKE_DIR}/../Utilities/hdf5-1.8/hl/src
  )
 ENDIF(ParaView_BINARY_DIR)
