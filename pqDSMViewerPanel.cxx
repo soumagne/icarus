@@ -327,11 +327,15 @@ bool pqDSMViewerPanel::DSMReady()
       this->UI->DSMProxy->GetProperty("DsmIsServer"), true);
     //
     if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
-      this->DSMCommType = XDMF_DSM_COMM_MPI;
+      this->DSMCommType = H5FD_DSM_COMM_MPI;
     }
-    else {
-      this->DSMCommType = XDMF_DSM_COMM_SOCKET;
+    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
+      this->DSMCommType = H5FD_DSM_COMM_SOCKET;
     }
+    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
+      this->DSMCommType = H5FD_DSM_COMM_MPI_RMA;
+    }
+
     pqSMAdaptor::setElementProperty(
       this->UI->DSMProxy->GetProperty("DsmCommType"),
       this->DSMCommType);
@@ -379,7 +383,7 @@ void pqDSMViewerPanel::onBrowseFile()
 void pqDSMViewerPanel::onPublishDSM()
 {
   if (this->DSMReady() && !this->Connected) {
-    if (this->DSMCommType == XDMF_DSM_COMM_SOCKET) {
+    if (this->DSMCommType == H5FD_DSM_COMM_SOCKET) {
       QString hostname = this->UI->dsmServerName->currentText();
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("ServerHostName"),

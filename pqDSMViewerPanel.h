@@ -6,8 +6,10 @@
 #include <vtkSmartPointer.h>
 
 // For communicator selection, has to match XdmfDsmComm.h
-#define XDMF_DSM_COMM_MPI 0x10
-#define XDMF_DSM_COMM_SOCKET 0x11
+#define H5FD_DSM_COMM_MPI     0x10
+#define H5FD_DSM_COMM_SOCKET  0x11
+#define H5FD_DSM_COMM_MPI_RMA 0x12
+#define H5FD_DSM_COMM_GNI     0x13
 
 class pqServer;
 class pqView;

@@ -27,7 +27,7 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-90</y>
+         <y>0</y>
          <width>410</width>
          <height>742</height>
         </rect>
@@ -83,6 +83,11 @@
                <item>
                 <property name="text">
                  <string>Sockets</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>MPI_RMA</string>
                 </property>
                </item>
               </widget>
