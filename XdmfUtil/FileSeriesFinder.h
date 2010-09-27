@@ -1,18 +1,27 @@
-// DGraham Data
-// Ascii2H5Part -c D:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.plymouth.cfg -f H:/ParticleData/DGraham/DAT_t_6_2.ascii 
-// Ascii2H5Part -c D:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.plymouth.cfg -f H:/ParticleData/DGraham/Graham_wave_data_New.ascii 
-// Ascii2H5Part -c D:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.plymouth.cfg -f H:/ParticleData/DGraham/DATA_2.ascii 
-//
-// EDF Data
-// Ascii2H5Part -c C:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.edf.cfg -f C:/data/ParticleData/EDF/test_case_output95.dat
-// Ascii2H5Part -c D:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.edf.cfg -f H:\ParticleData\EDF\test_case\test_case_output1.dat
-//
-// UMan Data
-// Ascii2H5Part -c C:/cmakebuild/plugins/bin/ASCII2H5Part.manchester.cfg  -f C:/Data/ParticleData/UMan/Case6/PART_0001 -a C:/Data/ParticleData/UMan/Case6/PART_0000_point_attribs.txt   
-//
-// ECN Data
-// Ascii2H5Part -c C:/code/CSCS/pv-meshless/CSCS/vtkH5Part/Tools/Ascii2H5Part.ecn.cfg -f C:/Data/ParticleData/ECN/BGL_SPhere0POSX.dat
-//---------------------------------------------------------------------------
+/*=========================================================================
+
+  Project                 : XdmfUtil
+  Module                  : FileSeriesFinder.h
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
+
+  Copyright (C) CSCS - Swiss National Supercomputing Centre.
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
+  2) An acknowledgment appears with any substantial usage of the code
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
+=========================================================================*/
 #ifndef FILESERIESFINDER_H
 #define FILESERIESFINDER_H
 
@@ -94,7 +103,3 @@ class VTK_EXPORT FileSeriesFinder {
 };
 
 #endif // FILESERIESFINDER_H
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------

@@ -1,41 +1,41 @@
 <?xml version="1.0" ?>
 <Xdmf>
   <Domain>
-    <Grid>
+    <Grid Name="PartType1">
       <Topology TopologyType="Polyvertex">
       </Topology>
       <Geometry GeometryType="XYZ">
 	<DataItem>/PartType1/Coordinates</DataItem>
       </Geometry>
-      <Attribute>
+      <Attribute Name="ParticleIDs">
 	<DataItem>/PartType1/ParticleIDs</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Acceleration">
 	<DataItem>/PartType1/Acceleration</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Potential">
 	<DataItem>/PartType1/Potential</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Velocities">
 	<DataItem>/PartType1/Velocities</DataItem>
       </Attribute>
     </Grid>   
-    <Grid>
+    <Grid Name="PartType2">
       <Topology TopologyType="Polyvertex">
       </Topology>
       <Geometry GeometryType="XYZ">
 	<DataItem>/PartType2/Coordinates</DataItem>
       </Geometry>
-      <Attribute>
+      <Attribute Name="ParticleIDs">
 	<DataItem>/PartType2/ParticleIDs</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Acceleration">
 	<DataItem>/PartType2/Acceleration</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Potential">
 	<DataItem>/PartType2/Potential</DataItem>
       </Attribute>
-      <Attribute>
+      <Attribute Name="Velocities">
 	<DataItem>/PartType2/Velocities</DataItem>
       </Attribute>
     </Grid>

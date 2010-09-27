@@ -1,7 +1,7 @@
 /*=========================================================================
 
-  Project                 : XdmfUtil
-  Module                  : XdmfDump.h
+  Project                 : Icarus
+  Module                  : vtkXdmfSteeringParser.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,35 +22,44 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#ifndef __XdmfDump_h
-#define __XdmfDump_h
 
-#include "XdmfUtilconfig.h"
-#include "XdmfObject.h"
+#ifndef __vtkXdmfSteeringParser_h
+#define __vtkXdmfSteeringParser_h
 
-class H5FDdsmBuffer;
+#include <XdmfDOM.h>
 
-#include <cstring>
 #include <sstream>
+#include <string>
 
-class XDMF_EXPORT XdmfDump : public XdmfObject {
+// Structures to hold information given in the .lxmf file
+typedef struct xmfSteeringConfigAttribute_ {
+  std::string attributeName;
+} xmfSteeringConfigAttribute;
 
-    public :
-        XdmfDump();
-        ~XdmfDump();
+typedef struct xmfSteeringConfigGrid_ {
+  std::string gridName;
+  XdmfInt32   numberOfAttributes;
+  xmfSteeringConfigAttribute *attributeConfig;
+} xmfSteeringConfigGrid;
 
-        XdmfSetStringMacro(FileName);
-        XdmfGetStringMacro(FileName);
+typedef struct xmfSteeringConfig_ {
+  XdmfInt32              numberOfGrids;
+  xmfSteeringConfigGrid *gridConfig;
+} xmfSteeringConfig;
 
-        void Dump();
-        void DumpLight();
-        void DumpXML(std::ostringstream &);
 
-        void SetDsmBuffer(H5FDdsmBuffer* _arg);
+class XDMF_EXPORT vtkXdmfSteeringParser : public XdmfObject
+{
+public:
+  vtkXdmfSteeringParser();
+  ~vtkXdmfSteeringParser();
 
-    protected:
-        H5FDdsmBuffer *DsmBuffer;
-        XdmfString     FileName;
+  XdmfGetValueMacro(SteeringConfig, xmfSteeringConfig*);
+  int Parse(const char *filepath);
+
+protected:
+  XdmfDOM           *ConfigDOM;
+  xmfSteeringConfig *SteeringConfig;
 };
 
-#endif // __XdmfDump_h
+#endif /* __vtkXdmfSteeringParser_h */

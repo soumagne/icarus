@@ -27,9 +27,9 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>0</y>
+         <y>-170</y>
          <width>410</width>
-         <height>742</height>
+         <height>822</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -312,6 +312,15 @@
           <layout class="QVBoxLayout" name="verticalLayout_6">
            <item>
             <widget class="QGraphicsView" name="dsmHTMView"/>
+           </item>
+           <item>
+            <widget class="QTreeWidget" name="dsmArrayTreeWidget">
+             <column>
+              <property name="text">
+               <string>Cell/Point Array Status</string>
+              </property>
+             </column>
+            </widget>
            </item>
            <item>
             <layout class="QGridLayout" name="gridLayout_2">

@@ -1,7 +1,11 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : Icarus
   Module                  : vtkXdmfReader4.h
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -13,6 +17,9 @@
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
 // .NAME vtkXdmfReader4 - Read Xdmf + HDF5 files using DSM manager

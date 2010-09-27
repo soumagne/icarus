@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <Xdmf>
   <Domain>
-    <Grid>
+    <Grid Name="PartType1">
       <Topology TopologyType="Polyvertex">
       </Topology>
       <Geometry GeometryType="XYZ">

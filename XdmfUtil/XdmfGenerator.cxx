@@ -228,6 +228,10 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     if(topologyDINode != NULL) {
       XdmfConstString topologyPath = lXdmfDOM->GetCData(topologyDINode);
       XdmfXmlNode hdfTopologyNode = this->FindConvertHDFPath(hdfDOM, topologyPath);
+      if (!hdfTopologyNode) {
+        XdmfDebug("Skipping node of path " << topologyPath);
+        continue;
+      }
       XdmfConstString topologyData = this->FindDataItemInfo(hdfDOM, hdfTopologyNode, hdfFileName, topologyPath, lXdmfDOM, topologyDINode);
       topology->SetNumberOfElements(this->FindNumberOfCells(hdfDOM, hdfTopologyNode, topologyTypeStr));
       topology->SetDataXml(topologyData);
@@ -247,6 +251,11 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     while (geometryDINode != NULL) {
       XdmfConstString geometryPath = lXdmfDOM->GetCData(geometryDINode);
       XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(hdfDOM, geometryPath);
+      if (!hdfGeometryNode) {
+        XdmfDebug("Skipping node of path " << geometryPath);
+        geometryDINode = geometryDINode->next;
+        continue;
+      }
       XdmfConstString geometryData = this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath, lXdmfDOM, geometryDINode);
       if (geometryData) {
         geomXML += geometryData;
@@ -287,6 +296,12 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       XdmfConstString attributePath    = lXdmfDOM->GetCData(attributeDINode);
       XdmfXmlNode     hdfAttributeNode = this->FindConvertHDFPath(hdfDOM, attributePath);
       XdmfConstString attributeData    = NULL;
+
+      if (!hdfAttributeNode) {
+        // The node does not exist in the HDF DOM so do not generate it
+        XdmfDebug("Skipping node of path " << attributePath);
+        continue;
+      }
 
       // Set Attribute Name, use one from template if it exists
       XdmfString attributeName = (XdmfString) lXdmfDOM->GetAttribute(attributeNode, "Name");
@@ -377,7 +392,7 @@ XdmfXmlNode XdmfGenerator::FindConvertHDFPath(XdmfHDFDOM *hdfDOM, XdmfConstStrin
 {
   std::string newPath = "/HDF5-File/RootGroup/";
   std::string currentBlockName = "";
-  XdmfXmlNode node;
+  XdmfXmlNode node = NULL;
 
   // skip leading "/"
   int cursor = 1;
@@ -434,12 +449,16 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfHDFDOM *hdfDOM,
 XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode hdfDatasetNode,
     XdmfConstString hdfFileName, XdmfConstString dataPath, XdmfDOM *lXdmfDOM, XdmfXmlNode templateNode)
 {
-  XdmfXmlNode hdfDataspaceNode, hdfDatatypeNode;
+  XdmfXmlNode hdfDataspaceNode = NULL, hdfDatatypeNode = NULL;
   XdmfString nDimsStr, dataPrecisionStr, dataItemStr;
   XdmfInt32 nDims;
   std::string dimSize, hdfDataType, dataType, dataPrecision, dataItem;
 
   hdfDataspaceNode = hdfDOM->FindElement("Dataspace", 0, hdfDatasetNode);
+  if (!hdfDataspaceNode) {
+    XdmfErrorMessage("No Dataspace element found");
+    return NULL;
+  }
   nDimsStr = (XdmfString) hdfDOM->GetAttribute(hdfDOM->GetChild(0, hdfDataspaceNode), "Ndims");
   nDims = atoi(nDimsStr);
   if (nDimsStr) free(nDimsStr);
@@ -456,6 +475,10 @@ XdmfConstString XdmfGenerator::FindDataItemInfo(XdmfHDFDOM *hdfDOM, XdmfXmlNode 
   }
 
   hdfDatatypeNode = hdfDOM->FindElement("DataType", 0, hdfDatasetNode);
+  if (!hdfDatatypeNode) {
+    XdmfErrorMessage("No DataType element found");
+    return NULL;
+  }
   hdfDataType = hdfDOM->GetElementName(hdfDOM->GetChild(0, hdfDOM->GetChild(0, hdfDatatypeNode)));
 
   // Float | Int | UInt | Char | UChar

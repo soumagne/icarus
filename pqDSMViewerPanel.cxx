@@ -1,3 +1,27 @@
+/*=========================================================================
+
+  Project                 : Icarus
+  Module                  : pqDSMViewerPanel.cxx
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
+
+  Copyright (C) CSCS - Swiss National Supercomputing Centre.
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
+  2) An acknowledgment appears with any substantial usage of the code
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
+
+  This software is distributed WITHOUT ANY WARRANTY; without even the
+  implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
+=========================================================================*/
 #include "pqDSMViewerPanel.h"
 
 // Qt includes
@@ -59,6 +83,9 @@
 
 //
 #include "ui_pqDSMViewerPanel.h"
+
+#include "vtkXdmfSteeringParser.h"
+
 
 //----------------------------------------------------------------------------
 //
@@ -137,13 +164,7 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->unpublishDSM,
     SIGNAL(clicked()), this, SLOT(onUnpublishDSM()));
 
-  this->connect(this->UI->autoDisplayDSM,
-      SIGNAL(clicked()), this, SLOT(onAutoDisplayDSM()));
-
   // Steering commands
-//  this->connect(this->UI->_simulation_manager, SIGNAL(currentDateChanged(const EPSN::PointDate &, const EPSN::PointDate &)),
-//          this,                SLOT(updateBoxes()));
-
   this->connect(this->UI->scRestart,
       SIGNAL(clicked()), this, SLOT(onSCRestart()));
 
@@ -155,6 +176,9 @@ QDockWidget("DSM Manager", p)
 
   this->connect(this->UI->dsmWriteDisk,
       SIGNAL(clicked()), this, SLOT(onDSMWriteDisk()));
+
+  this->connect(this->UI->dsmArrayTreeWidget,
+      SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
   //
   // Link paraview events to callbacks
@@ -241,6 +265,7 @@ void pqDSMViewerPanel::LoadSettings()
   QString descFilePath = settings->value("DescriptionFilePath").toString();
   if(!descFilePath.isEmpty()) {
     this->UI->xdmfFilePathLineEdit->insert(descFilePath);
+    this->DescFileParse(descFilePath.toStdString().c_str());
   }
   // Force XDMF Generation
   this->UI->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
@@ -275,6 +300,37 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("ForceXDMFGeneration", this->UI->forceXdmfGeneration->isChecked());
   //
   settings->endGroup();
+}
+//----------------------------------------------------------------------------
+void pqDSMViewerPanel::DescFileParse(const char *filepath)
+{
+  vtkXdmfSteeringParser steeringParser;
+  xmfSteeringConfig *steeringConfig;
+
+  steeringParser.Parse(filepath);
+  steeringConfig = steeringParser.GetSteeringConfig();
+
+  this->UI->dsmArrayTreeWidget->setColumnCount(1);
+  QList<QTreeWidgetItem *> gridItems;
+  for (int i = 0; i < steeringConfig->numberOfGrids; i++) {
+    QTreeWidgetItem *gridItem;
+    QList<QTreeWidgetItem *> attributeItems;
+
+    gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(steeringConfig->gridConfig[i].gridName.c_str())));
+    gridItem->setCheckState(0, Qt::Checked);
+    gridItems.append(gridItem);
+
+    for (int j = 0; j < steeringConfig->gridConfig->numberOfAttributes; j++) {
+      QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(steeringConfig->gridConfig[i].attributeConfig[j].attributeName.c_str())));
+      attributeItem->setCheckState(0, Qt::Checked);
+      gridItems.append(attributeItem);
+    }
+  }
+  // TODO not sure that memory is well released
+  this->UI->dsmArrayTreeWidget->clear();
+  this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
+  // this->UI->dsmArrayTreeWidget->expandAll();
+
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
@@ -377,6 +433,7 @@ void pqDSMViewerPanel::onBrowseFile()
     QString fileName = dialog.selectedFiles().at(0);
     this->UI->xdmfFilePathLineEdit->clear();
     this->UI->xdmfFilePathLineEdit->insert(fileName);
+    this->DescFileParse(fileName.toStdString().c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -407,24 +464,28 @@ void pqDSMViewerPanel::onUnpublishDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onAutoDisplayDSM()
-{
-  if (this->DSMReady()) {
-//    if (this->UI->autoDisplayDSM->isChecked()) {
-//      if (this->UI->dsmWriteDisk->isChecked()) {
-//        this->UI->dsmWriteDisk->setChecked(false);
-//        this->onDSMWriteDisk();
-//      }
-//      if (!this->UI->storeDSMContents->isEnabled()) this->UI->storeDSMContents->setEnabled(true);
-//    }
-  }
-}
-//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDSMWriteDisk()
 {
   if (this->DSMReady()) {
     pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("DsmWriteDisk"), 1);
     this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
+{
+  this->ChangeItemState(item);
+  // Refresh list of send-able arrays
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::ChangeItemState(QTreeWidgetItem *item)
+{
+  if (!item)
+    return;
+  for (int i = 0; i < item->childCount(); i++) {
+    QTreeWidgetItem *child = item->child(i);
+    child->setCheckState(0, item->checkState(0));
+    this->ChangeItemState(child);
   }
 }
 //-----------------------------------------------------------------------------
@@ -466,10 +527,6 @@ void pqDSMViewerPanel::onSCRestart()
     this->UI->DSMProxy->UpdateVTKObjects();
   }
 }
-
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDisplayDSM()
 {
