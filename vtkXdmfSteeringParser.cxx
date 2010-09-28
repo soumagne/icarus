@@ -90,6 +90,7 @@ int vtkXdmfSteeringParser::Parse(const char *configFilePath)
       this->SteeringConfig->gridConfig[currentGridIndex].gridName = "Undefined Grid";
     }
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
+    this->SteeringConfig->gridConfig[currentGridIndex].isEnabled = true;
     this->SteeringConfig->gridConfig->numberOfAttributes = numberOfAttributes;
 
     this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig = new xmfSteeringConfigAttribute[numberOfAttributes];
@@ -105,6 +106,7 @@ int vtkXdmfSteeringParser::Parse(const char *configFilePath)
         reName.find(attributePath);
         this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].attributeName = reName.match(1).c_str();
       }
+      this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].isEnabled = true;
     }
   }
 

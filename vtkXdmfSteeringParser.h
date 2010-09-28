@@ -34,11 +34,13 @@
 // Structures to hold information given in the .lxmf file
 typedef struct xmfSteeringConfigAttribute_ {
   std::string attributeName;
+  XdmfBoolean isEnabled;
 } xmfSteeringConfigAttribute;
 
 typedef struct xmfSteeringConfigGrid_ {
   std::string gridName;
   XdmfInt32   numberOfAttributes;
+  XdmfBoolean isEnabled;
   xmfSteeringConfigAttribute *attributeConfig;
 } xmfSteeringConfigGrid;
 
@@ -55,6 +57,7 @@ public:
   ~vtkXdmfSteeringParser();
 
   XdmfGetValueMacro(SteeringConfig, xmfSteeringConfig*);
+  XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
   int Parse(const char *filepath);
 
 protected:

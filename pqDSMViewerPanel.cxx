@@ -138,6 +138,8 @@ QDockWidget("DSM Manager", p)
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
 
+  this->SteeringParser = new vtkXdmfSteeringParser();
+
   this->HTMScene = new QGraphicsScene();
   this->UI->dsmHTMView->setScene(this->HTMScene);
   this->HTMScene->addText("HTM view to be displayed here!");
@@ -232,6 +234,9 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
   if (this->UpdateTimer) delete this->UpdateTimer;
   this->UpdateTimer = NULL;
 
+  if (this->SteeringParser) delete this->SteeringParser;
+  this->SteeringParser = NULL;
+
   if (this->HTMScene) delete this->HTMScene;
   this->HTMScene = NULL;
 }
@@ -304,11 +309,10 @@ void pqDSMViewerPanel::SaveSettings()
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
 {
-  vtkXdmfSteeringParser steeringParser;
   xmfSteeringConfig *steeringConfig;
 
-  steeringParser.Parse(filepath);
-  steeringConfig = steeringParser.GetSteeringConfig();
+  this->SteeringParser->Parse(filepath);
+  steeringConfig = this->SteeringParser->GetSteeringConfig();
 
   this->UI->dsmArrayTreeWidget->setColumnCount(1);
   QList<QTreeWidgetItem *> gridItems;
@@ -317,7 +321,8 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
     QList<QTreeWidgetItem *> attributeItems;
 
     gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(steeringConfig->gridConfig[i].gridName.c_str())));
-    gridItem->setCheckState(0, Qt::Checked);
+    // Do not make grids selectable
+    // gridItem->setCheckState(0, Qt::Checked);
     gridItems.append(gridItem);
 
     for (int j = 0; j < steeringConfig->gridConfig->numberOfAttributes; j++) {
@@ -476,6 +481,17 @@ void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
   // Refresh list of send-able arrays
+  for(int i = 0; i < this->UI->dsmArrayTreeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *gridItem;
+    gridItem = this->UI->dsmArrayTreeWidget->topLevelItem(i);
+    for (int j = 0; j < gridItem->childCount(); j++) {
+      QTreeWidgetItem *attributeItem = gridItem->child(j);
+      this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled = (attributeItem->checkState(0) == Qt::Checked) ? true : false;
+//      if (this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
+//        cerr << attributeItem->text(0).toStdString() << endl;
+//      }
+    }
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::ChangeItemState(QTreeWidgetItem *item)
@@ -580,14 +596,14 @@ void pqDSMViewerPanel::onDisplayDSM()
         if (this->UI->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
           force_generate = (this->UI->forceXdmfGeneration->isChecked()) ? true : false;
           // Only re-generate if the description file path has changed or if force is set to true
-          if (xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString() || first_time || force_generate) {
+          if ((xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString()) || first_time || force_generate) {
             xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
             // Generate xdmf file for reading
-            // No need to do H5dump here any more since done in Generator now
-            //          this->UI->DSMProxy->InvokeCommand("H5DumpXML");
+            // Send the whole string representing the DOM and not the file path so that the template file
+            // does not to be present on the server anymore
             pqSMAdaptor::setElementProperty(
                 this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
-                xdmf_description_file_path.c_str());
+                this->SteeringParser->GetConfigDOM()->Serialize());
 
             this->UI->DSMProxy->UpdateVTKObjects();
             this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");

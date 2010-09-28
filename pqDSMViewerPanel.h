@@ -44,6 +44,8 @@ class QTreeWidgetItem;
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
 
+class vtkXdmfSteeringParser;
+
 class pqDSMViewerPanel : public QDockWidget
 {
   Q_OBJECT
@@ -73,7 +75,6 @@ public slots:
   void onPublishDSM();
   void onUnpublishDSM();
 
-//  void onAutoDisplayDSM();
   void onDSMWriteDisk();
 
   void onArrayItemChanged(QTreeWidgetItem*, int);
@@ -102,6 +103,8 @@ protected:
   bool             Connected;
   int              DSMCommType;
   QTimer          *UpdateTimer;
+
+  vtkXdmfSteeringParser *SteeringParser;
 
   // For HTM drawing
   QGraphicsScene  *HTMScene;
