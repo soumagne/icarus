@@ -61,6 +61,19 @@ IF(NOT USE_H5FD_DSM)
   # temporary here but will be removed when next versions of ParaView integrate hdf5-1.8
   FIND_PATH(HDF5_SOURCE_DIR "path to the source directory of HDF5")
   INCLUDE_DIRECTORIES(${HDF5_SOURCE_DIR})
+
+SET(XdmfUtil_SRCS
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5dump.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_str.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_utils.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_ref.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_type.cxx
+  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5trav.cxx
+  )
+
+ELSE(NOT USE_H5FD_DSM)
+  SET(XdmfUtil_SRCS "")
 ENDIF(NOT USE_H5FD_DSM)
 
 INCLUDE_DIRECTORIES(
@@ -74,13 +87,6 @@ SET(XdmfUtil_SRCS
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfDump.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5dump.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_str.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_utils.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_ref.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_type.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5trav.cxx
   )
 
 IF(VTK_BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS)
