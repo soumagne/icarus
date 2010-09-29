@@ -68,19 +68,13 @@ ENDIF(ParaView_BINARY_DIR)
 #--------------------------------------------------
 # Find and Use Boost
 #--------------------------------------------------
-SET(Boost_DEBUG ON)
-SET(Boost_ADDITIONAL_VERSIONS "1.39" "1.39.0" "1.40" "1.40.0")
-SET(BOOST_ROOT "C:/Program Files/Boost")
-SET(Boost_USE_STATIC_LIBS   ON)
-SET(Boost_USE_MULTITHREADED ON)
-FIND_PACKAGE(Boost 1.38.0 COMPONENTS thread) 
-
-IF(Boost_FOUND)
-  INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
-  #MESSAGE(${Boost_INCLUDE_DIRS})
+IF(WIN32)
+  SET(BOOST_DIR CACHE PATH "path to boost include")
+  INCLUDE(${BOOST_DIR}/lib/Boost.cmake)
+  INCLUDE_DIRECTORIES(${BOOST_DIR}/include)
   ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
-  LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-ENDIF(Boost_FOUND)
+  LINK_DIRECTORIES(${BOOST_DIR}/lib)
+ENDIF (WIN32)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -174,7 +168,6 @@ TARGET_LINK_LIBRARIES(
     Xdmf
     XdmfUtil
     ${PARAVIEW_HDF5_LIBRARIES} 
-    ${Boost_LIBRARIES}
 )
 
 #--------------------------------------------------
