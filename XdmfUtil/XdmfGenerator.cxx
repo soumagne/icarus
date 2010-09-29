@@ -270,8 +270,22 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     geomXML += "</Geometry>";
     geometry->SetDataXml(geomXML.c_str());
     //
+    // The geometry may be {x,y,z} separate arrays, but this does not mean the topology is rank 3
+    // for example particles, with x,y,z arrays are rank 1
+    //
     if (topologyDINode == NULL) {
-      topology->GetShapeDesc()->SetShape(numcells.size(), &numcells[0]);
+      switch (topology->GetTopologyType()) {
+        case XDMF_2DSMESH      :  
+        case XDMF_2DRECTMESH   :
+        case XDMF_2DCORECTMESH :  
+        case XDMF_3DSMESH      :  
+        case XDMF_3DRECTMESH   :  
+        case XDMF_3DCORECTMESH :  
+          topology->GetShapeDesc()->SetShape(numcells.size(), &numcells[0]);
+          break;
+        default :
+          topology->GetShapeDesc()->SetShape(1, &numcells[0]);
+      }
     }
     if (topologyTypeStr) free(topologyTypeStr);
 

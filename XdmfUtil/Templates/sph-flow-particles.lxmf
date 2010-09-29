@@ -1,0 +1,29 @@
+<?xml version="1.0" ?>
+<Xdmf>
+  <Domain>
+    <Grid Name="Particles">
+      <Topology TopologyType="Polyvertex">
+      </Topology>
+      <Geometry GeometryType="X_Y_Z">
+        <DataItem Name="x">/Step#0/X</DataItem>
+        <DataItem Name="y">/Step#0/Y</DataItem>
+        <DataItem Name="z">/Step#0/Z</DataItem>
+      </Geometry>
+      <Attribute>
+        <DataItem>/Step#0/VX</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Step#0/VY</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Step#0/VZ</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Step#0/P</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Step#0/Smooth</DataItem>
+      </Attribute>
+    </Grid>
+  </Domain>
+</Xdmf>
