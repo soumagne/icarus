@@ -75,13 +75,12 @@ public slots:
   void onPublishDSM();
   void onUnpublishDSM();
 
-  void onDSMWriteDisk();
-
   void onArrayItemChanged(QTreeWidgetItem*, int);
 
   void onSCRestart();
   void onSCPause();
   void onSCPlay();
+  void onSCWriteDisk();
 
   void onDisplayDSM();
   void TrackSource();

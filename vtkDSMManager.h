@@ -83,15 +83,8 @@ public:
   void ClearDsmUpdateReady() { return DsmManager->ClearDsmUpdateReady(); }
 
   // Description:
-  // Get/Set the "write to disk" flag, in this case data is written to disk
-  // using the HDF MPIO parallel driver
-  void SetDsmWriteDisk(int enable) { DsmManager->SetDsmWriteDisk(enable); }
-  int GetDsmWriteDisk() { return DsmManager->GetDsmWriteDisk(); }
-
-  // Description:
   // Set/Get the current given steering command.
-  // The command isthen passed to the simulation.
-  // vtkSetStringMacro(SteeringCommand);
+  // The command is then passed to the simulation.
   void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
   const char *GetSteeringCommand() { return DsmManager->GetSteeringCommand(); }
 

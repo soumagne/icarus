@@ -83,6 +83,7 @@ INCLUDE_DIRECTORIES(
   )
 
 SET(XdmfUtil_SRCS
+  ${XdmfUtil_SRCS}
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/XdmfHDFDOM.cxx
   ${CMAKE_CURRENT_SOURCE_DIR}/FileSeriesFinder.cxx

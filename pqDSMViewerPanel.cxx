@@ -177,7 +177,7 @@ QDockWidget("DSM Manager", p)
       SIGNAL(clicked()), this, SLOT(onSCPlay()));
 
   this->connect(this->UI->dsmWriteDisk,
-      SIGNAL(clicked()), this, SLOT(onDSMWriteDisk()));
+      SIGNAL(clicked()), this, SLOT(onSCWriteDisk()));
 
   this->connect(this->UI->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
@@ -469,14 +469,6 @@ void pqDSMViewerPanel::onUnpublishDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onDSMWriteDisk()
-{
-  if (this->DSMReady()) {
-    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("DsmWriteDisk"), 1);
-    this->UI->DSMProxy->UpdateVTKObjects();
-  }
-}
-//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
@@ -537,6 +529,25 @@ void pqDSMViewerPanel::onSCRestart()
     const char *steeringCmd = "restart";
     pqSMAdaptor::setElementProperty(
         this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        steeringCmd);
+    this->UI->infoCurrentSteeringCommand->clear();
+    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onSCWriteDisk()
+{
+  if (this->DSMReady()) {
+    // workaround to be able to click multiple times on the disk button
+    const char *steeringCmdNone = "none";
+    const char *steeringCmd = "disk";
+
+    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        steeringCmdNone);
+    this->UI->DSMProxy->UpdateVTKObjects();
+
+    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->UI->infoCurrentSteeringCommand->clear();
     this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
