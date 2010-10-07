@@ -14,24 +14,6 @@ IF(NOT USE_H5FD_DSM)
     FIND_PACKAGE(ParaView REQUIRED)
     INCLUDE(${PARAVIEW_USE_FILE})
     INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
-    IF (ParaView_BINARY_DIR)
-      INCLUDE_DIRECTORIES(
-        ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/libsrc
-        ${ParaView_BINARY_DIR}/Utilities/Xdmf2/libsrc
-      )
-    IF (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${LIBXML2_INCLUDE_DIR}
-      )
-    ELSE (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
-      )
-    ENDIF (VTK_USE_SYSTEM_LIBXML2)
-    ENDIF(ParaView_BINARY_DIR)
-    IF(VTK_USE_MPI)
-      SET(USE_MPI 1)
-    ENDIF(VTK_USE_MPI)
     SET(PARAVIEW_LOADED 1)
   ELSE(NOT PARAVIEW_LOADED)
     IF (PARAVIEW_BUILD_QT_GUI)
@@ -42,36 +24,38 @@ IF(NOT USE_H5FD_DSM)
       ${PARAVIEW_KWSYS_INCLUDE_DIRS}
       ${VTK_INCLUDE_DIR}
       ${MPI_INCLUDE_PATH}
+    )
+  ENDIF(NOT PARAVIEW_LOADED)
+
+  IF(VTK_USE_MPI)
+    SET(USE_MPI 1)
+  ENDIF(VTK_USE_MPI)
+
+  IF (ParaView_BINARY_DIR)
+    IF (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
+    ELSE (VTK_USE_SYSTEM_LIBXML2)
+      INCLUDE_DIRECTORIES(${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2)
+    ENDIF (VTK_USE_SYSTEM_LIBXML2)
+    INCLUDE_DIRECTORIES(
       ${ParaView_CMAKE_DIR}/../Utilities/Xdmf2/libsrc
       ${ParaView_BINARY_DIR}/Utilities/Xdmf2/libsrc
     )
-    IF(VTK_USE_MPI)
-      SET(USE_MPI 1)
-    ENDIF(VTK_USE_MPI)
-    IF (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${LIBXML2_INCLUDE_DIR}
-      )
-    ELSE (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
-      )
-    ENDIF (VTK_USE_SYSTEM_LIBXML2)
-  ENDIF(NOT PARAVIEW_LOADED)
+  ENDIF(ParaView_BINARY_DIR)
+
   # temporary here but will be removed when next versions of ParaView integrate hdf5-1.8
   FIND_PATH(HDF5_SOURCE_DIR "path to the source directory of HDF5")
   INCLUDE_DIRECTORIES(${HDF5_SOURCE_DIR})
 
-SET(XdmfUtil_SRCS
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5dump.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_str.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_utils.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_ref.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_type.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5trav.cxx
+  SET(XdmfUtil_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5dump.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_str.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_utils.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_ref.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5tools_type.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/h5dump/h5trav.cxx
   )
-
 ELSE(NOT USE_H5FD_DSM)
   SET(XdmfUtil_SRCS "")
 ENDIF(NOT USE_H5FD_DSM)

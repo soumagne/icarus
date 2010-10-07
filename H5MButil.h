@@ -25,6 +25,8 @@
 #ifndef H5MButil_H
 #define H5MButil_H
 
+//--------------------------------------------------------------------------
+#include "H5Tpublic.h"
 //----------------------------------------------------------------------------
 #ifdef __cplusplus
 extern "C" {
@@ -48,8 +50,7 @@ extern "C" {
     #define DSM_DLLVAR extern __attribute__ ((visibility("default")))
   #endif
 #endif
-//--------------------------------------------------------------------------
-#include "H5Tpublic.h"
+
 //--------------------------------------------------------------------------
 struct H5MB_tree_type {
   void *TreePtr;      

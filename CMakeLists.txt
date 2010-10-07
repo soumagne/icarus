@@ -13,21 +13,6 @@ IF(NOT PARAVIEW_LOADED)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
   INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
-  IF (ParaView_BINARY_DIR)
-    IF (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${LIBXML2_INCLUDE_DIR}
-      )
-    ELSE (VTK_USE_SYSTEM_LIBXML2)
-      INCLUDE_DIRECTORIES(
-        ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
-      )
-    ENDIF (VTK_USE_SYSTEM_LIBXML2)
-    INCLUDE_DIRECTORIES(
-      ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
-      ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
-    )
-  ENDIF(ParaView_BINARY_DIR)
   SET(PARAVIEW_LOADED 1)
 ELSE(NOT PARAVIEW_LOADED)
   IF (PARAVIEW_BUILD_QT_GUI)
@@ -35,46 +20,25 @@ ELSE(NOT PARAVIEW_LOADED)
   ENDIF (PARAVIEW_BUILD_QT_GUI)
   INCLUDE_DIRECTORIES(
     ${PARAVIEW_INCLUDE_DIRS}
-    ${ParaView_SOURCE_DIR}/VTK/Geovis
     ${PARAVIEW_GUI_INCLUDE_DIRS}
     ${PARAVIEW_KWSYS_INCLUDE_DIRS}
     ${VTK_INCLUDE_DIR}
     ${MPI_INCLUDE_PATH}
   )
+ENDIF(NOT PARAVIEW_LOADED)
+
+IF (ParaView_BINARY_DIR)
   IF (VTK_USE_SYSTEM_LIBXML2)
-    INCLUDE_DIRECTORIES(
-      ${LIBXML2_INCLUDE_DIR}
-    )
+    INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
   ELSE (VTK_USE_SYSTEM_LIBXML2)
-    INCLUDE_DIRECTORIES(
-      ${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2
-    )
+    INCLUDE_DIRECTORIES(${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2)
   ENDIF (VTK_USE_SYSTEM_LIBXML2)
   INCLUDE_DIRECTORIES(
     ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
     ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
+    ${ParaView_CMAKE_DIR}/../Utilities/hdf5-1.8/hl/src
   )
-ENDIF(NOT PARAVIEW_LOADED)
-
-IF (ParaView_BINARY_DIR)
-INCLUDE_DIRECTORIES(
-  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
-  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
-  ${ParaView_CMAKE_DIR}/../Utilities/hdf5-1.8/hl/src
- )
 ENDIF(ParaView_BINARY_DIR)
-
-
-#--------------------------------------------------
-# Find and Use Boost
-#--------------------------------------------------
-IF(WIN32)
-  SET(BOOST_DIR CACHE PATH "path to boost include")
-  INCLUDE(${BOOST_DIR}/lib/Boost.cmake)
-  INCLUDE_DIRECTORIES(${BOOST_DIR}/include)
-  ADD_DEFINITIONS(-DHAVE_BOOST_THREADS)
-  LINK_DIRECTORIES(${BOOST_DIR}/lib)
-ENDIF (WIN32)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -85,31 +49,15 @@ INCLUDE_DIRECTORIES(
   )
 
 #--------------------------------------------------
-# Set Definitions 
-#--------------------------------------------------
-ADD_DEFINITIONS(-DMPICH_SKIP_MPICXX)
-ADD_DEFINITIONS(-DCSCS_PARAVIEW_INTERNAL)
-ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
-
-#-----------------------------------------------
-# Setup some convenience flags depending on machine
-#-----------------------------------------------
-SET(COMPUTERNAME $ENV{COMPUTERNAME})
-IF(COMPUTERNAME)
-  MESSAGE("Setting computername #DEFINE to MACHINE_$ENV{COMPUTERNAME}")
-  ADD_DEFINITIONS(-DMACHINE_$ENV{COMPUTERNAME})
-ENDIF(COMPUTERNAME)
-
-#--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
-  OPTION(CSCS_DSM_BUILD_TESTING "Build testing DSM viewer panel" OFF)
-  IF(CSCS_DSM_BUILD_TESTING)
-    SET(DSM_PANEL_CLASS pqDSMViewerPanel_testing)
-  ELSE(CSCS_DSM_BUILD_TESTING)
+  OPTION(CSCS_DSM_BUILD_TESTING "Build DSM plugin testing" OFF)
+#  IF(CSCS_DSM_BUILD_TESTING)
+#    SET(DSM_PANEL_CLASS pqDSMViewerPanel_testing)
+#  ELSE(CSCS_DSM_BUILD_TESTING)
     SET(DSM_PANEL_CLASS pqDSMViewerPanel)
-  ENDIF(CSCS_DSM_BUILD_TESTING)
+#  ENDIF(CSCS_DSM_BUILD_TESTING)
 
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
@@ -142,7 +90,6 @@ ADD_PARAVIEW_PLUGIN(
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader3.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
   SERVER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
@@ -183,61 +130,16 @@ ADD_SUBDIRECTORY(XdmfUtil)
 #--------------------------------------------------
 # Testing
 #--------------------------------------------------
-ADD_SUBDIRECTORY(Testing)
+IF(CSCS_DSM_BUILD_TESTING)
+  ADD_SUBDIRECTORY(Testing)
+ENDIF(CSCS_DSM_BUILD_TESTING)
 
 #--------------------------------------------------
 # Converter
 #--------------------------------------------------
-
-SET(Converter_LIBS CSCS_DSM hdf5_hl)
-
-IF(CSCS_PLUGIN_CFX)
-  MESSAGE("Xdmf converter supporting CFX " ${CSCS_CFX_DIR})
-  SET(HAS_CFX ON)
-  ADD_DEFINITIONS(-DHAS_CFX)
-  INCLUDE_DIRECTORIES(${CSCS_CFX_DIR})
-  LINK_DIRECTORIES(${CSCS_CFX_LINK_DIRS})
-  SET(Converter_LIBS ${Converter_LIBS} CSCS_CFX)
-ENDIF(CSCS_PLUGIN_CFX)
-  
-IF(CSCS_PLUGIN_Fluent)
-  MESSAGE("Xdmf converter supporting Fluent " ${CSCS_Fluent_DIR})
-  SET(HAS_FLUENT ON)
-  ADD_DEFINITIONS(-DHAS_FLUENT)
-  INCLUDE_DIRECTORIES(${CSCS_Fluent_DIR})
-  SET(Converter_LIBS ${Converter_LIBS} CSCS_Fluent)
-ENDIF(CSCS_PLUGIN_Fluent)
-
-ADD_EXECUTABLE(
-  ConvertToXdmf
-  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkSubdivideUnstructuredGrid.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkSplitBlocksFilter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/vtkRedistributeBlocksFilter.cxx
-  ${CMAKE_CURRENT_SOURCE_DIR}/Tools/ConvertToXdmf.cxx
-)
-
-TARGET_LINK_LIBRARIES(ConvertToXdmf ${Converter_LIBS})
-
-ADD_EXECUTABLE(
-  TestDSMListener  
-  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TestDSMListener.cxx
-)
-
-TARGET_LINK_LIBRARIES(TestDSMListener ${Converter_LIBS})
-
-#ADD_EXECUTABLE(
-#  TreeTest
-#  ${CMAKE_CURRENT_SOURCE_DIR}/Testing/TreeTest.cpp
-#)
-
-
-#--------------------------------------------------
-# Testing, pull in the test from ParaView/Utilities/Xdmf2/vtk/Testing/Cxx
-#--------------------------------------------------
-#ADD_SUBDIRECTORY(
-#  ${ParaView_SOURCE_DIR}/Utilities/Xdmf2/vtk/Testing/Cxx
-#  ${CMAKE_CURRENT_BINARY_DIR}/PVTesting
-#  )
+IF(CSCS_DSM_BUILD_TESTING)
+  ADD_SUBDIRECTORY(Tools)
+ENDIF(CSCS_DSM_BUILD_TESTING)
 
 #--------------------------------------------------
 # Install

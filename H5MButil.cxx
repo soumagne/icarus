@@ -30,6 +30,7 @@
 extern "C" {
 #endif
 
+#include "mpi.h"
 #include "H5Dpublic.h"
 #include "H5Fpublic.h"
 #include "H5Ppublic.h"
@@ -50,7 +51,6 @@ extern "C" {
 #include <utility>
 //
 #include "TCL/Tree.h"
-#include "mpi.h"
 
 #if (!H5_USE_16_API && ((H5_VERS_MAJOR>1) || ((H5_VERS_MAJOR==1) && (H5_VERS_MINOR>6))))
   #define HAVE_H5LT 1
