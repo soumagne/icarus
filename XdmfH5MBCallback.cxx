@@ -137,7 +137,7 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     hdf->GetHyperSlab(&start[0],&stride[0],&count[0]);
   }
   //
-  this->dataArrays->datamap.insert( HeavyType(Path, NULL));
+  this->dataArrays->datamap.insert( HeavyType(Path, static_cast<XdmfArray*>(NULL)));
 //  Debug("DoOpen with map size " << this->dataArrays->datamap.size());
   //
   char datatype[256];
