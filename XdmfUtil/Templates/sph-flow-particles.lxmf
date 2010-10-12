@@ -1,6 +1,56 @@
 <?xml version="1.0" ?>
 <Xdmf>
   <Domain>
+    <Grid Name="Boundaries-0">
+      <Topology TopologyType="Triangle" BaseOffset="1">
+        <DataItem Name="connectivity">/Mesh_Triangles#0/connectivity</DataItem>
+      </Topology>
+      <Geometry GeometryType="X_Y_Z">
+        <DataItem Name="x">/Mesh_nodes#0/X</DataItem>
+        <DataItem Name="y">/Mesh_nodes#0/Y</DataItem>
+        <DataItem Name="z">/Mesh_nodes#0/Z</DataItem>
+      </Geometry>
+      <Attribute>
+        <DataItem>/Mesh_nodes#0/VX</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#0/VY</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#0/VZ</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#0/P</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#0/Smooth</DataItem>
+      </Attribute>
+    </Grid>
+    <Grid Name="Boundaries-1">
+      <Topology TopologyType="Triangle" BaseOffset="1">
+        <DataItem Name="connectivity">/Mesh_Triangles#1/connectivity</DataItem>
+      </Topology>
+      <Geometry GeometryType="X_Y_Z">
+        <DataItem Name="x">/Mesh_nodes#1/X</DataItem>
+        <DataItem Name="y">/Mesh_nodes#1/Y</DataItem>
+        <DataItem Name="z">/Mesh_nodes#1/Z</DataItem>
+      </Geometry>
+      <Attribute>
+        <DataItem>/Mesh_nodes#1/VX</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#1/VY</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#1/VZ</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#1/P</DataItem>
+      </Attribute>
+      <Attribute>
+        <DataItem>/Mesh_nodes#1/Smooth</DataItem>
+      </Attribute>
+    </Grid>
     <Grid Name="Particles">
       <Topology TopologyType="Polyvertex">
       </Topology>

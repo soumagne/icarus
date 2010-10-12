@@ -237,6 +237,10 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       topology->SetDataXml(topologyData);
       if (topologyData) delete []topologyData;
     }
+    XdmfString topologyBaseOffset = (XdmfString) lXdmfDOM->GetAttribute(topologyNode, "BaseOffset");
+    if (topologyBaseOffset) {
+      topology->SetBaseOffset(atoi(topologyBaseOffset));
+    }
 
     // Look for Geometry
     geometry = grid->GetGeometry();
@@ -454,6 +458,9 @@ XdmfInt32 XdmfGenerator::FindNumberOfCells(XdmfHDFDOM *hdfDOM,
     numberOfCells = dimSize;
   }
   else if (topologyType == "3DRECTMESH") {
+    numberOfCells = dimSize;
+  }
+  else { 
     numberOfCells = dimSize;
   }
 
