@@ -150,7 +150,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
   }
   hdfFileDump->DumpXML(hdfFileDumpStream);
 
-//  std::cout << hdfFileDumpStream.str().c_str() << std::endl;
+//  std::cerr << hdfFileDumpStream.str().c_str() << std::endl;
 
   // Fill HDF DOM
   if (hdfDOM->Parse(hdfFileDumpStream.str().c_str()) != XDMF_SUCCESS) {
@@ -158,7 +158,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     return(XDMF_FAIL);
   }
 //  hdfDOM->SetGlobalDebug(1);
-//  std::cout << (hdfDOM->Serialize()) << std::endl;
+//  std::cerr << (hdfDOM->Serialize()) << std::endl;
 
   //Find domain element
   domainNode = lXdmfDOM->FindElement("Domain");
@@ -186,6 +186,7 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
   // Fill the GeneratedDOM
   XdmfGrid *grid = NULL;
   for (int currentGridIndex=0; currentGridIndex<numberOfGrids; currentGridIndex++) {
+    bool abortgrid = false;
     grid = new XdmfGrid();
     XdmfTopology *topology;
     XdmfGeometry *geometry;
@@ -252,12 +253,13 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
     // we might need to read multiple items for x/y/z sizes (2-3 or more dimensions)
     std::vector<XdmfInt64> numcells;
     std::string geomXML = "<Geometry>";
-    while (geometryDINode != NULL) {
+    while (!abortgrid && geometryDINode != NULL) {
       XdmfConstString geometryPath = lXdmfDOM->GetCData(geometryDINode);
       XdmfXmlNode hdfGeometryNode = this->FindConvertHDFPath(hdfDOM, geometryPath);
       if (!hdfGeometryNode) {
         XdmfDebug("Skipping node of path " << geometryPath);
-        geometryDINode = geometryDINode->next;
+        std::cerr << "Geometry Absent : Aborting Grid " << grid->GetName() << std::endl;
+        abortgrid = true;
         continue;
       }
       XdmfConstString geometryData = this->FindDataItemInfo(hdfDOM, hdfGeometryNode, hdfFileName, geometryPath, lXdmfDOM, geometryDINode);
@@ -270,6 +272,9 @@ XdmfInt32 XdmfGenerator::Generate(XdmfConstString lXdmfFile, XdmfConstString hdf
       numcells.insert(numcells.begin(),N);
       //
       geometryDINode = geometryDINode->next;
+    }
+    if (abortgrid) {
+      continue;
     }
     geomXML += "</Geometry>";
     geometry->SetDataXml(geomXML.c_str());

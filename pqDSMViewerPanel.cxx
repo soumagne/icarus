@@ -325,7 +325,7 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
     // gridItem->setCheckState(0, Qt::Checked);
     gridItems.append(gridItem);
 
-    for (int j = 0; j < steeringConfig->gridConfig->numberOfAttributes; j++) {
+    for (int j = 0; j < steeringConfig->gridConfig[i].numberOfAttributes; j++) {
       QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(steeringConfig->gridConfig[i].attributeConfig[j].attributeName.c_str())));
       attributeItem->setCheckState(0, Qt::Checked);
       gridItems.append(attributeItem);

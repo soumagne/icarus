@@ -91,7 +91,7 @@ int vtkXdmfSteeringParser::Parse(const char *configFilePath)
     }
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
     this->SteeringConfig->gridConfig[currentGridIndex].isEnabled = true;
-    this->SteeringConfig->gridConfig->numberOfAttributes = numberOfAttributes;
+    this->SteeringConfig->gridConfig[currentGridIndex].numberOfAttributes = numberOfAttributes;
 
     this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig = new xmfSteeringConfigAttribute[numberOfAttributes];
     for(int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
