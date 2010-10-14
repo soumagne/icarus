@@ -85,6 +85,7 @@
 #include "ui_pqDSMViewerPanel.h"
 
 #include "vtkXdmfSteeringParser.h"
+#include <vtksys/SystemTools.hxx>
 
 
 //----------------------------------------------------------------------------
@@ -131,8 +132,9 @@ QDockWidget("DSM Manager", p)
   this->UI = new pqUI(this);
   this->UI->setupUi(this);
 
-  this->Connected = false;
-  this->DSMCommType = 0;
+  this->Connected       = false;
+  this->DSMCommType     = 0;
+  this->CurrentTimeStep = 0;
   this->UpdateTimer = new QTimer(this);
   this->UpdateTimer->setInterval(0);
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
@@ -155,6 +157,12 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->browseFile,
     SIGNAL(clicked()), this, SLOT(onBrowseFile()));
 
+  // Auto Save image
+  this->connect(this->UI->browseFileImage,
+    SIGNAL(clicked()), this, SLOT(onBrowseFileImage()));
+
+  this->connect(this->UI->autoSaveImage,
+    SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
 
   // DSM Commands
   this->connect(this->UI->addServerDSM,
@@ -274,7 +282,11 @@ void pqDSMViewerPanel::LoadSettings()
   }
   // Force XDMF Generation
   this->UI->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
-  //
+  // Image Save
+  QString imageFilePath = settings->value("ImageFilePath").toString();
+  if(!imageFilePath.isEmpty()) {
+    this->UI->imageFilePath->insert(imageFilePath);
+  }
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
@@ -303,6 +315,8 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
   // Force XDMF Generation
   settings->setValue("ForceXDMFGeneration", this->UI->forceXdmfGeneration->isChecked());
+  // Image Save
+  settings->setValue("ImageFilePath", this->UI->imageFilePath->text());
   //
   settings->endGroup();
 }
@@ -313,6 +327,7 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
 
   this->SteeringParser->Parse(filepath);
   steeringConfig = this->SteeringParser->GetSteeringConfig();
+  if (!steeringConfig) return;
 
   this->UI->dsmArrayTreeWidget->setColumnCount(1);
   QList<QTreeWidgetItem *> gridItems;
@@ -334,7 +349,7 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
   // TODO not sure that memory is well released
   this->UI->dsmArrayTreeWidget->clear();
   this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
-  // this->UI->dsmArrayTreeWidget->expandAll();
+  this->UI->dsmArrayTreeWidget->expandAll();
 
 }
 //----------------------------------------------------------------------------
@@ -433,12 +448,30 @@ void pqDSMViewerPanel::onBrowseFile()
   QFileDialog dialog;
   dialog.setSidebarUrls(urls);
   dialog.setViewMode(QFileDialog::Detail);
-  dialog.setFileMode(QFileDialog::AnyFile);
+  dialog.setFileMode(QFileDialog::ExistingFile);
   if(dialog.exec()) {
     QString fileName = dialog.selectedFiles().at(0);
     this->UI->xdmfFilePathLineEdit->clear();
     this->UI->xdmfFilePathLineEdit->insert(fileName);
     this->DescFileParse(fileName.toStdString().c_str());
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onBrowseFileImage()
+{
+  QList<QUrl> urls;
+  urls << QUrl::fromLocalFile(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
+
+  QFileDialog dialog;
+  dialog.setSidebarUrls(urls);
+  dialog.setViewMode(QFileDialog::Detail);
+  dialog.setFileMode(QFileDialog::AnyFile);
+  if(dialog.exec()) {
+    std::string fileName = dialog.selectedFiles().at(0).toStdString();
+    this->UI->imageFilePath->clear();
+    fileName = vtksys::SystemTools::GetFilenamePath(fileName) + "/" +
+      vtksys::SystemTools::GetFilenameWithoutLastExtension(fileName) + ".xxxxx.png";
+    this->UI->imageFilePath->insert(QString(fileName.c_str()));
   }
 }
 //-----------------------------------------------------------------------------
@@ -552,6 +585,21 @@ void pqDSMViewerPanel::onSCWriteDisk()
     this->UI->infoCurrentSteeringCommand->clear();
     this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
     this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::SaveSnapshot() {
+  std::string pngname = this->UI->imageFilePath->text().toStdString();
+  vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
+  char buffer[1024];
+  sprintf(buffer, pngname.c_str(), this->CurrentTimeStep);  
+  pqActiveObjects::instance().activeView()->saveImage(0, 0, QString(buffer));
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onautoSaveImageChecked(int checked)
+{
+  if (checked) {
+    SaveSnapshot();
   }
 }
 //-----------------------------------------------------------------------------
@@ -675,6 +723,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
     foreach (pqAnimationScene *scene, scenes) {
       scene->setAnimationTime(++current_time);
+      this->CurrentTimeStep = current_time;
     }
 
     dieTime = QTime::currentTime().addMSecs(10);
@@ -686,6 +735,9 @@ void pqDSMViewerPanel::onDisplayDSM()
     if (pqActiveObjects::instance().activeView())
     {
       pqActiveObjects::instance().activeView()->render();
+      if (this->UI->autoSaveImage->isChecked()) {
+        this->SaveSnapshot();
+      }
     }
 #endif //DISABLE_DISPLAY
 
@@ -741,7 +793,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
       if (ready != 0) {
         this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
         if (this->UI->autoDisplayDSM->isChecked()) {
-        this->onDisplayDSM();
+          this->onDisplayDSM();
         } else {
           this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
         }

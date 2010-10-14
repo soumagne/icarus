@@ -69,6 +69,9 @@ public slots:
   void onAddServerDSM();
 
   void onBrowseFile();
+  void onBrowseFileImage();
+  void onautoSaveImageChecked(int);
+  void SaveSnapshot();
 
   void onUpdateTimeout();
 
@@ -102,6 +105,7 @@ protected:
   bool             Connected;
   int              DSMCommType;
   QTimer          *UpdateTimer;
+  int              CurrentTimeStep;
 
   vtkXdmfSteeringParser *SteeringParser;
 

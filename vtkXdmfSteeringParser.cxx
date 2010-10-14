@@ -65,15 +65,17 @@ int vtkXdmfSteeringParser::Parse(const char *configFilePath)
     delete []this->SteeringConfig->gridConfig;
     delete this->SteeringConfig;
   }
-  this->SteeringConfig = new xmfSteeringConfig;
 
   // Fill configDOM
   XdmfDebug("Parsing file: " << configFilePath);
   if (this->ConfigDOM->Parse(configFilePath) != XDMF_SUCCESS) {
     XdmfErrorMessage("Unable to parse xml steering config file");
+    delete this->ConfigDOM;
+    this->ConfigDOM = NULL;
     return(XDMF_FAIL);
   }
 
+  this->SteeringConfig = new xmfSteeringConfig;
   //Find domain element
   domainNode = this->ConfigDOM->FindElement("Domain");
   numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", domainNode);

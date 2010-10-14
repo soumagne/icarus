@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>446</width>
-    <height>695</height>
+    <width>388</width>
+    <height>679</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -27,353 +27,528 @@
        <property name="geometry">
         <rect>
          <x>0</x>
-         <y>-170</y>
-         <width>410</width>
-         <height>822</height>
+         <y>0</y>
+         <width>370</width>
+         <height>639</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
         <item>
-         <widget class="QGroupBox" name="groupBox_2">
-          <property name="enabled">
+         <widget class="QTabWidget" name="tabWidget">
+          <property name="tabPosition">
+           <enum>QTabWidget::West</enum>
+          </property>
+          <property name="currentIndex">
+           <number>0</number>
+          </property>
+          <property name="elideMode">
+           <enum>Qt::ElideRight</enum>
+          </property>
+          <property name="usesScrollButtons">
            <bool>true</bool>
           </property>
-          <property name="title">
-           <string>DSM Settings and Controls</string>
+          <property name="documentMode">
+           <bool>true</bool>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
-            <layout class="QGridLayout" name="gridLayout">
-             <item row="6" column="0" colspan="3">
-              <widget class="QPushButton" name="unpublishDSM">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Disable DSM data routing</string>
-               </property>
-              </widget>
-             </item>
-             <item row="5" column="0" colspan="3">
-              <widget class="QPushButton" name="publishDSM">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="text">
-                <string>Enable DSM data routing</string>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="1" colspan="2">
-              <widget class="QComboBox" name="xdmfCommTypeComboBox">
-               <property name="currentIndex">
-                <number>0</number>
-               </property>
-               <item>
-                <property name="text">
-                 <string>MPI</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Sockets</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>MPI_RMA</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item row="2" column="1" colspan="2">
-              <widget class="QSpinBox" name="xdmfCommPort">
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="singleStep">
-                <number>1000</number>
-               </property>
-               <property name="value">
-                <number>22000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="4" column="0">
-              <widget class="QLabel" name="xdmfCommTypeLabel">
-               <property name="text">
-                <string>Inter-Communicator</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0">
-              <widget class="QLabel" name="dsmSizeLabel">
-               <property name="text">
-                <string>Buffer Size/Node (in MB)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="1" colspan="2">
-              <widget class="QSpinBox" name="dsmSizeSpinBox">
-               <property name="maximum">
-                <number>65535</number>
-               </property>
-               <property name="value">
-                <number>128</number>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="dsmServerNameLabel">
-               <property name="text">
-                <string>Host (name/IP address)</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QComboBox" name="dsmServerName">
-               <property name="currentIndex">
-                <number>0</number>
-               </property>
-               <item>
-                <property name="text">
-                 <string>default</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>agno.staff.cscs.ch</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>dino.staff.cscs.ch</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>breno.staff.cscs.ch</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>horus.login.cscs.ch</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>localhost</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item row="1" column="2">
-              <widget class="QToolButton" name="addServerDSM">
-               <property name="enabled">
-                <bool>true</bool>
-               </property>
-               <property name="text">
-                <string>...</string>
-               </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/pqWidgets/Icons/pqConnect24.png</normaloff>:/pqWidgets/Icons/pqConnect24.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
-              <widget class="QLabel" name="xdmfCommPortLabel">
-               <property name="text">
-                <string>Port number</string>
-               </property>
-              </widget>
-             </item>
-             <item row="7" column="0" colspan="3">
-              <widget class="QCheckBox" name="autoDisplayDSM">
-               <property name="text">
-                <string>Refresh Data Display</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="0" colspan="3">
-              <widget class="QCheckBox" name="storeDSMContents">
-               <property name="text">
-                <string>Store Time Step</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox">
-          <property name="minimumSize">
-           <size>
-            <width>0</width>
-            <height>0</height>
-           </size>
+          <property name="tabsClosable">
+           <bool>false</bool>
           </property>
-          <property name="title">
-           <string>Description File Settings</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <layout class="QFormLayout" name="formLayout">
-             <property name="fieldGrowthPolicy">
-              <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-             </property>
-             <item row="0" column="0">
-              <widget class="QLabel" name="xdmfFileTypeLabel">
-               <property name="text">
-                <string>Description File Format</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QComboBox" name="xdmfFileTypeComboBox">
-               <item>
-                <property name="text">
-                 <string>XDMF format</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>XDMF template format</string>
-                </property>
-               </item>
-               <item>
-                <property name="text">
-                 <string>Use Sent XML</string>
-                </property>
-               </item>
-              </widget>
-             </item>
-             <item row="1" column="0">
-              <widget class="QLabel" name="xdmfFilePathLabel">
-               <property name="text">
-                <string>Description File Path</string>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QLineEdit" name="xdmfFilePathLineEdit"/>
-             </item>
-             <item row="2" column="0" colspan="2">
-              <widget class="QPushButton" name="browseFile">
-               <property name="text">
-                <string>Browse...</string>
-               </property>
-              </widget>
-             </item>
-             <item row="3" column="0" colspan="2">
-              <widget class="QCheckBox" name="forceXdmfGeneration">
-               <property name="text">
-                <string>Force XDMF generation</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox_3">
-          <property name="title">
-           <string>Active Source Object</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_5">
-           <item>
-            <widget class="QLineEdit" name="infoTextOutput">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QGroupBox" name="groupBox_4">
-          <property name="title">
-           <string>Steering Controls</string>
-          </property>
-          <layout class="QVBoxLayout" name="verticalLayout_6">
-           <item>
-            <widget class="QGraphicsView" name="dsmHTMView"/>
-           </item>
-           <item>
-            <widget class="QTreeWidget" name="dsmArrayTreeWidget">
-             <column>
-              <property name="text">
-               <string>Cell/Point Array Status</string>
+          <widget class="QWidget" name="tab">
+           <attribute name="title">
+            <string>DSM Initialization</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_2">
+            <item>
+             <layout class="QGridLayout" name="gridLayout">
+              <property name="horizontalSpacing">
+               <number>6</number>
               </property>
-             </column>
-            </widget>
-           </item>
-           <item>
-            <layout class="QGridLayout" name="gridLayout_2">
-             <item row="0" column="1">
-              <widget class="QToolButton" name="scPause">
+              <item row="6" column="0" colspan="3">
+               <widget class="QPushButton" name="unpublishDSM">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Disable DSM data routing</string>
+                </property>
+               </widget>
+              </item>
+              <item row="5" column="0" colspan="3">
+               <widget class="QPushButton" name="publishDSM">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Enable DSM data routing</string>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="1" colspan="2">
+               <widget class="QComboBox" name="xdmfCommTypeComboBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="currentIndex">
+                 <number>0</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>MPI</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Sockets</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>MPI_RMA</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="2" column="1" colspan="2">
+               <widget class="QSpinBox" name="xdmfCommPort">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximum">
+                 <number>65535</number>
+                </property>
+                <property name="singleStep">
+                 <number>1000</number>
+                </property>
+                <property name="value">
+                 <number>22000</number>
+                </property>
+               </widget>
+              </item>
+              <item row="4" column="0">
+               <widget class="QLabel" name="xdmfCommTypeLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Inter-Communicator</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0">
+               <widget class="QLabel" name="dsmSizeLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Buffer Size/Node (in MB)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="1" colspan="2">
+               <widget class="QSpinBox" name="dsmSizeSpinBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="maximum">
+                 <number>65535</number>
+                </property>
+                <property name="value">
+                 <number>128</number>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="dsmServerNameLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Host (name/IP address)</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QComboBox" name="dsmServerName">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="currentIndex">
+                 <number>0</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>default</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>agno.staff.cscs.ch</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>dino.staff.cscs.ch</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>breno.staff.cscs.ch</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>horus.login.cscs.ch</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>localhost</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="1" column="2">
+               <widget class="QToolButton" name="addServerDSM">
+                <property name="enabled">
+                 <bool>true</bool>
+                </property>
+                <property name="text">
+                 <string>...</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>:/pqWidgets/Icons/pqConnect24.png</normaloff>:/pqWidgets/Icons/pqConnect24.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0">
+               <widget class="QLabel" name="xdmfCommPortLabel">
+                <property name="minimumSize">
+                 <size>
+                  <width>150</width>
+                  <height>0</height>
+                 </size>
+                </property>
+                <property name="text">
+                 <string>Port number</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <layout class="QFormLayout" name="formLayout">
+              <property name="fieldGrowthPolicy">
+               <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+              </property>
+              <item row="0" column="0">
+               <widget class="QLabel" name="xdmfFileTypeLabel">
+                <property name="text">
+                 <string>Description File Format</string>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="1">
+               <widget class="QComboBox" name="xdmfFileTypeComboBox">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="currentIndex">
+                 <number>1</number>
+                </property>
+                <item>
+                 <property name="text">
+                  <string>XDMF format</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>XDMF template format</string>
+                 </property>
+                </item>
+                <item>
+                 <property name="text">
+                  <string>Use Sent XML</string>
+                 </property>
+                </item>
+               </widget>
+              </item>
+              <item row="1" column="0">
+               <widget class="QLabel" name="xdmfFilePathLabel">
+                <property name="text">
+                 <string>Description File Path</string>
+                </property>
+               </widget>
+              </item>
+              <item row="1" column="1">
+               <widget class="QLineEdit" name="xdmfFilePathLineEdit">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item row="2" column="0" colspan="2">
+               <widget class="QPushButton" name="browseFile">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Browse...</string>
+                </property>
+               </widget>
+              </item>
+              <item row="3" column="0" colspan="2">
+               <widget class="QCheckBox" name="forceXdmfGeneration">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="text">
+                 <string>Force XDMF generation</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <spacer name="verticalSpacer">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_3">
+           <attribute name="title">
+            <string>Steering Controls</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_5">
+            <item>
+             <widget class="QCheckBox" name="autoDisplayDSM">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Refresh Data Display</string>
+              </property>
+              <property name="checked">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="storeDSMContents">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Store Time Step</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGroupBox" name="groupBox">
+              <property name="title">
+               <string>Image Save</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_5">
+               <item row="0" column="0" colspan="2">
+                <widget class="QCheckBox" name="autoSaveImage">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="toolTip">
+                  <string>Save an image after every new data triggered render</string>
+                 </property>
+                 <property name="text">
+                  <string>Auto-Save Snapshot</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="0">
+                <widget class="QLabel" name="FilePathLabel_2">
+                 <property name="text">
+                  <string>Image File Path</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="1">
+                <widget class="QLineEdit" name="imageFilePath">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="2">
+                <widget class="QPushButton" name="browseFileImage">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Browse...</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <layout class="QGridLayout" name="gridLayout_2">
+              <item row="0" column="1">
+               <widget class="QToolButton" name="scPause">
+                <property name="text">
+                 <string>pause</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>:/pqWidgets/Icons/pqVcrPause24.png</normaloff>:/pqWidgets/Icons/pqVcrPause24.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="2">
+               <widget class="QToolButton" name="scPlay">
+                <property name="text">
+                 <string>play</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="0">
+               <widget class="QToolButton" name="scRestart">
+                <property name="text">
+                 <string>restart</string>
+                </property>
+                <property name="icon">
+                 <iconset>
+                  <normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</iconset>
+                </property>
+               </widget>
+              </item>
+              <item row="0" column="3">
+               <widget class="QToolButton" name="dsmWriteDisk">
+                <property name="text">
+                 <string>disk</string>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+            <item>
+             <widget class="QTreeWidget" name="dsmArrayTreeWidget">
+              <column>
                <property name="text">
-                <string>pause</string>
+                <string>Cell/Point Array Status</string>
                </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/pqWidgets/Icons/pqVcrPause24.png</normaloff>:/pqWidgets/Icons/pqVcrPause24.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2">
-              <widget class="QToolButton" name="scPlay">
-               <property name="text">
-                <string>play</string>
-               </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</normaloff>:/pqWidgets/Icons/pqVcrPlay24.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QToolButton" name="scRestart">
-               <property name="text">
-                <string>restart</string>
-               </property>
-               <property name="icon">
-                <iconset>
-                 <normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</normaloff>:/pqWidgets/Icons/pqVcrFirst24.png</iconset>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QToolButton" name="dsmWriteDisk">
-               <property name="text">
-                <string>disk</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QLineEdit" name="infoCurrentSteeringCommand">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
+              </column>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLineEdit" name="infoCurrentSteeringCommand">
+              <property name="readOnly">
+               <bool>true</bool>
+              </property>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="tab_4">
+           <attribute name="title">
+            <string>Obsolete</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_6">
+            <item>
+             <widget class="QGroupBox" name="groupBox_3">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>Active Source Object</string>
+              </property>
+              <layout class="QVBoxLayout" name="verticalLayout_7">
+               <item>
+                <widget class="QLineEdit" name="infoTextOutput">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QGraphicsView" name="dsmHTMView"/>
+            </item>
+           </layout>
+          </widget>
          </widget>
         </item>
        </layout>
