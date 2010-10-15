@@ -86,7 +86,6 @@ public:
   // Set/Get the current given steering command.
   // The command is then passed to the simulation.
   void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
-  const char *GetSteeringCommand() { return DsmManager->GetSteeringCommand(); }
 
   // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
