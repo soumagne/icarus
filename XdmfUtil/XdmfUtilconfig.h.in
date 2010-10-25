@@ -1,7 +1,0 @@
-#ifndef XDMFUTILCONFIG_H
-#define XDMFUTILCONFIG_H
-
-#cmakedefine USE_H5FD_DSM ${USE_H5FD_DSM}
-#cmakedefine USE_MPI ${USE_MPI}
-
-#endif
