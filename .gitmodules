@@ -1,0 +1,3 @@
+[submodule "XdmfGenerator"]
+	path = XdmfGenerator
+	url = https://hpcforge.org/anonscm/git/xdmfgenerator/xdmfgenerator.git

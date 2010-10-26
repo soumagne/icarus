@@ -44,8 +44,8 @@ ENDIF(ParaView_BINARY_DIR)
 # Set project include directories 
 #--------------------------------------------------
 INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_SOURCE_DIR}/XdmfUtil
-  ${CMAKE_CURRENT_BINARY_DIR}/XdmfUtil
+  ${CMAKE_CURRENT_SOURCE_DIR}/XdmfGenerator
+  ${CMAKE_CURRENT_BINARY_DIR}/XdmfGenerator
   )
 
 #--------------------------------------------------
@@ -113,19 +113,19 @@ TARGET_LINK_LIBRARIES(
     H5FDdsm
     hdf5_hl
     Xdmf
-    XdmfUtil
+    XdmfGenerator
     ${PARAVIEW_HDF5_LIBRARIES} 
 )
 
 #--------------------------------------------------
-# XdmfUtil
+# XdmfGenerator
 #--------------------------------------------------
-# USE_H5FD_DSM must be defined to enable DSM suppport in XdmfUtil
+# USE_H5FD_DSM must be defined to enable DSM suppport in XdmfGenerator
 IF(VTK_USE_MPI)
   SET(USE_MPI 1)
 ENDIF(VTK_USE_MPI)
 SET(USE_H5FD_DSM 1)
-ADD_SUBDIRECTORY(XdmfUtil)
+ADD_SUBDIRECTORY(XdmfGenerator)
 
 #--------------------------------------------------
 # Testing
