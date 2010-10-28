@@ -164,9 +164,11 @@ public:
   // Get the associated DSM buffer handle
   H5FDdsmBuffer *GetDSMHandle() { return DsmManager->GetDSMHandle(); }
 
+//BTX
   // Description:
   // Get the associated H5FDdsmManager
   vtkGetMacro(DsmManager, H5FDdsmManager*);
+//ETX
 
   // Description:
   // Set/Get the file path pointing either to an XDMF description file
