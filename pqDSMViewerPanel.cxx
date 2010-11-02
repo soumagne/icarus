@@ -283,6 +283,7 @@ void pqDSMViewerPanel::LoadSettings()
   // Force XDMF Generation
   this->UI->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
   // Image Save
+  this->UI->autoSaveImage->setChecked(settings->value("AutoSaveImage", 0).toBool());
   QString imageFilePath = settings->value("ImageFilePath").toString();
   if(!imageFilePath.isEmpty()) {
     this->UI->imageFilePath->insert(imageFilePath);
@@ -316,6 +317,7 @@ void pqDSMViewerPanel::SaveSettings()
   // Force XDMF Generation
   settings->setValue("ForceXDMFGeneration", this->UI->forceXdmfGeneration->isChecked());
   // Image Save
+  settings->setValue("AutoSaveImage", this->UI->autoSaveImage->isChecked());
   settings->setValue("ImageFilePath", this->UI->imageFilePath->text());
   //
   settings->endGroup();
