@@ -1,0 +1,45 @@
+<ServerManagerConfiguration>
+
+  <ProxyGroup name="icarus_helpers">
+
+    <!-- ================================================================= -->
+    <SourceProxy name="XdmfReader4" class="vtkXdmfReader4">
+      <Documentation
+        short_help="Read data from Xdmf/HDF5 files.">
+        Reader to read HDF5 data using eXtensible Data Model and Format *(XDMF) files.
+      </Documentation>
+
+      <Property name="Modified"
+                command="Modified">
+      </Property>
+
+      <StringVectorProperty
+        name="FileName"
+        command="SetFileName"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <ProxyProperty name="DSMManager" 
+                     command="SetDSMManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers" 
+                 name="DSMManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+      <Hints>
+        <Property name="FileName" show="0"/>
+        <Property name="DSMManager" show="0"/>
+      </Hints>
+      <!-- End of XdmfReader -->
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

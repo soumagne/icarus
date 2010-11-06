@@ -1,6 +1,5 @@
 <RCC>
   <qresource prefix="/ParaViewResources" >
-    <file>CSCS_DSMManager_Client.xml</file>
     <file>Icons/NextMuSELogo.png</file>
   </qresource>
 </RCC>
