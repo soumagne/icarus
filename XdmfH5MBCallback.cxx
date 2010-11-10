@@ -31,6 +31,7 @@
 #include "XdmfHDF.h"
 #include "hdf5_hl.h"
 #include "vtkDSMManager.h"
+#include "H5FDdsm.h"
 
 typedef std::pair<std::string, XdmfArray *> HeavyType;
 typedef std::map< std::string, XdmfArray *> HeavyDataMap;
