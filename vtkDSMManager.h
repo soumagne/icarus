@@ -130,7 +130,7 @@ public:
   // information can be read. This is for use the by a DSM client.
   // DSM servers write their .dsm_config when PublishDSM() is called
   // Returns false if the .dsm_config file is not read
-  bool   ReadDSMConfigFile() { return DsmManager->ReadDSMConfigFile(); }
+  bool   ReadDSMConfigFile();
 
 //BTX
   #ifdef VTK_USE_MPI
@@ -158,6 +158,12 @@ protected:
     int            UpdateNumPieces;
     //BTX
 #ifdef VTK_USE_MPI
+    // If the user is running paraview client in stand-alone mode and not
+    // an mpijob, the mpi controller wiull be a vtkDummyController
+    // check for this and replace with an MPI controller if necessary when
+    // firsat setting up a DSM object
+    void CheckMPIController();
+
     //ETX
     vtkMultiProcessController* Controller;
     //BTX

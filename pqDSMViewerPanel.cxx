@@ -190,6 +190,9 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
+  this->connect(this->UI->writeToDSM,
+      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
+
   //
   // Link paraview events to callbacks
   //
@@ -404,27 +407,34 @@ bool pqDSMViewerPanel::DSMReady()
     pqSMAdaptor::setElementProperty(
       this->UI->DSMProxy->GetProperty("DsmIsServer"), true);
     //
-    if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
-      this->DSMCommType = H5FD_DSM_COMM_MPI;
+    if (this->UI->clientMode->isChecked()) {
+      this->UI->DSMProxy->InvokeCommand("ReadDSMConfigFile");
+      this->UI->DSMProxy->InvokeCommand("CreateDSM");
+      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+      this->UI->DSMInitialized = 1;
     }
-    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
-      this->DSMCommType = H5FD_DSM_COMM_SOCKET;
+    else {
+      if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
+        this->DSMCommType = H5FD_DSM_COMM_MPI;
+      }
+      else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
+        this->DSMCommType = H5FD_DSM_COMM_SOCKET;
+      }
+      else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
+        this->DSMCommType = H5FD_DSM_COMM_MPI_RMA;
+      }
+      pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("DsmCommType"),
+        this->DSMCommType);
+      //
+      pqSMAdaptor::setElementProperty(
+        this->UI->DSMProxy->GetProperty("DsmLocalBufferSize"),
+        this->UI->dsmSizeSpinBox->value());
+      //
+      this->UI->DSMProxy->UpdateVTKObjects();
+      this->UI->DSMProxy->InvokeCommand("CreateDSM");
+      this->UI->DSMInitialized = 1;
     }
-    else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
-      this->DSMCommType = H5FD_DSM_COMM_MPI_RMA;
-    }
-
-    pqSMAdaptor::setElementProperty(
-      this->UI->DSMProxy->GetProperty("DsmCommType"),
-      this->DSMCommType);
-    //
-    pqSMAdaptor::setElementProperty(
-      this->UI->DSMProxy->GetProperty("DsmLocalBufferSize"),
-      this->UI->dsmSizeSpinBox->value());
-    //
-    this->UI->DSMProxy->UpdateVTKObjects();
-    this->UI->DSMProxy->InvokeCommand("CreateDSM");
-    this->UI->DSMInitialized = 1;
   }
   return this->UI->DSMInitialized;
 }
@@ -587,6 +597,38 @@ void pqDSMViewerPanel::onSCWriteDisk()
     this->UI->infoCurrentSteeringCommand->clear();
     this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
     this->UI->DSMProxy->UpdateVTKObjects();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onWriteDataToDSM() 
+{
+  if (this->DSMReady()) {
+    if (!this->UI->ActiveSourceProxy) {
+      vtkGenericWarningMacro(<<"Nothing to Write");
+      return;
+    }
+    //
+    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
+      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
+
+    // Delete our reference now and let smart pointer clean up later
+    XdmfWriter->UnRegister(NULL);
+
+    pqSMAdaptor::setProxyProperty(
+      XdmfWriter->GetProperty("DSMManager"), this->UI->DSMProxy);
+
+    pqSMAdaptor::setElementProperty(
+      XdmfWriter->GetProperty("FileName"), "stdin");
+
+    pqSMAdaptor::setInputProperty(
+      XdmfWriter->GetProperty("Input"),
+      this->UI->ActiveSourceProxy,
+      this->UI->ActiveSourcePort
+      );
+
+    XdmfWriter->UpdateVTKObjects();
+    XdmfWriter->UpdatePipeline();
   }
 }
 //-----------------------------------------------------------------------------

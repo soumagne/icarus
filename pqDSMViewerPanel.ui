@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>435</width>
-    <height>679</height>
+    <width>385</width>
+    <height>623</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -28,8 +28,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>437</width>
-         <height>618</height>
+         <width>387</width>
+         <height>568</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -39,7 +39,7 @@
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>0</number>
+           <number>1</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideRight</enum>
@@ -385,7 +385,7 @@
                  <string/>
                 </property>
                 <property name="pixmap">
-                 <pixmap resource="CSCS_DSMManager.qrc">:/ParaViewResources/Icons/NextMuSELogo.png</pixmap>
+                 <pixmap resource="IcarusQtResources.qrc">:/ParaViewResources/Icons/NextMuSELogo.png</pixmap>
                 </property>
                 <property name="scaledContents">
                  <bool>false</bool>
@@ -518,6 +518,48 @@
              </widget>
             </item>
             <item>
+             <widget class="QGroupBox" name="sourceBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>Active Source Object</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_3">
+               <item row="0" column="0" colspan="3">
+                <widget class="QLineEdit" name="infoTextOutput">
+                 <property name="readOnly">
+                  <bool>true</bool>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="0" colspan="2">
+                <widget class="QCheckBox" name="clientMode">
+                 <property name="text">
+                  <string>Client Mode </string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="2">
+                <widget class="QPushButton" name="writeToDSM">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Write Active Source to DSM</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </widget>
+            </item>
+            <item>
              <widget class="QGroupBox" name="standardControlBox">
               <property name="title">
                <string>Standard Controls</string>
@@ -590,28 +632,6 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
-             <widget class="QGroupBox" name="sourceBox">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="title">
-               <string>Active Source Object</string>
-              </property>
-              <layout class="QVBoxLayout" name="verticalLayout_7">
-               <item>
-                <widget class="QLineEdit" name="infoTextOutput">
-                 <property name="readOnly">
-                  <bool>true</bool>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </widget>
-            </item>
-            <item>
              <widget class="QGraphicsView" name="dsmHTMView"/>
             </item>
            </layout>
@@ -626,7 +646,7 @@
   </widget>
  </widget>
  <resources>
-  <include location="CSCS_DSMManager.qrc"/>
+  <include location="IcarusQtResources.qrc"/>
  </resources>
  <connections/>
 </ui>

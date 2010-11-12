@@ -30,11 +30,15 @@
       <Property name="PublishDSM"
                 command="PublishDSM">
       </Property>
-      
+
       <Property name="UnpublishDSM"
                 command="UnpublishDSM">
       </Property>
-      
+
+      <Property name="ReadDSMConfigFile"
+                command="ReadDSMConfigFile">
+      </Property>
+
       <Property name="H5Dump"
                 command="H5Dump">
       </Property>

@@ -85,6 +85,9 @@ public slots:
   void onSCPlay();
   void onSCWriteDisk();
 
+  // Sending data to DSM
+  void onWriteDataToDSM();
+
   void onDisplayDSM();
   void TrackSource();
 

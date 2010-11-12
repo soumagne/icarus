@@ -79,7 +79,7 @@ bool vtkDSMManager::DestroyDSM()
   return this->DsmManager->DestroyDSM();
 }
 //----------------------------------------------------------------------------
-bool vtkDSMManager::CreateDSM()
+void vtkDSMManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {
@@ -114,6 +114,34 @@ bool vtkDSMManager::CreateDSM()
     this->SetController(controller);
     vtkMPIController::SetGlobalController(controller);
   }
+}
+//----------------------------------------------------------------------------
+bool vtkDSMManager::ReadDSMConfigFile()
+{
+  this->CheckMPIController();
+  //
+  // Get the raw MPI_Comm handle
+  //
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  this->DsmManager->SetCommunicator(*communicator->GetMPIComm()->GetHandle());
+
+#ifdef VTK_USE_MPI
+  this->UpdatePiece     = this->Controller->GetLocalProcessId();
+  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+#else
+  this->UpdatePiece     = 0;
+  this->UpdateNumPieces = 1;
+  vtkErrorMacro(<<"No MPI");
+  return 0;
+#endif
+
+  return this->DsmManager->ReadDSMConfigFile();
+}
+//----------------------------------------------------------------------------
+bool vtkDSMManager::CreateDSM()
+{
+  this->CheckMPIController();
 
   //
   // Get the raw MPI_Comm handle
