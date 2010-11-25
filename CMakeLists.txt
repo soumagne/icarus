@@ -101,7 +101,10 @@ ADD_PARAVIEW_PLUGIN(
   GUI_INTERFACES 
     ${DSM_IFACE}
   GUI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfSteeringParser.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringProperty.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringVectorProperty.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringIntVectorProperty.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}

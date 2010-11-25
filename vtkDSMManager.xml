@@ -146,7 +146,20 @@
         name="SteeringCommand"
         command="SetSteeringCommand"
         number_of_elements="1">
-      </StringVectorProperty>  
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="IntScalarInteractionName"
+        command="SetIntScalarInteractionName"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <IntVectorProperty
+        name="IntScalarInteraction"
+        command="SetIntScalarInteraction"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
 
     </Proxy>
 

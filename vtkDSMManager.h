@@ -83,9 +83,17 @@ public:
   void ClearDsmUpdateReady() { return DsmManager->ClearDsmUpdateReady(); }
 
   // Description:
-  // Set/Get the current given steering command.
+  // Set the current given steering command.
   // The command is then passed to the simulation.
   void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
+
+  // Description:
+  // Set the current given IntScalar interaction.
+  void SetIntScalarInteraction(int value) { DsmManager->SetIntScalarInteraction(value); }
+
+  // Description:
+  // Set the current given name for the corresponding IntScalar interaction.
+  void SetIntScalarInteractionName(char *name) { DsmManager->SetIntScalarInteractionName(name); }
 
   // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted

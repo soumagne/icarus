@@ -29,6 +29,8 @@
 
 #include <vtkSmartPointer.h>
 
+#include <vector>
+
 // For communicator selection, has to match XdmfDsmComm.h
 #define H5FD_DSM_COMM_MPI     0x10
 #define H5FD_DSM_COMM_SOCKET  0x11
@@ -40,11 +42,13 @@ class pqView;
 class QTimer;
 class QGraphicsScene;
 class QTreeWidgetItem;
+class QSpinBox;
+class QLabel;
 
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
 
-class vtkXdmfSteeringParser;
+class XdmfSteeringParser;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -88,6 +92,8 @@ public slots:
   // Sending data to DSM
   void onWriteDataToDSM();
 
+  void onAdvancedControlUpdate();
+
   void onDisplayDSM();
   void TrackSource();
 
@@ -100,17 +106,21 @@ protected:
   void LoadSettings();
   void SaveSettings();
 
+  void DeleteSteeringWidgets();
+
   void DescFileParse(const char *filepath);
   void ChangeItemState(QTreeWidgetItem *item);
 
   class pqUI;
-  pqUI* UI;
+  pqUI            *UI;
   bool             Connected;
   int              DSMCommType;
   QTimer          *UpdateTimer;
   int              CurrentTimeStep;
 
-  vtkXdmfSteeringParser *SteeringParser;
+  XdmfSteeringParser *SteeringParser;
+  std::vector<QSpinBox*> advancedControlIntScalarSpinBoxes;
+  std::vector<QLabel*> advancedControlIntScalarLabels;
 
   // For HTM drawing
   QGraphicsScene  *HTMScene;

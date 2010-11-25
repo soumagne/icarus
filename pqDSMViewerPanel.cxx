@@ -84,9 +84,11 @@
 //
 #include "ui_pqDSMViewerPanel.h"
 
-#include "vtkXdmfSteeringParser.h"
+#include "XdmfSteeringParser.h"
+#include "XdmfSteeringIntVectorProperty.h"
 #include <vtksys/SystemTools.hxx>
 
+using std::vector;
 
 //----------------------------------------------------------------------------
 //
@@ -140,7 +142,7 @@ QDockWidget("DSM Manager", p)
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
 
-  this->SteeringParser = new vtkXdmfSteeringParser();
+  this->SteeringParser = new XdmfSteeringParser();
 
   this->HTMScene = new QGraphicsScene();
   this->UI->dsmHTMView->setScene(this->HTMScene);
@@ -193,6 +195,8 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->writeToDSM,
       SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
 
+  this->connect(this->UI->advancedControlUpdate,
+        SIGNAL(clicked()), this, SLOT(onAdvancedControlUpdate()));
   //
   // Link paraview events to callbacks
   //
@@ -241,6 +245,8 @@ QDockWidget("DSM Manager", p)
 pqDSMViewerPanel::~pqDSMViewerPanel()
 {
   this->SaveSettings();
+
+  this->DeleteSteeringWidgets();
 
   if (this->UpdateTimer) delete this->UpdateTimer;
   this->UpdateTimer = NULL;
@@ -326,9 +332,43 @@ void pqDSMViewerPanel::SaveSettings()
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
+void pqDSMViewerPanel::DeleteSteeringWidgets()
+{
+  // Delete old tree
+  for(int i = 0; i < this->UI->dsmArrayTreeWidget->topLevelItemCount(); i++) {
+    QTreeWidgetItem *gridItem;
+    gridItem = this->UI->dsmArrayTreeWidget->topLevelItem(i);
+    for (int j = 0; j < gridItem->childCount(); j++) {
+      QTreeWidgetItem *attributeItem = gridItem->child(j);
+      gridItem->removeChild(attributeItem);
+      if (attributeItem) delete attributeItem;
+      attributeItem = NULL;
+    }
+    this->UI->dsmArrayTreeWidget->removeItemWidget(gridItem, 0);
+    if (gridItem) delete gridItem;
+    gridItem = NULL;
+  }
+
+  // First delete old created widgets
+  while (!this->advancedControlIntScalarLabels.empty()) {
+    QLabel *label = this->advancedControlIntScalarLabels.back();
+    this->advancedControlIntScalarLabels.pop_back();
+    if (label) delete label;
+    label = NULL;
+  }
+  while (!this->advancedControlIntScalarSpinBoxes.empty()) {
+    QSpinBox *spinBox = this->advancedControlIntScalarSpinBoxes.back();
+    this->advancedControlIntScalarSpinBoxes.pop_back();
+    if (spinBox) delete spinBox;
+    spinBox = NULL;
+  }
+}
+//----------------------------------------------------------------------------
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
 {
   xmfSteeringConfig *steeringConfig;
+
+  this->DeleteSteeringWidgets();
 
   this->SteeringParser->Parse(filepath);
   steeringConfig = this->SteeringParser->GetSteeringConfig();
@@ -351,6 +391,21 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
       gridItems.append(attributeItem);
     }
   }
+
+  for (int i = 0; i < steeringConfig->interactConfig.numberOfIVP; i++) {
+    // TODO Handle vectors and not only scalars
+    QGridLayout *gridLayout = dynamic_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
+    QSpinBox *spinBox = new QSpinBox();
+    spinBox->setValue(steeringConfig->interactConfig.ivp[i]->GetElement(0));
+    spinBox->setToolTip(steeringConfig->interactConfig.ivp[i]->GetDocumentation());
+    QLabel *label = new QLabel();
+    label->setText(steeringConfig->interactConfig.ivp[i]->GetXMLName());
+    gridLayout->addWidget(label, i, 0);
+    gridLayout->addWidget(spinBox, i, 1);
+    advancedControlIntScalarLabels.push_back(label);
+    advancedControlIntScalarSpinBoxes.push_back(spinBox);
+  }
+
   // TODO not sure that memory is well released
   this->UI->dsmArrayTreeWidget->clear();
   this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
@@ -524,9 +579,9 @@ void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
     for (int j = 0; j < gridItem->childCount(); j++) {
       QTreeWidgetItem *attributeItem = gridItem->child(j);
       this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled = (attributeItem->checkState(0) == Qt::Checked) ? true : false;
-//      if (this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
-//        cerr << attributeItem->text(0).toStdString() << endl;
-//      }
+      if (this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
+        // cerr << this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].hdfPath << endl;
+      }
     }
   }
 }
@@ -629,6 +684,21 @@ void pqDSMViewerPanel::onWriteDataToDSM()
 
     XdmfWriter->UpdateVTKObjects();
     XdmfWriter->UpdatePipeline();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onAdvancedControlUpdate()
+{
+  if (this->DSMReady()) {
+    for (unsigned int i = 0; i < this->advancedControlIntScalarSpinBoxes.size(); i++) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("IntScalarInteractionName"),
+          this->advancedControlIntScalarLabels.at(i)->text().toStdString().c_str());
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("IntScalarInteraction"),
+          this->advancedControlIntScalarSpinBoxes[i]->value());
+      this->UI->DSMProxy->UpdateVTKObjects();
+    }
   }
 }
 //-----------------------------------------------------------------------------
@@ -839,6 +909,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         if (this->UI->autoDisplayDSM->isChecked()) {
           this->onDisplayDSM();
         } else {
+          // TODO If the XdmfWriter has to write something back to the DSM, it's here
           this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
         }
       }

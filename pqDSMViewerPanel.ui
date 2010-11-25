@@ -632,6 +632,27 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
+             <widget class="QGroupBox" name="advancedControlBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="title">
+               <string>Advanced Controls</string>
+              </property>
+              <layout class="QGridLayout" name="gridLayout_4"/>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="advancedControlUpdate">
+              <property name="text">
+               <string>Update Controls</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QGraphicsView" name="dsmHTMView"/>
             </item>
            </layout>
