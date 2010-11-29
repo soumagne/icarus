@@ -406,11 +406,9 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
     advancedControlIntScalarSpinBoxes.push_back(spinBox);
   }
 
-  // TODO not sure that memory is well released
   this->UI->dsmArrayTreeWidget->clear();
   this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
   this->UI->dsmArrayTreeWidget->expandAll();
-
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
@@ -693,7 +691,7 @@ void pqDSMViewerPanel::onAdvancedControlUpdate()
     for (unsigned int i = 0; i < this->advancedControlIntScalarSpinBoxes.size(); i++) {
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("IntScalarInteractionName"),
-          this->advancedControlIntScalarLabels.at(i)->text().toStdString().c_str());
+          this->advancedControlIntScalarLabels[i]->text().toStdString().c_str());
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("IntScalarInteraction"),
           this->advancedControlIntScalarSpinBoxes[i]->value());
