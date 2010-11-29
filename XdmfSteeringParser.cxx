@@ -27,6 +27,7 @@
 #include <XdmfDOM.h>
 
 #include "XdmfSteeringIntVectorProperty.h"
+#include "XdmfSteeringDoubleVectorProperty.h"
 
 #include <vtksys/RegularExpression.hxx>
 #include <iostream>
@@ -43,11 +44,27 @@ XdmfSteeringParser::~XdmfSteeringParser()
 {
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = NULL;
+  this->DeleteConfig();
+}
+//----------------------------------------------------------------------------
+void XdmfSteeringParser::DeleteConfig()
+{
   if (this->SteeringConfig) {
     for (int i = 0; i < this->SteeringConfig->numberOfGrids; i++) {
-        delete []this->SteeringConfig->gridConfig[i].attributeConfig;
-      }
+      delete []this->SteeringConfig->gridConfig[i].attributeConfig;
+    }
     delete []this->SteeringConfig->gridConfig;
+
+    for (int i = 0; i < this->SteeringConfig->interactConfig.numberOfIntVectorProperties; i++) {
+      delete this->SteeringConfig->interactConfig.intVectorProperties[i];
+    }
+    delete []this->SteeringConfig->interactConfig.intVectorProperties;
+
+    for (int i = 0; i < this->SteeringConfig->interactConfig.numberOfDoubleVectorProperties; i++) {
+      delete this->SteeringConfig->interactConfig.doubleVectorProperties[i];
+    }
+    delete []this->SteeringConfig->interactConfig.doubleVectorProperties;
+
     delete this->SteeringConfig;
   }
   this->SteeringConfig = NULL;
@@ -59,18 +76,12 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   int numberOfGrids;
 
   XdmfXmlNode interactionNode;
-  int numberOfIVP;
+  int numberOfIntVectorProperties;
+  int numberOfDoubleVectorProperties;
 
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = new XdmfDOM();
-
-  if (this->SteeringConfig) {
-    for (int i = 0; i < this->SteeringConfig->numberOfGrids; i++) {
-        delete []this->SteeringConfig->gridConfig[i].attributeConfig;
-      }
-    delete []this->SteeringConfig->gridConfig;
-    delete this->SteeringConfig;
-  }
+  this->DeleteConfig();
 
   // Fill configDOM
   XdmfDebug("Parsing file: " << configFilePath);
@@ -85,10 +96,15 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   //////////////////////////////////////////////////////////////////////
   // Interaction
   interactionNode = this->ConfigDOM->FindElement("Interaction");
-  numberOfIVP = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
-  this->SteeringConfig->interactConfig.numberOfIVP = numberOfIVP;
-  this->SteeringConfig->interactConfig.ivp = new XdmfSteeringIntVectorProperty*[numberOfIVP];
-  for (int currentIVPIndex=0; currentIVPIndex < numberOfIVP; currentIVPIndex++) {
+
+  numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
+  this->SteeringConfig->interactConfig.numberOfIntVectorProperties = numberOfIntVectorProperties;
+
+  numberOfDoubleVectorProperties = this->ConfigDOM->FindNumberOfElements("DoubleVectorProperty", interactionNode);
+  this->SteeringConfig->interactConfig.numberOfDoubleVectorProperties = numberOfDoubleVectorProperties;
+
+  this->SteeringConfig->interactConfig.intVectorProperties = new XdmfSteeringIntVectorProperty*[numberOfIntVectorProperties];
+  for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
     XdmfXmlNode ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
     XdmfXmlNode ivpDocNode = this->ConfigDOM->FindElement("Documentation", 0, ivpNode);
     XdmfSteeringIntVectorProperty *ivp = new XdmfSteeringIntVectorProperty();
@@ -97,7 +113,20 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     ivp->SetNumberOfElements(atoi(this->ConfigDOM->GetAttribute(ivpNode, "number_of_elements")));
     ivp->SetElement(0, atoi(this->ConfigDOM->GetAttribute(ivpNode, "default_values")));
     ivp->SetDocumentation(this->ConfigDOM->GetCData(ivpDocNode));
-    this->SteeringConfig->interactConfig.ivp[currentIVPIndex] = ivp;
+    this->SteeringConfig->interactConfig.intVectorProperties[currentIVPIndex] = ivp;
+  }
+
+  this->SteeringConfig->interactConfig.doubleVectorProperties = new XdmfSteeringDoubleVectorProperty*[numberOfDoubleVectorProperties];
+  for (int currentDVPIndex=0; currentDVPIndex < numberOfDoubleVectorProperties; currentDVPIndex++) {
+    XdmfXmlNode dvpNode = this->ConfigDOM->FindElement("DoubleVectorProperty", currentDVPIndex, interactionNode);
+    XdmfXmlNode dvpDocNode = this->ConfigDOM->FindElement("Documentation", 0, dvpNode);
+    XdmfSteeringDoubleVectorProperty *dvp = new XdmfSteeringDoubleVectorProperty();
+    dvp->SetXMLName(this->ConfigDOM->GetAttribute(dvpNode, "name"));
+    dvp->SetXMLLabel(this->ConfigDOM->GetAttribute(dvpNode, "label"));
+    dvp->SetNumberOfElements(atoi(this->ConfigDOM->GetAttribute(dvpNode, "number_of_elements")));
+    dvp->SetElement(0, atof(this->ConfigDOM->GetAttribute(dvpNode, "default_values")));
+    dvp->SetDocumentation(this->ConfigDOM->GetCData(dvpDocNode));
+    this->SteeringConfig->interactConfig.doubleVectorProperties[currentDVPIndex] = dvp;
   }
   //////////////////////////////////////////////////////////////////////
   // Domain

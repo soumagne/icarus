@@ -28,6 +28,8 @@
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVariant>
+#include <QSpinBox>
+#include <QDoubleSpinBox>
 #include <QLabel>
 #include <QComboBox>
 #include <QTableWidget>
@@ -86,6 +88,7 @@
 
 #include "XdmfSteeringParser.h"
 #include "XdmfSteeringIntVectorProperty.h"
+#include "XdmfSteeringDoubleVectorProperty.h"
 #include <vtksys/SystemTools.hxx>
 
 using std::vector;
@@ -362,6 +365,18 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
     if (spinBox) delete spinBox;
     spinBox = NULL;
   }
+  while (!this->advancedControlDoubleScalarLabels.empty()) {
+    QLabel *label = this->advancedControlDoubleScalarLabels.back();
+    this->advancedControlDoubleScalarLabels.pop_back();
+    if (label) delete label;
+    label = NULL;
+  }
+  while (!this->advancedControlDoubleScalarSpinBoxes.empty()) {
+    QDoubleSpinBox *spinBox = this->advancedControlDoubleScalarSpinBoxes.back();
+    this->advancedControlDoubleScalarSpinBoxes.pop_back();
+    if (spinBox) delete spinBox;
+    spinBox = NULL;
+  }
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
@@ -392,18 +407,34 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
     }
   }
 
-  for (int i = 0; i < steeringConfig->interactConfig.numberOfIVP; i++) {
+  for (int i = 0; i < steeringConfig->interactConfig.numberOfIntVectorProperties; i++) {
     // TODO Handle vectors and not only scalars
     QGridLayout *gridLayout = dynamic_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
     QSpinBox *spinBox = new QSpinBox();
-    spinBox->setValue(steeringConfig->interactConfig.ivp[i]->GetElement(0));
-    spinBox->setToolTip(steeringConfig->interactConfig.ivp[i]->GetDocumentation());
+    spinBox->setValue(steeringConfig->interactConfig.intVectorProperties[i]->GetElement(0));
+    spinBox->setToolTip(steeringConfig->interactConfig.intVectorProperties[i]->GetDocumentation());
     QLabel *label = new QLabel();
-    label->setText(steeringConfig->interactConfig.ivp[i]->GetXMLName());
+    label->setText(steeringConfig->interactConfig.intVectorProperties[i]->GetXMLName());
     gridLayout->addWidget(label, i, 0);
     gridLayout->addWidget(spinBox, i, 1);
     advancedControlIntScalarLabels.push_back(label);
     advancedControlIntScalarSpinBoxes.push_back(spinBox);
+  }
+
+  for (int i = 0; i < steeringConfig->interactConfig.numberOfDoubleVectorProperties; i++) {
+    // TODO Handle vectors and not only scalars
+    QGridLayout *gridLayout = dynamic_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
+    QDoubleSpinBox *spinBox = new QDoubleSpinBox();
+    spinBox->setRange(-5000,5000);
+    spinBox->setDecimals(10);
+    spinBox->setValue(steeringConfig->interactConfig.doubleVectorProperties[i]->GetElement(0));
+    spinBox->setToolTip(steeringConfig->interactConfig.doubleVectorProperties[i]->GetDocumentation());
+    QLabel *label = new QLabel();
+    label->setText(steeringConfig->interactConfig.doubleVectorProperties[i]->GetXMLName());
+    gridLayout->addWidget(label, i+steeringConfig->interactConfig.numberOfIntVectorProperties, 0);
+    gridLayout->addWidget(spinBox, i+steeringConfig->interactConfig.numberOfIntVectorProperties, 1);
+    advancedControlDoubleScalarLabels.push_back(label);
+    advancedControlDoubleScalarSpinBoxes.push_back(spinBox);
   }
 
   this->UI->dsmArrayTreeWidget->clear();
@@ -695,6 +726,15 @@ void pqDSMViewerPanel::onAdvancedControlUpdate()
       pqSMAdaptor::setElementProperty(
           this->UI->DSMProxy->GetProperty("IntScalarInteraction"),
           this->advancedControlIntScalarSpinBoxes[i]->value());
+      this->UI->DSMProxy->UpdateVTKObjects();
+    }
+    for (unsigned int i = 0; i < this->advancedControlDoubleScalarSpinBoxes.size(); i++) {
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("DoubleScalarInteractionName"),
+          this->advancedControlDoubleScalarLabels[i]->text().toStdString().c_str());
+      pqSMAdaptor::setElementProperty(
+          this->UI->DSMProxy->GetProperty("DoubleScalarInteraction"),
+          this->advancedControlDoubleScalarSpinBoxes[i]->value());
       this->UI->DSMProxy->UpdateVTKObjects();
     }
   }

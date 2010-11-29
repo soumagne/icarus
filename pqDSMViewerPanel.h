@@ -43,6 +43,7 @@ class QTimer;
 class QGraphicsScene;
 class QTreeWidgetItem;
 class QSpinBox;
+class QDoubleSpinBox;
 class QLabel;
 
 class vtkSMSourceProxy;
@@ -121,6 +122,8 @@ protected:
   XdmfSteeringParser *SteeringParser;
   std::vector<QSpinBox*> advancedControlIntScalarSpinBoxes;
   std::vector<QLabel*> advancedControlIntScalarLabels;
+  std::vector<QDoubleSpinBox*> advancedControlDoubleScalarSpinBoxes;
+  std::vector<QLabel*> advancedControlDoubleScalarLabels;
 
   // For HTM drawing
   QGraphicsScene  *HTMScene;

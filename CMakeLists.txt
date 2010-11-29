@@ -105,6 +105,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringProperty.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringVectorProperty.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringIntVectorProperty.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringDoubleVectorProperty.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
