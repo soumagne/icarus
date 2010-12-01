@@ -132,6 +132,7 @@ vtkXdmfWriter4::vtkXdmfWriter4()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 
   this->LightDataLimit = 0;
+  this->SetNumberOfOutputPorts(1);
 }
 //----------------------------------------------------------------------------
 vtkXdmfWriter4::~vtkXdmfWriter4()
@@ -152,6 +153,14 @@ vtkXdmfWriter4::~vtkXdmfWriter4()
 int vtkXdmfWriter4::FillInputPortInformation(int port, vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
+  return 1;
+}
+//----------------------------------------------------------------------------
+int vtkXdmfWriter4::FillOutputPortInformation(
+  int vtkNotUsed(port), vtkInformation* info)
+{
+  // we might be multiblock, we might be dataset
+  info->Set(vtkDataObject::DATA_TYPE_NAME(), "vtkPolyData");
   return 1;
 }
 //----------------------------------------------------------------------------
@@ -513,7 +522,10 @@ int vtkXdmfWriter4::RequestData(
   //
 #ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  MPI_Comm mpiComm = *communicator->GetMPIComm()->GetHandle();
+  MPI_Comm mpiComm = NULL;
+  if (communicator) {
+    mpiComm = *communicator->GetMPIComm()->GetHandle();
+  }
   //
   if (!this->Callback) {
     this->Callback = new H5MBCallback(mpiComm);

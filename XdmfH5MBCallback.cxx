@@ -46,8 +46,14 @@ class ArrayMap {
 H5MBCallback::H5MBCallback(MPI_Comm comm) 
 {
   this->Communicator = comm;
-  MPI_Comm_size( this->Communicator, &this->Size );
-  MPI_Comm_rank( this->Communicator, &this->Rank );
+  if (!this->Communicator) {
+    this->Size = 1;
+    this->Rank = 0;
+  }
+  else {
+    MPI_Comm_size( this->Communicator, &this->Size );
+    MPI_Comm_rank( this->Communicator, &this->Rank );
+  }
   this->tree        = NULL;
   this->dataArrays  = NULL;
   this->AccessPlist = -1;

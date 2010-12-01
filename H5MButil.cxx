@@ -369,8 +369,14 @@ bool H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm)
   if (!tree) return false;
   //
   int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  if (!comm) {
+    // no need to actual send/receive anything
+    return true;
+  }
+  else {
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+  }
   //
   std::stringstream data;
   data << *tree << std::endl;
@@ -419,8 +425,14 @@ bool H5MB_create(H5MB_tree_type *treestruct, MPI_Comm comm, hid_t plist_id)
   if (!tree) return false;
   //
   int rank, size;
-  MPI_Comm_rank(comm, &rank);
-  MPI_Comm_size(comm, &size);
+  if (!comm) {
+    size = 1;
+    rank = 0;
+  }
+  else {
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+  }
   //
   std::string filename = tree->get()->get_text();
   
