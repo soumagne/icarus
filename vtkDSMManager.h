@@ -96,6 +96,14 @@ public:
   void SetIntScalarInteractionName(char *name) { DsmManager->SetIntScalarInteractionName(name); }
 
   // Description:
+  // Set the current given DoubleScalar interaction.
+  void SetDoubleScalarInteraction(double value) { DsmManager->SetDoubleScalarInteraction(value); }
+
+  // Description:
+  // Set the current given name for the corresponding DoubleScalar interaction.
+  void SetDoubleScalarInteractionName(char *name) { DsmManager->SetDoubleScalarInteractionName(name); }
+
+  // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
   // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
   // object to see if a string is present

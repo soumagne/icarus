@@ -32,6 +32,7 @@
 #include <string>
 
 class XdmfSteeringIntVectorProperty;
+class XdmfSteeringDoubleVectorProperty;
 
 // Structures to hold information given in the .lxmf file
 typedef struct xmfSteeringConfigAttribute_ {
@@ -48,8 +49,10 @@ typedef struct xmfSteeringConfigGrid_ {
 } xmfSteeringConfigGrid;
 
 typedef struct xmfSteeringConfigInteract_ {
-  XdmfInt32   numberOfIVP;
-  XdmfSteeringIntVectorProperty **ivp;
+  XdmfInt32   numberOfIntVectorProperties;
+  XdmfSteeringIntVectorProperty **intVectorProperties;
+  XdmfInt32   numberOfDoubleVectorProperties;
+  XdmfSteeringDoubleVectorProperty **doubleVectorProperties;
 } xmfSteeringConfigInteract;
 
 typedef struct xmfSteeringConfig_ {
@@ -65,6 +68,7 @@ public:
   XdmfSteeringParser();
   ~XdmfSteeringParser();
 
+  void DeleteConfig();
   XdmfGetValueMacro(SteeringConfig, xmfSteeringConfig*);
   XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
   int Parse(const char *filepath);
