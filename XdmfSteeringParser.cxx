@@ -28,6 +28,10 @@
 
 #include "XdmfSteeringIntVectorProperty.h"
 #include "XdmfSteeringDoubleVectorProperty.h"
+#include "XdmfSteeringBooleanDomain.h"
+#include "XdmfSteeringIntRangeDomain.h"
+#include "XdmfSteeringDoubleRangeDomain.h"
+#include "XdmfSteeringEnumerationDomain.h"
 
 #include <vtksys/RegularExpression.hxx>
 #include <iostream>
@@ -107,6 +111,8 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
     XdmfXmlNode ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
     XdmfXmlNode ivpDocNode = this->ConfigDOM->FindElement("Documentation", 0, ivpNode);
+    XdmfXmlNode ivpDomainNode;
+
     XdmfSteeringIntVectorProperty *ivp = new XdmfSteeringIntVectorProperty();
     ivp->SetXMLName(this->ConfigDOM->GetAttribute(ivpNode, "name"));
     ivp->SetXMLLabel(this->ConfigDOM->GetAttribute(ivpNode, "label"));
@@ -114,12 +120,30 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     ivp->SetElement(0, atoi(this->ConfigDOM->GetAttribute(ivpNode, "default_values")));
     ivp->SetDocumentation(this->ConfigDOM->GetCData(ivpDocNode));
     this->SteeringConfig->interactConfig.intVectorProperties[currentIVPIndex] = ivp;
+
+    // BooleanDomain
+    if ((ivpDomainNode = this->ConfigDOM->FindElement("BooleanDomain", 0, ivpNode))) {
+      XdmfSteeringBooleanDomain *boolDomain = new XdmfSteeringBooleanDomain();
+      cerr << "BooleanDomain" << endl;
+    }
+    // IntRangeDomain
+    else if ((ivpDomainNode = this->ConfigDOM->FindElement("IntRangeDomain", 0, ivpNode))) {
+      XdmfSteeringIntRangeDomain *rangeDomain = new XdmfSteeringIntRangeDomain();
+      cerr << "IntRangeDomain" << endl;
+    }
+    // EnumerationDomain
+    else if ((ivpDomainNode = this->ConfigDOM->FindElement("EnumerationDomain", 0, ivpNode))) {
+      XdmfSteeringEnumerationDomain *enumDomain = new XdmfSteeringEnumerationDomain();
+      cerr << "EnumerationDomain" << endl;
+    }
   }
 
   this->SteeringConfig->interactConfig.doubleVectorProperties = new XdmfSteeringDoubleVectorProperty*[numberOfDoubleVectorProperties];
   for (int currentDVPIndex=0; currentDVPIndex < numberOfDoubleVectorProperties; currentDVPIndex++) {
     XdmfXmlNode dvpNode = this->ConfigDOM->FindElement("DoubleVectorProperty", currentDVPIndex, interactionNode);
     XdmfXmlNode dvpDocNode = this->ConfigDOM->FindElement("Documentation", 0, dvpNode);
+    XdmfXmlNode dvpDomainNode;
+
     XdmfSteeringDoubleVectorProperty *dvp = new XdmfSteeringDoubleVectorProperty();
     dvp->SetXMLName(this->ConfigDOM->GetAttribute(dvpNode, "name"));
     dvp->SetXMLLabel(this->ConfigDOM->GetAttribute(dvpNode, "label"));
@@ -127,6 +151,12 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     dvp->SetElement(0, atof(this->ConfigDOM->GetAttribute(dvpNode, "default_values")));
     dvp->SetDocumentation(this->ConfigDOM->GetCData(dvpDocNode));
     this->SteeringConfig->interactConfig.doubleVectorProperties[currentDVPIndex] = dvp;
+
+    // DoubleRangeDomain
+    if ((dvpDomainNode = this->ConfigDOM->FindElement("DoubleRangeDomain", 0, dvpNode))) {
+      XdmfSteeringDoubleRangeDomain *rangeDomain = new XdmfSteeringDoubleRangeDomain();
+      cerr << "DoubleRangeDomain" << endl;
+    }
   }
   //////////////////////////////////////////////////////////////////////
   // Domain
