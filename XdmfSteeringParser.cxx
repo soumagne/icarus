@@ -112,6 +112,8 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     XdmfXmlNode ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
     XdmfXmlNode ivpDocNode = this->ConfigDOM->FindElement("Documentation", 0, ivpNode);
     XdmfXmlNode ivpDomainNode;
+    bool eod = false;
+    int boolIdx = 0, rangeIdx = 0, enumIdx = 0;
 
     XdmfSteeringIntVectorProperty *ivp = new XdmfSteeringIntVectorProperty();
     ivp->SetXMLName(this->ConfigDOM->GetAttribute(ivpNode, "name"));
@@ -121,20 +123,38 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     ivp->SetDocumentation(this->ConfigDOM->GetCData(ivpDocNode));
     this->SteeringConfig->interactConfig.intVectorProperties[currentIVPIndex] = ivp;
 
-    // BooleanDomain
-    if ((ivpDomainNode = this->ConfigDOM->FindElement("BooleanDomain", 0, ivpNode))) {
-      XdmfSteeringBooleanDomain *boolDomain = new XdmfSteeringBooleanDomain();
-      cerr << "BooleanDomain" << endl;
-    }
-    // IntRangeDomain
-    else if ((ivpDomainNode = this->ConfigDOM->FindElement("IntRangeDomain", 0, ivpNode))) {
-      XdmfSteeringIntRangeDomain *rangeDomain = new XdmfSteeringIntRangeDomain();
-      cerr << "IntRangeDomain" << endl;
-    }
-    // EnumerationDomain
-    else if ((ivpDomainNode = this->ConfigDOM->FindElement("EnumerationDomain", 0, ivpNode))) {
-      XdmfSteeringEnumerationDomain *enumDomain = new XdmfSteeringEnumerationDomain();
-      cerr << "EnumerationDomain" << endl;
+    while (!eod) {
+      // BooleanDomain
+      if ((ivpDomainNode = this->ConfigDOM->FindElement("BooleanDomain", boolIdx, ivpNode))) {
+        XdmfSteeringBooleanDomain *boolDomain = new XdmfSteeringBooleanDomain();
+        ivp->AddDomain("bool", boolDomain);
+        boolIdx++;
+      }
+      // IntRangeDomain
+      else if ((ivpDomainNode = this->ConfigDOM->FindElement("IntRangeDomain", rangeIdx, ivpNode))) {
+        XdmfSteeringIntRangeDomain *rangeDomain = new XdmfSteeringIntRangeDomain();
+        rangeDomain->AddMinimum(0, atoi(this->ConfigDOM->GetAttribute(ivpDomainNode, "min")));
+        rangeDomain->AddMaximum(0, atoi(this->ConfigDOM->GetAttribute(ivpDomainNode, "max")));
+        ivp->AddDomain("range", rangeDomain);
+        rangeIdx++;
+      }
+      // EnumerationDomain
+      else if ((ivpDomainNode = this->ConfigDOM->FindElement("EnumerationDomain", enumIdx, ivpNode))) {
+        XdmfSteeringEnumerationDomain *enumDomain = new XdmfSteeringEnumerationDomain();
+        int entryIdx = 0;
+        XdmfXmlNode entryNode = this->ConfigDOM->FindElement("Entry", entryIdx, ivpDomainNode);
+        while (entryNode) {
+          enumDomain->AddEntry(this->ConfigDOM->GetAttribute(entryNode, "text"),
+              atoi(this->ConfigDOM->GetAttribute(entryNode, "value")));
+          entryIdx++;
+          entryNode = this->ConfigDOM->FindElement("Entry", entryIdx, ivpDomainNode);
+        }
+        ivp->AddDomain("enum", enumDomain);
+        enumIdx++;
+      }
+      else {
+        eod = true;
+      }
     }
   }
 
@@ -143,6 +163,8 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     XdmfXmlNode dvpNode = this->ConfigDOM->FindElement("DoubleVectorProperty", currentDVPIndex, interactionNode);
     XdmfXmlNode dvpDocNode = this->ConfigDOM->FindElement("Documentation", 0, dvpNode);
     XdmfXmlNode dvpDomainNode;
+    bool eod = false;
+    int rangeIdx = 0;
 
     XdmfSteeringDoubleVectorProperty *dvp = new XdmfSteeringDoubleVectorProperty();
     dvp->SetXMLName(this->ConfigDOM->GetAttribute(dvpNode, "name"));
@@ -152,10 +174,18 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     dvp->SetDocumentation(this->ConfigDOM->GetCData(dvpDocNode));
     this->SteeringConfig->interactConfig.doubleVectorProperties[currentDVPIndex] = dvp;
 
-    // DoubleRangeDomain
-    if ((dvpDomainNode = this->ConfigDOM->FindElement("DoubleRangeDomain", 0, dvpNode))) {
-      XdmfSteeringDoubleRangeDomain *rangeDomain = new XdmfSteeringDoubleRangeDomain();
-      cerr << "DoubleRangeDomain" << endl;
+    while (!eod) {
+      // DoubleRangeDomain
+      if ((dvpDomainNode = this->ConfigDOM->FindElement("DoubleRangeDomain", rangeIdx, dvpNode))) {
+        XdmfSteeringDoubleRangeDomain *rangeDomain = new XdmfSteeringDoubleRangeDomain();
+        rangeDomain->AddMinimum(0, atof(this->ConfigDOM->GetAttribute(dvpDomainNode, "min")));
+        rangeDomain->AddMaximum(0, atof(this->ConfigDOM->GetAttribute(dvpDomainNode, "max")));
+        dvp->AddDomain("range", rangeDomain);
+        rangeIdx++;
+      }
+      else {
+        eod = true;
+      }
     }
   }
   //////////////////////////////////////////////////////////////////////
