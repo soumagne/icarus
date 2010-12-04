@@ -85,7 +85,7 @@
 
 //
 #include "ui_pqDSMViewerPanel.h"
-
+#include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
 #include "XdmfSteeringIntVectorProperty.h"
 #include "XdmfSteeringDoubleVectorProperty.h"
@@ -110,11 +110,13 @@ public:
   //
   ~pqUI() {
     delete this->Links;
+    this->DSMProxy = NULL;
+    this->ActiveSourceProxy = NULL;
   }
 
   void CreateProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
+    this->DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
     this->DSMProxy->UpdatePropertyInformation();
   }
 
@@ -232,6 +234,7 @@ QDockWidget("DSM Manager", p)
   this->connect(smModel,
     SIGNAL(sourceAdded(pqPipelineSource*)),
     this, SLOT(TrackSource()));
+
   this->connect(smModel,
     SIGNAL(sourceRemoved(pqPipelineSource*)),
     this, SLOT(TrackSource()));
@@ -259,6 +262,16 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 
   if (this->HTMScene) delete this->HTMScene;
   this->HTMScene = NULL;
+
+  if (this->UI->ProxyCreated()) {
+    this->UI->DSMProxy->InvokeCommand("DestroyDSM");
+    this->UI->DSMProxy = NULL;
+    this->UI->DSMInitialized = 0;
+  }
+
+  this->XdmfReader = NULL;
+  this->XdmfRepresentation = NULL;
+
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LoadSettings()
@@ -488,16 +501,12 @@ bool pqDSMViewerPanel::DSMReady()
   //
   if (!this->UI->DSMInitialized) {
     //
+    bool server = (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked());
+    bool client = (this->UI->dsmIsClient->isChecked() || this->UI->dsmIsStandalone->isChecked());
     pqSMAdaptor::setElementProperty(
-      this->UI->DSMProxy->GetProperty("DsmIsServer"), true);
+      this->UI->DSMProxy->GetProperty("DsmIsServer"), server);
     //
-    if (this->UI->clientMode->isChecked()) {
-      this->UI->DSMProxy->InvokeCommand("ReadDSMConfigFile");
-      this->UI->DSMProxy->InvokeCommand("CreateDSM");
-      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
-      this->UI->DSMInitialized = 1;
-    }
-    else {
+    if (server) {
       if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
         this->DSMCommType = H5FD_DSM_COMM_MPI;
       }
@@ -518,6 +527,17 @@ bool pqDSMViewerPanel::DSMReady()
       this->UI->DSMProxy->UpdateVTKObjects();
       this->UI->DSMProxy->InvokeCommand("CreateDSM");
       this->UI->DSMInitialized = 1;
+    }
+    else if (client) {
+      this->UI->DSMProxy->InvokeCommand("ReadDSMConfigFile");
+      this->UI->DSMProxy->InvokeCommand("CreateDSM");
+      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+      this->UI->DSMInitialized = 1;
+    }
+    // 
+    if (server && client) {
+//      this->onPublishDSM();
+//      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
     }
   }
   return this->UI->DSMInitialized;
@@ -896,7 +916,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     //
     // To prevent deadlock, switch communicators if we are client and server
     //
-    this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
+//    this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
   }
 }
 //-----------------------------------------------------------------------------
@@ -946,8 +966,9 @@ void pqDSMViewerPanel::onUpdateTimeout()
         this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
         if (this->UI->autoDisplayDSM->isChecked()) {
           this->onDisplayDSM();
-        } else {
-          // TODO If the XdmfWriter has to write something back to the DSM, it's here
+        } 
+        // TODO If the XdmfWriter has to write something back to the DSM, it's here
+        if (!this->UI->dsmIsStandalone->isChecked()) {
           this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
         }
       }

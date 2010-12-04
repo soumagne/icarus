@@ -28,24 +28,22 @@
 #include <QDockWidget>
 
 #include <vtkSmartPointer.h>
-
+//
 #include <vector>
-
-// For communicator selection, has to match XdmfDsmComm.h
-#define H5FD_DSM_COMM_MPI     0x10
-#define H5FD_DSM_COMM_SOCKET  0x11
-#define H5FD_DSM_COMM_MPI_RMA 0x12
-#define H5FD_DSM_COMM_GNI     0x13
-
-class pqServer;
-class pqView;
+// Core Qt 
 class QTimer;
 class QGraphicsScene;
 class QTreeWidgetItem;
 class QSpinBox;
 class QDoubleSpinBox;
 class QLabel;
-
+// Servermanager and views
+class pqServer;
+class pqView;
+// 3D widget control
+class pq3DWidget;
+// Proxies
+class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkSMRepresentationProxy;
 
