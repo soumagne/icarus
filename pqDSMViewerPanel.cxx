@@ -82,7 +82,7 @@
 #include "pqActiveObjects.h"
 #include "pqDisplayPolicy.h"
 #include "pqAnimationScene.h"
-
+#include "pq3DWidget.h"
 //
 #include "ui_pqDSMViewerPanel.h"
 #include "H5FDdsmComm.h"
@@ -171,6 +171,10 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->autoSaveImage,
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
 
+  // 3D widget
+  this->connect(this->UI->displayWidget,
+    SIGNAL(clicked()), this, SLOT(showHandleWidget()));
+  
   // DSM Commands
   this->connect(this->UI->addServerDSM,
       SIGNAL(clicked()), this, SLOT(onAddServerDSM()));
@@ -271,6 +275,8 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 
   this->XdmfReader = NULL;
   this->XdmfRepresentation = NULL;
+  this->HandleProxy = NULL;
+  this->HandleWidget = NULL;
 
 }
 //----------------------------------------------------------------------------
@@ -478,6 +484,9 @@ void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->UI->ActiveView = renView;
+  if (this->HandleWidget) {
+    this->HandleWidget->setView(this->UI->ActiveView);
+  }
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LinkServerManagerProperties()
@@ -977,5 +986,42 @@ void pqDSMViewerPanel::onUpdateTimeout()
 
   // restart the timer before we exit
   this->UpdateTimer->start();
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::showHandleWidget()
+{
+  if (!this->XdmfReader) {
+    this->UI->displayWidget->setChecked(0);
+    return;
+  }
+
+
+  if (!this->HandleProxy) {
+    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    this->HandleProxy = pm->NewProxy("extended_sources", "PointSource");
+    this->HandleProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    this->HandleProxy->UpdatePropertyInformation();
+    QList<pq3DWidget*> widgets =
+      pq3DWidget::createWidgets(this->HandleProxy, this->HandleProxy);
+    if (widgets.size() > 1)
+      {
+      for (int cc=1; cc < widgets.size(); cc++)
+        {
+        delete widgets[cc];
+        }
+      }
+    if(!widgets.isEmpty())
+      {
+      this->HandleWidget = widgets[0];
+      this->HandleWidget->resetBounds();
+      this->HandleWidget->reset();
+
+      QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->widgetLayout);
+      l->addWidget(this->HandleWidget, 1, 0, 1, 2);
+      this->HandleWidget->setView(this->UI->ActiveView);
+      this->HandleWidget->show();
+      }
+  }
+
 }
 //-----------------------------------------------------------------------------

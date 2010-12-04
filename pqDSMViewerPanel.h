@@ -26,7 +26,8 @@
 #define _pqDSMViewerPanel_h
 
 #include <QDockWidget>
-
+#include <QPointer>
+//
 #include <vtkSmartPointer.h>
 //
 #include <vector>
@@ -96,6 +97,8 @@ public slots:
   void onDisplayDSM();
   void TrackSource();
 
+  void showHandleWidget();
+
 private slots:
 
 protected:
@@ -128,6 +131,9 @@ protected:
 
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
+
+  vtkSmartPointer<vtkSMProxy> HandleProxy;
+  QPointer<pq3DWidget>        HandleWidget;
 
 protected slots:
 
