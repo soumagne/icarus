@@ -35,6 +35,7 @@ class QTimer;
 class QGraphicsScene;
 class QTreeWidgetItem;
 class QSpinBox;
+class QComboBox;
 class QDoubleSpinBox;
 class QLabel;
 // Servermanager and views
@@ -118,8 +119,13 @@ protected:
   int              CurrentTimeStep;
 
   XdmfSteeringParser *SteeringParser;
+
   std::vector<QSpinBox*> advancedControlIntScalarSpinBoxes;
-  std::vector<QLabel*> advancedControlIntScalarLabels;
+  std::vector<QLabel*> advancedControlIntScalarSpinBoxesLabels;
+
+  std::vector<QComboBox*> advancedControlIntScalarComboBoxes;
+  std::vector<QLabel*> advancedControlIntScalarComboBoxesLabels;
+
   std::vector<QDoubleSpinBox*> advancedControlDoubleScalarSpinBoxes;
   std::vector<QLabel*> advancedControlDoubleScalarLabels;
 
