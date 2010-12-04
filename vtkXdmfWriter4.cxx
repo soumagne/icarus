@@ -522,7 +522,7 @@ int vtkXdmfWriter4::RequestData(
   //
 #ifdef VTK_USE_MPI
   vtkMPICommunicator *communicator = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  MPI_Comm mpiComm = NULL;
+  MPI_Comm mpiComm = MPI_COMM_NULL;
   if (communicator) {
     mpiComm = *communicator->GetMPIComm()->GetHandle();
   }

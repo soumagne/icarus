@@ -28,6 +28,10 @@
 
 #include "XdmfObject.h"
 
+class XdmfSteeringDomain;
+
+struct XdmfSteeringPropertyInternals;
+
 class XDMF_EXPORT XdmfSteeringProperty : public XdmfObject
 {
 public:
@@ -41,43 +45,24 @@ public:
   XdmfGetStringMacro(Command);
 
   // Description:
-  // Returns true if all values are in all domains, false otherwise.
-  // The domains will check the unchecked values (SetUncheckedXXX())
-  // instead of the actual values.
-//  int IsInDomains();
-
-  // Description:
-  // Creates, initializes and returns a new domain iterator. The user
-  // has to delete the iterator.
-//  vtkSMDomainIterator* NewDomainIterator();
-
-  // Description:
   // Returns a domain give a name.
-//  vtkSMDomain* GetDomain(const char* name);
+  XdmfSteeringDomain* GetDomain(const char* name);
 
   // Description:
   // Returns the first domain which is of the specified type.
-//  vtkSMDomain* FindDomain(const char* classname);
+  XdmfSteeringDomain* FindDomain(const char* classname);
 
   // Description:
   // Returns the number of domains this property has. This can be
   // used to specify a valid index for GetDomain(index).
-//  unsigned int GetNumberOfDomains();
+  unsigned int GetNumberOfDomains();
 
   // Description:
-  // Static boolean used to determine whether domain checking should
-  // be performed when setting values. On by default.
-//  static int GetCheckDomains();
-//  static void SetCheckDomains(int check);
+  // Properties can have one or more domains.
+  void AddDomain(const char* name, XdmfSteeringDomain* dom);
 
   // Description:
-  // Properties can have one or more domains. These are assigned by
-  // the proxy manager and can be used to obtain information other
-  // than given by the type of the propery and its values.
-//  void AddDomain(const char* name, vtkSMDomain* dom);
-
-  // Description:
-  // Returns the documentation for this proxy. The return value
+  // Returns the documentation for this property. The return value
   // may be NULL if no documentation is defined in the XML
   // for this property.
   XdmfGetStringMacro(Documentation);
@@ -108,13 +93,11 @@ protected:
 
   XdmfString Command;
 
+  XdmfSteeringPropertyInternals* PInternals;
+
   XdmfString XMLName;
   XdmfString XMLLabel;
   XdmfSetStringMacro(XMLLabel);
-
-//  vtkSMDomainIterator* DomainIterator;
-//
-//  static int CheckDomains;
 
   XdmfString Documentation;
   XdmfSetStringMacro(Documentation);

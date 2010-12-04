@@ -260,7 +260,7 @@ std::istream& operator>>(std::istream& is, TreeClass& t)
   for (int i=0; i<childcount; ++i) { 
     // mark stream position because item is read once here
     std::streamoff pos = is.tellg();
-    H5MB_info item("", 0, NULL);
+    H5MB_info item("", NULL, 0);
     is >> item;
     TreeClass::iterator it = H5MB_utility::find(&t, item.get_text());
     if (it==t.end()) {
