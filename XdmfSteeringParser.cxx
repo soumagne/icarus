@@ -34,8 +34,15 @@
 #include "XdmfSteeringEnumerationDomain.h"
 
 #include <vtksys/RegularExpression.hxx>
+#include <vtksys/SystemTools.hxx>
+#include <string>
 #include <iostream>
 #include <cstdlib>
+
+#include "vtkDSMProxyHelper.h"
+#include "vtkProcessModule.h"
+#include "vtkSMObject.h"
+#include "vtkSMProxyManager.h"
 
 //----------------------------------------------------------------------------
 XdmfSteeringParser::XdmfSteeringParser()
@@ -101,6 +108,8 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   // Interaction
   interactionNode = this->ConfigDOM->FindElement("Interaction");
 
+  this->CreateProxyXML(interactionNode);
+
   numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
   this->SteeringConfig->interactConfig.numberOfIntVectorProperties = numberOfIntVectorProperties;
 
@@ -118,8 +127,8 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     XdmfSteeringIntVectorProperty *ivp = new XdmfSteeringIntVectorProperty();
     ivp->SetXMLName(this->ConfigDOM->GetAttribute(ivpNode, "name"));
     ivp->SetXMLLabel(this->ConfigDOM->GetAttribute(ivpNode, "label"));
-    ivp->SetNumberOfElements(atoi(this->ConfigDOM->GetAttribute(ivpNode, "number_of_elements")));
-    ivp->SetElement(0, atoi(this->ConfigDOM->GetAttribute(ivpNode, "default_values")));
+//    ivp->SetNumberOfElements(atoi(this->ConfigDOM->GetAttribute(ivpNode, "number_of_elements")));
+//    ivp->SetElement(0, atoi(this->ConfigDOM->GetAttribute(ivpNode, "default_values")));
     ivp->SetDocumentation(this->ConfigDOM->GetCData(ivpDocNode));
     this->SteeringConfig->interactConfig.intVectorProperties[currentIVPIndex] = ivp;
 
@@ -233,5 +242,52 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   }
 
   return(XDMF_SUCCESS);
+}
+//----------------------------------------------------------------------------
+int XdmfSteeringParser::CreateProxyXML(XdmfXmlNode interactionNode)
+{
+  std::ostringstream xmlstring;
+  //
+  xmlstring << "<ServerManagerConfiguration>" << std::endl;
+  xmlstring << "<ProxyGroup name=\"icarus_helpers\">" << std::endl;
+  xmlstring << "<Proxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
+  // The Helper needs a DSM manager
+  xmlstring << "      <ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\">\n";
+  xmlstring << "        <ProxyGroupDomain name=\"groups\">\n";
+  xmlstring << "          <Group name=\"icarus_helpers\"/>\n";
+  xmlstring << "        </ProxyGroupDomain>\n";
+  xmlstring << "        <ProxyListDomain name=\"proxy_list\">\n";
+  xmlstring << "          <Proxy group=\"icarus_helpers\" \n";
+  xmlstring << "                 name=\"DSMManager\" />\n";
+  xmlstring << "        </ProxyListDomain>\n";
+  xmlstring << "      </ProxyProperty>\n";
+  
+  int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
+  for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
+    XdmfXmlNode  ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
+    std::string      xml = this->ConfigDOM->Serialize(ivpNode);
+    XdmfConstString name = this->ConfigDOM->GetAttribute(ivpNode, "name");
+    vtksys::SystemTools::ReplaceString(xml, "@@@", name);
+    xmlstring << xml << std::endl;
+  }
+
+  int numberOfDoubleVectorProperties = this->ConfigDOM->FindNumberOfElements("DoubleVectorProperty", interactionNode);
+  for (int currentDVPIndex=0; currentDVPIndex < numberOfDoubleVectorProperties; currentDVPIndex++) {
+    XdmfXmlNode  dvpNode = this->ConfigDOM->FindElement("DoubleVectorProperty", currentDVPIndex, interactionNode);
+    std::string      xml = this->ConfigDOM->Serialize(dvpNode);
+    XdmfConstString name = this->ConfigDOM->GetAttribute(dvpNode, "name");
+    vtksys::SystemTools::ReplaceString(xml, "@@@", name);
+    xmlstring << xml << std::endl;
+  }
+
+  xmlstring << "</Proxy>" << std::endl;
+  xmlstring << "</ProxyGroup>" << std::endl;
+  xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;
+  std::cout << xmlstring.str().c_str();
+
+  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
+  vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring.str().c_str());
+
+  return 1;
 }
 //----------------------------------------------------------------------------

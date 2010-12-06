@@ -39,7 +39,7 @@
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>3</number>
+           <number>2</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideRight</enum>
@@ -590,15 +590,11 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
-             <layout class="QGridLayout" name="widgetLayout">
-              <item row="0" column="0">
-               <widget class="QCheckBox" name="displayWidget">
-                <property name="text">
-                 <string>displayWidget</string>
-                </property>
-               </widget>
-              </item>
-             </layout>
+             <widget class="QCheckBox" name="displayWidget">
+              <property name="text">
+               <string>displayWidget</string>
+              </property>
+             </widget>
             </item>
             <item>
              <widget class="QGroupBox" name="advancedControlBox">
@@ -611,7 +607,11 @@
               <property name="title">
                <string>Advanced Controls</string>
               </property>
-              <layout class="QGridLayout" name="gridLayout_4"/>
+              <layout class="QVBoxLayout" name="verticalLayout_9">
+               <item>
+                <layout class="QVBoxLayout" name="generatedLayout"/>
+               </item>
+              </layout>
              </widget>
             </item>
             <item>
@@ -620,9 +620,6 @@
                <string>Update Controls</string>
               </property>
              </widget>
-            </item>
-            <item>
-             <widget class="QGraphicsView" name="dsmHTMView"/>
             </item>
            </layout>
           </widget>
@@ -692,6 +689,9 @@
                </item>
               </layout>
              </widget>
+            </item>
+            <item>
+             <widget class="QGraphicsView" name="dsmHTMView"/>
             </item>
             <item>
              <spacer name="verticalSpacer_2">

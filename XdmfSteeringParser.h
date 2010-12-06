@@ -73,6 +73,8 @@ public:
   XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
   int Parse(const char *filepath);
 
+  int CreateProxyXML(XdmfXmlNode interactionNode);
+
 protected:
   XdmfDOM           *ConfigDOM;
   xmfSteeringConfig *SteeringConfig;

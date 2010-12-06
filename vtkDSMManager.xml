@@ -1,10 +1,14 @@
 <ServerManagerConfiguration>
 
   <!-- ================================================================ -->
-  <!-- DSM                                                              -->
+  <!-- DSM classes wrapped by server manager                            -->
   <!-- ================================================================ -->
 
   <ProxyGroup name="icarus_helpers">
+    
+    <!-- ============================================================== -->
+    <!-- DSMManager                                                     -->
+    <!-- ============================================================== -->
     <Proxy name="DSMManager" class="vtkDSMManager">
       
       <Property name="CreateDSM"
