@@ -252,15 +252,14 @@ int XdmfSteeringParser::CreateProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<ProxyGroup name=\"icarus_helpers\">" << std::endl;
   xmlstring << "<Proxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
   // The Helper needs a DSM manager
-  xmlstring << "      <ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\">\n";
-  xmlstring << "        <ProxyGroupDomain name=\"groups\">\n";
-  xmlstring << "          <Group name=\"icarus_helpers\"/>\n";
-  xmlstring << "        </ProxyGroupDomain>\n";
-  xmlstring << "        <ProxyListDomain name=\"proxy_list\">\n";
-  xmlstring << "          <Proxy group=\"icarus_helpers\" \n";
-  xmlstring << "                 name=\"DSMManager\" />\n";
-  xmlstring << "        </ProxyListDomain>\n";
-  xmlstring << "      </ProxyProperty>\n";
+  xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\">" << std::endl;
+  xmlstring << "  <ProxyGroupDomain name=\"groups\">" << std::endl;
+  xmlstring << "    <Group name=\"icarus_helpers\"/>" << std::endl;;
+  xmlstring << "  </ProxyGroupDomain>" << std::endl;
+  xmlstring << "  <ProxyListDomain name=\"proxy_list\">" << std::endl;
+  xmlstring << "    <Proxy group=\"icarus_helpers\" name=\"DSMManager\" />" << std::endl;
+  xmlstring << "  </ProxyListDomain>" << std::endl;
+  xmlstring << "</ProxyProperty>" << std::endl;
   
   int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
   for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {

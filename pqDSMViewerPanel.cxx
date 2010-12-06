@@ -125,6 +125,7 @@ public:
     this->ActiveServer     = 0;
     this->ActiveView       = 0;
     this->ObjectInspector  = 0;
+    this->pqObjectInspectorProxy = 0;
   }
   //
   ~pqUI() {
@@ -148,6 +149,7 @@ public:
   vtkSmartPointer<vtkSMProxy> DSMProxyHelper;
   vtkSmartPointer<vtkSMProxy> ActiveSourceProxy;
   pqObjectInspectorWidget    *ObjectInspector;
+  pqProxy                    *pqObjectInspectorProxy;
   int                         ActiveSourcePort;
   pqServer                   *ActiveServer;
   pqRenderView               *ActiveView;
@@ -452,7 +454,9 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
 
   // clear out auto generated controls
   delete this->UI->ObjectInspector;
-  this->UI->ObjectInspector = NULL;
+  delete this->UI->pqObjectInspectorProxy;
+  this->UI->ObjectInspector        = NULL;
+  this->UI->pqObjectInspectorProxy = NULL;
 
 /*
   // First delete old created widgets
@@ -498,13 +502,13 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
 {
   xmfSteeringConfig *steeringConfig;
-
+  //
   this->DeleteSteeringWidgets();
-
+  //
   this->SteeringParser->Parse(filepath);
   steeringConfig = this->SteeringParser->GetSteeringConfig();
   if (!steeringConfig) return;
-
+  //
   this->UI->dsmArrayTreeWidget->setColumnCount(1);
   QList<QTreeWidgetItem *> gridItems;
   for (int i = 0; i < steeringConfig->numberOfGrids; i++) {
@@ -540,13 +544,13 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
     this->UI->DSMProxyHelper->GetProperty("DSMManager"), this->UI->DSMProxy);
   this->UI->DSMProxyHelper->UpdateVTKObjects();
   // wrap the object in a pqProxy
-  pqProxy *pqproxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
+  this->UI->pqObjectInspectorProxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
   //
   // create an object inspector to manage the settings
   //
   this->UI->ObjectInspector = new pqObjectInspectorWidget(this->UI->devTab);
   this->UI->ObjectInspector->setView(this->UI->ActiveView);
-  this->UI->ObjectInspector->setProxy(pqproxy);
+  this->UI->ObjectInspector->setProxy(this->UI->pqObjectInspectorProxy);
   this->UI->ObjectInspector->setDeleteButtonVisibility(false);
   this->UI->generatedLayout->addWidget(this->UI->ObjectInspector);
 
