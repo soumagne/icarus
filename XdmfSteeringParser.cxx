@@ -280,6 +280,7 @@ int XdmfSteeringParser::CreateProxyXML(XdmfXmlNode interactionNode)
     xmlstring << xml << std::endl;
   }
 
+  xmlstring << "<Hints> <Property name=\"DSMManager\" show=\"0\"/> </Hints>" << std::endl;
   xmlstring << "</Proxy>" << std::endl;
   xmlstring << "</ProxyGroup>" << std::endl;
   xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;

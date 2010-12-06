@@ -124,6 +124,7 @@ public:
     this->ActiveSourcePort = 0;
     this->ActiveServer     = 0;
     this->ActiveView       = 0;
+    this->ObjectInspector  = 0;
   }
   //
   ~pqUI() {
@@ -146,6 +147,7 @@ public:
   vtkSmartPointer<vtkSMProxy> DSMProxy;
   vtkSmartPointer<vtkSMProxy> DSMProxyHelper;
   vtkSmartPointer<vtkSMProxy> ActiveSourceProxy;
+  pqObjectInspectorWidget    *ObjectInspector;
   int                         ActiveSourcePort;
   pqServer                   *ActiveServer;
   pqRenderView               *ActiveView;
@@ -241,8 +243,8 @@ QDockWidget("DSM Manager", p)
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
 
   // 3D widget
-  this->connect(this->UI->displayWidget,
-    SIGNAL(stateChanged(int)), this, SLOT(toggleHandleWidget(int)));
+//  this->connect(this->UI->displayWidget,
+//    SIGNAL(stateChanged(int)), this, SLOT(toggleHandleWidget(int)));
   
   // DSM Commands
   this->connect(this->UI->addServerDSM,
@@ -273,8 +275,8 @@ QDockWidget("DSM Manager", p)
   this->connect(this->UI->writeToDSM,
       SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
 
-  this->connect(this->UI->advancedControlUpdate,
-        SIGNAL(clicked()), this, SLOT(onAdvancedControlUpdate()));
+//  this->connect(this->UI->advancedControlUpdate,
+//        SIGNAL(clicked()), this, SLOT(onAdvancedControlUpdate()));
   //
   // Link paraview events to callbacks
   //
@@ -448,6 +450,11 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
     gridItem = NULL;
   }
 
+  // clear out auto generated controls
+  delete this->UI->ObjectInspector;
+  this->UI->ObjectInspector = NULL;
+
+/*
   // First delete old created widgets
   while (!this->advancedControlIntScalarSpinBoxesLabels.empty()) {
     QLabel *label = this->advancedControlIntScalarSpinBoxesLabels.back();
@@ -485,6 +492,7 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
     if (spinBox) delete spinBox;
     spinBox = NULL;
   }
+  */
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
@@ -514,6 +522,34 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
       gridItems.append(attributeItem);
     }
   }
+
+  //
+  // The active view is very important once we start generating proxies to control
+  // widgets etc. Make sure it is valid.
+  // 
+  if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
+    this->onActiveViewChanged(pqActiveView::instance().current());
+  }
+
+  // Create a DSM proxy helper object (interacts with generated Steering Objects)
+  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+  this->UI->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
+  this->UI->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+  // Set the DSM manager it uses for communication
+  pqSMAdaptor::setProxyProperty(
+    this->UI->DSMProxyHelper->GetProperty("DSMManager"), this->UI->DSMProxy);
+  this->UI->DSMProxyHelper->UpdateVTKObjects();
+  // wrap the object in a pqProxy
+  pqProxy *pqproxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
+  //
+  // create an object inspector to manage the settings
+  //
+  this->UI->ObjectInspector = new pqObjectInspectorWidget(this->UI->devTab);
+  this->UI->ObjectInspector->setView(this->UI->ActiveView);
+  this->UI->ObjectInspector->setProxy(pqproxy);
+  this->UI->ObjectInspector->setDeleteButtonVisibility(false);
+  this->UI->generatedLayout->addWidget(this->UI->ObjectInspector);
+
 /*
   for (int i = 0; i < steeringConfig->interactConfig.numberOfIntVectorProperties; i++) {
     // TODO Handle vectors and not only scalars
@@ -862,6 +898,7 @@ void pqDSMViewerPanel::onWriteDataToDSM()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onAdvancedControlUpdate()
 {
+/*
   if (this->DSMReady()) {
     for (unsigned int i = 0; i < this->advancedControlIntScalarSpinBoxes.size(); i++) {
       pqSMAdaptor::setElementProperty(
@@ -897,6 +934,7 @@ void pqDSMViewerPanel::onAdvancedControlUpdate()
       this->UI->DSMProxy->UpdateVTKObjects();
     }
   }
+  */
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::SaveSnapshot() {
@@ -1124,43 +1162,7 @@ void pqDSMViewerPanel::toggleHandleWidget(int state)
     this->onActiveViewChanged(pqActiveView::instance().current());
   }
 
-  static int once = 1;
-  if (once) {
-    once = 0;
-    // Create a DSM proxy helper object (interacts with generated Steering Objects)
-    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    this->UI->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
-    this->UI->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-    // Set the DSM manager it uses for communication
-    pqSMAdaptor::setProxyProperty(
-      this->UI->DSMProxyHelper->GetProperty("DSMManager"), this->UI->DSMProxy);
-    this->UI->DSMProxyHelper->UpdateVTKObjects();
-    // wrap the object in a pqProxy
-    pqProxy *pqproxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
-    // create an object inspector to manage the settings
-    pqObjectInspectorWidget *pqoiw = new pqObjectInspectorWidget(this->UI->advancedControlBox);
-    pqoiw->setView(this->UI->ActiveView);
-    pqoiw->setProxy(pqproxy);
-    pqoiw->setDeleteButtonVisibility(false);
-    this->UI->generatedLayout->addWidget(pqoiw);
-
-/*
-    pqAutoGeneratedObjectPanel *agob = new pqAutoGeneratedObjectPanel(pqproxy);
-    // the current auto panel always has the name "Editor"
-    agob->setObjectName("Editor");
-    this->UI->generatedLayout->addWidget(agob);
-    agob->setView(this->UI->ActiveView);
-    agob->select();
-    agob->show();
-*/
-
-//    QGridLayout *gl = new QGridLayout(this->UI->advancedControlBox);
-//    pqNamedWidgets::createWidgets(gl, this->HandleProxy);
-//    this->UI->advancedControlBox->show();
-  }
-
   if (!this->XdmfReader) {
-    this->UI->displayWidget->setChecked(0);
     return;
   }
 
@@ -1179,7 +1181,7 @@ void pqDSMViewerPanel::toggleHandleWidget(int state)
     this->HandleWidget->resetBounds();
     this->HandleWidget->reset();
 
-    QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
+    QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->devTab->layout());
     l->addWidget(this->HandleWidget, 1, 0, 1, 2);
     if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
       this->onActiveViewChanged(pqActiveView::instance().current());
