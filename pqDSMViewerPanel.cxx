@@ -84,6 +84,15 @@
 #include "pqAnimationScene.h"
 #include "pq3DWidget.h"
 //
+#include "pq3DWidgetInterface.h"
+#include "pqBoxWidget.h"
+#include "pqDistanceWidget.h"
+#include "pqImplicitPlaneWidget.h"
+#include "pqLineSourceWidget.h"
+#include "pqPointSourceWidget.h"
+#include "pqSphereWidget.h"
+#include "pqSplineWidget.h"
+//
 #include "ui_pqDSMViewerPanel.h"
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
@@ -135,6 +144,55 @@ public:
   pqServer                   *ActiveServer;
   pqRenderView               *ActiveView;
 };
+//-----------------------------------------------------------------------------
+class dsmStandardWidgets : public pq3DWidgetInterface
+{
+public:
+  pq3DWidget* newWidget(const QString& name,
+    vtkSMProxy* referenceProxy,
+    vtkSMProxy* controlledProxy)
+    {
+    pq3DWidget *widget = 0;
+    if (name == "Plane")
+      {
+      widget = new pqImplicitPlaneWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Box")
+      {
+      widget = new pqBoxWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Handle")
+      {
+      widget = new pqHandleWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "PointSource")
+      {
+      widget = new pqPointSourceWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "LineSource")
+      {
+      widget = new pqLineSourceWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Line")
+      {
+      widget = new pqLineWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Distance")
+      {
+      widget = new pqDistanceWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Sphere")
+      {
+      widget = new pqSphereWidget(referenceProxy, controlledProxy, 0);
+      }
+    else if (name == "Spline")
+      {
+      widget = new pqSplineWidget(referenceProxy, controlledProxy, 0);
+      }
+    return widget;
+    }
+};
+//-----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -178,7 +236,7 @@ QDockWidget("DSM Manager", p)
 
   // 3D widget
   this->connect(this->UI->displayWidget,
-    SIGNAL(clicked()), this, SLOT(showHandleWidget()));
+    SIGNAL(stateChanged(int)), this, SLOT(toggleHandleWidget(int)));
   
   // DSM Commands
   this->connect(this->UI->addServerDSM,
@@ -308,6 +366,10 @@ void pqDSMViewerPanel::LoadSettings()
   this->UI->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
   // Port
   this->UI->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
+  // Client/Server/Standalone
+  this->UI->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
+  this->UI->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
+  this->UI->dsmIsStandalone->setChecked(settings->value("dsmStandalone", 0).toBool());
   // Description file type
   this->UI->xdmfFileTypeComboBox->setCurrentIndex(settings->value("DescriptionFileType", 0).toInt());
   // Description file path
@@ -346,6 +408,10 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("Communication", this->UI->xdmfCommTypeComboBox->currentIndex());
   // Port
   settings->setValue("Port", this->UI->xdmfCommPort->value());
+  // Client/Server/Standalone
+  settings->setValue("dsmServer", this->UI->dsmIsServer->isChecked());
+  settings->setValue("dsmClient", this->UI->dsmIsClient->isChecked());
+  settings->setValue("dsmStandalone", this->UI->dsmIsStandalone->isChecked());
   // Description file type
   settings->setValue("DescriptionFileType", this->UI->xdmfFileTypeComboBox->currentIndex());
   // Description file path
@@ -527,7 +593,7 @@ void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->UI->ActiveView = renView;
-  if (this->HandleWidget) {
+  if (this->HandleWidget && this->UI->ActiveView) {
     this->HandleWidget->setView(this->UI->ActiveView);
   }
 }
@@ -1046,40 +1112,37 @@ void pqDSMViewerPanel::onUpdateTimeout()
   this->UpdateTimer->start();
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::showHandleWidget()
+void pqDSMViewerPanel::toggleHandleWidget(int state)
 {
   if (!this->XdmfReader) {
     this->UI->displayWidget->setChecked(0);
     return;
   }
 
-
   if (!this->HandleProxy) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    this->HandleProxy = pm->NewProxy("extended_sources", "PointSource");
+//    this->HandleProxy = pm->NewProxy("extended_sources", "Transform3");
+    this->HandleProxy = pm->NewProxy("3d_widgets", "HandleWidget");
     this->HandleProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->HandleProxy->UpdatePropertyInformation();
-    QList<pq3DWidget*> widgets =
-      pq3DWidget::createWidgets(this->HandleProxy, this->HandleProxy);
-    if (widgets.size() > 1)
-      {
-      for (int cc=1; cc < widgets.size(); cc++)
-        {
-        delete widgets[cc];
-        }
-      }
-    if(!widgets.isEmpty())
-      {
-      this->HandleWidget = widgets[0];
-      this->HandleWidget->resetBounds();
-      this->HandleWidget->reset();
 
-      QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->widgetLayout);
-      l->addWidget(this->HandleWidget, 1, 0, 1, 2);
-      this->HandleWidget->setView(this->UI->ActiveView);
-      this->HandleWidget->show();
-      }
+    dsmStandardWidgets standardWidgets;
+    this->HandleWidget = standardWidgets.newWidget("Distance", this->XdmfReader, this->HandleProxy);
+
+    this->HandleWidget->resetBounds();
+    this->HandleWidget->reset();
+
+    QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->widgetLayout);
+    l->addWidget(this->HandleWidget, 1, 0, 1, 2);
+    if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
+      this->onActiveViewChanged(pqActiveView::instance().current());
+    }
+    this->HandleWidget->setView(this->UI->ActiveView);
+    this->HandleWidget->show();
   }
 
+  double bounds[6];
+  this->HandleWidget->select();
+  this->HandleWidget->showWidget();
 }
 //-----------------------------------------------------------------------------

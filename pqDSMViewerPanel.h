@@ -98,7 +98,7 @@ public slots:
   void onDisplayDSM();
   void TrackSource();
 
-  void showHandleWidget();
+  void toggleHandleWidget(int);
 
 private slots:
 
