@@ -35,16 +35,30 @@
 #include "vtkSmartPointer.h"
 //
 #include "vtkDSMManager.h"
-//
-int vtkObjectCommand(vtkClientServerInterpreter*, vtkObjectBase*, const char*, const vtkClientServerStream&, vtkClientServerStream& resultStream);
+//----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
 int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
-//
+//----------------------------------------------------------------------------
+vtkStandardNewMacro(vtkDSMProxyHelper);
+vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
+//----------------------------------------------------------------------------
+vtkDSMProxyHelper::vtkDSMProxyHelper() 
+{
+  this->DSMManager = NULL;
+}
+//----------------------------------------------------------------------------
+vtkDSMProxyHelper::~vtkDSMProxyHelper()
+{ 
+  this->SetDSMManager(NULL);
+}
+//----------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------
 vtkObjectBase *vtkDSMProxyHelperClientServerNewCommand()
 {
   return vtkDSMProxyHelper::New();
 }
-
+//----------------------------------------------------------------------------
 void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter* csi)
 {
   static bool once;
@@ -56,23 +70,11 @@ void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter* csi)
     csi->AddCommandFunction("vtkDSMProxyHelper", vtkDSMProxyHelperCommand);
     }
 }
-
-//----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkDSMProxyHelper);
-vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
-//----------------------------------------------------------------------------
-vtkDSMProxyHelper::vtkDSMProxyHelper() 
-{
-}
-//----------------------------------------------------------------------------
-vtkDSMProxyHelper::~vtkDSMProxyHelper()
-{ 
-}
 //----------------------------------------------------------------------------
 int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)
 {
   vtkDSMProxyHelper *op = vtkDSMProxyHelper::SafeDownCast(ob);
-  if(!op)
+  if (!op)
     {
     vtkOStrStreamWrapper vtkmsg;
     vtkmsg << "Cannot cast " << ob->GetClassName() << " object to vtkDSMProxyHelper.  "
@@ -82,7 +84,6 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
                  << vtkmsg.str() << 0 << vtkClientServerStream::End;
     return 0;
     }
-  (void)arlu;
   
   if (!strncmp ("SetSteeringValueInt",method, 19))
   {
@@ -100,7 +101,9 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
     }
     std::cout << ");" << std::endl;
-//    op->DSMManager->SetSteeringValueInt(param_name.c_str(), nArgs, ival);
+    if (op) {
+//      op->GetDSMManager()->SetSteeringValueInt(param_name.c_str(), nArgs, ival);
+    }
   }
 
   if (!strncmp ("SetSteeringValueDouble",method, 22))
@@ -119,8 +122,33 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
     }
     std::cout << ");" << std::endl;
-//    op->DSMManager->SetSteeringValueDouble(param_name.c_str(), nArgs, dval);
+    if (op) {
+//      op->GetDSMManager()->SetSteeringValueDouble(param_name.c_str(), nArgs, dval);
+    }
   }
+
+  //
+  // We actually need to use these real ClientServer set/getters
+  //
+  if (!strcmp("SetDSMManager",method) && msg.GetNumberOfArguments(0) == 3)
+    {
+    vtkDSMManager  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDSMManager"))
+      {
+      op->SetDSMManager(temp0);
+      return 1;
+      }
+    }
+  if (!strcmp("GetDSMManager",method) && msg.GetNumberOfArguments(0) == 2)
+    {
+    vtkDSMManager  *temp20;
+      {
+      temp20 = (op)->GetDSMManager();
+      resultStream.Reset();
+      resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
+      return 1;
+      }
+    }
 
   return 1;
 }

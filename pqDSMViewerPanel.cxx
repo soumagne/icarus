@@ -1134,6 +1134,7 @@ void pqDSMViewerPanel::toggleHandleWidget(int state)
     // Set the DSM manager it uses for communication
     pqSMAdaptor::setProxyProperty(
       this->UI->DSMProxyHelper->GetProperty("DSMManager"), this->UI->DSMProxy);
+    this->UI->DSMProxyHelper->UpdateVTKObjects();
     // wrap the object in a pqProxy
     pqProxy *pqproxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
     // create an object inspector to manage the settings
