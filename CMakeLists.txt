@@ -6,6 +6,10 @@ IF(COMMAND CMAKE_POLICY)
   CMAKE_POLICY(SET CMP0003 NEW)
 ENDIF(COMMAND CMAKE_POLICY)
 
+IF(WIN32 AND MSVC)
+  ADD_DEFINITIONS(-D_CRT_SECURE_NO_WARNINGS)
+ENDIF(WIN32 AND MSVC)
+
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
