@@ -391,14 +391,17 @@ vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *nam
 {
   vtkXDRDebug("MakeGridName");
   vtkstd::stringstream temp1, temp2;
-  if (!name) {
+  if (name) {
+    temp1 << name;
+  }
+  else {
     temp1 << dataset->GetClassName();
   }
   if (this->UpdateNumPieces>1) {
-    temp1 << "_P_" << this->UpdatePiece;
+//    temp1 << "_P_" << this->UpdatePiece;
   }
   if (index>=0) {
-    temp1 << "_B_" << index;
+//    temp1 << "_B_" << index;
   }
   temp1 << vtkstd::ends;
   vtkstd::string gridname = name ? name : temp1.str().c_str();
@@ -568,7 +571,8 @@ int vtkXdmfWriter4::RequestData(
       dsinput = vtkDataSet::SafeDownCast(iter->GetCurrentDataObject());
       bool StaticFlag = false;
       if (dsinput) {
-        vtkstd::string name = this->MakeGridName(dsinput, NULL, index);
+        const char *bname = mbinput->GetMetaData( iter )->Get( vtkCompositeDataSet::NAME());
+        vtkstd::string name = this->MakeGridName(dsinput, bname, index);
         staticnode = this->GetStaticGridNode(dsinput, true, outputDOM, name.c_str(), StaticFlag);
         vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
         std::cout << "Adding block by index " << index << std::endl;
