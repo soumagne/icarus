@@ -38,18 +38,14 @@ typedef struct xmfSteeringConfigAttribute_ {
   XdmfBoolean isEnabled;
 } xmfSteeringConfigAttribute;
 
-class AttributeMap : public std::map<std::string, xmfSteeringConfigAttribute>
-{
-};
+typedef std::map<std::string, xmfSteeringConfigAttribute> AttributeMap;
 
 typedef struct xmfSteeringConfigGrid_ {
   XdmfBoolean  isEnabled;
   AttributeMap attributeConfig;
 } xmfSteeringConfigGrid;
 
-class GridMap : public std::map<std::string, xmfSteeringConfigGrid>
-{
-};
+typedef std::map<std::string, xmfSteeringConfigGrid> GridMap;
 
 class XdmfSteeringParser : public XdmfObject {
 public:
