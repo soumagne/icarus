@@ -93,8 +93,6 @@ public slots:
   // Sending data to DSM
   void onWriteDataToDSM();
 
-  void onAdvancedControlUpdate();
-
   void onDisplayDSM();
   void TrackSource();
 
@@ -122,15 +120,6 @@ protected:
   int              CurrentTimeStep;
 
   XdmfSteeringParser *SteeringParser;
-
-  std::vector<QSpinBox*> advancedControlIntScalarSpinBoxes;
-  std::vector<QLabel*> advancedControlIntScalarSpinBoxesLabels;
-
-  std::vector<QComboBox*> advancedControlIntScalarComboBoxes;
-  std::vector<QLabel*> advancedControlIntScalarComboBoxesLabels;
-
-  std::vector<QDoubleSpinBox*> advancedControlDoubleScalarSpinBoxes;
-  std::vector<QLabel*> advancedControlDoubleScalarLabels;
 
   // For HTM drawing
   QGraphicsScene  *HTMScene;
