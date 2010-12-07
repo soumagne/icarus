@@ -76,11 +76,14 @@ public:
   int GetAcceptedConnection() { return DsmManager->GetAcceptedConnection(); }
 
   // Description:
-  // Get/Set the update ready flag which triggers the VTK pipeline update and the
-  // display of DSM objects.
-  void SetDsmUpdateReady(int ready) { DsmManager->SetDsmUpdateReady(ready); }
+  // Get/Set the update ready flag which triggers the VTK pipeline update.
   int GetDsmUpdateReady() { return DsmManager->GetDsmUpdateReady(); }
   void ClearDsmUpdateReady() { return DsmManager->ClearDsmUpdateReady(); }
+
+  // Description:
+  // Get/Set the display update flag which triggers the update the view
+  int  GetDsmUpdateDisplay() { return DsmManager->GetDsmUpdateDisplay(); }
+  void ClearDsmUpdateDisplay() { DsmManager->ClearDsmUpdateDisplay(); }
 
   // Description:
   // Set the current given steering command.
