@@ -152,32 +152,6 @@
         number_of_elements="1">
       </StringVectorProperty>
 
-      <StringVectorProperty
-        name="IntScalarInteractionName"
-        command="SetIntScalarInteractionName"
-        number_of_elements="1">
-      </StringVectorProperty>
-
-      <IntVectorProperty
-        name="IntScalarInteraction"
-        command="SetIntScalarInteraction"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-     <StringVectorProperty
-        name="DoubleScalarInteractionName"
-        command="SetDoubleScalarInteractionName"
-        number_of_elements="1">
-      </StringVectorProperty>
-
-      <DoubleVectorProperty
-        name="DoubleScalarInteraction"
-        command="SetDoubleScalarInteraction"
-        number_of_elements="1"
-        default_values="0">
-      </DoubleVectorProperty>
-
     </Proxy>
 
   </ProxyGroup>

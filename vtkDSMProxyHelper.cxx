@@ -101,8 +101,8 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
     }
     std::cout << ");" << std::endl;
-    if (op) {
-//      op->GetDSMManager()->SetSteeringValueInt(param_name.c_str(), nArgs, ival);
+    if (op && op->GetDSMManager()) {
+      op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
     }
   }
 
@@ -122,8 +122,8 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
     }
     std::cout << ");" << std::endl;
-    if (op) {
-//      op->GetDSMManager()->SetSteeringValueDouble(param_name.c_str(), nArgs, dval);
+    if (op && op->GetDSMManager()) {
+      op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
     }
   }
 

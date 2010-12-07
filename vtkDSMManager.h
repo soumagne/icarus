@@ -88,20 +88,18 @@ public:
   void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
 
   // Description:
-  // Set the current given IntScalar interaction.
-  void SetIntScalarInteraction(int value) { DsmManager->SetIntScalarInteraction(value); }
+  // Set values and associated name for the corresponding int interaction.
+  void SetSteeringValues(const char *name, int numberOfElements, int *values)
+  {
+    DsmManager->SetSteeringValues(name, numberOfElements, values);
+  }
 
   // Description:
-  // Set the current given name for the corresponding IntScalar interaction.
-  void SetIntScalarInteractionName(char *name) { DsmManager->SetIntScalarInteractionName(name); }
-
-  // Description:
-  // Set the current given DoubleScalar interaction.
-  void SetDoubleScalarInteraction(double value) { DsmManager->SetDoubleScalarInteraction(value); }
-
-  // Description:
-  // Set the current given name for the corresponding DoubleScalar interaction.
-  void SetDoubleScalarInteractionName(char *name) { DsmManager->SetDoubleScalarInteractionName(name); }
+  // Set values and associated name for the corresponding int interaction.
+  void SetSteeringValues(const char *name, int numberOfElements, double *values)
+  {
+    DsmManager->SetSteeringValues(name, numberOfElements, values);
+  }
 
   // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
