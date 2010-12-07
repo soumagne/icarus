@@ -458,46 +458,6 @@ void pqDSMViewerPanel::DeleteSteeringWidgets()
   delete this->UI->pqObjectInspectorProxy;
   this->UI->ObjectInspector        = NULL;
   this->UI->pqObjectInspectorProxy = NULL;
-
-/*
-  // First delete old created widgets
-  while (!this->advancedControlIntScalarSpinBoxesLabels.empty()) {
-    QLabel *label = this->advancedControlIntScalarSpinBoxesLabels.back();
-    this->advancedControlIntScalarSpinBoxesLabels.pop_back();
-    if (label) delete label;
-    label = NULL;
-  }
-  while (!this->advancedControlIntScalarComboBoxesLabels.empty()) {
-    QLabel *label = this->advancedControlIntScalarComboBoxesLabels.back();
-    this->advancedControlIntScalarComboBoxesLabels.pop_back();
-    if (label) delete label;
-    label = NULL;
-  }
-  while (!this->advancedControlIntScalarSpinBoxes.empty()) {
-    QSpinBox *spinBox = this->advancedControlIntScalarSpinBoxes.back();
-    this->advancedControlIntScalarSpinBoxes.pop_back();
-    if (spinBox) delete spinBox;
-    spinBox = NULL;
-  }
-  while (!this->advancedControlIntScalarComboBoxes.empty()) {
-    QComboBox *comboBox = this->advancedControlIntScalarComboBoxes.back();
-    this->advancedControlIntScalarComboBoxes.pop_back();
-    if (comboBox) delete comboBox;
-    comboBox = NULL;
-  }
-  while (!this->advancedControlDoubleScalarLabels.empty()) {
-    QLabel *label = this->advancedControlDoubleScalarLabels.back();
-    this->advancedControlDoubleScalarLabels.pop_back();
-    if (label) delete label;
-    label = NULL;
-  }
-  while (!this->advancedControlDoubleScalarSpinBoxes.empty()) {
-    QDoubleSpinBox *spinBox = this->advancedControlDoubleScalarSpinBoxes.back();
-    this->advancedControlDoubleScalarSpinBoxes.pop_back();
-    if (spinBox) delete spinBox;
-    spinBox = NULL;
-  }
-  */
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::DescFileParse(const char *filepath)
@@ -556,63 +516,6 @@ void pqDSMViewerPanel::DescFileParse(const char *filepath)
   this->UI->ObjectInspector->setHelpButtonVisibility(false);
   this->UI->generatedLayout->addWidget(this->UI->ObjectInspector);
 
-/*
-  for (int i = 0; i < steeringConfig->interactConfig.numberOfIntVectorProperties; i++) {
-    // TODO Handle vectors and not only scalars
-    QGridLayout *gridLayout = dynamic_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
-    QLabel *label = new QLabel();
-    label->setText(steeringConfig->interactConfig.intVectorProperties[i]->GetXMLName());
-    gridLayout->addWidget(label, i, 0);
-    if (steeringConfig->interactConfig.intVectorProperties[i]->GetDomain("enum")) {
-      XdmfSteeringEnumerationDomain *enumDomain = dynamic_cast<XdmfSteeringEnumerationDomain*>(steeringConfig->interactConfig.intVectorProperties[i]->GetDomain("enum"));
-      QComboBox *comboBox = new QComboBox();
-      for (unsigned int entryIdx = 0; entryIdx < enumDomain->GetNumberOfEntries(); entryIdx++) {
-        comboBox->addItem(enumDomain->GetEntryText(entryIdx));
-      }
-      comboBox->setCurrentIndex(steeringConfig->interactConfig.intVectorProperties[i]->GetElement(0));
-      comboBox->setToolTip(steeringConfig->interactConfig.intVectorProperties[i]->GetDocumentation());
-      gridLayout->addWidget(comboBox, i, 1);
-      advancedControlIntScalarComboBoxes.push_back(comboBox);
-      advancedControlIntScalarComboBoxesLabels.push_back(label);
-    } else {
-    QSpinBox *spinBox = new QSpinBox();
-    if (steeringConfig->interactConfig.intVectorProperties[i]->GetDomain("bool")) {
-      spinBox->setMinimum(0);
-      spinBox->setMaximum(1);
-    }
-    if (steeringConfig->interactConfig.intVectorProperties[i]->GetDomain("range")) {
-      XdmfSteeringIntRangeDomain *rangeDomain = dynamic_cast<XdmfSteeringIntRangeDomain*>(steeringConfig->interactConfig.intVectorProperties[i]->GetDomain("range"));
-      spinBox->setMinimum(rangeDomain->GetMinimum(0));
-      spinBox->setMaximum(rangeDomain->GetMaximum(0));
-    }
-    spinBox->setValue(steeringConfig->interactConfig.intVectorProperties[i]->GetElement(0));
-    spinBox->setToolTip(steeringConfig->interactConfig.intVectorProperties[i]->GetDocumentation());
-    gridLayout->addWidget(spinBox, i, 1);
-    advancedControlIntScalarSpinBoxes.push_back(spinBox);
-    advancedControlIntScalarSpinBoxesLabels.push_back(label);
-    }
-  }
-
-  for (int i = 0; i < steeringConfig->interactConfig.numberOfDoubleVectorProperties; i++) {
-    // TODO Handle vectors and not only scalars
-    QGridLayout *gridLayout = dynamic_cast<QGridLayout*>(this->UI->advancedControlBox->layout());
-    QDoubleSpinBox *spinBox = new QDoubleSpinBox();
-    if (steeringConfig->interactConfig.doubleVectorProperties[i]->GetDomain("range")) {
-      XdmfSteeringDoubleRangeDomain *rangeDomain = dynamic_cast<XdmfSteeringDoubleRangeDomain*>(steeringConfig->interactConfig.doubleVectorProperties[i]->GetDomain("range"));
-      spinBox->setMinimum(rangeDomain->GetMinimum(0));
-      spinBox->setMaximum(rangeDomain->GetMaximum(0));
-    }
-    spinBox->setDecimals(10);
-    spinBox->setValue(steeringConfig->interactConfig.doubleVectorProperties[i]->GetElement(0));
-    spinBox->setToolTip(steeringConfig->interactConfig.doubleVectorProperties[i]->GetDocumentation());
-    QLabel *label = new QLabel();
-    label->setText(steeringConfig->interactConfig.doubleVectorProperties[i]->GetXMLName());
-    gridLayout->addWidget(label, i+steeringConfig->interactConfig.numberOfIntVectorProperties, 0);
-    gridLayout->addWidget(spinBox, i+steeringConfig->interactConfig.numberOfIntVectorProperties, 1);
-    advancedControlDoubleScalarLabels.push_back(label);
-    advancedControlDoubleScalarSpinBoxes.push_back(spinBox);
-  }
-*/
   this->UI->dsmArrayTreeWidget->clear();
   this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
   this->UI->dsmArrayTreeWidget->expandAll();
@@ -1054,11 +957,6 @@ void pqDSMViewerPanel::onDisplayDSM()
       }
     }
 #endif //DISABLE_DISPLAY
-
-    //
-    // To prevent deadlock, switch communicators if we are client and server
-    //
-//    this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
   }
 }
 //-----------------------------------------------------------------------------
@@ -1108,7 +1006,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
         if (this->UI->autoDisplayDSM->isChecked()) {
           this->onDisplayDSM();
-        } 
+        }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
         if (!this->UI->dsmIsStandalone->isChecked()) {
           this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");

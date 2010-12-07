@@ -48,17 +48,9 @@ typedef struct xmfSteeringConfigGrid_ {
   xmfSteeringConfigAttribute *attributeConfig;
 } xmfSteeringConfigGrid;
 
-typedef struct xmfSteeringConfigInteract_ {
-  XdmfInt32   numberOfIntVectorProperties;
-  XdmfSteeringIntVectorProperty **intVectorProperties;
-  XdmfInt32   numberOfDoubleVectorProperties;
-  XdmfSteeringDoubleVectorProperty **doubleVectorProperties;
-} xmfSteeringConfigInteract;
-
 typedef struct xmfSteeringConfig_ {
   XdmfInt32                    numberOfGrids;
   xmfSteeringConfigGrid       *gridConfig;
-  xmfSteeringConfigInteract    interactConfig;
 } xmfSteeringConfig;
 
 

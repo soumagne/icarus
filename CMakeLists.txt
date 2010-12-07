@@ -103,15 +103,6 @@ ADD_PARAVIEW_PLUGIN(
     ${DSM_IFACE}
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringDomain.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringBooleanDomain.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringIntRangeDomain.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringDoubleRangeDomain.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringEnumerationDomain.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringProperty.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringVectorProperty.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringIntVectorProperty.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringDoubleVectorProperty.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
