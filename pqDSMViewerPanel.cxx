@@ -108,39 +108,66 @@ using std::vector;
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-class pqDSMViewerPanel::pqUI : public QObject, public Ui::DSMViewerPanel 
+class pqDSMViewerPanel::pqInternals : public QObject, public Ui::DSMViewerPanel 
 {
 public:
-  pqUI(pqDSMViewerPanel* p) : QObject(p)
+  pqInternals(pqDSMViewerPanel* p) : QObject(p)
   {
-    this->Links = new pqPropertyLinks;
-    this->DSMInitialized   = 0;
-    this->ActiveSourcePort = 0;
-    this->ActiveServer     = 0;
-    this->ActiveView       = 0;
-    this->ObjectInspector  = 0;
-    this->pqObjectInspectorProxy = 0;
+    this->DSMInitialized     = false;
+    this->DSMListening       = false;
+    this->ActiveSourcePort   = 0;
+    this->ActiveServer       = NULL;
+    this->ActiveView         = NULL;
+    this->pqObjectInspector  = NULL;
+    this->pqDSMProxyHelper   = NULL;
+    this->pqWidget3D         = NULL;
+    this->SteeringParser     = NULL;
+    this->CurrentTimeStep    = 0;
+    this->DSMCommType        = 0;
   }
   //
-  ~pqUI() {
-    delete this->Links;
+  ~pqInternals() {
+    if (this->DSMProxyCreated()) {
+      this->DSMProxy->InvokeCommand("DestroyDSM");
+    }
     this->DSMProxy           = NULL;
     this->DSMProxyHelper     = NULL;
     this->ActiveSourceProxy  = NULL;
     this->XdmfReader         = NULL;
     this->XdmfRepresentation = NULL;
     this->Widget3DProxy      = NULL;
-    this->pqWidget3D         = NULL;
+    if (this->SteeringParser) {
+      delete this->SteeringParser;
+    }
   }
-
-  void CreateProxy() {
+  //
+  void CreateDSMProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
     this->DSMProxy->UpdatePropertyInformation();
   }
-
+  // 
+  void CreateDSMHelperProxy() {
+    if (!this->DSMProxyCreated()) {
+      this->CreateDSMProxy();
+    }
+    //
+    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    this->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
+    //
+    // Set the DSM manager it uses for communication
+    pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
+    this->DSMProxyHelper->UpdateVTKObjects();
+    //
+    // wrap the DSMProxyHelper object in a pqProxy so that we can use it in our object inspector
+    if (this->pqDSMProxyHelper) {
+      delete this->pqDSMProxyHelper;
+    }
+    this->pqDSMProxyHelper = new pqProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper, this->ActiveServer); 
+  }
   //
-  bool ProxyCreated() { return this->DSMProxy!=NULL; }
+  bool DSMProxyCreated() { return this->DSMProxy!=NULL; }
+  bool HelperProxyCreated() { return this->DSMProxyHelper!=NULL; }
 
   //
   // Internal variables maintained by the panel
@@ -152,13 +179,18 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
   vtkSmartPointer<vtkSMProxy>               Widget3DProxy;
-  QPointer<pq3DWidget>                      pqWidget3D;
-  pqObjectInspectorWidget                  *ObjectInspector;
-  pqProxy                                  *pqObjectInspectorProxy;
+  pq3DWidget                               *pqWidget3D;
+  pqObjectInspectorWidget                  *pqObjectInspector;
+  pqProxy                                  *pqDSMProxyHelper;
   int                                       ActiveSourcePort;
   pqServer                                 *ActiveServer;
   pqRenderView                             *ActiveView;
-  pqPropertyLinks                          *Links;
+  XdmfSteeringParser                       *SteeringParser;
+  //
+  bool                                      DSMListening;
+  int              DSMCommType;
+  int                                       CurrentTimeStep;
+
 };
 //-----------------------------------------------------------------------------
 class dsmStandardWidgets : public pq3DWidgetInterface
@@ -215,75 +247,63 @@ public:
 pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
 QDockWidget("DSM Manager", p)
 {
-  this->UI = new pqUI(this);
-  this->UI->setupUi(this);
-
-  this->Connected       = false;
-  this->DSMCommType     = 0;
-  this->CurrentTimeStep = 0;
+  this->Internals = new pqInternals(this);
+  this->Internals->setupUi(this);
+  //
   this->UpdateTimer = new QTimer(this);
-  this->UpdateTimer->setInterval(0);
+  this->UpdateTimer->setInterval(10);
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
-
-  this->SteeringParser = new XdmfSteeringParser();
-
-  this->HTMScene = new QGraphicsScene();
-  this->UI->dsmHTMView->setScene(this->HTMScene);
-  this->HTMScene->addText("HTM view to be displayed here!");
-
-  QGraphicsView view(this->HTMScene);
-  view.show();
 
   //
   // Link GUI object events to callbacks
   //
 
   // XDMF XML Commands
-  this->connect(this->UI->browseFile,
+  this->connect(this->Internals->browseFile,
     SIGNAL(clicked()), this, SLOT(onBrowseFile()));
 
   // Auto Save image
-  this->connect(this->UI->browseFileImage,
+  this->connect(this->Internals->browseFileImage,
     SIGNAL(clicked()), this, SLOT(onBrowseFileImage()));
 
-  this->connect(this->UI->autoSaveImage,
+  this->connect(this->Internals->autoSaveImage,
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
 
   // 3D widget
-//  this->connect(this->UI->displayWidget,
+//  this->connect(this->Internals->displayWidget,
 //    SIGNAL(stateChanged(int)), this, SLOT(toggleHandleWidget(int)));
   
   // DSM Commands
-  this->connect(this->UI->addServerDSM,
+  this->connect(this->Internals->addServerDSM,
       SIGNAL(clicked()), this, SLOT(onAddServerDSM()));
 
-  this->connect(this->UI->publishDSM,
+  this->connect(this->Internals->publishDSM,
     SIGNAL(clicked()), this, SLOT(onPublishDSM()));
 
-  this->connect(this->UI->unpublishDSM,
+  this->connect(this->Internals->unpublishDSM,
     SIGNAL(clicked()), this, SLOT(onUnpublishDSM()));
 
   // Steering commands
-  this->connect(this->UI->scRestart,
+  this->connect(this->Internals->scRestart,
       SIGNAL(clicked()), this, SLOT(onSCRestart()));
 
-  this->connect(this->UI->scPause,
+  this->connect(this->Internals->scPause,
       SIGNAL(clicked()), this, SLOT(onSCPause()));
 
-  this->connect(this->UI->scPlay,
+  this->connect(this->Internals->scPlay,
       SIGNAL(clicked()), this, SLOT(onSCPlay()));
 
-  this->connect(this->UI->dsmWriteDisk,
+  this->connect(this->Internals->dsmWriteDisk,
       SIGNAL(clicked()), this, SLOT(onSCWriteDisk()));
 
-  this->connect(this->UI->dsmArrayTreeWidget,
+  this->connect(this->Internals->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
-  this->connect(this->UI->writeToDSM,
+  this->connect(this->Internals->writeToDSM,
       SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
 
-//  this->connect(this->UI->advancedControlUpdate,
+//  this->connect(this->Internals->advancedControlUpdate,
 //        SIGNAL(clicked()), this, SLOT(onAdvancedControlUpdate()));
   //
   // Link paraview events to callbacks
@@ -339,19 +359,6 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 
   if (this->UpdateTimer) delete this->UpdateTimer;
   this->UpdateTimer = NULL;
-
-  if (this->SteeringParser) delete this->SteeringParser;
-  this->SteeringParser = NULL;
-
-  if (this->HTMScene) delete this->HTMScene;
-  this->HTMScene = NULL;
-
-  if (this->UI->ProxyCreated()) {
-    this->UI->DSMProxy->InvokeCommand("DestroyDSM");
-    this->UI->DSMProxy = NULL;
-    this->UI->DSMInitialized = 0;
-  }
-
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LoadSettings()
@@ -363,39 +370,39 @@ void pqDSMViewerPanel::LoadSettings()
     for (int i=0; i<size; ++i) {
       settings->setArrayIndex(i);
       QString server = settings->value("server").toString();
-      if (this->UI->dsmServerName->findText(server) < 0) {
-        this->UI->dsmServerName->addItem(server);
+      if (this->Internals->dsmServerName->findText(server) < 0) {
+        this->Internals->dsmServerName->addItem(server);
       }
     }
   }
   settings->endArray();
   // Active server
-  this->UI->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
+  this->Internals->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
   // Size
-  this->UI->dsmSizeSpinBox->setValue(settings->value("Size", 0).toInt());
+  this->Internals->dsmSizeSpinBox->setValue(settings->value("Size", 0).toInt());
   // Method
-  this->UI->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
+  this->Internals->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
   // Port
-  this->UI->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
+  this->Internals->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
   // Client/Server/Standalone
-  this->UI->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
-  this->UI->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
-  this->UI->dsmIsStandalone->setChecked(settings->value("dsmStandalone", 0).toBool());
+  this->Internals->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
+  this->Internals->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
+  this->Internals->dsmIsStandalone->setChecked(settings->value("dsmStandalone", 0).toBool());
   // Description file type
-  this->UI->xdmfFileTypeComboBox->setCurrentIndex(settings->value("DescriptionFileType", 0).toInt());
+  this->Internals->xdmfFileTypeComboBox->setCurrentIndex(settings->value("DescriptionFileType", 0).toInt());
   // Description file path
   QString descFilePath = settings->value("DescriptionFilePath").toString();
   if(!descFilePath.isEmpty()) {
-    this->UI->xdmfFilePathLineEdit->insert(descFilePath);
-    this->DescFileParse(descFilePath.toStdString().c_str());
+    this->Internals->xdmfFilePathLineEdit->insert(descFilePath);
+    this->ParseXMLTemplate(descFilePath.toStdString().c_str());
   }
   // Force XDMF Generation
-  this->UI->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
+  this->Internals->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
   // Image Save
-  this->UI->autoSaveImage->setChecked(settings->value("AutoSaveImage", 0).toBool());
+  this->Internals->autoSaveImage->setChecked(settings->value("AutoSaveImage", 0).toBool());
   QString imageFilePath = settings->value("ImageFilePath").toString();
   if(!imageFilePath.isEmpty()) {
-    this->UI->imageFilePath->insert(imageFilePath);
+    this->Internals->imageFilePath->insert(imageFilePath);
   }
   settings->endGroup();
 }
@@ -406,32 +413,32 @@ void pqDSMViewerPanel::SaveSettings()
   settings->beginGroup("DSMManager");
   // servers
   settings->beginWriteArray("Servers");
-  for (int i=0; i<this->UI->dsmServerName->model()->rowCount(); i++) {
+  for (int i=0; i<this->Internals->dsmServerName->model()->rowCount(); i++) {
     settings->setArrayIndex(i);
-    settings->setValue("server", this->UI->dsmServerName->itemText(i));
+    settings->setValue("server", this->Internals->dsmServerName->itemText(i));
   }
   settings->endArray();
   // Active server
-  settings->setValue("Selected", this->UI->dsmServerName->currentIndex());
+  settings->setValue("Selected", this->Internals->dsmServerName->currentIndex());
   // Size
-  settings->setValue("Size", this->UI->dsmSizeSpinBox->value());
+  settings->setValue("Size", this->Internals->dsmSizeSpinBox->value());
   // Method
-  settings->setValue("Communication", this->UI->xdmfCommTypeComboBox->currentIndex());
+  settings->setValue("Communication", this->Internals->xdmfCommTypeComboBox->currentIndex());
   // Port
-  settings->setValue("Port", this->UI->xdmfCommPort->value());
+  settings->setValue("Port", this->Internals->xdmfCommPort->value());
   // Client/Server/Standalone
-  settings->setValue("dsmServer", this->UI->dsmIsServer->isChecked());
-  settings->setValue("dsmClient", this->UI->dsmIsClient->isChecked());
-  settings->setValue("dsmStandalone", this->UI->dsmIsStandalone->isChecked());
+  settings->setValue("dsmServer", this->Internals->dsmIsServer->isChecked());
+  settings->setValue("dsmClient", this->Internals->dsmIsClient->isChecked());
+  settings->setValue("dsmStandalone", this->Internals->dsmIsStandalone->isChecked());
   // Description file type
-  settings->setValue("DescriptionFileType", this->UI->xdmfFileTypeComboBox->currentIndex());
+  settings->setValue("DescriptionFileType", this->Internals->xdmfFileTypeComboBox->currentIndex());
   // Description file path
-  settings->setValue("DescriptionFilePath", this->UI->xdmfFilePathLineEdit->text());
+  settings->setValue("DescriptionFilePath", this->Internals->xdmfFilePathLineEdit->text());
   // Force XDMF Generation
-  settings->setValue("ForceXDMFGeneration", this->UI->forceXdmfGeneration->isChecked());
+  settings->setValue("ForceXDMFGeneration", this->Internals->forceXdmfGeneration->isChecked());
   // Image Save
-  settings->setValue("AutoSaveImage", this->UI->autoSaveImage->isChecked());
-  settings->setValue("ImageFilePath", this->UI->imageFilePath->text());
+  settings->setValue("AutoSaveImage", this->Internals->autoSaveImage->isChecked());
+  settings->setValue("ImageFilePath", this->Internals->imageFilePath->text());
   //
   settings->endGroup();
 }
@@ -439,177 +446,170 @@ void pqDSMViewerPanel::SaveSettings()
 void pqDSMViewerPanel::DeleteSteeringWidgets()
 {
   // Delete old tree
-  for(int i = 0; i < this->UI->dsmArrayTreeWidget->topLevelItemCount(); i++) {
+  for(int i = 0; i < this->Internals->dsmArrayTreeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *gridItem;
-    gridItem = this->UI->dsmArrayTreeWidget->topLevelItem(i);
+    gridItem = this->Internals->dsmArrayTreeWidget->topLevelItem(i);
     for (int j = 0; j < gridItem->childCount(); j++) {
       QTreeWidgetItem *attributeItem = gridItem->child(j);
       gridItem->removeChild(attributeItem);
       if (attributeItem) delete attributeItem;
       attributeItem = NULL;
     }
-    this->UI->dsmArrayTreeWidget->removeItemWidget(gridItem, 0);
+    this->Internals->dsmArrayTreeWidget->removeItemWidget(gridItem, 0);
     if (gridItem) delete gridItem;
     gridItem = NULL;
   }
 
   // clear out auto generated controls
-  delete this->UI->ObjectInspector;
-  delete this->UI->pqObjectInspectorProxy;
-  this->UI->ObjectInspector        = NULL;
-  this->UI->pqObjectInspectorProxy = NULL;
+  delete this->Internals->pqObjectInspector;
+  delete this->Internals->pqDSMProxyHelper;
+  this->Internals->pqObjectInspector = NULL;
+  this->Internals->pqDSMProxyHelper  = NULL;
 }
 //----------------------------------------------------------------------------
-void pqDSMViewerPanel::DescFileParse(const char *filepath)
+void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
 {
-  xmfSteeringConfig *steeringConfig;
+  //
+  // Clean up anything from a previous creation
   //
   this->DeleteSteeringWidgets();
   //
-  this->SteeringParser->Parse(filepath);
-  steeringConfig = this->SteeringParser->GetSteeringConfig();
-  if (!steeringConfig) return;
+  // Parse XML template and create proxies, 
+  // We must parse XML first, otherwise the DSMHelperProxy is empty
   //
-  this->UI->dsmArrayTreeWidget->setColumnCount(1);
-  QList<QTreeWidgetItem *> gridItems;
-  for (int i = 0; i < steeringConfig->numberOfGrids; i++) {
-    QTreeWidgetItem *gridItem;
-    QList<QTreeWidgetItem *> attributeItems;
+  if (this->Internals->SteeringParser) delete this->Internals->SteeringParser;
+  this->Internals->SteeringParser = new XdmfSteeringParser();
+  this->Internals->SteeringParser->Parse(filepath);
+  this->Internals->CreateDSMHelperProxy();
+  //
+  // populate GUI with controls for grids
+  //
+  xmfSteeringConfig *steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
+  if (steeringConfig) {
+    //
+    this->Internals->dsmArrayTreeWidget->setColumnCount(1);
+    QList<QTreeWidgetItem *> gridItems;
+    for (int i = 0; i < steeringConfig->numberOfGrids; i++) {
+      QTreeWidgetItem *gridItem;
+      QList<QTreeWidgetItem *> attributeItems;
 
-    gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(steeringConfig->gridConfig[i].gridName.c_str())));
-    // Do not make grids selectable
-    // gridItem->setCheckState(0, Qt::Checked);
-    gridItems.append(gridItem);
+      gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(steeringConfig->gridConfig[i].gridName.c_str())));
+      // Do not make grids selectable
+      // gridItem->setCheckState(0, Qt::Checked);
+      gridItems.append(gridItem);
 
-    for (int j = 0; j < steeringConfig->gridConfig[i].numberOfAttributes; j++) {
-      QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(steeringConfig->gridConfig[i].attributeConfig[j].attributeName.c_str())));
-      attributeItem->setCheckState(0, Qt::Checked);
-      gridItems.append(attributeItem);
+      for (int j = 0; j < steeringConfig->gridConfig[i].numberOfAttributes; j++) {
+        QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(steeringConfig->gridConfig[i].attributeConfig[j].attributeName.c_str())));
+        attributeItem->setCheckState(0, Qt::Checked);
+        gridItems.append(attributeItem);
+      }
     }
+    this->Internals->dsmArrayTreeWidget->clear();
+    this->Internals->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
+    this->Internals->dsmArrayTreeWidget->expandAll();
   }
 
   //
   // The active view is very important once we start generating proxies to control
   // widgets etc. Make sure it is valid.
   // 
-  if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
+  if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
     this->onActiveViewChanged(pqActiveView::instance().current());
   }
-
-  // Create a DSM proxy helper object (interacts with generated Steering Objects)
-  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-  this->UI->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
-  this->UI->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-  // Set the DSM manager it uses for communication
-  pqSMAdaptor::setProxyProperty(
-    this->UI->DSMProxyHelper->GetProperty("DSMManager"), this->UI->DSMProxy);
-  this->UI->DSMProxyHelper->UpdateVTKObjects();
-  // wrap the object in a pqProxy
-  this->UI->pqObjectInspectorProxy = new pqProxy("icarus_helpers", "DSMProxyHelper", this->UI->DSMProxyHelper, this->UI->ActiveServer); 
   //
   // create an object inspector to manage the settings
   //
-  this->UI->ObjectInspector = new pqObjectInspectorWidget(this->UI->devTab);
-  this->UI->ObjectInspector->setView(this->UI->ActiveView);
-  this->UI->ObjectInspector->setProxy(this->UI->pqObjectInspectorProxy);
-  this->UI->ObjectInspector->setDeleteButtonVisibility(false);
-  this->UI->ObjectInspector->setHelpButtonVisibility(false);
-  this->UI->generatedLayout->addWidget(this->UI->ObjectInspector);
-
-  this->UI->dsmArrayTreeWidget->clear();
-  this->UI->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
-  this->UI->dsmArrayTreeWidget->expandAll();
+  this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->devTab);
+  this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
+  this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
+  this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
+  this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
+  this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
 {
-  this->UI->ActiveServer = server;
+  this->Internals->ActiveServer = server;
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onActiveServerChanged(pqServer* server)
 {
-  this->UI->ActiveServer = server;
+  this->Internals->ActiveServer = server;
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::StartRemovingServer(pqServer *server)
 {
-  if (this->UI->ProxyCreated()) {
-    this->UI->DSMProxy->InvokeCommand("DestroyDSM");
-    this->UI->DSMProxy = NULL;
-    this->UI->DSMInitialized = 0;
+  if (this->Internals->DSMProxyCreated()) {
+    this->Internals->DSMProxy->InvokeCommand("DestroyDSM");
+    this->Internals->DSMProxy = NULL;
+    this->Internals->DSMInitialized = 0;
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
-  this->UI->ActiveView = renView;
-  if (this->UI->pqWidget3D && this->UI->ActiveView) {
-    this->UI->pqWidget3D->setView(this->UI->ActiveView);
+  this->Internals->ActiveView = renView;
+  if (this->Internals->pqWidget3D && this->Internals->ActiveView) {
+    this->Internals->pqWidget3D->setView(this->Internals->ActiveView);
   }
 }
-//----------------------------------------------------------------------------
-void pqDSMViewerPanel::LinkServerManagerProperties()
-{
-  // TBD
-}
 //---------------------------------------------------------------------------
-bool pqDSMViewerPanel::ProxyReady()
+bool pqDSMViewerPanel::DSMProxyReady()
 {
-  if (!this->UI->ProxyCreated()) {
-    this->UI->CreateProxy();
-    this->LinkServerManagerProperties();
-    return this->UI->ProxyCreated();
+  if (!this->Internals->DSMProxyCreated()) {
+    this->Internals->CreateDSMProxy();
+    return this->Internals->DSMProxyCreated();
   }
   return true;
 }
 //---------------------------------------------------------------------------
 bool pqDSMViewerPanel::DSMReady()
 {
-  if (!this->ProxyReady()) return 0;
+  if (!this->DSMProxyReady()) return 0;
   //
-  if (!this->UI->DSMInitialized) {
+  if (!this->Internals->DSMInitialized) {
     //
-    bool server = (this->UI->dsmIsServer->isChecked() || this->UI->dsmIsStandalone->isChecked());
-    bool client = (this->UI->dsmIsClient->isChecked() || this->UI->dsmIsStandalone->isChecked());
+    bool server = (this->Internals->dsmIsServer->isChecked() || this->Internals->dsmIsStandalone->isChecked());
+    bool client = (this->Internals->dsmIsClient->isChecked() || this->Internals->dsmIsStandalone->isChecked());
     pqSMAdaptor::setElementProperty(
-      this->UI->DSMProxy->GetProperty("DsmIsServer"), server);
+      this->Internals->DSMProxy->GetProperty("DsmIsServer"), server);
     //
     if (server) {
-      if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
-        this->DSMCommType = H5FD_DSM_COMM_MPI;
+      if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
+        this->Internals->DSMCommType = H5FD_DSM_COMM_MPI;
       }
-      else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
-        this->DSMCommType = H5FD_DSM_COMM_SOCKET;
+      else if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
+        this->Internals->DSMCommType = H5FD_DSM_COMM_SOCKET;
       }
-      else if (this->UI->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
-        this->DSMCommType = H5FD_DSM_COMM_MPI_RMA;
+      else if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
+        this->Internals->DSMCommType = H5FD_DSM_COMM_MPI_RMA;
       }
       pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("DsmCommType"),
-        this->DSMCommType);
+        this->Internals->DSMProxy->GetProperty("DsmCommType"),
+        this->Internals->DSMCommType);
       //
       pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("DsmLocalBufferSize"),
-        this->UI->dsmSizeSpinBox->value());
+        this->Internals->DSMProxy->GetProperty("DsmLocalBufferSize"),
+        this->Internals->dsmSizeSpinBox->value());
       //
-      this->UI->DSMProxy->UpdateVTKObjects();
-      this->UI->DSMProxy->InvokeCommand("CreateDSM");
-      this->UI->DSMInitialized = 1;
+      this->Internals->DSMProxy->UpdateVTKObjects();
+      this->Internals->DSMProxy->InvokeCommand("CreateDSM");
+      this->Internals->DSMInitialized = 1;
     }
     else if (client) {
-      this->UI->DSMProxy->InvokeCommand("ReadDSMConfigFile");
-      this->UI->DSMProxy->InvokeCommand("CreateDSM");
-      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
-      this->UI->DSMInitialized = 1;
+      this->Internals->DSMProxy->InvokeCommand("ReadDSMConfigFile");
+      this->Internals->DSMProxy->InvokeCommand("CreateDSM");
+      this->Internals->DSMProxy->InvokeCommand("ConnectDSM");
+      this->Internals->DSMInitialized = 1;
     }
     // 
     if (server && client) {
 //      this->onPublishDSM();
-//      this->UI->DSMProxy->InvokeCommand("ConnectDSM");
+//      this->Internals->DSMProxy->InvokeCommand("ConnectDSM");
     }
   }
-  return this->UI->DSMInitialized;
+  return this->Internals->DSMInitialized;
 }
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -618,10 +618,10 @@ void pqDSMViewerPanel::onAddServerDSM()
 {
   QString servername = QInputDialog::getText(this, tr("Add DSM Server"),
             tr("Please enter the host name or IP address of a DSM server you want to add/remove:"), QLineEdit::Normal);
-  if ((this->UI->dsmServerName->findText(servername) < 0) && !servername.isEmpty()) {
-    this->UI->dsmServerName->addItem(servername);
+  if ((this->Internals->dsmServerName->findText(servername) < 0) && !servername.isEmpty()) {
+    this->Internals->dsmServerName->addItem(servername);
   } else {
-    this->UI->dsmServerName->removeItem(this->UI->dsmServerName->findText(servername));
+    this->Internals->dsmServerName->removeItem(this->Internals->dsmServerName->findText(servername));
   }
 }
 //-----------------------------------------------------------------------------
@@ -636,9 +636,9 @@ void pqDSMViewerPanel::onBrowseFile()
   dialog.setFileMode(QFileDialog::ExistingFile);
   if(dialog.exec()) {
     QString fileName = dialog.selectedFiles().at(0);
-    this->UI->xdmfFilePathLineEdit->clear();
-    this->UI->xdmfFilePathLineEdit->insert(fileName);
-    this->DescFileParse(fileName.toStdString().c_str());
+    this->Internals->xdmfFilePathLineEdit->clear();
+    this->Internals->xdmfFilePathLineEdit->insert(fileName);
+    this->ParseXMLTemplate(fileName.toStdString().c_str());
   }
 }
 //-----------------------------------------------------------------------------
@@ -653,37 +653,37 @@ void pqDSMViewerPanel::onBrowseFileImage()
   dialog.setFileMode(QFileDialog::AnyFile);
   if(dialog.exec()) {
     std::string fileName = dialog.selectedFiles().at(0).toStdString();
-    this->UI->imageFilePath->clear();
+    this->Internals->imageFilePath->clear();
     fileName = vtksys::SystemTools::GetFilenamePath(fileName) + "/" +
       vtksys::SystemTools::GetFilenameWithoutLastExtension(fileName) + ".xxxxx.png";
-    this->UI->imageFilePath->insert(QString(fileName.c_str()));
+    this->Internals->imageFilePath->insert(QString(fileName.c_str()));
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPublishDSM()
 {
-  if (this->DSMReady() && !this->Connected) {
-    if (this->DSMCommType == H5FD_DSM_COMM_SOCKET) {
-      QString hostname = this->UI->dsmServerName->currentText();
+  if (this->DSMReady() && !this->Internals->DSMListening) {
+    if (this->Internals->DSMCommType == H5FD_DSM_COMM_SOCKET) {
+      QString hostname = this->Internals->dsmServerName->currentText();
       pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("ServerHostName"),
+          this->Internals->DSMProxy->GetProperty("ServerHostName"),
           hostname.toStdString().c_str());
 
       pqSMAdaptor::setElementProperty(
-          this->UI->DSMProxy->GetProperty("ServerPort"),
-          this->UI->xdmfCommPort->value());
+          this->Internals->DSMProxy->GetProperty("ServerPort"),
+          this->Internals->xdmfCommPort->value());
     }
-    this->UI->DSMProxy->UpdateVTKObjects();
-    this->UI->DSMProxy->InvokeCommand("PublishDSM");
-    this->Connected = true;
+    this->Internals->DSMProxy->UpdateVTKObjects();
+    this->Internals->DSMProxy->InvokeCommand("PublishDSM");
+    this->Internals->DSMListening = true;
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUnpublishDSM()
 {
-  if (this->DSMReady() && this->Connected) {
-      this->UI->DSMProxy->InvokeCommand("UnpublishDSM");
-      this->Connected = false;
+  if (this->DSMReady() && this->Internals->DSMListening) {
+    this->Internals->DSMProxy->InvokeCommand("UnpublishDSM");
+    this->Internals->DSMListening = false;
   }
 }
 //-----------------------------------------------------------------------------
@@ -691,14 +691,14 @@ void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
   // Refresh list of send-able arrays
-  for(int i = 0; i < this->UI->dsmArrayTreeWidget->topLevelItemCount(); i++) {
+  for(int i = 0; i < this->Internals->dsmArrayTreeWidget->topLevelItemCount(); i++) {
     QTreeWidgetItem *gridItem;
-    gridItem = this->UI->dsmArrayTreeWidget->topLevelItem(i);
+    gridItem = this->Internals->dsmArrayTreeWidget->topLevelItem(i);
     for (int j = 0; j < gridItem->childCount(); j++) {
       QTreeWidgetItem *attributeItem = gridItem->child(j);
-      this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled = (attributeItem->checkState(0) == Qt::Checked) ? true : false;
-      if (this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
-        // cerr << this->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].hdfPath << endl;
+      this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled = (attributeItem->checkState(0) == Qt::Checked) ? true : false;
+      if (this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
+        // cerr << this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].hdfPath << endl;
       }
     }
   }
@@ -720,11 +720,11 @@ void pqDSMViewerPanel::onSCPause()
   if (this->DSMReady()) {
     const char *steeringCmd = "pause";
     pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
-    this->UI->infoCurrentSteeringCommand->clear();
-    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->UI->DSMProxy->UpdateVTKObjects();
+    this->Internals->infoCurrentSteeringCommand->clear();
+    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
 //-----------------------------------------------------------------------------
@@ -733,11 +733,11 @@ void pqDSMViewerPanel::onSCPlay()
   if (this->DSMReady()) {
     const char *steeringCmd = "play";
     pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
-    this->UI->infoCurrentSteeringCommand->clear();
-    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->UI->DSMProxy->UpdateVTKObjects();
+    this->Internals->infoCurrentSteeringCommand->clear();
+    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
 //-----------------------------------------------------------------------------
@@ -746,11 +746,11 @@ void pqDSMViewerPanel::onSCRestart()
   if (this->DSMReady()) {
     const char *steeringCmd = "restart";
     pqSMAdaptor::setElementProperty(
-        this->UI->DSMProxy->GetProperty("SteeringCommand"),
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
-    this->UI->infoCurrentSteeringCommand->clear();
-    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->UI->DSMProxy->UpdateVTKObjects();
+    this->Internals->infoCurrentSteeringCommand->clear();
+    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
 //-----------------------------------------------------------------------------
@@ -761,22 +761,22 @@ void pqDSMViewerPanel::onSCWriteDisk()
     const char *steeringCmdNone = "none";
     const char *steeringCmd = "disk";
 
-    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("SteeringCommand"),
+    pqSMAdaptor::setElementProperty(this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmdNone);
-    this->UI->DSMProxy->UpdateVTKObjects();
+    this->Internals->DSMProxy->UpdateVTKObjects();
 
-    pqSMAdaptor::setElementProperty(this->UI->DSMProxy->GetProperty("SteeringCommand"),
+    pqSMAdaptor::setElementProperty(this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
-    this->UI->infoCurrentSteeringCommand->clear();
-    this->UI->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->UI->DSMProxy->UpdateVTKObjects();
+    this->Internals->infoCurrentSteeringCommand->clear();
+    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onWriteDataToDSM() 
 {
   if (this->DSMReady()) {
-    if (!this->UI->ActiveSourceProxy) {
+    if (!this->Internals->ActiveSourceProxy) {
       vtkGenericWarningMacro(<<"Nothing to Write");
       return;
     }
@@ -789,15 +789,15 @@ void pqDSMViewerPanel::onWriteDataToDSM()
     XdmfWriter->UnRegister(NULL);
 
     pqSMAdaptor::setProxyProperty(
-      XdmfWriter->GetProperty("DSMManager"), this->UI->DSMProxy);
+      XdmfWriter->GetProperty("DSMManager"), this->Internals->DSMProxy);
 
     pqSMAdaptor::setElementProperty(
       XdmfWriter->GetProperty("FileName"), "stdin");
 
     pqSMAdaptor::setInputProperty(
       XdmfWriter->GetProperty("Input"),
-      this->UI->ActiveSourceProxy,
-      this->UI->ActiveSourcePort
+      this->Internals->ActiveSourceProxy,
+      this->Internals->ActiveSourcePort
       );
 
     XdmfWriter->UpdateVTKObjects();
@@ -806,10 +806,10 @@ void pqDSMViewerPanel::onWriteDataToDSM()
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::SaveSnapshot() {
-  std::string pngname = this->UI->imageFilePath->text().toStdString();
+  std::string pngname = this->Internals->imageFilePath->text().toStdString();
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
-  sprintf(buffer, pngname.c_str(), this->CurrentTimeStep);  
+  sprintf(buffer, pngname.c_str(), this->Internals->CurrentTimeStep);  
   pqActiveObjects::instance().activeView()->saveImage(0, 0, QString(buffer));
 }
 //-----------------------------------------------------------------------------
@@ -825,18 +825,18 @@ void pqDSMViewerPanel::onDisplayDSM()
   bool force_generate     = false;
   static bool first_time  = true;
   static int current_time = 0;
-  static std::string xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
+  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
 
 
-  if (this->UI->ProxyCreated() && this->UI->DSMInitialized && this->DSMReady()) {
+  if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
 #ifdef DISABLE_DISPLAY
     if (this->DSMReady()) {
-      this->UI->DSMProxy->InvokeCommand("H5DumpLight");
+      this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
     }
 #else
-    if (!this->UI->XdmfReader || this->UI->storeDSMContents->isChecked()) {
+    if (!this->Internals->XdmfReader || this->Internals->storeDSMContents->isChecked()) {
       //
       // Create a new Reader proxy and register it with the system
       //
@@ -844,52 +844,52 @@ void pqDSMViewerPanel::onDisplayDSM()
 
       // When creating reader, make sure first_time is true
       if (!first_time) first_time = true;
-      if (this->UI->XdmfReader) this->UI->XdmfReader.New();
-      this->UI->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
-      this->UI->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-      this->UI->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
+      if (this->Internals->XdmfReader) this->Internals->XdmfReader.New();
+      this->Internals->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
+      this->Internals->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+      this->Internals->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       sprintf(proxyName, "DSMDataSource%d", current_time);
-      pm->RegisterProxy("sources", proxyName, this->UI->XdmfReader);
+      pm->RegisterProxy("sources", proxyName, this->Internals->XdmfReader);
 
       //
       // Connect our DSM manager to the reader
       //
       pqSMAdaptor::setProxyProperty(
-          this->UI->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
+          this->Internals->XdmfReader->GetProperty("DSMManager"), this->Internals->DSMProxy
         );
     }
 
     //
     // If we are using an Xdmf XML file supplied manually or generated, get it
     //
-    if (this->UI->xdmfFileTypeComboBox->currentIndex() != 2) { //if not use sent XML
-      if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
-        if (this->UI->xdmfFileTypeComboBox->currentIndex() == 0) { // Original XDMF File
+    if (this->Internals->xdmfFileTypeComboBox->currentIndex() != 2) { //if not use sent XML
+      if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
+        if (this->Internals->xdmfFileTypeComboBox->currentIndex() == 0) { // Original XDMF File
           pqSMAdaptor::setElementProperty(
-              this->UI->XdmfReader->GetProperty("FileName"),
-              this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
+              this->Internals->XdmfReader->GetProperty("FileName"),
+              this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
         }
-        if (this->UI->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
-          force_generate = (this->UI->forceXdmfGeneration->isChecked()) ? true : false;
+        if (this->Internals->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
+          force_generate = (this->Internals->forceXdmfGeneration->isChecked()) ? true : false;
           // Only re-generate if the description file path has changed or if force is set to true
-          if ((xdmf_description_file_path != this->UI->xdmfFilePathLineEdit->text().toStdString()) || first_time || force_generate) {
-            xdmf_description_file_path = this->UI->xdmfFilePathLineEdit->text().toStdString();
+          if ((xdmf_description_file_path != this->Internals->xdmfFilePathLineEdit->text().toStdString()) || first_time || force_generate) {
+            xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
             // Generate xdmf file for reading
             // Send the whole string representing the DOM and not the file path so that the template file
             // does not to be present on the server anymore
             pqSMAdaptor::setElementProperty(
-                this->UI->DSMProxy->GetProperty("XMFDescriptionFilePath"),
-                this->SteeringParser->GetConfigDOM()->Serialize());
+                this->Internals->DSMProxy->GetProperty("XMFDescriptionFilePath"),
+                this->Internals->SteeringParser->GetConfigDOM()->Serialize());
 
-            this->UI->DSMProxy->UpdateVTKObjects();
-            this->UI->DSMProxy->InvokeCommand("GenerateXMFDescription");
+            this->Internals->DSMProxy->UpdateVTKObjects();
+            this->Internals->DSMProxy->InvokeCommand("GenerateXMFDescription");
           }
         }
       }
     }
     else {
       pqSMAdaptor::setElementProperty(
-        this->UI->XdmfReader->GetProperty("FileName"), "stdin");
+        this->Internals->XdmfReader->GetProperty("FileName"), "stdin");
     }
 
     QTime dieTime = QTime::currentTime().addMSecs(10);
@@ -901,16 +901,16 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
     //
-    this->UI->XdmfReader->InvokeCommand("Modified");
-    this->UI->XdmfReader->UpdatePropertyInformation();
-    this->UI->XdmfReader->UpdateVTKObjects();
-    this->UI->XdmfReader->UpdatePipeline();
+    this->Internals->XdmfReader->InvokeCommand("Modified");
+    this->Internals->XdmfReader->UpdatePropertyInformation();
+    this->Internals->XdmfReader->UpdateVTKObjects();
+    this->Internals->XdmfReader->UpdatePipeline();
 
     //
     // Create a representation if we need one : First time or if storing multiple datasets
     //
-    if (!this->UI->XdmfRepresentation || this->UI->storeDSMContents->isChecked()) {
-      this->UI->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->UI->XdmfReader, 0);
+    if (!this->Internals->XdmfRepresentation || this->Internals->storeDSMContents->isChecked()) {
+      this->Internals->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->Internals->XdmfReader, 0);
     }
 
     //
@@ -919,7 +919,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Mark the item as Unmodified since we manually updated the pipeline ourselves
     //
     pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(this->UI->XdmfReader);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->XdmfReader);
     source->setModifiedState(pqProxy::UNMODIFIED);
 
     //
@@ -940,7 +940,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
     foreach (pqAnimationScene *scene, scenes) {
       scene->setAnimationTime(++current_time);
-      this->CurrentTimeStep = current_time;
+      this->Internals->CurrentTimeStep = current_time;
     }
 
     dieTime = QTime::currentTime().addMSecs(10);
@@ -952,7 +952,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     if (pqActiveObjects::instance().activeView())
     {
       pqActiveObjects::instance().activeView()->render();
-      if (this->UI->autoSaveImage->isChecked()) {
+      if (this->Internals->autoSaveImage->isChecked()) {
         this->SaveSnapshot();
       }
     }
@@ -968,25 +968,25 @@ void pqDSMViewerPanel::TrackSource()
   if (item)
   {
     pqOutputPort* port = qobject_cast<pqOutputPort*>(item);
-    this->UI->ActiveSourcePort = port ? port->getPortNumber() : 0;
+    this->Internals->ActiveSourcePort = port ? port->getPortNumber() : 0;
     pqPipelineSource *source = port ? port->getSource() : 
       qobject_cast<pqPipelineSource*>(item);
     if (source)
     {
-      this->UI->ActiveSourceProxy = source->getProxy();
-      this->UI->infoTextOutput->clear();
-      this->UI->infoTextOutput->insert(
-        this->UI->ActiveSourceProxy->GetVTKClassName()
+      this->Internals->ActiveSourceProxy = source->getProxy();
+      this->Internals->infoTextOutput->clear();
+      this->Internals->infoTextOutput->insert(
+        this->Internals->ActiveSourceProxy->GetVTKClassName()
         );
     }
     else {
-      this->UI->ActiveSourceProxy = NULL;
-      this->UI->infoTextOutput->clear();
+      this->Internals->ActiveSourceProxy = NULL;
+      this->Internals->infoTextOutput->clear();
     }
   }
   else {
-    this->UI->ActiveSourceProxy = NULL;
-    this->UI->infoTextOutput->clear();
+    this->Internals->ActiveSourceProxy = NULL;
+    this->Internals->infoTextOutput->clear();
   }
 }
 //-----------------------------------------------------------------------------
@@ -996,20 +996,20 @@ void pqDSMViewerPanel::onUpdateTimeout()
   this->UpdateTimer->stop();
 
   // we don't want to create anything just to inspect it, so test flags only
-  if (this->UI->ProxyCreated() && this->UI->DSMInitialized) {
+  if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized) {
     if (this->DSMReady()) {
       vtkSMIntVectorProperty *ur = vtkSMIntVectorProperty::SafeDownCast(
-        this->UI->DSMProxy->GetProperty("DsmUpdateReady"));
-      this->UI->DSMProxy->UpdatePropertyInformation(ur);
+        this->Internals->DSMProxy->GetProperty("DsmUpdateReady"));
+      this->Internals->DSMProxy->UpdatePropertyInformation(ur);
       int ready = ur->GetElement(0);
       if (ready != 0) {
-        this->UI->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-        if (this->UI->autoDisplayDSM->isChecked()) {
+        this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+        if (this->Internals->autoDisplayDSM->isChecked()) {
           this->onDisplayDSM();
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
-        if (!this->UI->dsmIsStandalone->isChecked()) {
-          this->UI->DSMProxy->InvokeCommand("RequestRemoteChannel");
+        if (!this->Internals->dsmIsStandalone->isChecked()) {
+          this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
         }
       }
     }
@@ -1021,39 +1021,39 @@ void pqDSMViewerPanel::onUpdateTimeout()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::toggleHandleWidget(int state)
 {
-  if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
+  if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
     this->onActiveViewChanged(pqActiveView::instance().current());
   }
 
-  if (!this->UI->XdmfReader) {
+  if (!this->Internals->XdmfReader) {
     return;
   }
 
-  if (!this->UI->Widget3DProxy) {
+  if (!this->Internals->Widget3DProxy) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
 
-//    this->UI->Widget3DProxy = pm->NewProxy("extended_sources", "Transform3");
-    this->UI->Widget3DProxy = pm->NewProxy("3d_widgets", "HandleWidget");
-    this->UI->Widget3DProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-    this->UI->Widget3DProxy->UpdatePropertyInformation();
+//    this->Internals->Widget3DProxy = pm->NewProxy("extended_sources", "Transform3");
+    this->Internals->Widget3DProxy = pm->NewProxy("3d_widgets", "HandleWidget");
+    this->Internals->Widget3DProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    this->Internals->Widget3DProxy->UpdatePropertyInformation();
 
     dsmStandardWidgets standardWidgets;
-    this->UI->pqWidget3D = standardWidgets.newWidget("Distance", this->UI->XdmfReader, this->UI->Widget3DProxy);
+    this->Internals->pqWidget3D = standardWidgets.newWidget("Distance", this->Internals->XdmfReader, this->Internals->Widget3DProxy);
 
-    this->UI->pqWidget3D->resetBounds();
-    this->UI->pqWidget3D->reset();
+    this->Internals->pqWidget3D->resetBounds();
+    this->Internals->pqWidget3D->reset();
 
-    QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->devTab->layout());
-    l->addWidget(this->UI->pqWidget3D, 1, 0, 1, 2);
-    if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
+    QGridLayout* l = qobject_cast<QGridLayout*>(this->Internals->devTab->layout());
+    l->addWidget(this->Internals->pqWidget3D, 1, 0, 1, 2);
+    if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
       this->onActiveViewChanged(pqActiveView::instance().current());
     }
-    this->UI->pqWidget3D->setView(this->UI->ActiveView);
-    this->UI->pqWidget3D->show();
+    this->Internals->pqWidget3D->setView(this->Internals->ActiveView);
+    this->Internals->pqWidget3D->show();
   }
 
-  this->UI->pqWidget3D->select();
-  this->UI->pqWidget3D->showWidget();
+  this->Internals->pqWidget3D->select();
+  this->Internals->pqWidget3D->showWidget();
 }
 //-----------------------------------------------------------------------------

@@ -60,7 +60,7 @@ public:
   pqDSMViewerPanel(QWidget* p = NULL);
  ~pqDSMViewerPanel();
 
-  bool ProxyReady();
+  bool DSMProxyReady();
   bool DSMReady();
 
 signals:
@@ -101,28 +101,20 @@ public slots:
 private slots:
 
 protected:
-  /// populate widgets with properties from the server manager
-  virtual void LinkServerManagerProperties();
-
+  /// Load/Save settings from paraview ini/config file
   void LoadSettings();
   void SaveSettings();
 
+  /// Generate objects for steering
+  void ParseXMLTemplate(const char *filepath);
   void DeleteSteeringWidgets();
 
-  void DescFileParse(const char *filepath);
+  /// Control of blocks
   void ChangeItemState(QTreeWidgetItem *item);
 
-  class pqUI;
-  pqUI            *UI;
-  bool             Connected;
-  int              DSMCommType;
+  class pqInternals;
+  pqInternals     *Internals;
   QTimer          *UpdateTimer;
-  int              CurrentTimeStep;
-
-  XdmfSteeringParser *SteeringParser;
-
-  // For HTM drawing
-  QGraphicsScene  *HTMScene;
 
 protected slots:
 
