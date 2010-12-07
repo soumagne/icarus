@@ -124,9 +124,13 @@ public:
   //
   ~pqUI() {
     delete this->Links;
-    this->DSMProxy          = NULL;
-    this->DSMProxyHelper    = NULL;
-    this->ActiveSourceProxy = NULL;
+    this->DSMProxy           = NULL;
+    this->DSMProxyHelper     = NULL;
+    this->ActiveSourceProxy  = NULL;
+    this->XdmfReader         = NULL;
+    this->XdmfRepresentation = NULL;
+    this->Widget3DProxy      = NULL;
+    this->pqWidget3D         = NULL;
   }
 
   void CreateProxy() {
@@ -137,16 +141,24 @@ public:
 
   //
   bool ProxyCreated() { return this->DSMProxy!=NULL; }
-  pqPropertyLinks            *Links;
-  int                         DSMInitialized;
-  vtkSmartPointer<vtkSMProxy> DSMProxy;
-  vtkSmartPointer<vtkSMProxy> DSMProxyHelper;
-  vtkSmartPointer<vtkSMProxy> ActiveSourceProxy;
-  pqObjectInspectorWidget    *ObjectInspector;
-  pqProxy                    *pqObjectInspectorProxy;
-  int                         ActiveSourcePort;
-  pqServer                   *ActiveServer;
-  pqRenderView               *ActiveView;
+
+  //
+  // Internal variables maintained by the panel
+  //
+  int                                       DSMInitialized;
+  vtkSmartPointer<vtkSMProxy>               DSMProxy;
+  vtkSmartPointer<vtkSMProxy>               DSMProxyHelper;
+  vtkSmartPointer<vtkSMProxy>               ActiveSourceProxy;
+  vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
+  vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
+  vtkSmartPointer<vtkSMProxy>               Widget3DProxy;
+  QPointer<pq3DWidget>                      pqWidget3D;
+  pqObjectInspectorWidget                  *ObjectInspector;
+  pqProxy                                  *pqObjectInspectorProxy;
+  int                                       ActiveSourcePort;
+  pqServer                                 *ActiveServer;
+  pqRenderView                             *ActiveView;
+  pqPropertyLinks                          *Links;
 };
 //-----------------------------------------------------------------------------
 class dsmStandardWidgets : public pq3DWidgetInterface
@@ -339,11 +351,6 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
     this->UI->DSMProxy = NULL;
     this->UI->DSMInitialized = 0;
   }
-
-  this->XdmfReader = NULL;
-  this->XdmfRepresentation = NULL;
-  this->HandleProxy = NULL;
-  this->HandleWidget = NULL;
 
 }
 //----------------------------------------------------------------------------
@@ -634,8 +641,8 @@ void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->UI->ActiveView = renView;
-  if (this->HandleWidget && this->UI->ActiveView) {
-    this->HandleWidget->setView(this->UI->ActiveView);
+  if (this->UI->pqWidget3D && this->UI->ActiveView) {
+    this->UI->pqWidget3D->setView(this->UI->ActiveView);
   }
 }
 //----------------------------------------------------------------------------
@@ -926,7 +933,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       this->UI->DSMProxy->InvokeCommand("H5DumpLight");
     }
 #else
-    if (!this->XdmfReader || this->UI->storeDSMContents->isChecked()) {
+    if (!this->UI->XdmfReader || this->UI->storeDSMContents->isChecked()) {
       //
       // Create a new Reader proxy and register it with the system
       //
@@ -934,18 +941,18 @@ void pqDSMViewerPanel::onDisplayDSM()
 
       // When creating reader, make sure first_time is true
       if (!first_time) first_time = true;
-      if (this->XdmfReader) this->XdmfReader.New();
-      this->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
-      this->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-      this->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
+      if (this->UI->XdmfReader) this->UI->XdmfReader.New();
+      this->UI->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
+      this->UI->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+      this->UI->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       sprintf(proxyName, "DSMDataSource%d", current_time);
-      pm->RegisterProxy("sources", proxyName, this->XdmfReader);
+      pm->RegisterProxy("sources", proxyName, this->UI->XdmfReader);
 
       //
       // Connect our DSM manager to the reader
       //
       pqSMAdaptor::setProxyProperty(
-          this->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
+          this->UI->XdmfReader->GetProperty("DSMManager"), this->UI->DSMProxy
         );
     }
 
@@ -956,7 +963,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       if (!this->UI->xdmfFilePathLineEdit->text().isEmpty()) {
         if (this->UI->xdmfFileTypeComboBox->currentIndex() == 0) { // Original XDMF File
           pqSMAdaptor::setElementProperty(
-              this->XdmfReader->GetProperty("FileName"),
+              this->UI->XdmfReader->GetProperty("FileName"),
               this->UI->xdmfFilePathLineEdit->text().toStdString().c_str());
         }
         if (this->UI->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
@@ -979,7 +986,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     }
     else {
       pqSMAdaptor::setElementProperty(
-        this->XdmfReader->GetProperty("FileName"), "stdin");
+        this->UI->XdmfReader->GetProperty("FileName"), "stdin");
     }
 
     QTime dieTime = QTime::currentTime().addMSecs(10);
@@ -991,16 +998,16 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Update before setting up representation to ensure correct 'type' is created
     // Remember that Xdmf supports many data types Regular/Unstructured/etc
     //
-    this->XdmfReader->InvokeCommand("Modified");
-    this->XdmfReader->UpdatePropertyInformation();
-    this->XdmfReader->UpdateVTKObjects();
-    this->XdmfReader->UpdatePipeline();
+    this->UI->XdmfReader->InvokeCommand("Modified");
+    this->UI->XdmfReader->UpdatePropertyInformation();
+    this->UI->XdmfReader->UpdateVTKObjects();
+    this->UI->XdmfReader->UpdatePipeline();
 
     //
     // Create a representation if we need one : First time or if storing multiple datasets
     //
-    if (!this->XdmfRepresentation || this->UI->storeDSMContents->isChecked()) {
-      this->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->XdmfReader, 0);
+    if (!this->UI->XdmfRepresentation || this->UI->storeDSMContents->isChecked()) {
+      this->UI->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->UI->XdmfReader, 0);
     }
 
     //
@@ -1009,7 +1016,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Mark the item as Unmodified since we manually updated the pipeline ourselves
     //
     pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(this->XdmfReader);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->UI->XdmfReader);
     source->setModifiedState(pqProxy::UNMODIFIED);
 
     //
@@ -1120,35 +1127,35 @@ void pqDSMViewerPanel::toggleHandleWidget(int state)
     this->onActiveViewChanged(pqActiveView::instance().current());
   }
 
-  if (!this->XdmfReader) {
+  if (!this->UI->XdmfReader) {
     return;
   }
 
-  if (!this->HandleProxy) {
+  if (!this->UI->Widget3DProxy) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
 
-//    this->HandleProxy = pm->NewProxy("extended_sources", "Transform3");
-    this->HandleProxy = pm->NewProxy("3d_widgets", "HandleWidget");
-    this->HandleProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-    this->HandleProxy->UpdatePropertyInformation();
+//    this->UI->Widget3DProxy = pm->NewProxy("extended_sources", "Transform3");
+    this->UI->Widget3DProxy = pm->NewProxy("3d_widgets", "HandleWidget");
+    this->UI->Widget3DProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    this->UI->Widget3DProxy->UpdatePropertyInformation();
 
     dsmStandardWidgets standardWidgets;
-    this->HandleWidget = standardWidgets.newWidget("Distance", this->XdmfReader, this->HandleProxy);
+    this->UI->pqWidget3D = standardWidgets.newWidget("Distance", this->UI->XdmfReader, this->UI->Widget3DProxy);
 
-    this->HandleWidget->resetBounds();
-    this->HandleWidget->reset();
+    this->UI->pqWidget3D->resetBounds();
+    this->UI->pqWidget3D->reset();
 
     QGridLayout* l = qobject_cast<QGridLayout*>(this->UI->devTab->layout());
-    l->addWidget(this->HandleWidget, 1, 0, 1, 2);
+    l->addWidget(this->UI->pqWidget3D, 1, 0, 1, 2);
     if (this->UI->ActiveView==NULL && pqActiveView::instance().current()) {
       this->onActiveViewChanged(pqActiveView::instance().current());
     }
-    this->HandleWidget->setView(this->UI->ActiveView);
-    this->HandleWidget->show();
+    this->UI->pqWidget3D->setView(this->UI->ActiveView);
+    this->UI->pqWidget3D->show();
   }
 
-  this->HandleWidget->select();
-  this->HandleWidget->showWidget();
+  this->UI->pqWidget3D->select();
+  this->UI->pqWidget3D->showWidget();
 }
 //-----------------------------------------------------------------------------

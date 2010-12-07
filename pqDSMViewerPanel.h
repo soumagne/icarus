@@ -124,12 +124,6 @@ protected:
   // For HTM drawing
   QGraphicsScene  *HTMScene;
 
-  vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
-  vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
-
-  vtkSmartPointer<vtkSMProxy> HandleProxy;
-  QPointer<pq3DWidget>        HandleWidget;
-
 protected slots:
 
 };
