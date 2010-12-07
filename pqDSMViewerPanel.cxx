@@ -1002,9 +1002,15 @@ void pqDSMViewerPanel::onUpdateTimeout()
         this->Internals->DSMProxy->GetProperty("DsmUpdateReady"));
       this->Internals->DSMProxy->UpdatePropertyInformation(ur);
       int ready = ur->GetElement(0);
+
+      vtkSMIntVectorProperty *ud = vtkSMIntVectorProperty::SafeDownCast(
+        this->Internals->DSMProxy->GetProperty("DsmUpdateDisplay"));
+      this->Internals->DSMProxy->UpdatePropertyInformation(ud);
+      int updateDisplay = ud->GetElement(0);
+
       if (ready != 0) {
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-        if (this->Internals->autoDisplayDSM->isChecked()) {
+        if (this->Internals->autoDisplayDSM->isChecked() && updateDisplay) {
           this->onDisplayDSM();
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
