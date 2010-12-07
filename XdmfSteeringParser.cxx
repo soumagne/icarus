@@ -41,7 +41,7 @@
 XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
-  this->SteeringConfig = NULL;
+//  this->SteeringConfig = NULL;
 }
 //----------------------------------------------------------------------------
 XdmfSteeringParser::~XdmfSteeringParser()
@@ -53,14 +53,16 @@ XdmfSteeringParser::~XdmfSteeringParser()
 //----------------------------------------------------------------------------
 void XdmfSteeringParser::DeleteConfig()
 {
+  /*
   if (this->SteeringConfig) {
     for (int i = 0; i < this->SteeringConfig->numberOfGrids; i++) {
-      delete []this->SteeringConfig->gridConfig[i].attributeConfig;
+      delete []this->SteeringConfig[i].attributeConfig;
     }
-    delete []this->SteeringConfig->gridConfig;
+    delete []this->SteeringConfig;
     delete this->SteeringConfig;
   }
   this->SteeringConfig = NULL;
+*/
 }
 //----------------------------------------------------------------------------
 int XdmfSteeringParser::Parse(const char *configFilePath)
@@ -83,61 +85,59 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     return(XDMF_FAIL);
   }
 
-  this->SteeringConfig = new xmfSteeringConfig;
+//  this->SteeringConfig = new xmfSteeringConfig;
   //////////////////////////////////////////////////////////////////////
   // Interaction
   interactionNode = this->ConfigDOM->FindElement("Interaction");
 
-  this->CreateProxyXML(interactionNode);
+  // Create XML that ParaView can use to create proxy objects and GUI controls
+  this->CreateParaViewProxyXML(interactionNode);
 
   //////////////////////////////////////////////////////////////////////
   // Domain
   domainNode = this->ConfigDOM->FindElement("Domain");
   numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", domainNode);
-  this->SteeringConfig->numberOfGrids = numberOfGrids;
-  this->SteeringConfig->gridConfig = new xmfSteeringConfigGrid[numberOfGrids];
+//  this->SteeringConfig->numberOfGrids = numberOfGrids;
+//  this->SteeringConfig = new xmfSteeringConfigGrid[numberOfGrids];
 
   for (int currentGridIndex=0; currentGridIndex < numberOfGrids; currentGridIndex++) {
     XdmfXmlNode gridNode = this->ConfigDOM->FindElement("Grid", currentGridIndex, domainNode);
     XdmfString  gridName = (XdmfString) this->ConfigDOM->GetAttribute(gridNode, "Name");
+    std::string gname = gridName;
     if (gridName) {
-      this->SteeringConfig->gridConfig[currentGridIndex].gridName = gridName;
       free(gridName);
-    } else {
-      this->SteeringConfig->gridConfig[currentGridIndex].gridName = "Undefined Grid";
-    }
+    } 
+    xmfSteeringConfigGrid &grid = this->SteeringConfig[gname];
+    grid.isEnabled = true;
+    //
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
-    this->SteeringConfig->gridConfig[currentGridIndex].isEnabled = true;
-    this->SteeringConfig->gridConfig[currentGridIndex].numberOfAttributes = numberOfAttributes;
-
-    this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig = new xmfSteeringConfigAttribute[numberOfAttributes];
-    for(int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
+    for (int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
       XdmfXmlNode attributeNode = this->ConfigDOM->FindElement("Attribute", currentAttributeIndex, gridNode);
       XdmfString  attributeName = (XdmfString) this->ConfigDOM->GetAttribute(attributeNode, "Name");
       XdmfXmlNode attributeDINode;
+      std::string attributeMapName;
       if (attributeName) {
-        this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].attributeName = attributeName;
+        attributeMapName = attributeName;
         free(attributeName);
       } else {
         XdmfConstString attributePath = this->ConfigDOM->GetCData(this->ConfigDOM->FindElement("DataItem", 0, attributeNode));
         vtksys::RegularExpression reName("/([^/]*)$");
         reName.find(attributePath);
-        this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].attributeName = reName.match(1).c_str();
+        attributeMapName = reName.match(1);
       }
       attributeDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeNode);
       if (attributeDINode) {
         XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
-        this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].hdfPath = attributePath;
+        grid.attributeConfig[attributeMapName].hdfPath = attributePath;
       }
-
-      this->SteeringConfig->gridConfig[currentGridIndex].attributeConfig[currentAttributeIndex].isEnabled = true;
+      grid.attributeConfig[attributeMapName].isEnabled = true;
     }
   }
 
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
-int XdmfSteeringParser::CreateProxyXML(XdmfXmlNode interactionNode)
+int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
 {
   std::ostringstream xmlstring;
   //
@@ -176,7 +176,6 @@ int XdmfSteeringParser::CreateProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "</Proxy>" << std::endl;
   xmlstring << "</ProxyGroup>" << std::endl;
   xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;
-  std::cout << xmlstring.str().c_str();
 
   vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
   vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring.str().c_str());

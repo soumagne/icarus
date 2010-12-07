@@ -30,46 +30,45 @@
 
 #include <sstream>
 #include <string>
-
-class XdmfSteeringIntVectorProperty;
-class XdmfSteeringDoubleVectorProperty;
+#include <map>
 
 // Structures to hold information given in the .lxmf file
 typedef struct xmfSteeringConfigAttribute_ {
-  std::string attributeName;
   std::string hdfPath;
   XdmfBoolean isEnabled;
 } xmfSteeringConfigAttribute;
 
+class AttributeMap : public std::map<std::string, xmfSteeringConfigAttribute>
+{
+};
+
 typedef struct xmfSteeringConfigGrid_ {
-  std::string gridName;
-  XdmfInt32   numberOfAttributes;
-  XdmfBoolean isEnabled;
-  xmfSteeringConfigAttribute *attributeConfig;
+  XdmfBoolean  isEnabled;
+  AttributeMap attributeConfig;
 } xmfSteeringConfigGrid;
 
-typedef struct xmfSteeringConfig_ {
-  XdmfInt32                    numberOfGrids;
-  xmfSteeringConfigGrid       *gridConfig;
-} xmfSteeringConfig;
-
-
-class XDMF_EXPORT XdmfSteeringParser : public XdmfObject
+class GridMap : public std::map<std::string, xmfSteeringConfigGrid>
 {
+};
+
+class XdmfSteeringParser : public XdmfObject {
 public:
-  XdmfSteeringParser();
+   XdmfSteeringParser();
   ~XdmfSteeringParser();
 
   void DeleteConfig();
-  XdmfGetValueMacro(SteeringConfig, xmfSteeringConfig*);
-  XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
-  int Parse(const char *filepath);
 
-  int CreateProxyXML(XdmfXmlNode interactionNode);
+  XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
+
+  int Parse(const char *filepath);
+  int CreateParaViewProxyXML(XdmfXmlNode interactionNode);
+  
+  GridMap &GetSteeringConfig() { return this->SteeringConfig; }
 
 protected:
-  XdmfDOM           *ConfigDOM;
-  xmfSteeringConfig *SteeringConfig;
+  XdmfDOM  *ConfigDOM;
+  GridMap   SteeringConfig;
+  
 };
 
 #endif /* __XdmfSteeringParser_h */

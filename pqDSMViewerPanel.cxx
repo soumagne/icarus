@@ -55,8 +55,10 @@
 #include "vtkSMProxyProperty.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
+#include "vtkSMPropertyIterator.h"
 #include "vtkProcessModule.h"
 #include "vtkProcessModuleConnectionManager.h"
+#include "vtkPVXMLElement.h"
 
 // ParaView includes
 #include "pqActiveServer.h"
@@ -155,7 +157,7 @@ public:
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
     //
-    // Set the DSM manager it uses for communication
+    // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
     this->DSMProxyHelper->UpdateVTKObjects();
     //
@@ -484,30 +486,28 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   //
   // populate GUI with controls for grids
   //
-  xmfSteeringConfig *steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
-  if (steeringConfig) {
-    //
-    this->Internals->dsmArrayTreeWidget->setColumnCount(1);
-    QList<QTreeWidgetItem *> gridItems;
-    for (int i = 0; i < steeringConfig->numberOfGrids; i++) {
-      QTreeWidgetItem *gridItem;
-      QList<QTreeWidgetItem *> attributeItems;
-
-      gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(steeringConfig->gridConfig[i].gridName.c_str())));
-      // Do not make grids selectable
-      // gridItem->setCheckState(0, Qt::Checked);
-      gridItems.append(gridItem);
-
-      for (int j = 0; j < steeringConfig->gridConfig[i].numberOfAttributes; j++) {
-        QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(steeringConfig->gridConfig[i].attributeConfig[j].attributeName.c_str())));
-        attributeItem->setCheckState(0, Qt::Checked);
-        gridItems.append(attributeItem);
-      }
+  GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
+  //
+  this->Internals->dsmArrayTreeWidget->setColumnCount(1);
+  QList<QTreeWidgetItem *> gridItems;
+  for (GridMap::iterator git=steeringConfig.begin(); git!=steeringConfig.end(); ++git) {
+    QTreeWidgetItem *gridItem;
+    QList<QTreeWidgetItem *> attributeItems;
+    gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(git->first.c_str())));
+    // Do not make grids selectable
+    gridItem->setCheckState(0, Qt::Checked);
+    gridItems.append(gridItem);
+    AttributeMap &amap = git->second.attributeConfig;
+    for (AttributeMap::iterator ait=amap.begin(); ait!=amap.end(); ++ait) {
+      QTreeWidgetItem *attributeItem = new QTreeWidgetItem(gridItem, QStringList(QString(ait->first.c_str())));
+      attributeItem->setCheckState(0, Qt::Checked);
+      attributeItem->setData(0, 1, QVariant(git->first.c_str()));
+      gridItems.append(attributeItem);
     }
-    this->Internals->dsmArrayTreeWidget->clear();
-    this->Internals->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
-    this->Internals->dsmArrayTreeWidget->expandAll();
   }
+  this->Internals->dsmArrayTreeWidget->clear();
+  this->Internals->dsmArrayTreeWidget->insertTopLevelItems(0, gridItems);
+  this->Internals->dsmArrayTreeWidget->expandAll();
 
   //
   // The active view is very important once we start generating proxies to control
@@ -525,6 +525,25 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
   this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
   this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
+  //
+  std::cout << "#######################################\n";
+  vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
+  while (!iter->IsAtEnd()) {
+    vtkPVXMLElement *h = iter->GetProperty()->GetHints();
+    if (h) {
+      h->PrintXML(std::cout,vtkIndent(0));
+      std::cout << "##########\n";
+      for (int i=0; i<h->GetNumberOfNestedElements(); i++) {
+        vtkPVXMLElement *n = h->GetNestedElement(i);
+        n->PrintXML(std::cout,vtkIndent(2));
+        std::cout << "#####\n";
+      }
+    }
+    iter->Next();
+  }
+  iter->Delete();
+  std::cout << "#######################################\n\n\n";
+
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::onServerAdded(pqServer *server)
@@ -691,17 +710,11 @@ void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
   // Refresh list of send-able arrays
-  for(int i = 0; i < this->Internals->dsmArrayTreeWidget->topLevelItemCount(); i++) {
-    QTreeWidgetItem *gridItem;
-    gridItem = this->Internals->dsmArrayTreeWidget->topLevelItem(i);
-    for (int j = 0; j < gridItem->childCount(); j++) {
-      QTreeWidgetItem *attributeItem = gridItem->child(j);
-      this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled = (attributeItem->checkState(0) == Qt::Checked) ? true : false;
-      if (this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].isEnabled) {
-        // cerr << this->Internals->SteeringParser->GetSteeringConfig()->gridConfig[i].attributeConfig[j].hdfPath << endl;
-      }
-    }
-  }
+  GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
+  std::string gridname = item->data(0, 1).toString().toStdString();
+  std::string attrname = item->text(0).toStdString();
+  steeringConfig[gridname].attributeConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
+  // What is supposed to happen here? did I break something?
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::ChangeItemState(QTreeWidgetItem *item)
