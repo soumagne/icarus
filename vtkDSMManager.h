@@ -82,8 +82,8 @@ public:
 
   // Description:
   // Get/Set the display update flag which triggers the update the view
-  int  GetDsmUpdateDisplay() { return DsmManager->GetDsmUpdateDisplay(); }
-  void ClearDsmUpdateDisplay() { DsmManager->ClearDsmUpdateDisplay(); }
+  int  GetDsmUpdateDisplay() { return DsmManager->GetDsmIsDataModified(); }
+  void ClearDsmUpdateDisplay() { DsmManager->ClearDsmIsDataModified(); }
 
   // Description:
   // Set the current given steering command.

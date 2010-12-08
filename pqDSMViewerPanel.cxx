@@ -1025,6 +1025,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
         if (this->Internals->autoDisplayDSM->isChecked() && updateDisplay) {
           this->onDisplayDSM();
+          this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateDisplay");
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
         if (!this->Internals->dsmIsStandalone->isChecked()) {
