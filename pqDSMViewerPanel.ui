@@ -28,8 +28,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>437</width>
-         <height>584</height>
+         <width>439</width>
+         <height>568</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -590,16 +590,6 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
-             <layout class="QVBoxLayout" name="generatedLayout"/>
-            </item>
-           </layout>
-          </widget>
-          <widget class="QWidget" name="Testing">
-           <attribute name="title">
-            <string>Testing</string>
-           </attribute>
-           <layout class="QVBoxLayout" name="verticalLayout_3">
-            <item>
              <widget class="QGroupBox" name="sourceBox">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
@@ -611,14 +601,14 @@
                <string>Active Source Object</string>
               </property>
               <layout class="QGridLayout" name="gridLayout_3">
-               <item row="0" column="0" colspan="2">
+               <item row="0" column="0" colspan="3">
                 <widget class="QLineEdit" name="infoTextOutput">
                  <property name="readOnly">
                   <bool>true</bool>
                  </property>
                 </widget>
                </item>
-               <item row="0" column="2">
+               <item row="0" column="3" colspan="2">
                 <widget class="QPushButton" name="writeToDSM">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -658,12 +648,55 @@
                  </property>
                 </widget>
                </item>
+               <item row="1" column="3">
+                <widget class="QPushButton" name="testButton">
+                 <property name="text">
+                  <string>test</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="1" column="4">
+                <widget class="QPushButton" name="testButton2">
+                 <property name="text">
+                  <string>update</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="2" column="1">
+                <widget class="QLineEdit" name="TranslateY"/>
+               </item>
+               <item row="2" column="2">
+                <widget class="QLineEdit" name="TranslateZ"/>
+               </item>
+               <item row="2" column="0">
+                <widget class="QLineEdit" name="TranslateX"/>
+               </item>
               </layout>
              </widget>
             </item>
             <item>
-             <widget class="QGraphicsView" name="dsmHTMView"/>
+             <layout class="QVBoxLayout" name="generatedLayout"/>
             </item>
+            <item>
+             <spacer name="verticalSpacer_3">
+              <property name="orientation">
+               <enum>Qt::Vertical</enum>
+              </property>
+              <property name="sizeHint" stdset="0">
+               <size>
+                <width>20</width>
+                <height>40</height>
+               </size>
+              </property>
+             </spacer>
+            </item>
+           </layout>
+          </widget>
+          <widget class="QWidget" name="Testing">
+           <attribute name="title">
+            <string>Testing</string>
+           </attribute>
+           <layout class="QVBoxLayout" name="verticalLayout_3">
             <item>
              <spacer name="verticalSpacer_2">
               <property name="orientation">

@@ -47,6 +47,7 @@ class pq3DWidget;
 // Proxies
 class vtkSMProxy;
 class vtkSMSourceProxy;
+class vtkSMProperty;
 class vtkSMRepresentationProxy;
 
 class XdmfSteeringParser;
@@ -66,8 +67,6 @@ public:
 signals:
 
 public slots:
-  void onServerAdded(pqServer *server);
-  void onActiveServerChanged(pqServer *server);
   void StartRemovingServer(pqServer *server);
   void onActiveViewChanged(pqView* view);
 
@@ -96,7 +95,10 @@ public slots:
   void onDisplayDSM();
   void TrackSource();
 
-  void toggleHandleWidget(int);
+  void propModified();
+  void testClicked();
+  void test2Clicked();
+  void BindWidgetToGrid(vtkSMProperty *prop, const char *name, const char *grid, const char *widgettype);
 
 private slots:
 

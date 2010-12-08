@@ -61,14 +61,9 @@ vtkObjectBase *vtkDSMProxyHelperClientServerNewCommand()
 //----------------------------------------------------------------------------
 void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter* csi)
 {
-  static bool once;
-  if(!once)
-    {
-    once = true;
-    vtkObject_Init(csi);
-    csi->AddNewInstanceFunction("vtkDSMProxyHelper", vtkDSMProxyHelperClientServerNewCommand);
-    csi->AddCommandFunction("vtkDSMProxyHelper", vtkDSMProxyHelperCommand);
-    }
+  vtkObject_Init(csi);
+  csi->AddNewInstanceFunction("vtkDSMProxyHelper", vtkDSMProxyHelperClientServerNewCommand);
+  csi->AddCommandFunction("vtkDSMProxyHelper", vtkDSMProxyHelperCommand);
 }
 //----------------------------------------------------------------------------
 int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)

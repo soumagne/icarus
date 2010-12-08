@@ -41,28 +41,12 @@
 XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
-//  this->SteeringConfig = NULL;
 }
 //----------------------------------------------------------------------------
 XdmfSteeringParser::~XdmfSteeringParser()
 {
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = NULL;
-  this->DeleteConfig();
-}
-//----------------------------------------------------------------------------
-void XdmfSteeringParser::DeleteConfig()
-{
-  /*
-  if (this->SteeringConfig) {
-    for (int i = 0; i < this->SteeringConfig->numberOfGrids; i++) {
-      delete []this->SteeringConfig[i].attributeConfig;
-    }
-    delete []this->SteeringConfig;
-    delete this->SteeringConfig;
-  }
-  this->SteeringConfig = NULL;
-*/
 }
 //----------------------------------------------------------------------------
 int XdmfSteeringParser::Parse(const char *configFilePath)
@@ -74,7 +58,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
 
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = new XdmfDOM();
-  this->DeleteConfig();
 
   // Fill configDOM
   XdmfDebug("Parsing file: " << configFilePath);
@@ -85,7 +68,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     return(XDMF_FAIL);
   }
 
-//  this->SteeringConfig = new xmfSteeringConfig;
   //////////////////////////////////////////////////////////////////////
   // Interaction
   interactionNode = this->ConfigDOM->FindElement("Interaction");
@@ -97,8 +79,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   // Domain
   domainNode = this->ConfigDOM->FindElement("Domain");
   numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", domainNode);
-//  this->SteeringConfig->numberOfGrids = numberOfGrids;
-//  this->SteeringConfig = new xmfSteeringConfigGrid[numberOfGrids];
 
   for (int currentGridIndex=0; currentGridIndex < numberOfGrids; currentGridIndex++) {
     XdmfXmlNode gridNode = this->ConfigDOM->FindElement("Grid", currentGridIndex, domainNode);
@@ -145,15 +125,18 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<ProxyGroup name=\"icarus_helpers\">" << std::endl;
   xmlstring << "<Proxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
   // The Helper needs a DSM manager
-  xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\">" << std::endl;
-  xmlstring << "  <ProxyGroupDomain name=\"groups\">" << std::endl;
-  xmlstring << "    <Group name=\"icarus_helpers\"/>" << std::endl;;
-  xmlstring << "  </ProxyGroupDomain>" << std::endl;
-  xmlstring << "  <ProxyListDomain name=\"proxy_list\">" << std::endl;
-  xmlstring << "    <Proxy group=\"icarus_helpers\" name=\"DSMManager\" />" << std::endl;
-  xmlstring << "  </ProxyListDomain>" << std::endl;
+  xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\"/>" << std::endl;
+  // Dummy input
+  xmlstring << "<InputProperty name=\"Input\" command=\"SetInputConnection\">" << std::endl;
+  xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"sources\"/> <Group name=\"filters\"/> </ProxyGroupDomain>" << std::endl;
+  xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkPointSet\"/> </DataTypeDomain>" << std::endl;
+  xmlstring << "</InputProperty>" << std::endl;
+  // Add a transform so that widgets can fake/trigger updates
+  xmlstring << "<ProxyProperty name=\"Trans\" command=\"SetTransform\">" << std::endl;
+  xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"transforms\"/> </ProxyGroupDomain>" << std::endl;
+  xmlstring << "<ProxyListDomain name=\"proxy_list\"> <Proxy group=\"extended_sources\" name=\"Transform3\" /> </ProxyListDomain>" << std::endl;
   xmlstring << "</ProxyProperty>" << std::endl;
-  
+
   int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
   for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
     XdmfXmlNode  ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
@@ -177,7 +160,9 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "</ProxyGroup>" << std::endl;
   xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;
 
+  // Register a constructor function for the DSMProxyHelper
   vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
+  // Pass the DSMProxyHelper XML into the proxy manager for use by NewProxy(...)
   vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring.str().c_str());
 
   return 1;

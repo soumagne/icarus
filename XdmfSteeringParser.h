@@ -32,27 +32,29 @@
 #include <string>
 #include <map>
 
+//
 // Structures to hold information given in the .lxmf file
+//
+//----------------------------------------------------------------------------
 typedef struct xmfSteeringConfigAttribute_ {
   std::string hdfPath;
   XdmfBoolean isEnabled;
 } xmfSteeringConfigAttribute;
 
 typedef std::map<std::string, xmfSteeringConfigAttribute> AttributeMap;
-
+//----------------------------------------------------------------------------
 typedef struct xmfSteeringConfigGrid_ {
   XdmfBoolean  isEnabled;
   AttributeMap attributeConfig;
+  std::string  WidgetControl;
 } xmfSteeringConfigGrid;
 
 typedef std::map<std::string, xmfSteeringConfigGrid> GridMap;
-
+//----------------------------------------------------------------------------
 class XdmfSteeringParser : public XdmfObject {
 public:
    XdmfSteeringParser();
   ~XdmfSteeringParser();
-
-  void DeleteConfig();
 
   XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
 

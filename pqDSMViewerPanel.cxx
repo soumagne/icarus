@@ -56,6 +56,7 @@
 #include "vtkSMViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMPropertyIterator.h"
+#include "vtkSMPropertyLink.h"
 #include "vtkProcessModule.h"
 #include "vtkProcessModuleConnectionManager.h"
 #include "vtkPVXMLElement.h"
@@ -104,9 +105,6 @@
 #include "XdmfSteeringParser.h"
 //
 #include <vtksys/SystemTools.hxx>
-
-using std::vector;
-
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -118,7 +116,6 @@ public:
     this->DSMInitialized     = false;
     this->DSMListening       = false;
     this->ActiveSourcePort   = 0;
-    this->ActiveServer       = NULL;
     this->ActiveView         = NULL;
     this->pqObjectInspector  = NULL;
     this->pqDSMProxyHelper   = NULL;
@@ -156,16 +153,30 @@ public:
     //
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
+    this->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    this->DSMProxyHelper->UpdatePropertyInformation();
+    this->DSMProxyHelper->UpdateVTKObjects();
+    //
+    this->TransformProxy = vtkSMProxy::SafeDownCast(pm->NewProxy("extended_sources", "Transform3"));
+    this->TransformProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
+    //
+    // Set the DSM manager it uses for communication, (warning: updates all properties)
+    pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("Transform"), this->TransformProxy);
     //
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
+    this->DSMProxyHelper->UpdatePropertyInformation();
     this->DSMProxyHelper->UpdateVTKObjects();
+    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
+    //
     //
     // wrap the DSMProxyHelper object in a pqProxy so that we can use it in our object inspector
     if (this->pqDSMProxyHelper) {
       delete this->pqDSMProxyHelper;
     }
-    this->pqDSMProxyHelper = new pqProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper, this->ActiveServer); 
+    this->pqDSMProxyHelper = new pqProxy("icarus_helpers", "DSMProxyHelper", 
+      this->DSMProxyHelper, pqActiveObjects::instance().activeServer()); 
   }
   //
   bool DSMProxyCreated() { return this->DSMProxy!=NULL; }
@@ -185,23 +196,25 @@ public:
   pqObjectInspectorWidget                  *pqObjectInspector;
   pqProxy                                  *pqDSMProxyHelper;
   int                                       ActiveSourcePort;
-  pqServer                                 *ActiveServer;
   pqRenderView                             *ActiveView;
   XdmfSteeringParser                       *SteeringParser;
+  pqPropertyLinks Links;
   //
   bool                                      DSMListening;
   int              DSMCommType;
   int                                       CurrentTimeStep;
+
+  vtkSmartPointer<vtkSMSourceProxy> ExtractBlockProxy;
+  vtkSmartPointer<vtkSMSourceProxy> TransformFilterProxy;
+  vtkSmartPointer<vtkSMProxy>       TransformProxy;
 
 };
 //-----------------------------------------------------------------------------
 class dsmStandardWidgets : public pq3DWidgetInterface
 {
 public:
-  pq3DWidget* newWidget(const QString& name,
-    vtkSMProxy* referenceProxy,
-    vtkSMProxy* controlledProxy)
-    {
+  pq3DWidget* newWidget(const QString& name, vtkSMProxy* referenceProxy, vtkSMProxy* controlledProxy)
+  {
     pq3DWidget *widget = 0;
     if (name == "Plane")
       {
@@ -273,8 +286,10 @@ QDockWidget("DSM Manager", p)
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
 
   // 3D widget
-//  this->connect(this->Internals->displayWidget,
-//    SIGNAL(stateChanged(int)), this, SLOT(toggleHandleWidget(int)));
+  this->connect(this->Internals->testButton,
+    SIGNAL(clicked()), this, SLOT(testClicked()));
+  this->connect(this->Internals->testButton2,
+    SIGNAL(clicked()), this, SLOT(test2Clicked()));
   
   // DSM Commands
   this->connect(this->Internals->addServerDSM,
@@ -305,20 +320,11 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->writeToDSM,
       SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
 
-//  this->connect(this->Internals->advancedControlUpdate,
-//        SIGNAL(clicked()), this, SLOT(onAdvancedControlUpdate()));
   //
   // Link paraview events to callbacks
   //
   pqServerManagerModel* smModel =
     pqApplicationCore::instance()->getServerManagerModel();
-
-  this->connect(smModel, SIGNAL(serverAdded(pqServer*)),
-    this, SLOT(onServerAdded(pqServer*)));
-
-  this->connect(&pqActiveObjects::instance(),
-    SIGNAL(serverChanged(pqServer*)),
-    this, SLOT(onActiveServerChanged(pqServer*)));
 
   this->connect(smModel, SIGNAL(aboutToRemoveServer(pqServer *)),
     this, SLOT(StartRemovingServer(pqServer *)));
@@ -525,35 +531,33 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
   this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
   this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
+
+  //
+  // Do any of the DSMHelperProxy properties have widgets attached
   //
   std::cout << "#######################################\n";
   vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
   while (!iter->IsAtEnd()) {
     vtkPVXMLElement *h = iter->GetProperty()->GetHints();
-    if (h) {
-      h->PrintXML(std::cout,vtkIndent(0));
-      std::cout << "##########\n";
-      for (int i=0; i<h->GetNumberOfNestedElements(); i++) {
-        vtkPVXMLElement *n = h->GetNestedElement(i);
-        n->PrintXML(std::cout,vtkIndent(2));
-        std::cout << "#####\n";
+    int N = h ? h->GetNumberOfNestedElements() : 0;
+    std::string grid, widgettype;
+    for (int i=0; i<N; i++) {
+      vtkPVXMLElement *n = h->GetNestedElement(i);
+      if (n->GetName()==std::string("AssociatedGrid")) {
+        grid = n->GetAttribute("name");
       }
+      if (n->GetName()==std::string("WidgetControl")) {
+        widgettype = n->GetAttribute("name");
+      }
+    }
+    if (grid.size() && widgettype.size()) {
+      this->BindWidgetToGrid(iter->GetProperty(), iter->GetKey(), grid.c_str(), widgettype.c_str());
     }
     iter->Next();
   }
   iter->Delete();
   std::cout << "#######################################\n\n\n";
 
-}
-//----------------------------------------------------------------------------
-void pqDSMViewerPanel::onServerAdded(pqServer *server)
-{
-  this->Internals->ActiveServer = server;
-}
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onActiveServerChanged(pqServer* server)
-{
-  this->Internals->ActiveServer = server;
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::StartRemovingServer(pqServer *server)
@@ -923,7 +927,7 @@ void pqDSMViewerPanel::onDisplayDSM()
     // Create a representation if we need one : First time or if storing multiple datasets
     //
     if (!this->Internals->XdmfRepresentation || this->Internals->storeDSMContents->isChecked()) {
-      this->Internals->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->Internals->XdmfReader, 0);
+//      this->Internals->XdmfRepresentation = pqActiveObjects::instance().activeView()->getViewProxy()->CreateDefaultRepresentation(this->Internals->XdmfReader, 0);
     }
 
     //
@@ -1038,22 +1042,29 @@ void pqDSMViewerPanel::onUpdateTimeout()
   this->UpdateTimer->start();
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::toggleHandleWidget(int state)
+void pqDSMViewerPanel::propModified()
 {
-  if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
-    this->onActiveViewChanged(pqActiveView::instance().current());
+  int x = 0;
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::test2Clicked()
+{
+  if (this->Internals->pqWidget3D) {
+    this->Internals->pqWidget3D->accept();
   }
-
-  if (!this->Internals->XdmfReader) {
-    return;
-  }
-
+  this->Internals->TransformFilterProxy->UpdatePropertyInformation();
+  this->Internals->TransformFilterProxy->UpdateVTKObjects();
+  this->Internals->TransformFilterProxy->UpdatePipeline();
+  this->Internals->pqWidget3D->renderView()->render();
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::testClicked()
+{
+/*
   if (!this->Internals->Widget3DProxy) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
-
-//    this->Internals->Widget3DProxy = pm->NewProxy("extended_sources", "Transform3");
-    this->Internals->Widget3DProxy = pm->NewProxy("3d_widgets", "HandleWidget");
+    this->Internals->Widget3DProxy = pm->NewProxy("filters", "TransformFilter");
     this->Internals->Widget3DProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->Internals->Widget3DProxy->UpdatePropertyInformation();
 
@@ -1074,5 +1085,107 @@ void pqDSMViewerPanel::toggleHandleWidget(int state)
 
   this->Internals->pqWidget3D->select();
   this->Internals->pqWidget3D->showWidget();
+  */
+
+  this->BindWidgetToGrid(NULL, "Test", "Body", "Box");
+
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, const char *grid, const char *widgettype)
+{
+  if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
+    this->onActiveViewChanged(pqActiveView::instance().current());
+  }
+
+  if (!this->Internals->XdmfReader) {
+    return;
+  }
+  //
+  std::cout << "Binding widget of type " << widgettype << " to " << grid << " via the property " << name << std::endl;
+  //
+  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+  //
+  this->Internals->ExtractBlockProxy = vtkSMSourceProxy::SafeDownCast(pm->NewProxy("filters", "ExtractBlock"));
+  this->Internals->ExtractBlockProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+  this->Internals->ExtractBlockProxy->SetServers(vtkProcessModule::DATA_SERVER);
+  //
+  pqSMAdaptor::setInputProperty(this->Internals->ExtractBlockProxy->GetProperty("Input"), this->Internals->XdmfReader, 0);
+  pqSMAdaptor::setElementProperty(this->Internals->ExtractBlockProxy->GetProperty("BlockIndices"), 4);  
+  this->Internals->ExtractBlockProxy->UpdateVTKObjects();
+  this->Internals->ExtractBlockProxy->UpdatePipeline();
+  pm->RegisterProxy("sources", "JBTest", this->Internals->ExtractBlockProxy);
+
+  this->Internals->TransformFilterProxy = vtkSMSourceProxy::SafeDownCast(pm->NewProxy("filters", "TransformFilter"));
+  this->Internals->TransformFilterProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+//  this->Internals->TransformFilterProxy->SetServers(vtkProcessModule::DATA_SERVER);
+
+  pqSMAdaptor::setInputProperty(this->Internals->TransformFilterProxy->GetProperty("Input"), this->Internals->ExtractBlockProxy, 0);
+  pqSMAdaptor::setProxyProperty(this->Internals->TransformFilterProxy->GetProperty("Transform"), this->Internals->TransformProxy);
+  this->Internals->TransformFilterProxy->UpdatePropertyInformation();
+  this->Internals->TransformFilterProxy->UpdateVTKObjects();
+  this->Internals->TransformFilterProxy->UpdatePipeline();
+  pm->RegisterProxy("sources", "JBTransformFilterProxy", this->Internals->TransformFilterProxy);
+
+  pqSMAdaptor::setProxyProperty(this->Internals->DSMProxyHelper->GetProperty("Transform"), this->Internals->TransformProxy);
+  this->Internals->DSMProxyHelper->UpdatePropertyInformation();
+  this->Internals->DSMProxyHelper->UpdateVTKObjects();
+
+  vtkSMPropertyLink* link = vtkSMPropertyLink::New();
+  link->AddLinkedProperty(this->Internals->TransformProxy, "Translate", vtkSMPropertyLink::INPUT);
+//  link->AddLinkedProperty(this->Internals->TransformProxy, "Modified", vtkSMPropertyLink::OUTPUT);
+//  link->AddLinkedProperty(this->Internals->DSMProxyHelper, "Modified", vtkSMPropertyLink::OUTPUT);
+  link->AddLinkedProperty(this->Internals->DSMProxyHelper, "AppliedForce", vtkSMPropertyLink::OUTPUT);
+
+  this->Internals->Links.addPropertyLink(this->Internals->TranslateX,
+    "text", SIGNAL(editingFinished()),
+    this->Internals->TransformProxy, this->Internals->TransformProxy->GetProperty("Position"), 0);
+
+  this->Internals->Links.addPropertyLink(this->Internals->TranslateY,
+    "text", SIGNAL(editingFinished()),
+    this->Internals->TransformProxy, this->Internals->TransformProxy->GetProperty("Position"), 1);
+  
+  this->Internals->Links.addPropertyLink(this->Internals->TranslateZ,
+    "text", SIGNAL(editingFinished()),
+    this->Internals->TransformProxy, this->Internals->TransformProxy->GetProperty("Position"), 2);
+    
+    
+  
+/*
+    //
+    // Create a pipeline source to appear in the GUI, 
+    // findItem creates a new one initially, thenafter returns the same object
+    // Mark the item as Unmodified since we manually updated the pipeline ourselves
+    //
+    pqPipelineSource* source = pqApplicationCore::instance()->
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->TransformFilterProxy);
+    source->setModifiedState(pqProxy::UNMODIFIED);
+    pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
+    pqOutputPort *port = source->getOutputPort(0);
+    display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
+*/
+
+  dsmStandardWidgets standardWidgets;
+//  this->Internals->pqWidget3D = standardWidgets.newWidget("Box", this->Internals->XdmfReader, this->Internals->Widget3DProxy);
+  this->Internals->pqWidget3D = standardWidgets.newWidget(widgettype, this->Internals->TransformFilterProxy, this->Internals->TransformProxy);
+  this->Internals->pqWidget3D->resetBounds();
+  this->Internals->pqWidget3D->reset();
+                                     
+  this->Internals->DSMProxyHelper->Modified();
+
+
+//  QGridLayout* l = qobject_cast<QGridLayout*>(this->Internals->devTab->layout());
+  this->Internals->generatedLayout->addWidget(this->Internals->pqWidget3D);
+  if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
+    this->onActiveViewChanged(pqActiveView::instance().current());
+  }
+  this->Internals->pqWidget3D->setView(this->Internals->ActiveView);
+  this->Internals->pqWidget3D->show();
+
+  this->Internals->pqWidget3D->select();
+  this->Internals->pqWidget3D->showWidget();
+
+  QObject::connect(this->Internals->pqWidget3D, SIGNAL(modified()),
+    this, SLOT(propModified()));
+
 }
 //-----------------------------------------------------------------------------
