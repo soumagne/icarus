@@ -68,11 +68,13 @@
 #include "pqOutputPort.h"
 #include "pqPipelineSource.h"
 #include "pqPropertyLinks.h"
+#include "pqPropertyManager.h"
 #include "pqProxy.h"
 #include "pqServer.h"
 #include "pqServerManagerSelectionModel.h"
 #include "pqServerManagerModelItem.h"
 #include "pqServerManagerModel.h"
+#include "pqObjectBuilder.h"
 #include "pqSMAdaptor.h"
 #include "pqTreeWidgetCheckHelper.h"
 #include "pqTreeWidgetItemObject.h"
@@ -106,6 +108,15 @@
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
+struct SteeringGUIWidgetInfo {
+  pq3DWidget    *pqWidget;
+  vtkSMProperty *Property;
+  std::string    AssociatedGrid;
+  std::string    WidgetType;
+};
+typedef std::map<std::string, SteeringGUIWidgetInfo> SteeringGUIWidgetMap;
+
+//----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
 class pqDSMViewerPanel::pqInternals : public QObject, public Ui::DSMViewerPanel 
@@ -123,7 +134,9 @@ public:
     this->SteeringParser     = NULL;
     this->CurrentTimeStep    = 0;
     this->DSMCommType        = 0;
-  }
+    this->PropertyManager = new pqPropertyManager(this);
+  };
+
   //
   ~pqInternals() {
     if (this->DSMProxyCreated()) {
@@ -138,11 +151,13 @@ public:
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
+    delete this->PropertyManager;
   }
   //
   void CreateDSMProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
+    this->DSMProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DSMProxy->UpdatePropertyInformation();
   }
   // 
@@ -152,18 +167,26 @@ public:
     }
     //
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    /*
+    pqServer* server = pqActiveObjects::instance().activeServer();
+    pqApplicationCore* core = pqApplicationCore::instance();
+    pqObjectBuilder* builder = core->getObjectBuilder();
+    this->pqDSMHelperProxySource = builder->createSource("icarus_helpers", "DSMProxyHelper", server);
+    this->DSMProxyHelper = this->pqDSMHelperProxySource->getProxy(); 
+*/
+
     this->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
     this->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DSMProxyHelper->UpdatePropertyInformation();
     this->DSMProxyHelper->UpdateVTKObjects();
-    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
+//    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
     //
-    this->TransformProxy = vtkSMProxy::SafeDownCast(pm->NewProxy("extended_sources", "Transform3"));
+    this->TransformProxy = pm->NewProxy("extended_sources", "Transform3");
     this->TransformProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
+//    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
     //
     // Set our Transform object in the HelperProxy for later use
-    pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("Transform"), this->TransformProxy);
+//    pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("Transform"), this->TransformProxy);
     //
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
@@ -192,17 +215,20 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMRepresentationProxy> XdmfRepresentation;
   vtkSmartPointer<vtkSMProxy>               Widget3DProxy;
+  pqPipelineSource                         *pqDSMHelperProxySource;
   pq3DWidget                               *pqWidget3D;
   pqObjectInspectorWidget                  *pqObjectInspector;
   pqProxy                                  *pqDSMProxyHelper;
   int                                       ActiveSourcePort;
   pqRenderView                             *ActiveView;
   XdmfSteeringParser                       *SteeringParser;
-  pqPropertyLinks Links;
+  SteeringGUIWidgetMap                      SteeringWidgetMap;
+  pqPropertyLinks    Links;
+  pqPropertyManager *PropertyManager;
   //
-  bool                                      DSMListening;
+  bool             DSMListening;
   int              DSMCommType;
-  int                                       CurrentTimeStep;
+  int              CurrentTimeStep;
 
   vtkSmartPointer<vtkSMSourceProxy> ExtractBlockProxy;
   vtkSmartPointer<vtkSMSourceProxy> TransformFilterProxy;
@@ -525,6 +551,13 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   //
   // create an object inspector to manage the settings
   //
+// Create the widgets inside "propertyFrameLayout"
+//  QGridLayout *propertyFrameLayout = new QGridLayout(this->Internals->PropertyFrame);
+//  pqNamedWidgets::createWidgets(propertyFrameLayout,this->Internals->DSMProxyHelper);
+//  pqNamedWidgets::link(this->Internals->PropertyFrame, 
+//                       this->Internals->DSMProxyHelper, 
+//                       this->Internals->PropertyManager);
+
   this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->devTab);
   this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
   this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
@@ -536,22 +569,38 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   // Do any of the DSMHelperProxy properties have widgets attached
   //
   std::cout << "#######################################\n";
+  this->Internals->pqObjectInspector->dumpObjectTree();
+  //
+  QList<pq3DWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pq3DWidget*>();
+  for (int i=0; i<widgets.size(); i++)
+  {
+    pq3DWidget* widget = widgets[i];
+    widget->hideWidget();
+  }
+  //
   vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
   while (!iter->IsAtEnd()) {
     vtkPVXMLElement *h = iter->GetProperty()->GetHints();
     int N = h ? h->GetNumberOfNestedElements() : 0;
-    std::string grid, widgettype;
-    for (int i=0; i<N; i++) {
-      vtkPVXMLElement *n = h->GetNestedElement(i);
-      if (n->GetName()==std::string("AssociatedGrid")) {
-        grid = n->GetAttribute("name");
+    if (N>0) {
+      // make sure any 3D widgets start life invisible
+      pq3DWidget *widget = this->Internals->pqObjectInspector->findChild<pq3DWidget*>();
+      if (widget)widget->hideWidget();
+      //
+      SteeringGUIWidgetInfo &info = this->Internals->SteeringWidgetMap[iter->GetKey()];
+      info.pqWidget = widget;
+      info.Property = iter->GetProperty();
+      //
+      for (int i=0; i<N; i++) {
+        vtkPVXMLElement *n = h->GetNestedElement(i);
+        if (n->GetName()==std::string("AssociatedGrid")) {
+          this->Internals->DSMProxyHelper;
+          info.AssociatedGrid = n->GetAttribute("name");
+        }
+        if (n->GetName()==std::string("WidgetControl")) {
+          info.WidgetType = n->GetAttribute("name");
+        }
       }
-      if (n->GetName()==std::string("WidgetControl")) {
-        widgettype = n->GetAttribute("name");
-      }
-    }
-    if (grid.size() && widgettype.size()) {
-      this->BindWidgetToGrid(iter->GetProperty(), iter->GetKey(), grid.c_str(), widgettype.c_str());
     }
     iter->Next();
   }
@@ -801,6 +850,7 @@ void pqDSMViewerPanel::onWriteDataToDSM()
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
       vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
+    XdmfWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 
     // Delete our reference now and let smart pointer clean up later
     XdmfWriter->UnRegister(NULL);
@@ -1114,7 +1164,7 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   pqSMAdaptor::setElementProperty(this->Internals->ExtractBlockProxy->GetProperty("BlockIndices"), 4);  
   this->Internals->ExtractBlockProxy->UpdateVTKObjects();
   this->Internals->ExtractBlockProxy->UpdatePipeline();
-  pm->RegisterProxy("sources", "JBTest", this->Internals->ExtractBlockProxy);
+//  pm->RegisterProxy("sources", "JBTest", this->Internals->ExtractBlockProxy);
 
   this->Internals->TransformFilterProxy = vtkSMSourceProxy::SafeDownCast(pm->NewProxy("filters", "TransformFilter"));
   this->Internals->TransformFilterProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
@@ -1132,10 +1182,8 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   this->Internals->DSMProxyHelper->UpdateVTKObjects();
 
   vtkSMPropertyLink* link = vtkSMPropertyLink::New();
-  link->AddLinkedProperty(this->Internals->TransformProxy, "Translate", vtkSMPropertyLink::INPUT);
-//  link->AddLinkedProperty(this->Internals->TransformProxy, "Modified", vtkSMPropertyLink::OUTPUT);
-//  link->AddLinkedProperty(this->Internals->DSMProxyHelper, "Modified", vtkSMPropertyLink::OUTPUT);
-  link->AddLinkedProperty(this->Internals->DSMProxyHelper, "AppliedForce", vtkSMPropertyLink::OUTPUT);
+  link->AddLinkedProperty(this->Internals->DSMProxyHelper, "FreeBodyCentre", vtkSMPropertyLink::INPUT);
+  link->AddLinkedProperty(this->Internals->TransformProxy, "Position", vtkSMPropertyLink::OUTPUT);
 
   this->Internals->Links.addPropertyLink(this->Internals->TranslateX,
     "text", SIGNAL(editingFinished()),
@@ -1165,7 +1213,7 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
 
   dsmStandardWidgets standardWidgets;
 //  this->Internals->pqWidget3D = standardWidgets.newWidget("Box", this->Internals->XdmfReader, this->Internals->Widget3DProxy);
-  this->Internals->pqWidget3D = standardWidgets.newWidget(widgettype, this->Internals->TransformFilterProxy, this->Internals->TransformProxy);
+  this->Internals->pqWidget3D = standardWidgets.newWidget(widgettype, this->Internals->TransformProxy, this->Internals->TransformProxy);
   this->Internals->pqWidget3D->resetBounds();
   this->Internals->pqWidget3D->reset();
                                      

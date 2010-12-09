@@ -120,10 +120,11 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
 int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
 {
   std::ostringstream xmlstring;
+  std::string hintstring;
   //
   xmlstring << "<ServerManagerConfiguration>" << std::endl;
   xmlstring << "<ProxyGroup name=\"icarus_helpers\">" << std::endl;
-  xmlstring << "<Proxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
+  xmlstring << "<SourceProxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
   // The Helper needs a DSM manager
   xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\"/>" << std::endl;
   // Dummy input
@@ -131,12 +132,13 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"sources\"/> <Group name=\"filters\"/> </ProxyGroupDomain>" << std::endl;
   xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkPointSet\"/> </DataTypeDomain>" << std::endl;
   xmlstring << "</InputProperty>" << std::endl;
+/*
   // Add a transform so that widgets can fake/trigger updates
   xmlstring << "<ProxyProperty name=\"Transform\" command=\"SetTransform\">" << std::endl;
   xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"transforms\"/> </ProxyGroupDomain>" << std::endl;
   xmlstring << "<ProxyListDomain name=\"proxy_list\"> <Proxy group=\"extended_sources\" name=\"Transform3\" /> </ProxyListDomain>" << std::endl;
   xmlstring << "</ProxyProperty>" << std::endl;
-
+*/
   int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
   for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
     XdmfXmlNode  ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
@@ -144,6 +146,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     XdmfConstString name = this->ConfigDOM->GetAttribute(ivpNode, "name");
     vtksys::SystemTools::ReplaceString(xml, "@@@", name);
     xmlstring << xml << std::endl;
+    hintstring += this->BuildWidgetHints(name, ivpNode);
   }
 
   int numberOfDoubleVectorProperties = this->ConfigDOM->FindNumberOfElements("DoubleVectorProperty", interactionNode);
@@ -153,10 +156,15 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     XdmfConstString name = this->ConfigDOM->GetAttribute(dvpNode, "name");
     vtksys::SystemTools::ReplaceString(xml, "@@@", name);
     xmlstring << xml << std::endl;
+    hintstring += this->BuildWidgetHints(name, dvpNode);
   }
 
-  xmlstring << "<Hints> <Property name=\"DSMManager\" show=\"0\"/> </Hints>" << std::endl;
-  xmlstring << "</Proxy>" << std::endl;
+  xmlstring << "<Hints>" << std::endl;
+  xmlstring << "<Property name=\"DSMManager\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"Transform\" show=\"0\"/>" << std::endl;
+  xmlstring << hintstring.c_str() << std::endl;
+  xmlstring << "</Hints>" << std::endl;
+  xmlstring << "</SourceProxy>" << std::endl;
   xmlstring << "</ProxyGroup>" << std::endl;
   xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;
 
@@ -166,5 +174,26 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring.str().c_str());
 
   return 1;
+}
+//----------------------------------------------------------------------------
+std::string XdmfSteeringParser::BuildWidgetHints(XdmfConstString name, XdmfXmlNode propertyNode)
+{
+  std::string hints;
+  std::ostringstream hintstring;
+  XdmfXmlNode widgetNode, hintsNode = this->ConfigDOM->FindElement("Hints", 0, propertyNode);
+  if (hintsNode && (widgetNode = this->ConfigDOM->FindElement("WidgetControl", 0, hintsNode))!=NULL) {
+    XdmfConstString wname = this->ConfigDOM->GetAttribute(widgetNode, "name");
+    XdmfConstString label = this->ConfigDOM->GetAttribute(propertyNode, "label");
+    hintstring << "<PropertyGroup type=\"" << wname << "\" label=\"" << label << "\">" << std::endl;
+    if (!strcmp(wname,"Handle") || !strcmp(wname,"Point")) {
+      hintstring << "<Property function=\"WorldPosition\" ";
+    }
+    else if (!strcmp(wname,"Box")) {
+      hintstring << "<Property function=\"Position\" ";
+    }
+    hintstring << "name=\"" << name << "\" />" << std::endl;
+    hintstring << "</PropertyGroup>" << std::endl;
+  }
+  return hintstring.str();
 }
 //----------------------------------------------------------------------------

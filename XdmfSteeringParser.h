@@ -60,6 +60,7 @@ public:
 
   int Parse(const char *filepath);
   int CreateParaViewProxyXML(XdmfXmlNode interactionNode);
+  std::string BuildWidgetHints(XdmfConstString name, XdmfXmlNode propertyNode);
   
   GridMap &GetSteeringConfig() { return this->SteeringConfig; }
 

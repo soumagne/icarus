@@ -29,8 +29,7 @@
 #ifndef __vtkDSMProxyHelper_h
 #define __vtkDSMProxyHelper_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
-#include "vtkObject.h"       // Base class
+#include "vtkDataObjectAlgorithm.h"    // Base class
 
 // BTX
 class vtkDSMManager;
@@ -38,11 +37,11 @@ class vtkClientServerInterpreter;
 extern "C" void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter *csi);
 //ETX
 
-class VTK_EXPORT vtkDSMProxyHelper : public vtkObject
+class VTK_EXPORT vtkDSMProxyHelper : public vtkDataObjectAlgorithm
 {
 public:
   static vtkDSMProxyHelper *New();
-  vtkTypeMacro(vtkDSMProxyHelper,vtkObject);
+  vtkTypeMacro(vtkDSMProxyHelper,vtkDataObjectAlgorithm);
 
   virtual void SetDSMManager(vtkDSMManager*);
   vtkGetObjectMacro(DSMManager, vtkDSMManager)

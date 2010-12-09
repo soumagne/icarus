@@ -37,6 +37,7 @@
 #include "vtkDSMManager.h"
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
+int vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDSMProxyHelper);
@@ -45,6 +46,8 @@ vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
 vtkDSMProxyHelper::vtkDSMProxyHelper() 
 {
   this->DSMManager = NULL;
+  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfOutputPorts(1);
 }
 //----------------------------------------------------------------------------
 vtkDSMProxyHelper::~vtkDSMProxyHelper()
@@ -99,6 +102,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     if (op && op->GetDSMManager()) {
       op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
     }
+    return 1;
   }
 
   if (!strncmp ("SetSteeringValueDouble",method, 22))
@@ -120,6 +124,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     if (op && op->GetDSMManager()) {
       op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
     }
+    return 1;
   }
 
   //
@@ -143,6 +148,11 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
       return 1;
       }
+    }
+
+  if (vtkDataObjectAlgorithmCommand(arlu, op,method,msg,resultStream))
+    {
+    return 1;
     }
 
   return 1;
