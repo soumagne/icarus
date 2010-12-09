@@ -156,19 +156,19 @@ public:
     this->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DSMProxyHelper->UpdatePropertyInformation();
     this->DSMProxyHelper->UpdateVTKObjects();
+    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
     //
     this->TransformProxy = vtkSMProxy::SafeDownCast(pm->NewProxy("extended_sources", "Transform3"));
     this->TransformProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
     //
-    // Set the DSM manager it uses for communication, (warning: updates all properties)
+    // Set our Transform object in the HelperProxy for later use
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("Transform"), this->TransformProxy);
     //
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
     this->DSMProxyHelper->UpdatePropertyInformation();
     this->DSMProxyHelper->UpdateVTKObjects();
-    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
     //
     //
     // wrap the DSMProxyHelper object in a pqProxy so that we can use it in our object inspector
@@ -1147,9 +1147,7 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   this->Internals->Links.addPropertyLink(this->Internals->TranslateZ,
     "text", SIGNAL(editingFinished()),
     this->Internals->TransformProxy, this->Internals->TransformProxy->GetProperty("Position"), 2);
-    
-    
-  
+     
 /*
     //
     // Create a pipeline source to appear in the GUI, 
