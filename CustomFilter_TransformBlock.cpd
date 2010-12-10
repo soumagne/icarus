@@ -1,0 +1,91 @@
+<CustomFilterDefinitions>
+  <CustomProxyDefinition name="TransformBlock" group="filters">
+    <CompoundSourceProxy id="447" servers="1">
+      <Proxy group="filters" type="ExtractBlock" id="293" servers="1" compound_name="ExtractBlock1">
+        <Property name="BlockIndices" id="293.BlockIndices" number_of_elements="1">
+          <Element index="0" value="4"/>
+          <Domain name="tree" id="293.BlockIndices.tree"/>
+        </Property>
+        <Property name="Input" id="293.Input" number_of_elements="1">
+          <Domain name="groups" id="293.Input.groups">
+            <Group value="sources"/>
+            <Group value="filters"/>
+          </Domain>
+          <Domain name="input_type" id="293.Input.input_type">
+            <DataType value="vtkMultiBlockDataSet"/>
+          </Domain>
+        </Property>
+        <Property name="MaintainStructure" id="293.MaintainStructure" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="293.MaintainStructure.bool"/>
+        </Property>
+        <Property name="PruneOutput" id="293.PruneOutput" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="293.PruneOutput.bool"/>
+        </Property>
+      </Proxy>
+      <Proxy group="filters" type="TransformFilter" id="367" servers="1" compound_name="Transform1">
+        <Property name="Input" id="367.Input" number_of_elements="1">
+          <Proxy value="293" output_port="0"/>
+          <Domain name="groups" id="367.Input.groups">
+            <Group value="sources"/>
+            <Group value="filters"/>
+          </Domain>
+          <Domain name="input_type" id="367.Input.input_type">
+            <DataType value="vtkPointSet"/>
+          </Domain>
+        </Property>
+        <Property name="Transform" id="367.Transform" number_of_elements="1">
+          <Proxy value="370"/>
+          <Domain name="groups" id="367.Transform.groups">
+            <Group value="transforms"/>
+          </Domain>
+          <Domain name="proxy_list" id="367.Transform.proxy_list">
+            <Proxy value="370"/>
+          </Domain>
+        </Property>
+      </Proxy>
+      <Proxy group="extended_sources" type="Transform3" id="370" servers="1" compound_name="auto_370">
+        <Property name="Position" id="370.Position" number_of_elements="3">
+          <Element index="0" value="0"/>
+          <Element index="1" value="0"/>
+          <Element index="2" value="0"/>
+          <Domain name="range" id="370.Position.range"/>
+        </Property>
+        <Property name="PositionInfo" id="370.PositionInfo" number_of_elements="3">
+          <Element index="0" value="0"/>
+          <Element index="1" value="0"/>
+          <Element index="2" value="0"/>
+        </Property>
+        <Property name="Rotation" id="370.Rotation" number_of_elements="3">
+          <Element index="0" value="0"/>
+          <Element index="1" value="0"/>
+          <Element index="2" value="0"/>
+          <Domain name="range" id="370.Rotation.range"/>
+        </Property>
+        <Property name="RotationInfo" id="370.RotationInfo" number_of_elements="3">
+          <Element index="0" value="0"/>
+          <Element index="1" value="0"/>
+          <Element index="2" value="0"/>
+        </Property>
+        <Property name="Scale" id="370.Scale" number_of_elements="3">
+          <Element index="0" value="1"/>
+          <Element index="1" value="1"/>
+          <Element index="2" value="1"/>
+          <Domain name="range" id="370.Scale.range"/>
+        </Property>
+        <Property name="ScaleInfo" id="370.ScaleInfo" number_of_elements="3">
+          <Element index="0" value="1"/>
+          <Element index="1" value="1"/>
+          <Element index="2" value="1"/>
+        </Property>
+      </Proxy>
+      <ExposedProperties>
+        <Property name="BlockIndices" proxy_name="ExtractBlock1" exposed_name="BlockIndices"/>
+        <Property name="Input" proxy_name="ExtractBlock1" exposed_name="Input"/>
+        <Property name="Transform" proxy_name="Transform1" exposed_name="Transform"/>
+      </ExposedProperties>
+      <OutputPort name="Output" proxy="Transform1" port_index="0"/>
+    </CompoundSourceProxy>
+  </CustomProxyDefinition>
+</CustomFilterDefinitions>

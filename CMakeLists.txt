@@ -84,6 +84,12 @@ IF(PARAVIEW_BUILD_QT_GUI)
   )
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
+encode_files_as_strings(ENCODED_FILTERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.cpd
+)
+
+MESSAGE("${ENCODED_FILTERS}")
+
 #--------------------------------------------------
 # Define Plugin
 #--------------------------------------------------
@@ -100,6 +106,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
   SERVER_SOURCES
+    ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMProxyHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx

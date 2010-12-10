@@ -29,7 +29,7 @@
          <x>0</x>
          <y>0</y>
          <width>445</width>
-         <height>583</height>
+         <height>584</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -676,19 +676,6 @@
             </item>
             <item>
              <layout class="QVBoxLayout" name="generatedLayout"/>
-            </item>
-            <item>
-             <spacer name="verticalSpacer_3">
-              <property name="orientation">
-               <enum>Qt::Vertical</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>20</width>
-                <height>40</height>
-               </size>
-              </property>
-             </spacer>
             </item>
            </layout>
           </widget>
