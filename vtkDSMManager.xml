@@ -165,6 +165,12 @@
         number_of_elements="1">
       </StringVectorProperty>
 
+      <StringVectorProperty
+        name="SteerableObject"
+        command="SetSteerableObject"
+        number_of_elements="1">
+      </StringVectorProperty>
+
     </Proxy>
 
   </ProxyGroup>

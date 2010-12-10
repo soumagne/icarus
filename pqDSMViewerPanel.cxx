@@ -810,18 +810,49 @@ void pqDSMViewerPanel::onUnpublishDSM()
 void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
+
   // Refresh list of send-able arrays
+  // TODO Enable it when set up in the Manager
   GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
-  std::string gridname = item->data(0, 1).toString().toStdString();
-  std::string attrname = item->text(0).toStdString();
-  steeringConfig[gridname].attributeConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
-  // What is supposed to happen here? did I break something?
+  for (GridMap::iterator git = steeringConfig.begin(); git != steeringConfig.end(); git++) {
+    for (AttributeMap::iterator ait = git->second.attributeConfig.begin();
+        ait != git->second.attributeConfig.end();
+        ait ++) {
+//      if (ait->second.isEnabled) {
+//        pqSMAdaptor::setElementProperty(
+//            this->Internals->DSMProxy->GetProperty("SteerableObject"),
+//            ait->second.hdfPath.c_str());
+//        this->Internals->DSMProxy->UpdateVTKObjects();
+//      }
+//      if (ait->second.isEnabled)
+//      cerr << ait->second.hdfPath.c_str() << endl;
+    }
+//    if (git->second.isEnabled) {
+//      pqSMAdaptor::setElementProperty(
+//          this->Internals->DSMProxy->GetProperty("SteerableObject"),
+//          git->first.c_str());
+//      this->Internals->DSMProxy->UpdateVTKObjects();
+//    }
+//    if (git->second.isEnabled)
+//      cerr << git->first.c_str() << endl;
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::ChangeItemState(QTreeWidgetItem *item)
 {
   if (!item)
     return;
+
+  GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
+  std::string gridname = item->data(0, 1).toString().toStdString();
+  std::string attrname = item->text(0).toStdString();
+
+  if (!item->parent()) {
+    steeringConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
+  } else {
+    steeringConfig[gridname].attributeConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
+  }
+
   for (int i = 0; i < item->childCount(); i++) {
     QTreeWidgetItem *child = item->child(i);
     child->setCheckState(0, item->checkState(0));
