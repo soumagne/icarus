@@ -57,6 +57,8 @@
 #include "vtkSMRepresentationProxy.h"
 #include "vtkSMPropertyIterator.h"
 #include "vtkSMPropertyLink.h"
+#include "vtkSMOutputPort.h"
+#include "vtkPVDataInformation.h"
 #include "vtkProcessModule.h"
 #include "vtkProcessModuleConnectionManager.h"
 #include "vtkPVXMLElement.h"
@@ -109,13 +111,6 @@
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
-struct SteeringGUIWidgetInfo {
-  pq3DWidget    *pqWidget;
-  vtkSMProperty *Property;
-  std::string    AssociatedGrid;
-  std::string    WidgetType;
-};
-typedef std::map<std::string, SteeringGUIWidgetInfo> SteeringGUIWidgetMap;
 
 extern const char *CustomFilter_TransformBlock;
 
@@ -266,7 +261,6 @@ public:
   int                                       ActiveSourcePort;
   pqRenderView                             *ActiveView;
   XdmfSteeringParser                       *SteeringParser;
-  SteeringGUIWidgetMap                      SteeringWidgetMap;
   pqPropertyLinks    Links;
   pqPropertyManager *PropertyManager;
   //
@@ -336,7 +330,7 @@ QDockWidget("DSM Manager", p)
   this->Internals->setupUi(this);
   //
   this->UpdateTimer = new QTimer(this);
-  this->UpdateTimer->setInterval(10);
+  this->UpdateTimer->setInterval(50);
   connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
   this->UpdateTimer->start();
 
@@ -608,30 +602,19 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
   this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
 
+/* 
   //
   // Do any of the DSMHelperProxy properties have widgets attached
   //
-  std::cout << "#######################################\n";
-  this->Internals->pqObjectInspector->dumpObjectTree();
-  //
-  QList<pq3DWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pq3DWidget*>();
-  for (int i=0; i<widgets.size(); i++)
-  {
-    pq3DWidget* widget = widgets[i];
-    widget->hideWidget();
-  }
+  // Obsolete : We do this in the parser now : keep for future use : just in case
   //
   vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
   while (!iter->IsAtEnd()) {
     vtkPVXMLElement *h = iter->GetProperty()->GetHints();
     int N = h ? h->GetNumberOfNestedElements() : 0;
     if (N>0) {
-      // make sure any 3D widgets start life invisible
-      pq3DWidget *widget = this->Internals->pqObjectInspector->findChild<pq3DWidget*>();
-      if (widget)widget->hideWidget();
       //
-      SteeringGUIWidgetInfo &info = this->Internals->SteeringWidgetMap[iter->GetKey()];
-      info.pqWidget = widget;
+      SteeringGUIWidgetInfo &info = SteeringWidgetMap[iter->GetKey()];
       info.Property = iter->GetProperty();
       //
       for (int i=0; i<N; i++) {
@@ -648,8 +631,30 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     iter->Next();
   }
   iter->Delete();
-  std::cout << "#######################################\n\n\n";
-
+*/
+  
+  //
+  // Get info about pwWidgets and SMProxy object that are bound to steering controls
+  //
+  // this->Internals->pqObjectInspector->dumpObjectTree();
+  SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
+  // Turn off visibility for all 3D widgets initially
+  QList<pq3DWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pq3DWidget*>();
+  for (int i=0; i<widgets.size(); i++) {
+    pq3DWidget* widget = widgets[i];
+    widget->hideWidget();
+    vtkSMProxy* controlledProxy = widget->getControlledProxy();
+    vtkSMProxy* referenceProxy = widget->getReferenceProxy();
+    for (SteeringGUIWidgetMap::iterator it=SteeringWidgetMap.begin(); it!=SteeringWidgetMap.end(); ++it) 
+    {
+      const char *propertyname = it->first.c_str();
+      if (controlledProxy->GetProperty(propertyname)) {
+        it->second.ControlledProxy = controlledProxy;
+        it->second.ReferenceProxy  = referenceProxy;
+        it->second.pqWidget        = widget;
+      }
+    }
+  }
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::StartRemovingServer(pqServer *server)
@@ -1203,6 +1208,20 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   this->Internals->ExtractBlockPipeline->UpdatePipeline();
   //
   vtkSMProxyProperty *transform = vtkSMProxyProperty::SafeDownCast(this->Internals->ExtractBlockPipeline->GetProperty("Transform"));
+
+
+  vtkSMOutputPort *out = this->Internals->ExtractBlockPipeline->GetOutputPort((unsigned int)0);
+  vtkPVDataInformation *di = out->GetDataInformation();
+  double bounds[6];
+  di->GetBounds(bounds);
+
+  SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
+  SteeringGUIWidgetInfo &info = SteeringWidgetMap["FreeBodyCentre"];
+  info.pqWidget->resetBounds(bounds);
+
+
+
+
 //  pm->RegisterProxy("sources", "TransformBlock", this->Internals->ExtractBlockPipeline);
 
 //  pqPipelineSource* source = pqApplicationCore::instance()->

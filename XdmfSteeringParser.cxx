@@ -180,9 +180,20 @@ std::string XdmfSteeringParser::BuildWidgetHints(XdmfConstString name, XdmfXmlNo
 {
   std::string hints;
   std::ostringstream hintstring;
-  XdmfXmlNode widgetNode, hintsNode = this->ConfigDOM->FindElement("Hints", 0, propertyNode);
+  XdmfXmlNode widgetNode, gridNode, initNode;
+  XdmfXmlNode hintsNode = this->ConfigDOM->FindElement("Hints", 0, propertyNode);
   if (hintsNode && (widgetNode = this->ConfigDOM->FindElement("WidgetControl", 0, hintsNode))!=NULL) {
+    SteeringGUIWidgetInfo &info = this->SteeringWidgetMap[name];
+    //
     XdmfConstString wname = this->ConfigDOM->GetAttribute(widgetNode, "name");
+    info.WidgetType = wname;
+    //
+    if ((gridNode=this->ConfigDOM->FindElement("AssociatedGrid", 0, hintsNode))!=NULL) {
+      info.AssociatedGrid = this->ConfigDOM->GetAttribute(gridNode, "name");
+    }
+    if ((initNode=this->ConfigDOM->FindElement("Initialization", 0, hintsNode))!=NULL) {
+      info.Initialization = this->ConfigDOM->GetAttribute(initNode, "name");
+    }
     XdmfConstString label = this->ConfigDOM->GetAttribute(propertyNode, "label");
     hintstring << "<PropertyGroup type=\"" << wname << "\" label=\"" << label << "\">" << std::endl;
     if (!strcmp(wname,"Handle") || !strcmp(wname,"Point")) {

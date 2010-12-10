@@ -51,6 +51,32 @@ typedef struct xmfSteeringConfigGrid_ {
 
 typedef std::map<std::string, xmfSteeringConfigGrid> GridMap;
 //----------------------------------------------------------------------------
+class pq3DWidget;
+class vtkSMProperty;
+class vtkSMProxy;
+// 
+// In order to map paraview 3DWidget controls onto properties and proxies
+// we shall store information. This info is hard to get at because it is buried
+// deep inside proxies etc, so we extract as much as we can when parsing XML 
+// and the paraview specific stuff is added when the object panel is created
+// 
+struct SteeringGUIWidgetInfo {
+  pq3DWidget    *pqWidget;
+  vtkSMProperty *Property;
+  vtkSMProxy    *ControlledProxy;
+  vtkSMProxy    *ReferenceProxy;
+  std::string    AssociatedGrid;
+  std::string    Initialization;
+  std::string    WidgetType;
+  SteeringGUIWidgetInfo() {
+    pqWidget        = NULL;
+    Property        = NULL;
+    ControlledProxy = NULL;
+    ReferenceProxy  = NULL;
+  }
+};
+typedef std::map<std::string, SteeringGUIWidgetInfo> SteeringGUIWidgetMap;
+//----------------------------------------------------------------------------
 class XdmfSteeringParser : public XdmfObject {
 public:
    XdmfSteeringParser();
@@ -62,11 +88,17 @@ public:
   int CreateParaViewProxyXML(XdmfXmlNode interactionNode);
   std::string BuildWidgetHints(XdmfConstString name, XdmfXmlNode propertyNode);
   
-  GridMap &GetSteeringConfig() { return this->SteeringConfig; }
+  GridMap &GetSteeringConfig() { 
+    return this->SteeringConfig; 
+  }
+  SteeringGUIWidgetMap &GetSteeringWidgetMap() {
+    return this->SteeringWidgetMap;
+  }
 
 protected:
-  XdmfDOM  *ConfigDOM;
-  GridMap   SteeringConfig;
+  XdmfDOM             *ConfigDOM;
+  GridMap              SteeringConfig;
+  SteeringGUIWidgetMap SteeringWidgetMap;
   
 };
 
