@@ -88,7 +88,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
       free(gridName);
     } 
     xmfSteeringConfigGrid &grid = this->SteeringConfig[gname];
-    grid.isEnabled = true;
     //
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
     for (int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
@@ -110,7 +109,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
         XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
         grid.attributeConfig[attributeMapName].hdfPath = attributePath;
       }
-      grid.attributeConfig[attributeMapName].isEnabled = true;
     }
   }
 

@@ -166,8 +166,8 @@
       </StringVectorProperty>
 
       <StringVectorProperty
-        name="SteerableObject"
-        command="SetSteerableObject"
+        name="DisabledObject"
+        command="SetDisabledObject"
         number_of_elements="1">
       </StringVectorProperty>
 

@@ -105,6 +105,10 @@ public:
   }
 
   // Description:
+  // Set/Unset objects
+  void SetDisabledObject(char *objectName) { DsmManager->SetDisabledObject(objectName); }
+
+  // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
   // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
   // object to see if a string is present

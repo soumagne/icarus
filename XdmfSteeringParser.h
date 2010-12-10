@@ -38,13 +38,11 @@
 //----------------------------------------------------------------------------
 typedef struct xmfSteeringConfigAttribute_ {
   std::string hdfPath;
-  XdmfBoolean isEnabled;
 } xmfSteeringConfigAttribute;
 
 typedef std::map<std::string, xmfSteeringConfigAttribute> AttributeMap;
 //----------------------------------------------------------------------------
 typedef struct xmfSteeringConfigGrid_ {
-  XdmfBoolean  isEnabled;
   AttributeMap attributeConfig;
   std::string  WidgetControl;
 } xmfSteeringConfigGrid;
