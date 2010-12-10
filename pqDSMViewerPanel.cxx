@@ -492,7 +492,6 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   QList<QTreeWidgetItem *> gridItems;
   for (GridMap::iterator git=steeringConfig.begin(); git!=steeringConfig.end(); ++git) {
     QTreeWidgetItem *gridItem;
-    QList<QTreeWidgetItem *> attributeItems;
     gridItem = new QTreeWidgetItem((QTreeWidget*)0, QStringList(QString(git->first.c_str())));
     // Do not make grids selectable
     gridItem->setCheckState(0, Qt::Checked);
@@ -710,30 +709,23 @@ void pqDSMViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
 
-  // Refresh list of send-able arrays
-  // TODO Enable it when set up in the Manager
   GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
-  for (GridMap::iterator git = steeringConfig.begin(); git != steeringConfig.end(); git++) {
-    for (AttributeMap::iterator ait = git->second.attributeConfig.begin();
-        ait != git->second.attributeConfig.end();
-        ait ++) {
-//      if (ait->second.isEnabled) {
-//        pqSMAdaptor::setElementProperty(
-//            this->Internals->DSMProxy->GetProperty("SteerableObject"),
-//            ait->second.hdfPath.c_str());
-//        this->Internals->DSMProxy->UpdateVTKObjects();
-//      }
-//      if (ait->second.isEnabled)
-//      cerr << ait->second.hdfPath.c_str() << endl;
-    }
-//    if (git->second.isEnabled) {
-//      pqSMAdaptor::setElementProperty(
-//          this->Internals->DSMProxy->GetProperty("SteerableObject"),
-//          git->first.c_str());
-//      this->Internals->DSMProxy->UpdateVTKObjects();
-//    }
-//    if (git->second.isEnabled)
-//      cerr << git->first.c_str() << endl;
+  std::string gridname = item->data(0, 1).toString().toStdString();
+  std::string attrname = item->text(0).toStdString();
+
+  pqSMAdaptor::setElementProperty(
+          this->Internals->DSMProxy->GetProperty("DisabledObject"),
+          "Modified");
+  if (!item->parent()) {
+    pqSMAdaptor::setElementProperty(
+        this->Internals->DSMProxy->GetProperty("DisabledObject"),
+        attrname.c_str());
+    this->Internals->DSMProxy->UpdateVTKObjects();
+  } else {
+    pqSMAdaptor::setElementProperty(
+        this->Internals->DSMProxy->GetProperty("DisabledObject"),
+        steeringConfig[gridname].attributeConfig[attrname].hdfPath.c_str());
+    this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
 //-----------------------------------------------------------------------------
@@ -741,16 +733,6 @@ void pqDSMViewerPanel::ChangeItemState(QTreeWidgetItem *item)
 {
   if (!item)
     return;
-
-  GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
-  std::string gridname = item->data(0, 1).toString().toStdString();
-  std::string attrname = item->text(0).toStdString();
-
-  if (!item->parent()) {
-    steeringConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
-  } else {
-    steeringConfig[gridname].attributeConfig[attrname].isEnabled = (item->checkState(0) == Qt::Checked);
-  }
 
   for (int i = 0; i < item->childCount(); i++) {
     QTreeWidgetItem *child = item->child(i);
@@ -801,15 +783,14 @@ void pqDSMViewerPanel::onSCRestart()
 void pqDSMViewerPanel::onSCWriteDisk()
 {
   if (this->DSMReady()) {
-    // workaround to be able to click multiple times on the disk button
-    const char *steeringCmdNone = "none";
     const char *steeringCmd = "disk";
 
-    pqSMAdaptor::setElementProperty(this->Internals->DSMProxy->GetProperty("SteeringCommand"),
-        steeringCmdNone);
-    this->Internals->DSMProxy->UpdateVTKObjects();
+    pqSMAdaptor::setElementProperty(
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
+        "Modified");
 
-    pqSMAdaptor::setElementProperty(this->Internals->DSMProxy->GetProperty("SteeringCommand"),
+    pqSMAdaptor::setElementProperty(
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
     this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
