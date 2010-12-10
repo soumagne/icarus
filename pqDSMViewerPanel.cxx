@@ -108,52 +108,10 @@
 //
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
+#include "vtkCustomPipelineHelper.h"
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
-
-extern const char *CustomFilter_TransformBlock;
-
-class CustomPipeline {
-public:
-  CustomPipeline(const char *CustomFilterXml) {
-    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    vtkSMProxyManager *proxyManager = vtkSMProxyManager::GetProxyManager();
-    static int num = 0;
-    // Make sure name is unique among filters
-    // Should this be done in vtkSMProxyManager???
-    vtkPVXMLParser* parser = vtkPVXMLParser::New();
-    parser->Parse(CustomFilterXml);
-    vtkPVXMLElement *root = parser->GetRootElement();
-    if (root)
-    {
-      unsigned int numElems = root->GetNumberOfNestedElements();
-      for (unsigned int i=0; i<numElems; i++)
-      {
-        vtkPVXMLElement* currentElement = root->GetNestedElement(i);
-        if (currentElement->GetName() &&
-            strcmp(currentElement->GetName(), "CustomProxyDefinition") == 0)
-        {
-          const char* name = currentElement->GetAttribute("name");
-          const char* group = currentElement->GetAttribute("group");
-          /*
-          if (name && group)
-          {
-            QString newname = QString(name) + QString(group) + QString("%1").arg(num);
-            currentElement->SetAttribute("name",newname.toAscii().data());
-          }
-          */
-        }
-      }
-      // Load the custom proxy definitions using the server manager.
-      // This should trigger some register events, which will update the
-      // list of custom filters.
-      proxyManager->LoadCustomProxyDefinitions(root);
-
-      parser->Delete();
-      }
-  }
-};
 
 //----------------------------------------------------------------------------
 //
@@ -268,9 +226,9 @@ public:
   int              DSMCommType;
   int              CurrentTimeStep;
 
-  vtkSmartPointer<vtkSMSourceProxy> ExtractBlockPipeline;
-  vtkSmartPointer<vtkSMSourceProxy> TransformFilterProxy;
-  vtkSmartPointer<vtkSMProxy>       TransformProxy;
+  vtkSmartPointer<vtkCustomPipelineHelper> ExtractBlockPipeline;
+  vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
+  vtkSmartPointer<vtkSMProxy>              TransformProxy;
 
 };
 //-----------------------------------------------------------------------------
@@ -1208,26 +1166,25 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   //
   std::cout << "Binding widget of type " << widgettype << " to " << grid << " via the property " << name << std::endl;
   //
-  CustomPipeline mp(CustomFilter_TransformBlock);
+  vtkCustomPipelineHelper::RegisterCustomFilters();
   //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-  this->Internals->ExtractBlockPipeline = vtkSMSourceProxy::SafeDownCast(pm->NewProxy("filters", "TransformBlock"));
-  this->Internals->ExtractBlockPipeline->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+  this->Internals->ExtractBlockPipeline.TakeReference( 
+    vtkCustomPipelineHelper::New("filters", "TransformBlock"));
   //
-  pqSMAdaptor::setInputProperty(this->Internals->ExtractBlockPipeline->GetProperty("Input"), this->Internals->XdmfReader, 0);
-  pqSMAdaptor::setElementProperty(this->Internals->ExtractBlockPipeline->GetProperty("BlockIndices"), 4);  
-  this->Internals->ExtractBlockPipeline->UpdatePropertyInformation();
-  this->Internals->ExtractBlockPipeline->UpdateVTKObjects();
-  this->Internals->ExtractBlockPipeline->UpdatePipeline();
+  this->Internals->ExtractBlockPipeline->SetInput(this->Internals->XdmfReader, 0);
+  pqSMAdaptor::setElementProperty(
+    this->Internals->ExtractBlockPipeline->Pipeline->GetProperty("BlockIndices"), 4);  
   //
-  vtkSMProxyProperty *transform = vtkSMProxyProperty::SafeDownCast(this->Internals->ExtractBlockPipeline->GetProperty("Transform"));
-
-
-  vtkSMOutputPort *out = this->Internals->ExtractBlockPipeline->GetOutputPort((unsigned int)0);
-  vtkPVDataInformation *di = out->GetDataInformation();
+  this->Internals->ExtractBlockPipeline->UpdateAll();
+  //
+  vtkSMProxyProperty *transform = vtkSMProxyProperty::SafeDownCast(
+    this->Internals->ExtractBlockPipeline->Pipeline->GetProperty("Transform"));
+  //
+  vtkSMOutputPort *out = this->Internals->ExtractBlockPipeline->GetOutputPort(0);
   double bounds[6];
-  di->GetBounds(bounds);
-
+  out->GetDataInformation()->GetBounds(bounds);
+  //
   SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
   SteeringGUIWidgetInfo &info = SteeringWidgetMap["FreeBodyCentre"];
   info.pqWidget->resetBounds(bounds);
@@ -1242,17 +1199,9 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
 //  source->setModifiedState(pqProxy::UNMODIFIED);
 
   // Create a representation proxy for the output of our mini filter
-  vtkSMProxy *viewModuleProxy = this->Internals->ActiveView->getProxy();
-  vtkSMProxy *reprProxy = this->Internals->ActiveView->getViewProxy()->CreateDefaultRepresentation(
-    this->Internals->ExtractBlockPipeline, 0);
-  reprProxy->SetConnectionID(this->Internals->ActiveView->getServer()->GetConnectionID());
-  pqSMAdaptor::setInputProperty(reprProxy->GetProperty("Input"), this->Internals->ExtractBlockPipeline, 0);
-  pqSMAdaptor::setElementProperty(reprProxy->GetProperty("Visibility"), 1);
-  reprProxy->UpdateVTKObjects();
-//  pm->RegisterProxy("representations", "DataRepresentation11111", reprProxy);
-  // 
-  pqSMAdaptor::addProxyProperty(viewModuleProxy->GetProperty("Representations"), reprProxy);
-  viewModuleProxy->UpdateVTKObjects();
+  vtkSMViewProxy *viewModuleProxy = vtkSMViewProxy::SafeDownCast(this->Internals->ActiveView->getProxy());
+  this->Internals->ExtractBlockPipeline->AddToRenderView(viewModuleProxy, 1);
+  //
   //
 //  pqApplicationCore* core = pqApplicationCore::instance();
 //  pqDataRepresentation *repr = core->getServerManagerModel()->
