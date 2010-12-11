@@ -53,6 +53,12 @@
 #include <sstream>
 //----------------------------------------------------------------------------
 extern const char *CustomFilter_TransformBlock;
+extern const char *CustomFilter_XdmfReaderBlock;
+//----------------------------------------------------------------------------
+namespace vtkCustomPipelineHelperSpace {
+  typedef std::list< std::pair< std::string, std::string > > stringpairlist;
+  std::list< std::pair< std::string, std::string > > RegisteredFilters;
+};
 //----------------------------------------------------------------------------
 vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *group)
 {
@@ -64,6 +70,21 @@ vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *g
 vtkCustomPipelineHelper::~vtkCustomPipelineHelper()
 {
   this->Pipeline = NULL;
+  this->UnRegisterCustomFilters();
+}
+//----------------------------------------------------------------------------
+void vtkCustomPipelineHelper::UnRegisterCustomFilters()
+{
+  static bool once = true;
+  if (once) {
+    vtkSMProxyManager *proxyManager = vtkSMProxyManager::GetProxyManager();
+    for (vtkCustomPipelineHelperSpace::stringpairlist::iterator it=vtkCustomPipelineHelperSpace::RegisteredFilters.begin();
+      it!=vtkCustomPipelineHelperSpace::RegisteredFilters.end(); ++it) 
+    {
+      proxyManager->UnRegisterCustomProxyDefinition(it->first.c_str(),it->second.c_str());
+    }
+    once = false;
+  }
 }
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::RegisterCustomFilters()
@@ -71,6 +92,7 @@ void vtkCustomPipelineHelper::RegisterCustomFilters()
   static bool once = true;
   if (once) {
     vtkCustomPipelineHelper::RegisterCustomFilter(CustomFilter_TransformBlock);
+    vtkCustomPipelineHelper::RegisterCustomFilter(CustomFilter_XdmfReaderBlock);
     once = false;
   }
 }
@@ -93,9 +115,12 @@ void vtkCustomPipelineHelper::RegisterCustomFilter(const char *xml)
         const char* name = currentElement->GetAttribute("name");
         const char* group = currentElement->GetAttribute("group");
         if (name && group) {
-          std::stringstream newname;
-          newname << name << group << num << std::ends;
-          currentElement->SetAttribute("name",newname.str().c_str());
+          vtkCustomPipelineHelperSpace::RegisteredFilters.push_back(
+            std::pair<std::string, std::string>(group,name)
+          );
+//          std::stringstream newname;
+//          newname << name << group << num << std::ends;
+//          currentElement->SetAttribute("name",newname.str().c_str());
         }
       }
     }
@@ -132,7 +157,7 @@ vtkSMOutputPort *vtkCustomPipelineHelper::GetOutputPort(unsigned int port)
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::UpdateAll()
 {
-  this->Pipeline->UpdatePropertyInformation();
+//  this->Pipeline->UpdatePropertyInformation();
   this->Pipeline->UpdateVTKObjects();
   this->Pipeline->UpdatePipeline();
 }

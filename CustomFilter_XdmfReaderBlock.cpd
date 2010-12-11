@@ -1,0 +1,51 @@
+<CustomFilterDefinitions>
+  <CustomProxyDefinition name="XdmfReaderBlock" group="sources">
+    <CompoundSourceProxy id="355" servers="1">
+      <Proxy group="sources" type="XdmfReader4" id="212" servers="1" compound_name="XdmfReader1">
+        <Property name="DSMManager" id="212.DSMManager" number_of_elements="1">
+          <Proxy value="215"/>
+          <Domain name="groups" id="212.DSMManager.groups">
+            <Group value="icarus_helpers"/>
+          </Domain>
+          <Domain name="proxy_list" id="212.DSMManager.proxy_list">
+            <Proxy value="215"/>
+          </Domain>
+        </Property>
+        <Property name="FileName" id="212.FileName" number_of_elements="1">
+        </Property>
+      </Proxy>
+      <Proxy group="filters" type="ExtractBlock" id="285" servers="1" compound_name="ExtractBlock1">
+        <Property name="BlockIndices" id="285.BlockIndices" number_of_elements="3">
+          <Element index="0" value="1"/>
+          <Element index="1" value="2"/>
+          <Element index="2" value="3"/>
+          <Domain name="tree" id="285.BlockIndices.tree"/>
+        </Property>
+        <Property name="Input" id="285.Input" number_of_elements="1">
+          <Proxy value="212" output_port="0"/>
+          <Domain name="groups" id="285.Input.groups">
+            <Group value="sources"/>
+            <Group value="filters"/>
+          </Domain>
+          <Domain name="input_type" id="285.Input.input_type">
+            <DataType value="vtkMultiBlockDataSet"/>
+          </Domain>
+        </Property>
+        <Property name="MaintainStructure" id="285.MaintainStructure" number_of_elements="1">
+          <Element index="0" value="0"/>
+          <Domain name="bool" id="285.MaintainStructure.bool"/>
+        </Property>
+        <Property name="PruneOutput" id="285.PruneOutput" number_of_elements="1">
+          <Element index="0" value="1"/>
+          <Domain name="bool" id="285.PruneOutput.bool"/>
+        </Property>
+      </Proxy>
+      <ExposedProperties>
+        <Property name="BlockIndices" proxy_name="ExtractBlock1" exposed_name="BlockIndices"/>
+        <Property name="FileName" proxy_name="XdmfReader1" exposed_name="FileName"/>
+        <Property name="DSMManager" proxy_name="XdmfReader1" exposed_name="DSMManager"/>
+      </ExposedProperties>
+      <OutputPort name="Output" proxy="ExtractBlock1" port_index="0"/>
+    </CompoundSourceProxy>
+  </CustomProxyDefinition>
+</CustomFilterDefinitions>

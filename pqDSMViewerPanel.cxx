@@ -226,7 +226,8 @@ public:
   int              DSMCommType;
   int              CurrentTimeStep;
 
-  vtkSmartPointer<vtkCustomPipelineHelper> ExtractBlockPipeline;
+  vtkSmartPointer<vtkCustomPipelineHelper> XdmfViewer;
+  vtkSmartPointer<vtkCustomPipelineHelper> ExtractBlock;
   vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
   vtkSmartPointer<vtkSMProxy>              TransformProxy;
 
@@ -913,6 +914,8 @@ void pqDSMViewerPanel::onDisplayDSM()
   static int current_time = 0;
   static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
 
+  //
+  vtkCustomPipelineHelper::RegisterCustomFilters();
 
   if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized && this->DSMReady()) {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
@@ -931,11 +934,11 @@ void pqDSMViewerPanel::onDisplayDSM()
       // When creating reader, make sure first_time is true
       if (!first_time) first_time = true;
       if (this->Internals->XdmfReader) this->Internals->XdmfReader.New();
-      this->Internals->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfReader4")));
+      this->Internals->XdmfReader.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "XdmfReader4")));
       this->Internals->XdmfReader->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
       this->Internals->XdmfReader->SetServers(vtkProcessModule::DATA_SERVER);
       sprintf(proxyName, "DSMDataSource%d", current_time);
-      pm->RegisterProxy("sources", proxyName, this->Internals->XdmfReader);
+//      pm->RegisterProxy("sources", proxyName, this->Internals->XdmfReader);
 
       //
       // Connect our DSM manager to the reader
@@ -944,6 +947,25 @@ void pqDSMViewerPanel::onDisplayDSM()
           this->Internals->XdmfReader->GetProperty("DSMManager"), this->Internals->DSMProxy
         );
     }
+    //
+    // Create a pipeline source to appear in the GUI, 
+    // findItem creates a new one initially, thenafter returns the same object
+    // Mark the item as Unmodified since we manually updated the pipeline ourselves
+    //
+    //
+    this->Internals->XdmfViewer.TakeReference( 
+      vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock"));
+    this->Internals->XdmfViewer->SetInput(this->Internals->XdmfReader, 0);
+    QList<QVariant> blocks;
+    blocks.append(1);
+    blocks.append(2);
+    blocks.append(3);
+    pqSMAdaptor::setMultipleElementProperty(
+      this->Internals->XdmfViewer->Pipeline->GetProperty("BlockIndices"), blocks);  
+    pqSMAdaptor::setProxyProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("DSMManager"), this->Internals->DSMProxy
+      );
+    this->Internals->XdmfViewer->Pipeline->UpdateProperty("DSMManager");
 
     //
     // If we are using an Xdmf XML file supplied manually or generated, get it
@@ -954,7 +976,11 @@ void pqDSMViewerPanel::onDisplayDSM()
           pqSMAdaptor::setElementProperty(
               this->Internals->XdmfReader->GetProperty("FileName"),
               this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
-        }
+          pqSMAdaptor::setElementProperty(
+              this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), 
+              this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
+              }
+          this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
         if (this->Internals->xdmfFileTypeComboBox->currentIndex() == 1) { // XDMF Template File
           force_generate = (this->Internals->forceXdmfGeneration->isChecked()) ? true : false;
           // Only re-generate if the description file path has changed or if force is set to true
@@ -976,7 +1002,13 @@ void pqDSMViewerPanel::onDisplayDSM()
     else {
       pqSMAdaptor::setElementProperty(
         this->Internals->XdmfReader->GetProperty("FileName"), "stdin");
+      pqSMAdaptor::setElementProperty(
+          this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), "stdin"); 
+      this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
     }
+    //
+    this->Internals->XdmfViewer->UpdateAll();
+    pm->RegisterProxy("sources", "XdmfReaderBlock", this->Internals->XdmfViewer->Pipeline);
 
     QTime dieTime = QTime::currentTime().addMSecs(10);
     while( QTime::currentTime() < dieTime ) {
@@ -1000,12 +1032,9 @@ void pqDSMViewerPanel::onDisplayDSM()
     }
 
     //
-    // Create a pipeline source to appear in the GUI, 
-    // findItem creates a new one initially, thenafter returns the same object
-    // Mark the item as Unmodified since we manually updated the pipeline ourselves
-    //
+    /*
     pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->XdmfReader);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->XdmfViewer->Pipeline);
     source->setModifiedState(pqProxy::UNMODIFIED);
 
     //
@@ -1018,7 +1047,7 @@ void pqDSMViewerPanel::onDisplayDSM()
       //
       first_time = false;
     }
-
+*/
     // 
     // Increment the time as new steps appear.
     // @TODO : To be replaced with GetTimeStep from reader
@@ -1044,6 +1073,8 @@ void pqDSMViewerPanel::onDisplayDSM()
     }
 #endif //DISABLE_DISPLAY
   }
+  //
+  vtkCustomPipelineHelper::UnRegisterCustomFilters();
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::TrackSource()
@@ -1166,22 +1197,20 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   //
   std::cout << "Binding widget of type " << widgettype << " to " << grid << " via the property " << name << std::endl;
   //
-  vtkCustomPipelineHelper::RegisterCustomFilters();
-  //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-  this->Internals->ExtractBlockPipeline.TakeReference( 
+  this->Internals->ExtractBlock.TakeReference( 
     vtkCustomPipelineHelper::New("filters", "TransformBlock"));
   //
-  this->Internals->ExtractBlockPipeline->SetInput(this->Internals->XdmfReader, 0);
+  this->Internals->ExtractBlock->SetInput(this->Internals->XdmfReader, 0);
   pqSMAdaptor::setElementProperty(
-    this->Internals->ExtractBlockPipeline->Pipeline->GetProperty("BlockIndices"), 4);  
+    this->Internals->ExtractBlock->Pipeline->GetProperty("BlockIndices"), 4);  
   //
-  this->Internals->ExtractBlockPipeline->UpdateAll();
+  this->Internals->ExtractBlock->UpdateAll();
   //
   vtkSMProxyProperty *transform = vtkSMProxyProperty::SafeDownCast(
-    this->Internals->ExtractBlockPipeline->Pipeline->GetProperty("Transform"));
+    this->Internals->ExtractBlock->Pipeline->GetProperty("Transform"));
   //
-  vtkSMOutputPort *out = this->Internals->ExtractBlockPipeline->GetOutputPort(0);
+  vtkSMOutputPort *out = this->Internals->ExtractBlock->GetOutputPort(0);
   double bounds[6];
   out->GetDataInformation()->GetBounds(bounds);
   //
@@ -1192,15 +1221,15 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
 
 
 
-//  pm->RegisterProxy("sources", "TransformBlock", this->Internals->ExtractBlockPipeline);
+//  pm->RegisterProxy("sources", "TransformBlock", this->Internals->ExtractBlock);
 
 //  pqPipelineSource* source = pqApplicationCore::instance()->
-//    getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->ExtractBlockPipeline);
+//    getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->ExtractBlock);
 //  source->setModifiedState(pqProxy::UNMODIFIED);
 
   // Create a representation proxy for the output of our mini filter
   vtkSMViewProxy *viewModuleProxy = vtkSMViewProxy::SafeDownCast(this->Internals->ActiveView->getProxy());
-  this->Internals->ExtractBlockPipeline->AddToRenderView(viewModuleProxy, 1);
+  this->Internals->ExtractBlock->AddToRenderView(viewModuleProxy, 1);
   //
   //
 //  pqApplicationCore* core = pqApplicationCore::instance();

@@ -1,0 +1,6 @@
+<ParaViewReaders>
+  <Reader name="XdmfReader4"
+          extensions="xmf"
+          file_description="Xdmf files for Icarus">
+  </Reader> 
+</ParaViewReaders>

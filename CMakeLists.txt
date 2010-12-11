@@ -86,6 +86,7 @@ ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 encode_files_as_strings(ENCODED_FILTERS
   ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.cpd
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.cpd
 )
 
 MESSAGE("${ENCODED_FILTERS}")
@@ -122,6 +123,7 @@ ADD_PARAVIEW_PLUGIN(
   GUI_RESOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/IcarusQtResources.qrc
   GUI_RESOURCE_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Icarus_Readers.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
 )

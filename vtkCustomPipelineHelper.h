@@ -42,6 +42,7 @@ public:
    vtkCustomPipelineHelper(const char *name, const char *group);
   ~vtkCustomPipelineHelper();
   //
+  static void UnRegisterCustomFilters();
   static void RegisterCustomFilters();
   static void RegisterCustomFilter(const char *xml);
   //

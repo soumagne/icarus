@@ -1,6 +1,6 @@
 <ServerManagerConfiguration>
 
-  <ProxyGroup name="icarus_helpers">
+  <ProxyGroup name="sources">
 
     <!-- ================================================================= -->
     <SourceProxy name="XdmfReader4" class="vtkXdmfReader4">
