@@ -45,6 +45,10 @@
         <Property name="FileName" proxy_name="XdmfReader1" exposed_name="FileName"/>
         <Property name="DSMManager" proxy_name="XdmfReader1" exposed_name="DSMManager"/>
       </ExposedProperties>
+      <Hints>
+        <Property name="FileName" show="0"/>
+        <Property name="DSMManager" show="0"/>
+      </Hints>
       <OutputPort name="Output" proxy="ExtractBlock1" port_index="0"/>
     </CompoundSourceProxy>
   </CustomProxyDefinition>
