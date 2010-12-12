@@ -49,8 +49,8 @@ class vtkSMProxy;
 class vtkSMSourceProxy;
 class vtkSMProperty;
 class vtkSMRepresentationProxy;
-
 class XdmfSteeringParser;
+struct SteeringGUIWidgetInfo;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -98,7 +98,7 @@ public slots:
   void propModified();
   void testClicked();
   void test2Clicked();
-  void BindWidgetToGrid(vtkSMProperty *prop, const char *name, const char *grid, const char *widgettype);
+  void BindWidgetToGrid(SteeringGUIWidgetInfo *info, int blockindex);
 
 private slots:
 

@@ -961,18 +961,28 @@ void pqDSMViewerPanel::onDisplayDSM()
     this->Internals->XdmfReader = vtkSMSourceProxy::SafeDownCast(pipeline1->GetProxy("XdmfReader1"));
     this->Internals->XdmfReader->UpdatePipeline();
     vtkSMOutputPort *out = this->Internals->XdmfReader->GetOutputPort((unsigned int)0);
-    multiblock = (out->GetDataInformation()->GetCompositeDataInformation()->GetNumberOfChildren()>0);
-
+    multiblock = out->GetDataInformation()->GetCompositeDataInformation()->GetDataIsComposite();
+    //
     vtkSMSourceProxy *actualfilter = NULL;
     if (multiblock) {
       actualfilter = this->Internals->XdmfViewer->Pipeline;
       //
-      // Set which blocks to display
-      //
+      vtkPVCompositeDataInformation *pvcdi = out->GetDataInformation()->GetCompositeDataInformation();
+      SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
       QList<QVariant> blocks;
-      blocks.append(1);
-      blocks.append(2);
-      blocks.append(3);
+      int N = pvcdi->GetNumberOfChildren();
+      for (int i=0; i<N; i++) {
+        blocks.append(i+1);
+        const char *name = pvcdi->GetName(i);
+        for (SteeringGUIWidgetMap::iterator it=SteeringWidgetMap.begin(); it!=SteeringWidgetMap.end(); ++it) {
+          if (it->second.AssociatedGrid==std::string(name)) {
+            blocks.removeOne(i+1);
+            // todo : add index to GUI block selection object
+            this->BindWidgetToGrid(&it->second, i+1);
+            continue;
+          }
+        }
+      }
       pqSMAdaptor::setMultipleElementProperty(
         this->Internals->XdmfViewer->Pipeline->GetProperty("BlockIndices"), blocks);  
       this->Internals->XdmfViewer->Pipeline->UpdateProperty("BlockIndices");
@@ -1139,11 +1149,11 @@ void pqDSMViewerPanel::testClicked()
   this->Internals->pqWidget3D->showWidget();
   */
 
-  this->BindWidgetToGrid(NULL, "Test", "Body", "Box");
+//  this->BindWidgetToGrid(NULL, "Test", "Body", "Box");
 
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, const char *grid, const char *widgettype)
+void pqDSMViewerPanel::BindWidgetToGrid(SteeringGUIWidgetInfo *info, int blockindex)
 {
   if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
     this->onActiveViewChanged(pqActiveView::instance().current());
@@ -1153,16 +1163,14 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
     return;
   }
   //
-  std::cout << "Binding widget of type " << widgettype << " to " << grid << " via the property " << name << std::endl;
-  //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
   this->Internals->ExtractBlock.TakeReference( 
     vtkCustomPipelineHelper::New("filters", "TransformBlock"));
   //
   // @FIXME
-//  this->Internals->ExtractBlock->SetInput(this->Internals->XdmfReader, 0);
+  this->Internals->ExtractBlock->SetInput(this->Internals->XdmfReader, 0);
   pqSMAdaptor::setElementProperty(
-    this->Internals->ExtractBlock->Pipeline->GetProperty("BlockIndices"), 4);  
+    this->Internals->ExtractBlock->Pipeline->GetProperty("BlockIndices"), blockindex);  
   //
   this->Internals->ExtractBlock->UpdateAll();
   //
@@ -1173,12 +1181,7 @@ void pqDSMViewerPanel::BindWidgetToGrid(vtkSMProperty *prop, const char *name, c
   double bounds[6];
   out->GetDataInformation()->GetBounds(bounds);
   //
-  SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
-  SteeringGUIWidgetInfo &info = SteeringWidgetMap["FreeBodyCentre"];
-  info.pqWidget->resetBounds(bounds);
-
-
-
+  info->pqWidget->resetBounds(bounds);
 
 //  pm->RegisterProxy("sources", "TransformBlock", this->Internals->ExtractBlock);
 
