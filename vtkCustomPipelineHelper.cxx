@@ -33,6 +33,7 @@
 #include "vtkSMInputProperty.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSourceProxy.h"
+#include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
@@ -63,7 +64,7 @@ namespace vtkCustomPipelineHelperSpace {
 vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *group)
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-  this->Pipeline = vtkSMSourceProxy::SafeDownCast(pm->NewProxy(name, group));
+  this->Pipeline = vtkSMCompoundSourceProxy::SafeDownCast(pm->NewProxy(name, group));
   this->Pipeline->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 }
 //----------------------------------------------------------------------------
@@ -153,6 +154,11 @@ void vtkCustomPipelineHelper::SetInput(vtkSMSourceProxy *proxy, int outport)
 vtkSMOutputPort *vtkCustomPipelineHelper::GetOutputPort(unsigned int port)
 {
   return this->Pipeline->GetOutputPort(port);
+}
+//----------------------------------------------------------------------------
+vtkSMCompoundSourceProxy *vtkCustomPipelineHelper::GetCompoundPipeline()
+{
+  return vtkSMCompoundSourceProxy::SafeDownCast(this->Pipeline);
 }
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::UpdateAll()

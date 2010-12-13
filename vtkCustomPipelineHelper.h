@@ -30,6 +30,7 @@
 #include "vtkSmartPointer.h"
 //----------------------------------------------------------------------------
 class vtkSMSourceProxy;
+class vtkSMCompoundSourceProxy;
 class vtkSMViewProxy;
 class vtkSMOutputPort;
 //----------------------------------------------------------------------------
@@ -48,8 +49,9 @@ public:
   //
   void AddToRenderView(vtkSMViewProxy *viewModuleProxy, bool visible);
   //
-  void             SetInput(vtkSMSourceProxy *proxy, int outport);
-  vtkSMOutputPort *GetOutputPort(unsigned int port);
+  void                      SetInput(vtkSMSourceProxy *proxy, int outport);
+  vtkSMOutputPort          *GetOutputPort(unsigned int port);
+  vtkSMCompoundSourceProxy *GetCompoundPipeline();
   //
   void UpdateAll();
 

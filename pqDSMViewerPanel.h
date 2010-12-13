@@ -98,7 +98,7 @@ public slots:
   void propModified();
   void testClicked();
   void test2Clicked();
-  void BindWidgetToGrid(SteeringGUIWidgetInfo *info, int blockindex);
+  void BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex);
 
 private slots:
 

@@ -52,6 +52,8 @@ typedef std::map<std::string, xmfSteeringConfigGrid> GridMap;
 class pq3DWidget;
 class vtkSMProperty;
 class vtkSMProxy;
+class vtkSMNewWidgetRepresentationProxy;
+class vtkAbstractWidget;
 // 
 // In order to map paraview 3DWidget controls onto properties and proxies
 // we shall store information. This info is hard to get at because it is buried
@@ -59,13 +61,15 @@ class vtkSMProxy;
 // and the paraview specific stuff is added when the object panel is created
 // 
 struct SteeringGUIWidgetInfo {
-  pq3DWidget    *pqWidget;
-  vtkSMProperty *Property;
-  vtkSMProxy    *ControlledProxy;
-  vtkSMProxy    *ReferenceProxy;
-  std::string    AssociatedGrid;
-  std::string    Initialization;
-  std::string    WidgetType;
+  pq3DWidget                        *pqWidget;
+  vtkSMNewWidgetRepresentationProxy *WidgetProxy;
+  vtkAbstractWidget                 *AbstractWidget;
+  vtkSMProperty                     *Property;
+  vtkSMProxy                        *ControlledProxy;
+  vtkSMProxy                        *ReferenceProxy;
+  std::string                        AssociatedGrid;
+  std::string                        Initialization;
+  std::string                        WidgetType;
   SteeringGUIWidgetInfo() {
     pqWidget        = NULL;
     Property        = NULL;

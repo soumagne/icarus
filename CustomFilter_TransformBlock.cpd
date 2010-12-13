@@ -1,10 +1,10 @@
 <CustomFilterDefinitions>
   <CustomProxyDefinition name="TransformBlock" group="filters">
     <CompoundSourceProxy id="447" servers="1">
-      <Proxy group="filters" type="ExtractBlock" id="293" servers="1" compound_name="ExtractBlock1">
-        <Property name="BlockIndices" id="293.BlockIndices" number_of_elements="1">
+      <Proxy group="filters" type="FlattenOneBlock" id="293" servers="1" compound_name="FlattenOneBlock1">
+        <Property name="BlockIndex" id="293.BlockIndex" number_of_elements="1">
           <Element index="0" value="4"/>
-          <Domain name="tree" id="293.BlockIndices.tree"/>
+          <Domain name="tree" id="293.BlockIndex.tree"/>
         </Property>
         <Property name="Input" id="293.Input" number_of_elements="1">
           <Domain name="groups" id="293.Input.groups">
@@ -13,15 +13,8 @@
           </Domain>
           <Domain name="input_type" id="293.Input.input_type">
             <DataType value="vtkMultiBlockDataSet"/>
+            <DataType value="vtkDataSet"/>
           </Domain>
-        </Property>
-        <Property name="MaintainStructure" id="293.MaintainStructure" number_of_elements="1">
-          <Element index="0" value="0"/>
-          <Domain name="bool" id="293.MaintainStructure.bool"/>
-        </Property>
-        <Property name="PruneOutput" id="293.PruneOutput" number_of_elements="1">
-          <Element index="0" value="1"/>
-          <Domain name="bool" id="293.PruneOutput.bool"/>
         </Property>
       </Proxy>
       <Proxy group="filters" type="TransformFilter" id="367" servers="1" compound_name="Transform1">
@@ -81,10 +74,13 @@
         </Property>
       </Proxy>
       <ExposedProperties>
-        <Property name="BlockIndices" proxy_name="ExtractBlock1" exposed_name="BlockIndices"/>
-        <Property name="Input" proxy_name="ExtractBlock1" exposed_name="Input"/>
+        <Property name="BlockIndex" proxy_name="FlattenOneBlock1" exposed_name="BlockIndex"/>
         <Property name="Transform" proxy_name="Transform1" exposed_name="Transform"/>
       </ExposedProperties>
+      <Hints>
+        <Property name="BlockIndex" show="0"/>
+        <Property name="Transform" show="0"/>
+      </Hints>
       <OutputPort name="Output" proxy="Transform1" port_index="0"/>
     </CompoundSourceProxy>
   </CustomProxyDefinition>

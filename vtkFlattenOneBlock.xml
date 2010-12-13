@@ -1,0 +1,43 @@
+<ServerManagerConfiguration>
+
+  <ProxyGroup name="filters">
+
+    <!-- ================================================================= -->
+    <SourceProxy name="FlattenOneBlock" class="vtkFlattenOneBlock">
+      <Documentation
+        short_help="Extract one block from a multiblcok dataset">
+      </Documentation>
+
+      <InputProperty
+         name="Input"
+         command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type">
+          <DataType value="vtkMultiBlockDataSet"/>
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          This property specifies the input to the Extract Block filter.
+        </Documentation>
+      </InputProperty>
+
+      <IntVectorProperty
+        name="BlockIndex"
+        command="SetBlockIndex"
+        default_values="1"
+        number_of_elements="1">
+        <CompositeTreeDomain name="tree" mode="all">
+          <RequiredProperties>
+            <Property name="Input" function="Input"/>
+          </RequiredProperties>
+        </CompositeTreeDomain>
+      </IntVectorProperty>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+
+</ServerManagerConfiguration>

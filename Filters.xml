@@ -2,6 +2,7 @@
   <Category name="CSCS" menu_label="&amp;CSCS">
     <Filter name="XdmfWriter4b" />
     <Filter name="XdmfReader4" />
+    <Filter name="FlattenOneBlock" />
   </Category>
 </ParaViewFilters>
 
