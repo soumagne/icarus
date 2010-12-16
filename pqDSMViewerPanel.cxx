@@ -94,6 +94,7 @@
 #include "pqActiveObjects.h"
 #include "pqDisplayPolicy.h"
 #include "pqAnimationScene.h"
+#include "pqTimeKeeper.h"
 //
 #include "pqObjectInspectorWidget.h"
 #include "pqNamedWidgets.h"
@@ -135,7 +136,6 @@ public:
     this->ActiveView         = NULL;
     this->pqObjectInspector  = NULL;
     this->pqDSMProxyHelper   = NULL;
-    this->pqWidget3D         = NULL;
     this->SteeringParser     = NULL;
     this->CurrentTimeStep    = 0;
     this->DSMCommType        = 0;
@@ -149,12 +149,11 @@ public:
     }
     this->DSMProxy           = NULL;
     this->DSMProxyHelper     = NULL;
-    this->ActiveSourceProxy  = NULL;
     this->XdmfReader         = NULL;
-    this->Widget3DProxy      = NULL;
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
+    this->ActiveSourceProxy  = NULL;
   }
   //
   void CreateDSMProxy() {
@@ -200,30 +199,42 @@ public:
   bool DSMProxyCreated() { return this->DSMProxy!=NULL; }
   bool HelperProxyCreated() { return this->DSMProxyHelper!=NULL; }
 
-  //
-  // Internal variables maintained by the panel
-  //
+  // ---------------------------------------------------------------
+  // Variables for DSM management
+  // ---------------------------------------------------------------
   int                                       DSMInitialized;
   vtkSmartPointer<vtkSMProxy>               DSMProxy;
   vtkSmartPointer<vtkSMProxy>               DSMProxyHelper;
-  vtkSmartPointer<vtkSMProxy>               ActiveSourceProxy;
+  // ---------------------------------------------------------------
+  // Principal pipeline of Xdmf[->ExtractBlock]
+  // ---------------------------------------------------------------
+  vtkSmartPointer<vtkCustomPipelineHelper>  XdmfViewer;
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
-  vtkSmartPointer<vtkSMProxy>               Widget3DProxy;
-  pq3DWidget                               *pqWidget3D;
+  bool                                      DSMListening;
+  int                                       DSMCommType;
+  bool                                      CreateObjects;
+  // ---------------------------------------------------------------
+  // Display of controls via object inspector panel
+  // ---------------------------------------------------------------
+  XdmfSteeringParser                       *SteeringParser;
   pqObjectInspectorWidget                  *pqObjectInspector;
   pqProxy                                  *pqDSMProxyHelper;
-  int                                       ActiveSourcePort;
+  // ---------------------------------------------------------------
+  // Pipelines for steerable objects, one per 3D widget
+  // ---------------------------------------------------------------
+  PipelineList                              WidgetPipelines;
+  // ---------------------------------------------------------------
+  // General management 
+  // ---------------------------------------------------------------
   pqRenderView                             *ActiveView;
-  XdmfSteeringParser                       *SteeringParser;
-  pqPropertyLinks    Links;
+  int                                       CurrentTimeStep;
+  // ---------------------------------------------------------------
+  // Experimental, writing to Xdmf 
+  // ---------------------------------------------------------------
+  vtkSmartPointer<vtkSMProxy>               ActiveSourceProxy;
+  int                                       ActiveSourcePort;
   //
-  bool             DSMListening;
-  int              DSMCommType;
-  int              CurrentTimeStep;
-  bool             CreateObjects;
   //
-  vtkSmartPointer<vtkCustomPipelineHelper> XdmfViewer;
-  PipelineList                             WidgetPipelines;
   vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
   vtkSmartPointer<vtkSMProxy>              TransformProxy;
 };
@@ -619,9 +630,6 @@ void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->Internals->ActiveView = renView;
-  if (this->Internals->pqWidget3D && this->Internals->ActiveView) {
-    this->Internals->pqWidget3D->setView(this->Internals->ActiveView);
-  }
 }
 //---------------------------------------------------------------------------
 bool pqDSMViewerPanel::DSMProxyReady()
@@ -927,9 +935,6 @@ void pqDSMViewerPanel::onDisplayDSM()
   //
   // If we are using an Xdmf XML file supplied manually or generated, get it
   //
-  if (this->Internals->xdmfFileTypeComboBox->currentIndex() != XML_USE_SENT) { 
-  }
-
   if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
       pqSMAdaptor::setElementProperty(
@@ -977,9 +982,8 @@ void pqDSMViewerPanel::onDisplayDSM()
     vtkSMOutputPort *out = this->Internals->XdmfReader->GetOutputPort((unsigned int)0);
     multiblock = out->GetDataInformation()->GetCompositeDataInformation()->GetDataIsComposite();
     // 
-    vtkSMSourceProxy *actualfilter = NULL;
     if (multiblock) {
-      actualfilter = this->Internals->XdmfViewer->Pipeline;
+      this->Internals->XdmfViewer->PipelineEnd = this->Internals->XdmfViewer->Pipeline;
       //
       vtkPVCompositeDataInformation *pvcdi = out->GetDataInformation()->GetCompositeDataInformation();
       SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
@@ -1000,29 +1004,33 @@ void pqDSMViewerPanel::onDisplayDSM()
       pqSMAdaptor::setMultipleElementProperty(
         this->Internals->XdmfViewer->Pipeline->GetProperty("BlockIndices"), blocks);  
       this->Internals->XdmfViewer->Pipeline->UpdateProperty("BlockIndices");
+      this->Internals->XdmfViewer->PipelineEnd = this->Internals->XdmfViewer->Pipeline;
     } 
     else {
-      actualfilter = this->Internals->XdmfReader;
+      this->Internals->XdmfViewer->PipelineEnd = this->Internals->XdmfReader;
     }
 
     //
     // Trigger complete update of reader/ExtractBlock/etc pipeline
     //
-    actualfilter->UpdateVTKObjects();
-    actualfilter->UpdatePipeline();
+    this->Internals->XdmfViewer->UpdateAll();
 
     //
     // Registering the proxy as a source will create a pipeline source in the browser
+    // temporarily disable error messages to squash one warning about Input being
+    // declared but ot registered with the pipeline browser.
     //
     char proxyName[256];
     sprintf(proxyName, "DSM-Data-%d", current_time);
-    pm->RegisterProxy("sources", proxyName, actualfilter);
+    pqApplicationCore::instance()->disableOutputWindow();
+    pm->RegisterProxy("sources", proxyName, this->Internals->XdmfViewer->PipelineEnd);
+    pqApplicationCore::instance()->enableOutputWindow();
 
     //
     // Set status of registered pipeline source to unmodified 
     //
     pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(actualfilter);
+      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->XdmfViewer->PipelineEnd);
     source->setModifiedState(pqProxy::UNMODIFIED);
 
     //
@@ -1036,27 +1044,39 @@ void pqDSMViewerPanel::onDisplayDSM()
   }
   else {
     this->Internals->XdmfReader->InvokeCommand("Modified");
-    pqActiveObjects::instance().activeView()->render();
+    this->Internals->XdmfViewer->UpdateAll();
+    // Update all widget pipelines
+    for (PipelineList::iterator w=this->Internals->WidgetPipelines.begin(); 
+      w!=this->Internals->WidgetPipelines.end(); ++w)
+    {
+      (*w)->UpdateAll();
+    }
   }
   //
   this->Internals->CreateObjects = false;
 
   // Increment the time as new steps appear.
   // @TODO : To be replaced with GetTimeStep from reader
-  //
+  // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
+  // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
   QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
   foreach (pqAnimationScene *scene, scenes) {
-    scene->setAnimationTime(++current_time);
-    this->Internals->CurrentTimeStep = current_time;
+    this->Internals->CurrentTimeStep = ++current_time;
+    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+//    timekeeper->setTime(current_time);
+//    scene->setAnimationTime(current_time/1000.0);
+//    QPair<double, double> trange = timekeeper->getTimeRange();
+//    pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
+//    scene->getProxy()->UpdateProperty("AnimationTime");
   }
 
   //
   // Trigger a render : if changed, everything should update as usual
   if (pqActiveObjects::instance().activeView())
   {
-    pqActiveObjects::instance().activeView()->render();
+//    pqActiveObjects::instance().activeView()->render();
     if (this->Internals->autoSaveImage->isChecked()) {
-      this->SaveSnapshot();
+//      this->SaveSnapshot();
     }
   }
 #endif //DISABLE_DISPLAY
@@ -1113,7 +1133,9 @@ void pqDSMViewerPanel::onUpdateTimeout()
       if (ready != 0) {
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
         if (this->Internals->autoDisplayDSM->isChecked() && updateDisplay) {
+          std::cout << "DSM Ready for new Update " << std::endl;
           this->onDisplayDSM();
+          std::cout << "DSM Updated " << std::endl;
           this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateDisplay");
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
@@ -1151,12 +1173,15 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
     return;
   }
   //
+  // Create a pipeline with XdmfReader+FlattenOneBlock+Transform filters inside it
+  // [This can be extended to any number of internal filters]
+  //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
   CustomPipeline widgetPipeline;
   widgetPipeline.TakeReference(vtkCustomPipelineHelper::New("filters", "TransformBlock"));
   this->Internals->WidgetPipelines.push_back(widgetPipeline);
   //
-  // Replace the internal XdmfReader Proxy in the widget pipeline with our own XdmfReader
+  // Replace the internal XdmfReader Proxy in the widget pipeline with our primary XdmfReader
   // so that we can display the pipeline in the browser without warnings about unregistered objects
   //
   vtkSMCompoundSourceProxy *ExtractOneBlock = widgetPipeline->GetCompoundPipeline();

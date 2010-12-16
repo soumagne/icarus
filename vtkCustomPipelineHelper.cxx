@@ -163,8 +163,38 @@ vtkSMCompoundSourceProxy *vtkCustomPipelineHelper::GetCompoundPipeline()
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::UpdateAll()
 {
-//  this->Pipeline->UpdatePropertyInformation();
-  this->Pipeline->UpdateVTKObjects();
-  this->Pipeline->UpdatePipeline();
+  if (this->PipelineEnd) {
+    this->PipelineEnd->UpdateVTKObjects();
+    this->PipelineEnd->UpdatePipeline();
+  }
+  else {
+    this->Pipeline->UpdateVTKObjects();
+    this->Pipeline->UpdatePipeline();
+  }
+
+  // A nasty side effect of using a compound proxy is that inputs might not be exposed
+  // but their GUI panels still show components. After updating, we should trigger
+  // an update of domains, so that TreeDomains etc are refreshed.
+
+  vtkSMCompoundSourceProxy *csp = this->GetCompoundPipeline();
+  if (this->PipelineEnd) {
+    vtkSMProperty* inputProp = this->PipelineEnd->GetProperty("Input");
+    if (inputProp) {
+      inputProp->UpdateDependentDomains();
+    }
+  }
+  else if (csp) {
+    for (int i=0; i<csp->GetNumberOfProxies(); i++) {
+      vtkSMSourceProxy *sp = vtkSMSourceProxy::SafeDownCast(csp->GetProxy(i));
+      if (sp) {
+        sp->UpdatePipelineInformation();
+        vtkSMProperty *inputProp = sp->GetProperty("Input");
+        if (inputProp) {
+          inputProp->UpdateDependentDomains();
+        }
+      }
+    }
+  }
+
 }
 //----------------------------------------------------------------------------

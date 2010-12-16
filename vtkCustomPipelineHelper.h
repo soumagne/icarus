@@ -57,6 +57,7 @@ public:
 
 public:
   vtkSmartPointer<vtkSMSourceProxy> Pipeline; 
+  vtkSmartPointer<vtkSMSourceProxy> PipelineEnd; 
 };
 
 #endif /* __vtkCustomPipelineHelper_h */
