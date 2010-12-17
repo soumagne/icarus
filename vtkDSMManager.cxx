@@ -31,7 +31,11 @@
 #include <vtkstd/vector>
 //
 #include "vtkSmartPointer.h"
-
+#include "vtkProcessModule.h"
+#include "vtkSMObject.h"
+#include "vtkSMProxyManager.h"
+#include "vtkClientServerInterpreter.h"
+//
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
 #include "vtkMPIController.h"
@@ -39,6 +43,7 @@
 vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #endif
 //
+#include "vtkDSMProxyHelper.h"
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
@@ -61,14 +66,16 @@ vtkDSMManager::vtkDSMManager()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   this->XMFDescriptionFilePath  = NULL;
+  this->HelperProxyXMLString    = NULL;
   this->DsmManager              = new H5FDdsmManager();
 }
 //----------------------------------------------------------------------------
 vtkDSMManager::~vtkDSMManager()
 { 
-  if (this->DsmManager) delete this->DsmManager;
+  this->SetXMFDescriptionFilePath(NULL);
+  this->SetHelperProxyXMLString(NULL);
+  if (this->DsmManager) delete this->DsmManager;  
   this->DsmManager = NULL;
-
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -180,6 +187,38 @@ void vtkDSMManager::GenerateXMFDescription()
   if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
 }
+
+//----------------------------------------------------------------------------
+void vtkDSMManager::SetHelperProxyXMLString(const char *xmlstring)
+{
+  if (this->HelperProxyXMLString) delete []this->HelperProxyXMLString;
+
+  if ( this->HelperProxyXMLString == NULL && xmlstring == NULL) { return; }
+  if ( this->HelperProxyXMLString && xmlstring && (!strcmp(this->HelperProxyXMLString,xmlstring))) { return; } 
+  if ( this->HelperProxyXMLString) { delete [] this->HelperProxyXMLString; } 
+  if (xmlstring) {
+    size_t n = strlen(xmlstring) + 1;
+    char *cp1 =  new char[n];
+    const char *cp2 = (xmlstring);
+    this->HelperProxyXMLString = cp1;
+    do { *cp1++ = *cp2++; } while ( --n );
+  }
+  else {
+    this->HelperProxyXMLString = NULL;
+  }
+  // maybe we should just register it and not bother saving the string?
+  this->RegisterHelperProxy(xmlstring);
+}
+
+//----------------------------------------------------------------------------
+void vtkDSMManager::RegisterHelperProxy(const char *xmlstring) 
+{
+  // Register a constructor function for the DSMProxyHelper
+  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
+  // Pass the DSMProxyHelper XML into the proxy manager for use by NewProxy(...)
+  vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring);
+}
+
 //----------------------------------------------------------------------------
 void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
 {

@@ -111,6 +111,7 @@
 //
 #include "ui_pqDSMViewerPanel.h"
 //
+#include "vtkDSMManager.h"
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
@@ -517,7 +518,21 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   if (this->Internals->SteeringParser) delete this->Internals->SteeringParser;
   this->Internals->SteeringParser = new XdmfSteeringParser();
   this->Internals->SteeringParser->Parse(filepath);
-  this->Internals->CreateDSMHelperProxy();
+
+  if (this->Internals->DSMProxyCreated()) {
+    // Get the XML for our Helper proxy and send it to the DSM manager
+    // it will register the XML with the proxt manager on the server
+    std::string HelperProxyXML = this->Internals->SteeringParser->GetHelperProxyString();
+    // register proxy on the server
+    pqSMAdaptor::setElementProperty(
+      this->Internals->DSMProxy->GetProperty("HelperProxyXMLString"), HelperProxyXML.c_str());
+    this->Internals->DSMProxy->UpdateProperty("HelperProxyXMLString");
+    // and register on the client too 
+    vtkDSMManager::RegisterHelperProxy(HelperProxyXML.c_str());
+    // now create an actual proxy
+    this->Internals->CreateDSMHelperProxy();
+  }
+
   //
   // populate GUI with controls for grids
   //
@@ -624,6 +639,10 @@ void pqDSMViewerPanel::StartRemovingServer(pqServer *server)
     this->Internals->DSMProxy = NULL;
     this->Internals->DSMInitialized = 0;
   }
+  delete this->Internals->pqObjectInspector;
+  delete this->Internals->pqDSMProxyHelper;
+  this->Internals->pqObjectInspector = NULL;
+  this->Internals->pqDSMProxyHelper  = NULL;
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onActiveViewChanged(pqView* view)
@@ -679,6 +698,12 @@ bool pqDSMViewerPanel::DSMReady()
       this->Internals->DSMProxy->InvokeCommand("CreateDSM");
       this->Internals->DSMProxy->InvokeCommand("ConnectDSM");
       this->Internals->DSMInitialized = 1;
+    }
+    //
+    // Create GUI controls from template
+    //
+    if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
+      this->ParseXMLTemplate(this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
     }
   }
   return this->Internals->DSMInitialized;

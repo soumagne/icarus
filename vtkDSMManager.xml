@@ -123,8 +123,14 @@
         command="SetXMFDescriptionFilePath"
         number_of_elements="1">
       </StringVectorProperty>
-      
-       <IntVectorProperty
+
+      <StringVectorProperty
+        name="HelperProxyXMLString"
+        command="SetHelperProxyXMLString"
+        number_of_elements="1">
+      </StringVectorProperty>      
+
+      <IntVectorProperty
         name="AcceptedConnection"
         command="GetAcceptedConnection"
         information_only="1"

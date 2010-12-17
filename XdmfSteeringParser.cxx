@@ -33,10 +33,7 @@
 #include <iostream>
 #include <cstdlib>
 //
-#include "vtkDSMProxyHelper.h"
-#include "vtkProcessModule.h"
-#include "vtkSMObject.h"
-#include "vtkSMProxyManager.h"
+#include "vtkType.h"
 //
 //----------------------------------------------------------------------------
 XdmfSteeringParser::XdmfSteeringParser()
@@ -204,10 +201,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "</ProxyGroup>" << std::endl;
   xmlstring << "</ServerManagerConfiguration>" << std::endl << std::ends;
 
-  // Register a constructor function for the DSMProxyHelper
-  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
-  // Pass the DSMProxyHelper XML into the proxy manager for use by NewProxy(...)
-  vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring.str().c_str());
+  this->HelperProxyString = xmlstring.str().c_str();
 
   return 1;
 }

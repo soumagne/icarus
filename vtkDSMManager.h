@@ -117,6 +117,13 @@ public:
   void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
 
   // Description:
+  // The helper proxy used to generate (steering) panel controls must be created
+  // on the server, so we pass the string from the client to the DSM manager and
+  // let it do the registration and creation of the proxy.
+  void SetHelperProxyXMLString(const char *xmlstring);
+  vtkGetStringMacro(HelperProxyXMLString);
+
+  // Description:
   // Get the associated DSM buffer handle
   H5FDdsmBuffer *GetDSMHandle() { return DsmManager->GetDSMHandle(); }
 
@@ -169,30 +176,40 @@ public:
   #endif
 //ETX
 
+//BTX
+    // Registers our XML for the auto-generated steering proxy
+    // with the proxy manager. 
+    // We need to register on the server side as well as client.
+    static void RegisterHelperProxy(const char *xmlstring);
+//ETX
+
 protected:
-    vtkDSMManager();
+     vtkDSMManager();
     ~vtkDSMManager();
+
     //
     // Internal Variables
     //
     int            UpdatePiece;
     int            UpdateNumPieces;
+
     //BTX
 #ifdef VTK_USE_MPI
     // If the user is running paraview client in stand-alone mode and not
-    // an mpijob, the mpi controller wiull be a vtkDummyController
+    // an mpijob, the mpi controller will be a vtkDummyController
     // check for this and replace with an MPI controller if necessary when
-    // firsat setting up a DSM object
+    // first setting up a DSM object
     void CheckMPIController();
 
     //ETX
-    vtkMultiProcessController* Controller;
-    //BTX
+    vtkMultiProcessController *Controller;
+#endif
+
     //
     char           *XMFDescriptionFilePath;
-    //
+    char           *HelperProxyXMLString;
+    //BTX
     H5FDdsmManager *DsmManager;
-#endif
     //ETX
 
 private:
