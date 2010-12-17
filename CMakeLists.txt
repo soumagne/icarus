@@ -85,8 +85,8 @@ IF(PARAVIEW_BUILD_QT_GUI)
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
 encode_files_as_strings(ENCODED_FILTERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.cpd
-  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.cpd
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
 )
 
 MESSAGE("${ENCODED_FILTERS}")

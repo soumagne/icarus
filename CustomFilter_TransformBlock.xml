@@ -6,6 +6,12 @@
           <Element index="0" value="4"/>
           <Domain name="tree" id="293.BlockIndex.tree"/>
         </Property>
+
+        <Property name="DefaultNullDataType" id="293.DefaultNullDataType" number_of_elements="1">
+          <Element index="0" value="4"/>
+        </Property>
+
+
         <Property name="Input" id="293.Input" number_of_elements="1">
           <Domain name="groups" id="293.Input.groups">
             <Group value="sources"/>
@@ -75,6 +81,7 @@
       </Proxy>
       <ExposedProperties>
         <Property name="BlockIndex" proxy_name="FlattenOneBlock1" exposed_name="BlockIndex"/>
+        <Property name="DefaultNullDataType" proxy_name="FlattenOneBlock1" exposed_name="DefaultNullDataType"/>
         <Property name="Transform" proxy_name="Transform1" exposed_name="Transform"/>
       </ExposedProperties>
       <Hints>

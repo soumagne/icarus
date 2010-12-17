@@ -35,6 +35,13 @@
           </RequiredProperties>
         </CompositeTreeDomain>
       </IntVectorProperty>
+     
+      <IntVectorProperty
+        name="DefaultNullDataType"
+        command="SetDefaultNullDataType"
+        default_values="4"
+        number_of_elements="1">
+      </IntVectorProperty>
 
     </SourceProxy>
 

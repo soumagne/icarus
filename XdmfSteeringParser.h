@@ -96,12 +96,13 @@ public:
   SteeringGUIWidgetMap &GetSteeringWidgetMap() {
     return this->SteeringWidgetMap;
   }
+  int GetGridTypeForBlock(int blockindex);
 
 protected:
   XdmfDOM             *ConfigDOM;
   GridMap              SteeringConfig;
   SteeringGUIWidgetMap SteeringWidgetMap;
-  
+  std::map<int, int>   GridTypeMap;
 };
 
 #endif /* __XdmfSteeringParser_h */

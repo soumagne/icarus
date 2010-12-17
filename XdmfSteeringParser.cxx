@@ -23,20 +23,21 @@
 
 =========================================================================*/
 #include "XdmfSteeringParser.h"
-
-#include <XdmfDOM.h>
-
+//
+#include "XdmfDOM.h"
+#include "XdmfTopology.h"
+//
 #include <vtksys/RegularExpression.hxx>
 #include <vtksys/SystemTools.hxx>
 #include <string>
 #include <iostream>
 #include <cstdlib>
-
+//
 #include "vtkDSMProxyHelper.h"
 #include "vtkProcessModule.h"
 #include "vtkSMObject.h"
 #include "vtkSMProxyManager.h"
-
+//
 //----------------------------------------------------------------------------
 XdmfSteeringParser::XdmfSteeringParser()
 {
@@ -47,6 +48,33 @@ XdmfSteeringParser::~XdmfSteeringParser()
 {
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = NULL;
+}
+//----------------------------------------------------------------------------
+int XdmfTopologyToVTKDataSetType(XdmfTopology &topology) 
+{
+  if (topology.GetClass() == XDMF_UNSTRUCTURED ) 
+    {
+    return VTK_UNSTRUCTURED_GRID;
+    } 
+  XdmfInt32 topologyType = topology.GetTopologyType();
+  if (topologyType == XDMF_2DSMESH || topologyType == XDMF_3DSMESH )
+    { 
+    return VTK_STRUCTURED_GRID; 
+    }
+  else if (topologyType == XDMF_2DCORECTMESH ||
+    topologyType == XDMF_3DCORECTMESH)
+    {
+#ifdef USE_IMAGE_DATA
+    return VTK_IMAGE_DATA;
+#else
+    return VTK_UNIFORM_GRID;
+#endif
+    }
+  else if (topologyType == XDMF_2DRECTMESH || topologyType == XDMF_3DRECTMESH)
+    {
+    return VTK_RECTILINEAR_GRID;
+    }
+  return -1;
 }
 //----------------------------------------------------------------------------
 int XdmfSteeringParser::Parse(const char *configFilePath)
@@ -88,6 +116,16 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
       free(gridName);
     } 
     xmfSteeringConfigGrid &grid = this->SteeringConfig[gname];
+    //
+    // Store the TopologyType as a VTK dataset Type because the Widget controls make use of it
+    // when there are NULL blocks
+    //
+    XdmfTopology  topology;
+    XdmfXmlNode   topologyNode    = this->ConfigDOM->FindElement("Topology", 0, gridNode);
+    XdmfString    topologyTypeStr = (XdmfString) this->ConfigDOM->GetAttribute(topologyNode, "TopologyType");
+    topology.SetTopologyTypeFromString(topologyTypeStr);
+    XdmfInt32 topologyType = topology.GetTopologyType();
+    this->GridTypeMap[currentGridIndex] = XdmfTopologyToVTKDataSetType(topology);
     //
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
     for (int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
@@ -206,3 +244,7 @@ std::string XdmfSteeringParser::BuildWidgetHints(XdmfConstString name, XdmfXmlNo
   return hintstring.str();
 }
 //----------------------------------------------------------------------------
+int XdmfSteeringParser::GetGridTypeForBlock(int blockindex)
+{
+  return GridTypeMap[blockindex];
+};

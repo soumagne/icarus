@@ -1189,10 +1189,13 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   ExtractOneBlock->AddProxy("XdmfReader1", this->Internals->XdmfReader);
   pqSMAdaptor::setInputProperty(ExtractBlock->GetProperty("Input"), this->Internals->XdmfReader, 0);
   // 
-  // Select just the one block/grid that this widget is bound to
+  // Select just the one block/grid that this widget is bound to (NB. index subtract one : flat index)
   //
+  int defaultNullDataType = this->Internals->SteeringParser->GetGridTypeForBlock(blockindex-1);
   pqSMAdaptor::setElementProperty(
     widgetPipeline->Pipeline->GetProperty("BlockIndex"), blockindex);  
+  pqSMAdaptor::setElementProperty(
+    widgetPipeline->Pipeline->GetProperty("DefaultNullDataType"), defaultNullDataType);
   //
   widgetPipeline->UpdateAll();
   //

@@ -37,6 +37,7 @@ vtkStandardNewMacro(vtkFlattenOneBlock);
 vtkFlattenOneBlock::vtkFlattenOneBlock()
 {
   this->BlockIndex = 1;
+  this->DefaultNullDataType = VTK_UNSTRUCTURED_GRID;
 }
 //----------------------------------------------------------------------------
 vtkFlattenOneBlock::~vtkFlattenOneBlock()
@@ -83,8 +84,9 @@ int vtkFlattenOneBlock::RequestDataObject(
       newOutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(in_type));
     }
     else {
-      // we have no idea what the output type will be!
-      return 0;
+      // we do not know what the output type will be, use default
+      std::cout << vtkDataObjectTypes::GetClassNameFromTypeId(this->DefaultNullDataType) << " inserted by default" << std::endl;
+      newOutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(this->DefaultNullDataType));
     }
   }
   else if (inputDS) {
@@ -94,11 +96,11 @@ int vtkFlattenOneBlock::RequestDataObject(
     newOutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(inputDS->GetDataObjectType()));
   }
   else {
-    // we have no idea what the output type will be!
-    return 0;
+    // we do not know what the output type will be, use default
+    std::cout << vtkDataObjectTypes::GetClassNameFromTypeId(this->DefaultNullDataType) << " inserted by default" << std::endl;
+    newOutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(this->DefaultNullDataType));
   }
-  if (newOutput)
-  {
+  if (newOutput) {
     newOutput->SetPipelineInformation(outInfo);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
