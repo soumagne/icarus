@@ -191,8 +191,6 @@ void vtkDSMManager::GenerateXMFDescription()
 //----------------------------------------------------------------------------
 void vtkDSMManager::SetHelperProxyXMLString(const char *xmlstring)
 {
-  if (this->HelperProxyXMLString) delete []this->HelperProxyXMLString;
-
   if ( this->HelperProxyXMLString == NULL && xmlstring == NULL) { return; }
   if ( this->HelperProxyXMLString && xmlstring && (!strcmp(this->HelperProxyXMLString,xmlstring))) { return; } 
   if ( this->HelperProxyXMLString) { delete [] this->HelperProxyXMLString; } 
@@ -202,12 +200,12 @@ void vtkDSMManager::SetHelperProxyXMLString(const char *xmlstring)
     const char *cp2 = (xmlstring);
     this->HelperProxyXMLString = cp1;
     do { *cp1++ = *cp2++; } while ( --n );
+    // maybe we should just register it and not bother saving the string?
+    this->RegisterHelperProxy(xmlstring);
   }
   else {
     this->HelperProxyXMLString = NULL;
   }
-  // maybe we should just register it and not bother saving the string?
-  this->RegisterHelperProxy(xmlstring);
 }
 
 //----------------------------------------------------------------------------
