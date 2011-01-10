@@ -27,6 +27,7 @@
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkMultiProcessController.h"
+#include "vtkStreamingDemandDrivenPipeline.h"
 //
 #include "vtkDSMManager.h"
 //
@@ -38,6 +39,8 @@ vtkXdmfReader4::vtkXdmfReader4()
 {
   this->Controller = NULL;
   this->DSMManager = 0;
+  this->TimeRange[0] = 0.0;
+  this->TimeRange[1] = 0.0;
 }
 //----------------------------------------------------------------------------
 vtkXdmfReader4::~vtkXdmfReader4()
@@ -58,6 +61,21 @@ bool vtkXdmfReader4::PrepareDsmBufferDocument()
     this->SetInputString(this->DSMManager->GetXMLStringReceive());
   }
   return true;
+}
+//----------------------------------------------------------------------------
+int vtkXdmfReader4::RequestInformation(
+  vtkInformation *request,
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  int result = vtkXdmfReader::RequestInformation(request, inputVector, outputVector);
+  //
+  if (this->DSMManager) {
+    vtkInformation *outInfo = outputVector->GetInformationObject(0);
+    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->TimeRange, 2);
+  }
+  //
+  return result;
 }
 //----------------------------------------------------------------------------
 void vtkXdmfReader4::PrintSelf(ostream& os, vtkIndent indent)

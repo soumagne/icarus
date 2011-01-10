@@ -1088,11 +1088,13 @@ void pqDSMViewerPanel::onDisplayDSM()
   foreach (pqAnimationScene *scene, scenes) {
     this->Internals->CurrentTimeStep = ++current_time;
     pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-//    timekeeper->setTime(current_time);
-//    scene->setAnimationTime(current_time/1000.0);
-//    QPair<double, double> trange = timekeeper->getTimeRange();
-//    pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
-//    scene->getProxy()->UpdateProperty("AnimationTime");
+/* */
+    timekeeper->setTime(current_time);
+    scene->setAnimationTime(current_time);
+    QPair<double, double> trange = timekeeper->getTimeRange();
+    pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
+    scene->getProxy()->UpdateProperty("AnimationTime");
+/* */
   }
 
   //
@@ -1164,9 +1166,9 @@ void pqDSMViewerPanel::onUpdateTimeout()
           this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateDisplay");
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
-        if (!this->Internals->dsmIsStandalone->isChecked()) {
+//        if (!this->Internals->dsmIsStandalone->isChecked()) {
           this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
-        }
+//        }
       }
     }
   }
