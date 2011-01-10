@@ -1166,9 +1166,9 @@ void pqDSMViewerPanel::onUpdateTimeout()
           this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateDisplay");
         }
         // TODO If the XdmfWriter has to write something back to the DSM, it's here
-        if (!this->Internals->dsmIsStandalone->isChecked()) {
+//        if (!this->Internals->dsmIsStandalone->isChecked()) {
           this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
-        }
+//        }
       }
     }
   }
