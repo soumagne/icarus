@@ -57,17 +57,31 @@ public:
   virtual void SetDSMManager(vtkDSMManager*);
   vtkGetObjectMacro(DSMManager, vtkDSMManager);
 
+  // Description:
+  // Get the time range for the simulation run
+  // provided to enable DSM based simulations to declare a range
+  vtkGetVector2Macro(TimeRange, double);
+  vtkSetVector2Macro(TimeRange, double);
+
 protected:
    vtkXdmfReader4();
   ~vtkXdmfReader4();
   //
   bool PrepareDsmBufferDocument();
+
+
+  int RequestInformation(
+    vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector);
+
   //
   // User Variables
   //
   vtkMultiProcessController* Controller;
   // Used for DSM write
   vtkDSMManager *DSMManager;
+  double         TimeRange[2];
 
 private:
   vtkXdmfReader4(const vtkXdmfReader4&);  // Not implemented.

@@ -33,6 +33,12 @@
         </Documentation>
       </ProxyProperty>
 
+      <DoubleVectorProperty
+            name="TimeRange"
+            information_only="1" >
+        <TimeRangeInformationHelper/>
+      </DoubleVectorProperty>
+
       <Hints>
         <Property name="FileName" show="0"/>
         <Property name="DSMManager" show="0"/>

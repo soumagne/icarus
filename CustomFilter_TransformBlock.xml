@@ -87,6 +87,7 @@
       <Hints>
         <Property name="BlockIndex" show="0"/>
         <Property name="Transform" show="0"/>
+        <Property name="DefaultNullDataType" show="0"/>
       </Hints>
       <OutputPort name="Output" proxy="Transform1" port_index="0"/>
     </CompoundSourceProxy>
