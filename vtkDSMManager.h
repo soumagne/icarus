@@ -105,6 +105,20 @@ public:
   }
 
   // Description:
+  // Get values and associated name for the corresponding int interaction.
+  void GetSteeringValues(const char *name, int numberOfElements, int *values)
+  {
+    DsmManager->GetSteeringValues(name, numberOfElements, values);
+  }
+
+  // Description:
+  // Set values and associated name for the corresponding int interaction.
+  void GetSteeringValues(const char *name, int numberOfElements, double *values)
+  {
+    DsmManager->GetSteeringValues(name, numberOfElements, values);
+  }
+
+  // Description:
   // Set/Unset objects
   void SetDisabledObject(char *objectName) { DsmManager->SetDisabledObject(objectName); }
 

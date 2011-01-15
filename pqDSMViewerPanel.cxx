@@ -46,6 +46,7 @@
 // VTK includes
 
 // ParaView Server Manager includes
+#include "vtkSMPropertyHelper.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMProxyManager.h"
 #include "vtkSMSourceProxy.h"
@@ -836,6 +837,9 @@ void pqDSMViewerPanel::onSCPlay()
     const char *steeringCmd = "play";
     pqSMAdaptor::setElementProperty(
         this->Internals->DSMProxy->GetProperty("SteeringCommand"),
+        "Modified");
+    pqSMAdaptor::setElementProperty(
+        this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
     this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
@@ -932,6 +936,12 @@ void pqDSMViewerPanel::onDisplayDSM()
   if (!this->DSMReady()) return;
   //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+
+  double range[2];
+  vtkSMPropertyHelper timerange(this->Internals->DSMProxyHelper, "TimeRangeInfo");
+  timerange.UpdateValueFromServer();
+  timerange.Get(range,2);
+
 
 #ifdef DISABLE_DISPLAY
   if (this->DSMReady()) {
