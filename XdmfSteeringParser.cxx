@@ -121,7 +121,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     XdmfXmlNode   topologyNode    = this->ConfigDOM->FindElement("Topology", 0, gridNode);
     XdmfString    topologyTypeStr = (XdmfString) this->ConfigDOM->GetAttribute(topologyNode, "TopologyType");
     topology.SetTopologyTypeFromString(topologyTypeStr);
-    XdmfInt32 topologyType = topology.GetTopologyType();
     this->GridTypeMap[currentGridIndex] = XdmfTopologyToVTKDataSetType(topology);
     //
     int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
@@ -141,8 +140,15 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
       }
       attributeDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeNode);
       if (attributeDINode) {
-        XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
-        grid.attributeConfig[attributeMapName].hdfPath = attributePath;
+        XdmfXmlNode multiDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeDINode);
+        if (!multiDINode) {
+          XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
+          grid.attributeConfig[attributeMapName].hdfPath = attributePath;
+        } else {
+          // If the data item node is composed is composed of multiple sub-items, use the attribute name for
+          // matching disabled/enabled arrays in the steerer
+          grid.attributeConfig[attributeMapName].hdfPath = attributeMapName;
+        }
       }
     }
   }
