@@ -937,10 +937,27 @@ void pqDSMViewerPanel::onDisplayDSM()
   //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
 
-  double range[2];
+  double range[2] = { -1.0, -1.0 };
   vtkSMPropertyHelper timerange(this->Internals->DSMProxyHelper, "TimeRangeInfo");
   timerange.UpdateValueFromServer();
   timerange.Get(range,2);
+  if (range[0]!=-1.0 && range[1]!=-1.0) {
+    // Increment the time as new steps appear.
+    // @TODO : To be replaced with GetTimeStep from reader
+    // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
+    // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+      vtkSMProxy *tkp = timekeeper->getProxy();
+
+      if (tkp->IsA("vtkSMTimeKeeperProxy")) {
+        vtkSMPropertyHelper tr2(tkp, "TimeRange");
+        tr2.Set(range,2);
+      }
+    }
+    return;
+  }
 
 
 #ifdef DISABLE_DISPLAY
