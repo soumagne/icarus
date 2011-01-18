@@ -111,16 +111,23 @@ public:
 
   // Description:
   // Get values and associated name for the corresponding int interaction.
-  void GetSteeringValues(const char *name, int numberOfElements, int *values)
+  bool GetSteeringValues(const char *name, int numberOfElements, int *values)
   {
-    DsmManager->GetSteeringValues(name, numberOfElements, values);
+    return DsmManager->GetSteeringValues(name, numberOfElements, values);
   }
 
   // Description:
-  // Set values and associated name for the corresponding int interaction.
-  void GetSteeringValues(const char *name, int numberOfElements, double *values)
+  // Get values and associated name for the corresponding double interaction.
+  bool GetSteeringValues(const char *name, int numberOfElements, double *values)
   {
-    DsmManager->GetSteeringValues(name, numberOfElements, values);
+    return DsmManager->GetSteeringValues(name, numberOfElements, values);
+  }
+
+  // Description:
+  // Return 1 if the Interactions group exists, 0 otherwise
+  int GetInteractionsGroupPresent()
+  {
+    return DsmManager->GetInteractionsGroupPresent();
   }
 
   // Description:

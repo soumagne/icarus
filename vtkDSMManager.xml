@@ -164,7 +164,17 @@
       <Property name="ClearDsmUpdateDisplay"
                 command="ClearDsmUpdateDisplay">
       </Property>
-      
+
+      <IntVectorProperty
+        name="InteractionsGroupPresent"
+        command="GetInteractionsGroupPresent"
+        default_values="0"
+        information_only="1"
+        number_of_elements="1">
+        <SimpleIntInformationHelper/>
+      </IntVectorProperty>
+
+
       <StringVectorProperty
         name="SteeringCommand"
         command="SetSteeringCommand"
