@@ -166,6 +166,19 @@
       </Property>
 
       <IntVectorProperty
+        name="DsmUpdateLevel"
+        command="GetDsmUpdateLevel"
+        default_values="0"
+        information_only="1"
+        number_of_elements="1">
+        <SimpleIntInformationHelper/>
+      </IntVectorProperty>
+
+      <Property name="ClearDsmUpdateLevel"
+                command="ClearDsmUpdateLevel">
+      </Property>
+
+      <IntVectorProperty
         name="InteractionsGroupPresent"
         command="GetInteractionsGroupPresent"
         default_values="0"
