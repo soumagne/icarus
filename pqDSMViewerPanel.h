@@ -92,7 +92,10 @@ public slots:
   // Sending data to DSM
   void onWriteDataToDSM();
 
-  void onDisplayDSM();
+  // triggered by updates from simulation
+  void onDSMUpdateInformation();
+  void onDSMUpdatePipeline();
+
   void TrackSource();
 
   void propModified();

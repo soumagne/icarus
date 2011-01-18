@@ -82,8 +82,8 @@ public:
 
   // Description:
   // Get/Set the display update flag which triggers the update the view
-  int  GetDsmUpdateDisplay() { return DsmManager->GetDsmIsDataModified(); }
-  void ClearDsmUpdateDisplay() { DsmManager->ClearDsmIsDataModified(); }
+  int  GetDsmDataIsModified() { return DsmManager->GetDsmIsDataModified(); }
+  void ClearDsmDataIsModified() { DsmManager->ClearDsmIsDataModified(); }
 
   // Description:
   // Get/Set the update level flag

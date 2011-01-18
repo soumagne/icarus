@@ -925,18 +925,8 @@ void pqDSMViewerPanel::onautoSaveImageChecked(int checked) {
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onDisplayDSM()
+void pqDSMViewerPanel::onDSMUpdateInformation()
 {
-  bool force_generate     = false;
-  static int current_time = 0;
-  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
-  //
-  //
-  //
-  if (!this->DSMReady()) return;
-  //
-  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-
   double range[2] = { -1.0, -1.0 };
   vtkSMPropertyHelper timerange(this->Internals->DSMProxyHelper, "TimeRangeInfo");
   timerange.UpdateValueFromServer();
@@ -950,21 +940,27 @@ void pqDSMViewerPanel::onDisplayDSM()
     foreach (pqAnimationScene *scene, scenes) {
       pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
       vtkSMProxy *tkp = timekeeper->getProxy();
-
-      if (tkp->IsA("vtkSMTimeKeeperProxy")) {
-        vtkSMPropertyHelper tr2(tkp, "TimeRange");
+      if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
+        vtkSMPropertyHelper tr2(timekeeper->getProxy(), "TimeRange");
         tr2.Set(range,2);
       }
     }
-    return;
   }
-
-
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDSMUpdatePipeline()
+{
+  bool force_generate     = false;
+  static int current_time = 0;
+  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
+  //
 #ifdef DISABLE_DISPLAY
   if (this->DSMReady()) {
     this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
   }
 #else
+  //
+  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
   if (!this->Internals->XdmfViewer || this->Internals->storeDSMContents->isChecked()) {
     // set create objects flag
     this->Internals->CreateObjects = true;
@@ -1107,23 +1103,28 @@ void pqDSMViewerPanel::onDisplayDSM()
   //
   this->Internals->CreateObjects = false;
 
-  // Increment the time as new steps appear.
-  // @TODO : To be replaced with GetTimeStep from reader
-  // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
-  // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
-  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-  foreach (pqAnimationScene *scene, scenes) {
-    this->Internals->CurrentTimeStep = ++current_time;
-    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-/* */
-    timekeeper->setTime(current_time);
-    scene->setAnimationTime(current_time);
-    QPair<double, double> trange = timekeeper->getTimeRange();
-    pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
-    scene->getProxy()->UpdateProperty("AnimationTime");
-/* */
+    this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
+  
+  double tval[1] = { -1.0 };
+  vtkSMPropertyHelper time(this->Internals->DSMProxyHelper, "TimeInfo");
+  time.UpdateValueFromServer();
+  time.Get(tval,1);
+  if (tval[0]!=-1.0) {
+    // Increment the time as new steps appear.
+    // @TODO : To be replaced with GetTimeStep from reader
+    // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
+    // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+//      this->Internals->CurrentTimeStep = ++current_time;
+      pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+      timekeeper->setTime(tval[0]);
+      scene->setAnimationTime(tval[0]);
+//      QPair<double, double> trange = timekeeper->getTimeRange();
+//      pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
+//      scene->getProxy()->UpdateProperty("AnimationTime");
+    }
   }
-
   //
   // Trigger a render : if changed, everything should update as usual
   if (pqActiveObjects::instance().activeView())
@@ -1174,28 +1175,32 @@ void pqDSMViewerPanel::onUpdateTimeout()
   // we don't want to create anything just to inspect it, so test flags only
   if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized) {
     if (this->DSMReady()) {
-      vtkSMIntVectorProperty *ur = vtkSMIntVectorProperty::SafeDownCast(
-        this->Internals->DSMProxy->GetProperty("DsmUpdateReady"));
-      this->Internals->DSMProxy->UpdatePropertyInformation(ur);
-      int ready = ur->GetElement(0);
-
-      vtkSMIntVectorProperty *ud = vtkSMIntVectorProperty::SafeDownCast(
-        this->Internals->DSMProxy->GetProperty("DsmUpdateDisplay"));
-      this->Internals->DSMProxy->UpdatePropertyInformation(ud);
-      int updateDisplay = ud->GetElement(0);
-
-      if (ready != 0) {
+      vtkSMPropertyHelper ur(this->Internals->DSMProxy, "DsmUpdateReady");
+      ur.UpdateValueFromServer();
+      if (ur.GetAsInt() != 0) {
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-        if (this->Internals->autoDisplayDSM->isChecked() && updateDisplay) {
-          std::cout << "DSM Ready for new Update " << std::endl;
-          this->onDisplayDSM();
-          std::cout << "DSM Updated " << std::endl;
-          this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateDisplay");
+        //
+        vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
+        ig.UpdateValueFromServer();
+        std::cout << "DSM Received Update : ";
+        if (ig.GetAsInt()==0) {
+          std::cout << "Information" << std::endl;;
+          this->onDSMUpdateInformation();
         }
-        // TODO If the XdmfWriter has to write something back to the DSM, it's here
-//        if (!this->Internals->dsmIsStandalone->isChecked()) {
-          this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
-//        }
+        else if (ig.GetAsInt()==1) {
+          std::cout << "Pipeline" << std::endl;;
+          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmDataIsModified");
+          dm.UpdateValueFromServer();
+          if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
+            this->onDSMUpdatePipeline();
+            this->Internals->DSMProxy->InvokeCommand("ClearDsmDataIsModified");
+          }
+        }
+        else {
+          std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
+        }
+        std::cout << "Update complete : calling RequestRemoteChannel " << std::endl;
+        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
       }
     }
   }

@@ -153,16 +153,16 @@
       </Property>
 
       <IntVectorProperty
-        name="DsmUpdateDisplay"
-        command="GetDsmUpdateDisplay"
+        name="DsmDataIsModified"
+        command="GetDsmDataIsModified"
         default_values="0"
         information_only="1"
         number_of_elements="1">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-      <Property name="ClearDsmUpdateDisplay"
-                command="ClearDsmUpdateDisplay">
+      <Property name="ClearDsmDataIsModified"
+                command="ClearDsmDataIsModified">
       </Property>
 
       <IntVectorProperty
