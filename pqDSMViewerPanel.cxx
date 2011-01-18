@@ -1103,7 +1103,7 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
   //
   this->Internals->CreateObjects = false;
 
-    this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
+  // this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
   
   double tval[1] = { -1.0 };
   vtkSMPropertyHelper time(this->Internals->DSMProxyHelper, "TimeInfo");
@@ -1124,12 +1124,18 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
 //      pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
 //      scene->getProxy()->UpdateProperty("AnimationTime");
     }
+  } else {
+      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+      foreach (pqAnimationScene *scene, scenes) {
+        scene->setAnimationTime(++current_time);
+        this->Internals->CurrentTimeStep = current_time;
+      }
   }
   //
   // Trigger a render : if changed, everything should update as usual
   if (pqActiveObjects::instance().activeView())
   {
-//    pqActiveObjects::instance().activeView()->render();
+    pqActiveObjects::instance().activeView()->render();
     if (this->Internals->autoSaveImage->isChecked()) {
 //      this->SaveSnapshot();
     }
@@ -1187,7 +1193,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
           std::cout << "Information" << std::endl;;
           this->onDSMUpdateInformation();
         }
-        else if (ig.GetAsInt()==1) {
+        else if (ig.GetAsInt()>=1) {
           std::cout << "Pipeline" << std::endl;;
           vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmDataIsModified");
           dm.UpdateValueFromServer();
