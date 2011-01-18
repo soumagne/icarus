@@ -86,6 +86,11 @@ public:
   void ClearDsmUpdateDisplay() { DsmManager->ClearDsmIsDataModified(); }
 
   // Description:
+  // Get/Set the update level flag
+  int  GetDsmUpdateLevel() { return DsmManager->GetDsmUpdateLevel(); }
+  void ClearDsmUpdateLevel() { DsmManager->ClearDsmUpdateLevel(); }
+
+  // Description:
   // Set the current given steering command.
   // The command is then passed to the simulation.
   void SetSteeringCommand(char *command) { DsmManager->SetSteeringCommand(command); }
