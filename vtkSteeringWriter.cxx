@@ -60,6 +60,7 @@
 vtkCxxRevisionMacro(vtkSteeringWriter, "$Revision$");
 vtkStandardNewMacro(vtkSteeringWriter);
 #ifdef VTK_USE_MPI
+vtkCxxSetObjectMacro(vtkSteeringWriter, DSMManager, vtkDSMManager);
 vtkCxxSetObjectMacro(vtkSteeringWriter, Controller, vtkMultiProcessController);
 #endif
 //----------------------------------------------------------------------------
