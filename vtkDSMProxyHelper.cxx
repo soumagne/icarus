@@ -144,6 +144,26 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     }
   }
 
+  if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand_", "");
+      std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
+    if (msg.GetNumberOfArguments(0) == 2) {
+      double temp[2];
+      int nArgs = msg.GetNumberOfArguments(0);
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
+      std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
+
+      if (op && op->GetDSMManager()) {
+        op->GetDSMManager()->GetSteeringValues(param_name.c_str(), 2, temp);
+        resultStream.Reset();
+        resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(temp,2) << vtkClientServerStream::End;
+        return 1;
+      }
+    }
+  }
+
   //
   // We actually need to use these real ClientServer set/getters
   //

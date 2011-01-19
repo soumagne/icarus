@@ -178,6 +178,15 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<ProxyListDomain name=\"proxy_list\"> <Proxy group=\"extended_sources\" name=\"Transform3\" /> </ProxyListDomain>" << std::endl;
   xmlstring << "</ProxyProperty>" << std::endl;
 */
+  int numberOfCommandProperties = this->ConfigDOM->FindNumberOfElements("CommandProperty", interactionNode);
+  for (int currentPIndex=0; currentPIndex < numberOfCommandProperties; currentPIndex++) {
+    XdmfXmlNode  dvpNode = this->ConfigDOM->FindElement("CommandProperty", currentPIndex, interactionNode);
+    std::string      xml = this->ConfigDOM->Serialize(dvpNode);
+    XdmfConstString name = this->ConfigDOM->GetAttribute(dvpNode, "name");
+    vtksys::SystemTools::ReplaceString(xml, "@@@", name);
+    xmlstring << xml << std::endl;
+  }
+
   int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
   for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
     XdmfXmlNode  ivpNode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
