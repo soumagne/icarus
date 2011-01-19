@@ -911,7 +911,13 @@ void pqDSMViewerPanel::onWriteDataToDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::SaveSnapshot() {
+void pqDSMViewerPanel::RunScript() 
+{
+  std::string scriptname = this->Internals->scriptPath->text().toStdString();
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::SaveSnapshot() 
+{
   std::string pngname = this->Internals->imageFilePath->text().toStdString();
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
@@ -1137,7 +1143,10 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
   {
     pqActiveObjects::instance().activeView()->render();
     if (this->Internals->autoSaveImage->isChecked()) {
-//      this->SaveSnapshot();
+      this->SaveSnapshot();
+    }
+    if (this->Internals->runScript->isChecked()) {
+      this->RunScript();
     }
   }
 #endif //DISABLE_DISPLAY

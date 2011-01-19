@@ -76,6 +76,7 @@ public slots:
   void onBrowseFileImage();
   void onautoSaveImageChecked(int);
   void SaveSnapshot();
+  void RunScript();
 
   void onUpdateTimeout();
 
