@@ -60,8 +60,6 @@ public:
   // the file might survive an application crash.
   void CloseFile();
 
-  //BTX
-#ifdef VTK_USE_MPI
   // Description:
   // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
   // disk. The DSM manager is assumed to be created and initialized before
@@ -69,6 +67,8 @@ public:
   virtual void SetDSMManager(vtkDSMManager*);
   vtkGetObjectMacro(DSMManager, vtkDSMManager);
 
+  //BTX
+#ifdef VTK_USE_MPI
   // Description:
   // Set/Get the controller used for coordinating parallel writing
   // (set to the global controller by default)

@@ -91,6 +91,7 @@ public slots:
 
   // Sending data to DSM
   void onWriteDataToDSM();
+  void onWriteSteeringDataToDSM();
 
   // triggered by updates from simulation
   void onDSMUpdateInformation();
