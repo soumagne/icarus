@@ -221,13 +221,26 @@ void vtkSteeringWriter::CopyFromVector(int offset, vtkDataArray *source, vtkData
 }
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
+void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray)
+{
+  hid_t H5DataSetID = H5Dopen(this->H5GroupId, array_name, H5P_DEFAULT);
+  if (H5DataSetID<0) {
+    vtkErrorMacro(<<"Dataset open failed for " << array_name);
+  } else {
+    void *dataptr = dataarray->GetVoidPointer(0);
+    H5Dwrite(H5DataSetID, mem_type, mem_space, file_space, H5P_DEFAULT, dataptr);
+    H5Dclose(H5DataSetID);
+  }
+}
+//----------------------------------------------------------------------------
 void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
 {
 
   vtkSmartPointer<vtkDataArray> data = indata;
   //
 
-  hid_t memshape = H5S_ALL;
+  hid_t mem_space = H5S_ALL;
+  hid_t file_space = H5S_ALL;
 
   herr_t r=0;
   int Nt = data->GetNumberOfTuples();
@@ -257,7 +270,7 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
     char *tempname = const_cast<char *>(name.c_str());
     name = vtksys::SystemTools::ReplaceChars(tempname, BadChars, '_');
     // shape
-    memshape = H5Screate_simple(1, count_mem, NULL);
+    mem_space = H5Screate_simple(1, count_mem, NULL);
     // single vector write or component by component
     vtkSmartPointer<vtkDataArray> finalData = data;
     if (Nc>1) {
@@ -271,66 +284,66 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
       // we don't need a hyperslab here because we're writing 
       // a contiguous block from mem to disk with the same flat shape
     }
-    //
-//    switch (finalData->GetDataType()) {
-//    case VTK_FLOAT:
-//      H5PartWriteDataArray(,H5T_NATIVE_FLOAT, this->H5FileId, name, finalData);
-//      break;
-//    case VTK_DOUBLE:
-//      H5PartWriteDataArray(,H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
-//      break;
-//    case VTK_CHAR:
-//              if (VTK_TYPE_CHAR_IS_SIGNED) {
-//                H5PartWriteDataArray(,H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
-//              }
-//              else {
-//                H5PartWriteDataArray(,H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
-//              }
-//              break;
-//            case VTK_SIGNED_CHAR:
-//              H5PartWriteDataArray(,H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_UNSIGNED_CHAR:
-//              H5PartWriteDataArray(,H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_SHORT:
-//              H5PartWriteDataArray(,H5T_NATIVE_SHORT, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_UNSIGNED_SHORT:
-//              H5PartWriteDataArray(,H5T_NATIVE_USHORT, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_INT:
-//              H5PartWriteDataArray(,H5T_NATIVE_INT, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_UNSIGNED_INT:
-//              H5PartWriteDataArray(,H5T_NATIVE_UINT, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_LONG:
-//              H5PartWriteDataArray(,H5T_NATIVE_LONG, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_UNSIGNED_LONG:
-//              H5PartWriteDataArray(,H5T_NATIVE_ULONG, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_LONG_LONG:
-//              H5PartWriteDataArray(,H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_UNSIGNED_LONG_LONG:
-//              H5PartWriteDataArray(,H5T_NATIVE_ULLONG, this->H5FileId, name, finalData);
-//              break;
-//            case VTK_ID_TYPE:
-//              if (VTK_SIZEOF_ID_TYPE==8) {
-//                H5PartWriteDataArray(,H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
-//              }
-//              else if (VTK_SIZEOF_ID_TYPE==4) {
-//                H5PartWriteDataArray(,H5T_NATIVE_LONG, this->H5FileId, name, finalData);
-//              }
-//      break;
-//    default:
-//      vtkErrorMacro(<<"Unexpected data type");
-//    }
-    if (memshape!=H5S_ALL) {
-      if (H5Sclose(memshape)<0) vtkErrorMacro(<<"memshape : HANDLE_H5S_CLOSE_ERR");
-      memshape = H5S_ALL;
+
+    switch (finalData->GetDataType()) {
+    case VTK_FLOAT:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_DOUBLE:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_CHAR:
+      if (VTK_TYPE_CHAR_IS_SIGNED) {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name.c_str(), finalData);
+      }
+      else {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name.c_str(), finalData);
+      }
+      break;
+    case VTK_SIGNED_CHAR:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_UNSIGNED_CHAR:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_SHORT:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SHORT, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_UNSIGNED_SHORT:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_USHORT, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_INT:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_INT, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_UNSIGNED_INT:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UINT, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_LONG:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_UNSIGNED_LONG:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULONG, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_LONG_LONG:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_UNSIGNED_LONG_LONG:
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULLONG, this->H5FileId, name.c_str(), finalData);
+      break;
+    case VTK_ID_TYPE:
+      if (VTK_SIZEOF_ID_TYPE==8) {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name.c_str(), finalData);
+      }
+      else if (VTK_SIZEOF_ID_TYPE==4) {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name.c_str(), finalData);
+      }
+      break;
+    default:
+      vtkErrorMacro(<<"Unexpected data type");
+    }
+    if (mem_space!=H5S_ALL) {
+      if (H5Sclose(mem_space)<0) vtkErrorMacro(<<"memshape : HANDLE_H5S_CLOSE_ERR");
+      mem_space = H5S_ALL;
     }
     if (r<0) {
       vtkErrorMacro(<<"Array write failed for name "

@@ -94,6 +94,7 @@ protected:
   virtual void WriteData();
 
   void CopyFromVector(int offset, vtkDataArray *source, vtkDataArray *dest);
+  void H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray);
   void WriteDataArray(int i, vtkDataArray *array);
 
   // Overide information to only permit PolyData as input
@@ -108,7 +109,7 @@ protected:
   //
   // Internal Variables
   //
-  long long     NumberOfParticles;
+  long long NumberOfParticles;
   hid_t H5FileId;
   hid_t H5GroupId;
   char *GroupPath;
