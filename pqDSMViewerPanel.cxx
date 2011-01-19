@@ -348,9 +348,10 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
+//  this->connect(this->Internals->writeToDSM,
+//      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
   this->connect(this->Internals->writeToDSM,
-      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
-
+      SIGNAL(clicked()), this, SLOT(onWriteSteeringDataToDSM()));
   //
   // Link paraview events to callbacks
   //
@@ -916,8 +917,40 @@ void pqDSMViewerPanel::RunScript()
   std::string scriptname = this->Internals->scriptPath->text().toStdString();
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::SaveSnapshot() 
+void pqDSMViewerPanel::onWriteSteeringDataToDSM()
 {
+  if (this->DSMReady()) {
+    if (!this->Internals->ActiveSourceProxy) {
+      vtkGenericWarningMacro(<<"Nothing to Write");
+      return;
+    }
+    //
+    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSmartPointer<vtkSMSourceProxy> SteeringWriter =
+      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "SteeringWriter"));
+    SteeringWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+
+    // Delete our reference now and let smart pointer clean up later
+    SteeringWriter->UnRegister(NULL);
+
+    pqSMAdaptor::setProxyProperty(
+        SteeringWriter->GetProperty("DSMManager"), this->Internals->DSMProxy);
+
+    pqSMAdaptor::setElementProperty(
+        SteeringWriter->GetProperty("GroupPath"), "/PartType1");
+
+    pqSMAdaptor::setInputProperty(
+        SteeringWriter->GetProperty("Input"),
+      this->Internals->ActiveSourceProxy,
+      this->Internals->ActiveSourcePort
+      );
+
+    SteeringWriter->UpdateVTKObjects();
+    SteeringWriter->UpdatePipeline();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::SaveSnapshot() {
   std::string pngname = this->Internals->imageFilePath->text().toStdString();
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
@@ -1214,6 +1247,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         else {
           std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
         }
+//        this->onWriteSteeringDataToDSM();
         std::cout << "Update complete : calling RequestRemoteChannel " << std::endl;
         this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
       }

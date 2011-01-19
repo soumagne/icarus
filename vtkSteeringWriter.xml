@@ -1,0 +1,54 @@
+<ServerManagerConfiguration>
+
+  <ProxyGroup name="icarus_helpers">
+
+    <!-- ================================================================= -->
+    <WriterProxy name="SteeringWriter" class="vtkSteeringWriter">
+      <Documentation
+        short_help="Write data arrays to a specific group into the DSM">
+        Writer to write data into a given HDF5 group for steering and restart of simulation.
+      </Documentation>
+      <InputProperty name="Input" command="SetInputConnection">
+        <ProxyGroupDomain name="groups">
+          <Group name="sources"/>
+          <Group name="filters"/>
+        </ProxyGroupDomain>
+        <DataTypeDomain name="input_type" composite_data_supported="0">
+          <DataType value="vtkDataSet"/>
+        </DataTypeDomain>
+        <Documentation>
+          The input filter/source whose output dataset is to written to the file.
+        </Documentation>
+      </InputProperty>
+
+      <StringVectorProperty
+        name="GroupPath"
+        command="SetGroupPath"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <ProxyProperty name="DSMManager" 
+                     command="SetDSMManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers" 
+                 name="DSMManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+      <Hints>
+        <Property name="Input" show="0"/>
+        <Property name="GroupPath" show="0"/>
+      </Hints>
+      <!-- End of XdmfWriter -->
+    </WriterProxy>
+
+  </ProxyGroup>
+
+
+</ServerManagerConfiguration>

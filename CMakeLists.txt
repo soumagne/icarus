@@ -103,6 +103,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
