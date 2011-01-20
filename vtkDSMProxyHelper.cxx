@@ -89,7 +89,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     int nArgs = 0;
     //
     std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueInt_", "");
+    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueInt", "");
     std::cout << "Calling SetSteeringValueInt(" << param_name.c_str() << ",";
     for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
       if (msg.GetArgument(0, i, &ival[nArgs])) nArgs++;
@@ -111,7 +111,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     int nArgs = 0;
     //
     std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueDouble_", "");
+    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueDouble", "");
     std::cout << "Calling SetSteeringValueDouble(" << param_name.c_str() << ",";
     for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
       if (msg.GetArgument(0, i, &dval[nArgs])) nArgs++;
@@ -132,7 +132,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       double temp[2];
       int nArgs = msg.GetNumberOfArguments(0);
       std::string param_name = method;
-      vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble_", "");
+      vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
       std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
 
       if (op && op->GetDSMManager()) {
@@ -149,7 +149,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       int temp;
       int nArgs = msg.GetNumberOfArguments(0);
       std::string param_name = method;
-      vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand_", "");
+      vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
       std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
 
       if (op && op->GetDSMManager()) {
