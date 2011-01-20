@@ -333,9 +333,6 @@ QDockWidget("DSM Manager", p)
     SIGNAL(clicked()), this, SLOT(onUnpublishDSM()));
 
   // Steering commands
-  this->connect(this->Internals->scRestart,
-      SIGNAL(clicked()), this, SLOT(onSCRestart()));
-
   this->connect(this->Internals->scPause,
       SIGNAL(clicked()), this, SLOT(onSCPause()));
 
