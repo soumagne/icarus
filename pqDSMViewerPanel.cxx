@@ -1200,6 +1200,20 @@ void pqDSMViewerPanel::TrackSource()
       this->Internals->infoTextOutput->insert(
         this->Internals->ActiveSourceProxy->GetVTKClassName()
         );
+      
+      //
+      // make sure the field arrays are propagated to our panel
+      //
+      if (this->Internals->DSMProxyHelper) {
+        vtkSMProperty *ip = this->Internals->DSMProxyHelper->GetProperty("Input");
+        pqSMAdaptor::setInputProperty(
+          ip,
+          this->Internals->ActiveSourceProxy,
+          this->Internals->ActiveSourcePort
+        );
+        // This updates the ArrayListDomain domain 
+        ip->UpdateDependentDomains();
+      }
     }
     else {
       this->Internals->ActiveSourceProxy = NULL;

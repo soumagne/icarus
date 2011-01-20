@@ -169,7 +169,8 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   // Dummy input
   xmlstring << "<InputProperty name=\"Input\" command=\"SetInputConnection\">" << std::endl;
   xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"sources\"/> <Group name=\"filters\"/> </ProxyGroupDomain>" << std::endl;
-  xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkPointSet\"/> </DataTypeDomain>" << std::endl;
+  xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkDataObject\"/> </DataTypeDomain>" << std::endl;
+  xmlstring << "<InputArrayDomain name=\"input_array\"/>" << std::endl;
   xmlstring << "</InputProperty>" << std::endl;
 /*
   // Add a transform so that widgets can fake/trigger updates
@@ -179,28 +180,44 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "</ProxyProperty>" << std::endl;
 */
   int numberOfCommandProperties = this->ConfigDOM->FindNumberOfElements("CommandProperty", interactionNode);
-  for (int currentPIndex=0; currentPIndex < numberOfCommandProperties; currentPIndex++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("CommandProperty", currentPIndex, interactionNode);
+  for (int index=0; index < numberOfCommandProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("CommandProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string      name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "ExecuteSteeringCommand", std::string("ExecuteSteeringCommand" + name).c_str());
     xmlstring << xml << std::endl;
   }
 
   int numberOfDataArrayProperties = this->ConfigDOM->FindNumberOfElements("DataArrayProperty", interactionNode);
-  for (int currentDIndex=0; currentDIndex < numberOfDataArrayProperties; currentDIndex++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DataArrayProperty", currentDIndex, interactionNode);
+  for (int index=0; index < numberOfDataArrayProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DataArrayProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string      name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    vtksys::SystemTools::ReplaceString(xml, "<DataArrayProperty", "<StringVectorProperty");
+    vtksys::SystemTools::ReplaceString(xml, "</DataArrayProperty>", 
+      // none_string=\"No Data Write\"
+      "<ArrayListDomain name=\"array_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </ArrayListDomain> "
+      "<FieldDataDomain name=\"field_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </FieldDataDomain> "
+      "</StringVectorProperty>"
+    );
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringArray", std::string("SetSteeringArray" + name).c_str());
     xmlstring << xml << std::endl;
   }
 
-  int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
-  for (int currentIVPIndex=0; currentIVPIndex < numberOfIntVectorProperties; currentIVPIndex++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("IntVectorProperty", currentIVPIndex, interactionNode);
+  int numberOfStringProperties = this->ConfigDOM->FindNumberOfElements("StringVectorProperty", interactionNode);
+  for (int index=0; index < numberOfStringProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("StringVectorProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string      name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    vtksys::SystemTools::ReplaceString(xml, "SetSteeringString", std::string("SetSteeringString" + name).c_str());
+    xmlstring << xml << std::endl;
+  }
+
+  int numberOfIntVectorProperties = this->ConfigDOM->FindNumberOfElements("IntVectorProperty", interactionNode);
+  for (int index=0; index < numberOfIntVectorProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("IntVectorProperty", index, interactionNode);
+    std::string      xml = this->ConfigDOM->Serialize(xnode);
+    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueInt", std::string("SetSteeringValueInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueInt", std::string("GetSteeringValueInt" + name).c_str());
     xmlstring << xml << std::endl;
@@ -208,10 +225,10 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   }
 
   int numberOfDoubleVectorProperties = this->ConfigDOM->FindNumberOfElements("DoubleVectorProperty", interactionNode);
-  for (int currentDVPIndex=0; currentDVPIndex < numberOfDoubleVectorProperties; currentDVPIndex++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DoubleVectorProperty", currentDVPIndex, interactionNode);
+  for (int index=0; index < numberOfDoubleVectorProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DoubleVectorProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string      name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueDouble", std::string("SetSteeringValueDouble" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueDouble", std::string("GetSteeringValueDouble" + name).c_str());
     xmlstring << xml << std::endl;
@@ -221,6 +238,8 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<Hints>" << std::endl;
   xmlstring << "<Property name=\"DSMManager\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Transform\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"Time\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"TimeRange\" show=\"0\"/>" << std::endl;
   xmlstring << hintstring.c_str() << std::endl;
   xmlstring << "</Hints>" << std::endl;
   xmlstring << "</SourceProxy>" << std::endl;

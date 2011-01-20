@@ -47,7 +47,9 @@ public:
   vtkGetObjectMacro(DSMManager, vtkDSMManager)
 protected:
     vtkDSMProxyHelper();
-    ~vtkDSMProxyHelper();
+   ~vtkDSMProxyHelper();
+
+  int FillInputPortInformation(int port, vtkInformation* info);
 
   vtkDSMManager *DSMManager;
 

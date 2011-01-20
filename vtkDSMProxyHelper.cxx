@@ -24,6 +24,7 @@
 =========================================================================*/
 #include "vtkDSMProxyHelper.h"
 //
+#include "vtkInformation.h"
 #include "vtkObjectFactory.h"
 #include "vtkClientServerInterpreter.h"
 #include "vtkClientServerStream.h"
@@ -46,7 +47,7 @@ vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
 vtkDSMProxyHelper::vtkDSMProxyHelper() 
 {
   this->DSMManager = NULL;
-  this->SetNumberOfInputPorts(0);
+  this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 }
 //----------------------------------------------------------------------------
@@ -55,6 +56,12 @@ vtkDSMProxyHelper::~vtkDSMProxyHelper()
   this->SetDSMManager(NULL);
 }
 //----------------------------------------------------------------------------
+int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
+{
+  info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
+  info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
+  return 1;
+}
 
 //----------------------------------------------------------------------------
 vtkObjectBase *vtkDSMProxyHelperClientServerNewCommand()
@@ -85,7 +92,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   
   if (!strncmp ("SetSteeringValueInt",method, 19))
   {
-    int ival[256];
+    int ival[8];
     int nArgs = 0;
     //
     std::string param_name = method;
@@ -107,7 +114,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
 
   if (!strncmp ("SetSteeringValueDouble",method, 22))
   {
-    double dval[256];
+    double dval[8];
     int nArgs = 0;
     //
     std::string param_name = method;
@@ -123,6 +130,37 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     std::cout << ");" << std::endl;
     if (op && op->GetDSMManager()) {
       op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
+    }
+    return 1;
+  }
+
+  if (!strncmp ("SetSteeringArray",method, 16))
+  {
+    char *text;
+    int ival;
+    double dval;
+    int nArgs = msg.GetNumberOfArguments(0);
+    //
+    std::string param_name = method;
+    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
+    std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
+    for (int i=0; i<nArgs; i++) {
+      int t = msg.GetArgumentType(0,i);
+      if (t==vtkClientServerStream::int32_value) {
+        msg.GetArgument(0, i, &ival); 
+        std::cout << ival << (i<(nArgs-1) ? "(int)," : "(int)}");
+      }
+      if (t==vtkClientServerStream::float64_value) {
+        msg.GetArgument(0, i, &dval); 
+        std::cout << dval << (i<(nArgs-1) ? "(double)," : "(double)}");
+      }
+      if (t==vtkClientServerStream::string_value) {
+        msg.GetArgument(0, i, &text); 
+        std::cout << text << (i<(nArgs-1) ? "(string)," : "(string)}");
+      }
+    }
+    std::cout << ");" << std::endl;
+    if (op && op->GetDSMManager()) {
     }
     return 1;
   }
