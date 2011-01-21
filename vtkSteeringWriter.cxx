@@ -300,7 +300,7 @@ void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t file_space, hsiz
   }
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
+void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata)
 {
 #define SPLIT_ARRAYS 0
 
@@ -332,19 +332,11 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
   if (Nc>1) rank = 2;
 #endif 
 
-  char buffer[8];
-  char BadChars[] = "/\\:*?\"<> ";
   char typestring[128];
 
 #if SPLIT_ARRAYS==1
   for (int c=0; c<Nc; c++) {
 #endif 
-    // set the array name
-    sprintf(buffer,"%i", i);
-    vtkstd::string name = vtkstd::string("Scalars_").append(buffer);
-    if (data->GetName()) name = data->GetName();
-    char *tempname = const_cast<char *>(name.c_str());
-    name = vtksys::SystemTools::ReplaceChars(tempname, BadChars, '_');
     // shape
     mem_space = H5Screate_simple(rank, count_mem, NULL);
 
@@ -368,55 +360,55 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
 
     switch (finalData->GetDataType()) {
     case VTK_FLOAT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name, finalData);
       break;
     case VTK_DOUBLE:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
       break;
     case VTK_CHAR:
       if (VTK_TYPE_CHAR_IS_SIGNED) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name.c_str(), finalData);
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
       }
       else {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name.c_str(), finalData);
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
       }
       break;
     case VTK_SIGNED_CHAR:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
       break;
     case VTK_UNSIGNED_CHAR:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
       break;
     case VTK_SHORT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SHORT, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SHORT, this->H5FileId, name, finalData);
       break;
     case VTK_UNSIGNED_SHORT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_USHORT, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_USHORT, this->H5FileId, name, finalData);
       break;
     case VTK_INT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_INT, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_INT, this->H5FileId, name, finalData);
       break;
     case VTK_UNSIGNED_INT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UINT, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UINT, this->H5FileId, name, finalData);
       break;
     case VTK_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name, finalData);
       break;
     case VTK_UNSIGNED_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULONG, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULONG, this->H5FileId, name, finalData);
       break;
     case VTK_LONG_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
       break;
     case VTK_UNSIGNED_LONG_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULLONG, this->H5FileId, name.c_str(), finalData);
+      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULLONG, this->H5FileId, name, finalData);
       break;
     case VTK_ID_TYPE:
       if (VTK_SIZEOF_ID_TYPE==8) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name.c_str(), finalData);
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
       }
       else if (VTK_SIZEOF_ID_TYPE==4) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name.c_str(), finalData);
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name, finalData);
       }
       break;
     default:
@@ -427,10 +419,9 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
       mem_space = H5S_ALL;
     }
     if (r<0) {
-      vtkErrorMacro(<<"Array write failed for name "
-          << name.c_str());
+      vtkErrorMacro(<<"Array write failed for name " << name);
     } else {
-      vtkDebugMacro(<<"Wrote " << name.c_str() << " " << Nt << " " << Nc << " " << typestring); 
+      vtkDebugMacro(<<"Wrote " << name << " " << Nt << " " << Nc << " " << typestring); 
     }
 #if SPLIT_ARRAYS==1
   }
@@ -472,6 +463,8 @@ void vtkSteeringWriter::WriteData()
   
   if (!input) return;
 
+  std::string name = vtksys::SystemTools::GetFilenameName(this->GroupPath);
+
   if (this->ArrayType == 0 && input->IsA("vtkPointSet")) {
     //
     // Write coordinate data
@@ -479,7 +472,7 @@ void vtkSteeringWriter::WriteData()
     vtkSmartPointer<vtkPoints> points = vtkPointSet::SafeDownCast(input)->GetPoints();
     if (points && points->GetData()) {
       points->GetData()->SetName("Coords");
-      this->WriteDataArray(0, points->GetData());
+      this->WriteDataArray(name.c_str(), points->GetData());
     }
   }
 
@@ -491,7 +484,7 @@ void vtkSteeringWriter::WriteData()
     vtkSmartPointer<vtkCellArray> cells = ug->GetCells();
     if (ug && cells) {
       cells->GetData()->SetName("Connectivity");
-      this->WriteDataArray(0, cells->GetData());
+      this->WriteDataArray(name.c_str(), cells->GetData());
     }
   }
 
@@ -502,7 +495,7 @@ void vtkSteeringWriter::WriteData()
       //
       vtkPointData *pd = input->GetPointData();
       vtkDataArray *data = pd->GetArray(this->ArrayName);
-      this->WriteDataArray(0, data);
+      this->WriteDataArray(name.c_str(), data);
     }
     if (this->FieldType==1) {
       //
@@ -510,7 +503,7 @@ void vtkSteeringWriter::WriteData()
       //
       vtkCellData *cd = input->GetCellData();
       vtkDataArray *data = cd->GetArray(this->ArrayName);
-      this->WriteDataArray(0, data);
+      this->WriteDataArray(name.c_str(), data);
     }
   }
 
