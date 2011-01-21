@@ -21,15 +21,18 @@
 #include "vtkSteeringWriter.h"
 #include "vtkDSMManager.h"
 #include "H5FDdsm.h"
+#include "H5MButil.h"
 
 #include "vtkInformation.h"
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 #include "vtkPointData.h"
+#include "vtkCellData.h"
 #include "vtkPoints.h"
 #include "vtkPointSet.h"
 #include "vtkDataArray.h"
+#include "vtkUnstructuredGrid.h"
 //
 #include "vtkCharArray.h"
 #include "vtkUnsignedCharArray.h"
@@ -43,6 +46,7 @@
 #include "vtkUnsignedIntArray.h"
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
+#include "vtkCellArray.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -67,10 +71,14 @@ vtkCxxSetObjectMacro(vtkSteeringWriter, Controller, vtkMultiProcessController);
 vtkSteeringWriter::vtkSteeringWriter()
 {
   this->SetNumberOfInputPorts(1);
-  this->SetNumberOfOutputPorts(1);
+  this->SetNumberOfOutputPorts(0);
+  //
+  this->DSMManager = NULL;
+  this->ArrayName  = NULL;
   //
   this->TimeValue                 = 0.0;
   this->NumberOfParticles         = 0;
+  this->H5GroupId                 = H5I_BADID;
   this->H5FileId                  = H5I_BADID;
   this->GroupPath                 = NULL;
   this->UpdatePiece               = -1;
@@ -83,7 +91,9 @@ vtkSteeringWriter::vtkSteeringWriter()
 //----------------------------------------------------------------------------
 vtkSteeringWriter::~vtkSteeringWriter()
 { 
+  delete []this->ArrayName;
   this->CloseFile();
+  this->SetDSMManager(NULL);
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -140,6 +150,49 @@ void vtkSteeringWriter::CloseFile()
   }
 }
 //----------------------------------------------------------------------------
+int vtkSteeringWriter::OpenGroup(const char *pathwithoutname) {
+   H5E_auto2_t  errfunc;
+   void        *errdata;
+
+   // Prevent HDF5 to print out handled errors, first save old error handler
+   H5Eget_auto(H5E_DEFAULT, &errfunc, &errdata);
+   // Turn off error handling
+   H5Eset_auto(H5E_DEFAULT, NULL, NULL);
+
+   this->H5GroupId = H5Gopen(this->H5FileId, pathwithoutname, H5P_DEFAULT);
+
+   if (this->H5GroupId < 0) {
+     // Restore previous error handler
+
+     this->H5GroupId = H5Gcreate(this->H5FileId, pathwithoutname, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+     if (this->H5GroupId < 0) {
+       // skip leading "/"
+       int cursor = 1;
+       std::string currentGroupName;
+       hid_t new_group = H5I_BADID;
+       hid_t old_group = this->H5FileId;
+       do {
+         if (pathwithoutname[cursor] == '/' || pathwithoutname[cursor] != '\0') {
+           // try to open and create groups
+           new_group = H5Gopen(old_group, currentGroupName.c_str(), H5P_DEFAULT);
+           if (new_group < 0) {
+             new_group = H5Gcreate(old_group, currentGroupName.c_str(), H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+           }
+           H5Gclose(old_group);
+           old_group = new_group;
+           currentGroupName.clear();
+           currentGroupName = "";
+         } else {
+           currentGroupName += pathwithoutname[cursor];
+         }
+         cursor++;
+       } while (pathwithoutname[cursor] != '\0');
+     }
+   }
+   H5Eset_auto(H5E_DEFAULT, errfunc, errdata); 
+   return 1;
+}
+//----------------------------------------------------------------------------
 int vtkSteeringWriter::OpenFile()
 {
   if (this->H5FileId != H5I_BADID) {
@@ -150,9 +203,24 @@ int vtkSteeringWriter::OpenFile()
   this->H5FileId = H5Fopen("dsm", H5F_ACC_RDWR, dsmFapl);
   H5Pclose(dsmFapl);
   dsmFapl = H5I_BADID;
+  //
+  std::string path = vtksys::SystemTools::GetFilenamePath(this->GroupPath);
+  this->OpenGroup(path.c_str());
 
-  this->H5GroupId = H5Gopen(this->H5FileId, (const char *)this->GroupPath, H5P_DEFAULT);
-
+/*
+  std::vector<std::string> dirs;
+  //
+  vtksys::SystemTools::SplitPath(this->GroupPath,dirs,false);
+  hid_t location = this->H5FileId;
+  // last part of path is name
+  for (int i=0; i<dirs.size()-1; i++) {
+    std::string dir = dirs[i];
+    hid_t gid = H5Gcreate(location, dir.c_str(), H5P_DEFAULT);
+    this->group_ids.push_back(gid);
+    location = gid;
+  }
+  this->H5GroupId = location;
+*/
   if (!this->H5GroupId) {
     vtkErrorMacro(<< "Initialize: Could not open group " << this->GroupPath);
     return 0;
@@ -220,10 +288,9 @@ void vtkSteeringWriter::CopyFromVector(int offset, vtkDataArray *source, vtkData
   }
 }
 //----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray)
 {
-  hid_t H5DataSetID = H5Dopen(this->H5GroupId, array_name, H5P_DEFAULT);
+  hid_t H5DataSetID = H5Dcreate(this->H5GroupId, array_name, mem_type, file_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (H5DataSetID<0) {
     vtkErrorMacro(<<"Dataset open failed for " << array_name);
   } else {
@@ -235,34 +302,43 @@ void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t file_space, hsiz
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
 {
+#define SPLIT_ARRAYS 0
 
   vtkSmartPointer<vtkDataArray> data = indata;
   //
 
   hid_t mem_space = H5S_ALL;
-  hid_t file_space = H5S_ALL;
+  hid_t file_space = -1;
 
   herr_t r=0;
   int Nt = data->GetNumberOfTuples();
   int Nc = data->GetNumberOfComponents();
-  hsize_t     count_mem[] = { Nt*Nc };
+  hsize_t     count_mem[2] = { Nt, Nc };
+  int rank = 1;
 //  hsize_t     offset_mem[] = { 0 };
   //
   vtkSmartPointer<vtkDataArray> component;
 
   // we copy from original to a single component array
   count_mem[0] = Nt;
-  if (Nc>1) {
-    component.TakeReference(data->NewInstance());
-    component->SetNumberOfComponents(1);
-    component->SetNumberOfTuples(Nt);
-    component->WriteVoidPointer(0, Nt);
-  }
+#if SPLIT_ARRAYS==1
+    if (Nc>1) {
+      component.TakeReference(data->NewInstance());
+      component->SetNumberOfComponents(1);
+      component->SetNumberOfTuples(Nt);
+      component->WriteVoidPointer(0, Nt);
+    }
+#else
+  if (Nc>1) rank = 2;
+#endif 
 
   char buffer[8];
   char BadChars[] = "/\\:*?\"<> ";
   char typestring[128];
+
+#if SPLIT_ARRAYS==1
   for (int c=0; c<Nc; c++) {
+#endif 
     // set the array name
     sprintf(buffer,"%i", i);
     vtkstd::string name = vtkstd::string("Scalars_").append(buffer);
@@ -270,9 +346,11 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
     char *tempname = const_cast<char *>(name.c_str());
     name = vtksys::SystemTools::ReplaceChars(tempname, BadChars, '_');
     // shape
-    mem_space = H5Screate_simple(1, count_mem, NULL);
+    mem_space = H5Screate_simple(rank, count_mem, NULL);
+
     // single vector write or component by component
     vtkSmartPointer<vtkDataArray> finalData = data;
+#if SPLIT_ARRAYS==1
     if (Nc>1) {
       sprintf(buffer,"_%i", c);
       name = name.append(buffer);
@@ -284,6 +362,9 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
       // we don't need a hyperslab here because we're writing 
       // a contiguous block from mem to disk with the same flat shape
     }
+#else
+    file_space = H5Screate_simple(rank, count_mem, NULL);
+#endif
 
     switch (finalData->GetDataType()) {
     case VTK_FLOAT:
@@ -351,6 +432,12 @@ void vtkSteeringWriter::WriteDataArray(int i, vtkDataArray *indata)
     } else {
       vtkDebugMacro(<<"Wrote " << name.c_str() << " " << Nt << " " << Nc << " " << typestring); 
     }
+#if SPLIT_ARRAYS==1
+  }
+#endif 
+  if (file_space!=-1) {
+    if (H5Sclose(file_space)<0) vtkErrorMacro(<<"file_space : HANDLE_H5S_CLOSE_ERR");
+    file_space = H5S_ALL;
   }
 
 }
@@ -381,32 +468,53 @@ void vtkSteeringWriter::WriteData()
 
   //
   // Get the input to write and Set Num-Particles
-  vtkPointSet *input = this->GetInput();
-  this->NumberOfParticles = input->GetNumberOfPoints();
+  vtkDataSet *input = this->GetInput();
+  
+  if (!input) return;
 
-  //
-  // Write coordinate data
-  //
-  vtkSmartPointer<vtkPoints> points = input->GetPoints();
-  if (points && points->GetData()) {
-    points->GetData()->SetName("Coords");
-    this->WriteDataArray(0, points->GetData());
-  }
-//  else {
-//    this->WriteDataArray(0, NULL);
-//  }
-  //
-  // Write point data
-  //
-  int numScalars;
-  vtkPointData *pd = input->GetPointData();
-  numScalars = pd->GetNumberOfArrays();
-
-  for (int i=0; i<numScalars; i++) {
-    vtkDataArray *data = pd->GetArray(i);
-    this->WriteDataArray(i, data);
+  if (this->ArrayType == 0 && input->IsA("vtkPointSet")) {
+    //
+    // Write coordinate data
+    //
+    vtkSmartPointer<vtkPoints> points = vtkPointSet::SafeDownCast(input)->GetPoints();
+    if (points && points->GetData()) {
+      points->GetData()->SetName("Coords");
+      this->WriteDataArray(0, points->GetData());
+    }
   }
 
+  if (this->ArrayType == 1 && input->IsA("vtkUnstructuredGrid")) {
+    //
+    // Write connectivity data
+    //
+    vtkSmartPointer<vtkUnstructuredGrid> ug = vtkUnstructuredGrid::SafeDownCast(input);
+    vtkSmartPointer<vtkCellArray> cells = ug->GetCells();
+    if (ug && cells) {
+      cells->GetData()->SetName("Connectivity");
+      this->WriteDataArray(0, cells->GetData());
+    }
+  }
+
+  if (this->ArrayType == 2 && input->IsA("vtkDataSet")) {
+    if (this->FieldType==0) {
+      //
+      // Write point data
+      //
+      vtkPointData *pd = input->GetPointData();
+      vtkDataArray *data = pd->GetArray(this->ArrayName);
+      this->WriteDataArray(0, data);
+    }
+    if (this->FieldType==1) {
+      //
+      // Write cell data
+      //
+      vtkCellData *cd = input->GetCellData();
+      vtkDataArray *data = cd->GetArray(this->ArrayName);
+      this->WriteDataArray(0, data);
+    }
+  }
+
+  this->CloseFile();
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::PrintSelf(ostream& os, vtkIndent indent)

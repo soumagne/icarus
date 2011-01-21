@@ -36,6 +36,7 @@
 #include "vtkSmartPointer.h"
 //
 #include "vtkDSMManager.h"
+#include "vtkSteeringWriter.h"
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
 int vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
@@ -43,10 +44,12 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDSMProxyHelper);
 vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
+vtkCxxSetObjectMacro(vtkDSMProxyHelper, SteeringWriter, vtkSteeringWriter);
 //----------------------------------------------------------------------------
 vtkDSMProxyHelper::vtkDSMProxyHelper() 
 {
-  this->DSMManager = NULL;
+  this->DSMManager     = NULL;
+  this->SteeringWriter = NULL;
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
 }
@@ -54,6 +57,7 @@ vtkDSMProxyHelper::vtkDSMProxyHelper()
 vtkDSMProxyHelper::~vtkDSMProxyHelper()
 { 
   this->SetDSMManager(NULL);
+  this->SetSteeringWriter(NULL);
 }
 //----------------------------------------------------------------------------
 int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
@@ -61,6 +65,22 @@ int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
   info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
   return 1;
+}
+//----------------------------------------------------------------------------
+void vtkDSMProxyHelper::WriteSteeringData(const char *prop, const char *arrayname, int atype, int ftype)
+{
+  if (this->SteeringWriter && this->SteeringWriter->GetDSMManager()) {
+    std::cout << prop << " " << arrayname << " " << "/Mesh_Nodes#1/NewXYZ" << atype << std::endl;
+    this->SteeringWriter->SetArrayName(arrayname);
+    this->SteeringWriter->SetArrayType(atype);
+    this->SteeringWriter->SetFieldType(ftype);
+    this->SteeringWriter->SetGroupPath("/Mesh_Nodes#1/NewXYZ");
+    this->SteeringWriter->WriteData();
+  }
+  else {
+    std::cout << "Steering writer called with invalid DSM setup " << std::endl;
+  }
+  this->DSMManager->H5DumpLight();
 }
 
 //----------------------------------------------------------------------------
@@ -134,16 +154,46 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     return 1;
   }
 
+  if (!strncmp ("SetSteeringType",method, 15))
+  {
+    int ival;
+    int nArgs = msg.GetNumberOfArguments(0);
+    //
+    std::string param_name = method;
+    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringType", "");
+    vtksys::SystemTools::ReplaceString(param_name, "Type", "");
+    std::cout << "Calling SetSteeringType(" << param_name.c_str() << ", ";
+    msg.GetArgument(0, nArgs-1, &ival); 
+    std::cout << ival << ");" << std::endl;
+
+    if (op && op->GetDSMManager()) {
+      msg.GetArgument(0, nArgs-1, &ival); 
+      op->ArrayTypesMap[param_name] = ival;
+      if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end())
+      {
+        op->WriteSteeringData(param_name.c_str(), 
+        op->ArrayNamesMap[param_name].c_str(), 
+        op->ArrayTypesMap[param_name],
+        op->ArrayFieldMap[param_name]);
+      }
+    }
+    return 1;
+  }
+
   if (!strncmp ("SetSteeringArray",method, 16))
   {
     char *text;
     int ival;
-    double dval;
     int nArgs = msg.GetNumberOfArguments(0);
     //
     std::string param_name = method;
     vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
     std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
+    msg.GetArgument(0, nArgs-1, &text); 
+    msg.GetArgument(0, nArgs-2, &ival); 
+    std::cout << ival << ", " << text << ")" << std::endl;
+
+/*
     for (int i=0; i<nArgs; i++) {
       int t = msg.GetArgumentType(0,i);
       if (t==vtkClientServerStream::int32_value) {
@@ -159,8 +209,17 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         std::cout << text << (i<(nArgs-1) ? "(string)," : "(string)}");
       }
     }
-    std::cout << ");" << std::endl;
+*/
     if (op && op->GetDSMManager()) {
+      op->ArrayNamesMap[param_name] = text;
+      op->ArrayFieldMap[param_name] = ival;
+      if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end()) 
+      {
+        op->WriteSteeringData(param_name.c_str(), 
+        op->ArrayNamesMap[param_name].c_str(), 
+        op->ArrayTypesMap[param_name],
+        op->ArrayFieldMap[param_name]);
+      }
     }
     return 1;
   }
@@ -214,6 +273,28 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     vtkDSMManager  *temp20;
       {
       temp20 = (op)->GetDSMManager();
+      resultStream.Reset();
+      resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
+      return 1;
+      }
+    }
+  //
+  // We actually need to use these real ClientServer set/getters
+  //
+  if (!strcmp("SetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 3)
+    {
+    vtkSteeringWriter  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkSteeringWriter"))
+      {
+      op->SetSteeringWriter(temp0);
+      return 1;
+      }
+    }
+  if (!strcmp("GetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 2)
+    {
+    vtkSteeringWriter  *temp20;
+      {
+      temp20 = (op)->GetSteeringWriter();
       resultStream.Reset();
       resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
       return 1;

@@ -64,7 +64,7 @@ namespace vtkCustomPipelineHelperSpace {
 vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *group)
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-  this->Pipeline = vtkSMCompoundSourceProxy::SafeDownCast(pm->NewProxy(name, group));
+  this->Pipeline.TakeReference(vtkSMCompoundSourceProxy::SafeDownCast(pm->NewProxy(name, group)));
   this->Pipeline->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 }
 //----------------------------------------------------------------------------

@@ -30,9 +30,11 @@
 #define __vtkDSMProxyHelper_h
 
 #include "vtkDataObjectAlgorithm.h"    // Base class
+#include <map>
 
 // BTX
 class vtkDSMManager;
+class vtkSteeringWriter;
 class vtkClientServerInterpreter;
 extern "C" void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter *csi);
 //ETX
@@ -45,13 +47,23 @@ public:
 
   virtual void SetDSMManager(vtkDSMManager*);
   vtkGetObjectMacro(DSMManager, vtkDSMManager)
+
+  virtual void SetSteeringWriter(vtkSteeringWriter*);
+  vtkGetObjectMacro(SteeringWriter, vtkSteeringWriter)
+
+  void WriteSteeringData(const char *prop, const char *arrayname, int atype, int ftype);
+
+  std::map<std::string, int>         ArrayTypesMap;
+  std::map<std::string, std::string> ArrayNamesMap;
+  std::map<std::string, int>         ArrayFieldMap;
 protected:
     vtkDSMProxyHelper();
    ~vtkDSMProxyHelper();
 
   int FillInputPortInformation(int port, vtkInformation* info);
 
-  vtkDSMManager *DSMManager;
+  vtkDSMManager     *DSMManager;
+  vtkSteeringWriter *SteeringWriter;
 
 private:
     vtkDSMProxyHelper(const vtkDSMProxyHelper&);  // Not implemented.

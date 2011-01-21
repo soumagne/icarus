@@ -146,21 +146,22 @@ public:
 
   //
   ~pqInternals() {
-    if (this->DSMProxyCreated()) {
-      this->DSMProxy->InvokeCommand("DestroyDSM");
-    }
-    this->DSMProxy           = NULL;
     this->DSMProxyHelper     = NULL;
+    this->SteeringWriter     = NULL;
     this->XdmfReader         = NULL;
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
     this->ActiveSourceProxy  = NULL;
+    if (this->DSMProxyCreated()) {
+      this->DSMProxy->InvokeCommand("DestroyDSM");
+    }
+    this->DSMProxy           = NULL;
   }
   //
   void CreateDSMProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    this->DSMProxy = pm->NewProxy("icarus_helpers", "DSMManager");
+    this->DSMProxy.TakeReference(pm->NewProxy("icarus_helpers", "DSMManager"));
     this->DSMProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DSMProxy->UpdatePropertyInformation();
   }
@@ -171,13 +172,12 @@ public:
     }
     //
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
-    this->DSMProxyHelper = pm->NewProxy("icarus_helpers", "DSMProxyHelper");
+    this->DSMProxyHelper.TakeReference(pm->NewProxy("icarus_helpers", "DSMProxyHelper"));
     this->DSMProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DSMProxyHelper->UpdatePropertyInformation();
     this->DSMProxyHelper->UpdateVTKObjects();
-//    pm->RegisterProxy("icarus_helpers", "DSMProxyHelper", this->DSMProxyHelper);
     //
-    this->TransformProxy = pm->NewProxy("extended_sources", "Transform3");
+    this->TransformProxy.TakeReference(pm->NewProxy("extended_sources", "Transform3"));
     this->TransformProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 //    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
     //
@@ -186,9 +186,18 @@ public:
     //
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("DSMManager"), this->DSMProxy);
-    this->DSMProxyHelper->UpdatePropertyInformation();
-    this->DSMProxyHelper->UpdateVTKObjects();
     //
+    // We will also be needing a vtkSteeringWriter, so create that now
+    this->SteeringWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "SteeringWriter")));
+    this->SteeringWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
+    pqSMAdaptor::setProxyProperty(this->SteeringWriter->GetProperty("DSMManager"), this->DSMProxy);
+    pqSMAdaptor::setElementProperty(this->SteeringWriter->GetProperty("GroupPath"), "/PartType1");
+    this->SteeringWriter->UpdateVTKObjects();
+
+    // Set the DSM manager it uses for communication, (warning: updates all properties)
+    pqSMAdaptor::setProxyProperty(this->DSMProxyHelper->GetProperty("SteeringWriter"), this->SteeringWriter);
+    this->DSMProxyHelper->UpdateVTKObjects();
+
     //
     // wrap the DSMProxyHelper object in a pqProxy so that we can use it in our object inspector
     if (this->pqDSMProxyHelper) {
@@ -196,6 +205,9 @@ public:
     }
     this->pqDSMProxyHelper = new pqProxy("icarus_helpers", "DSMProxyHelper", 
       this->DSMProxyHelper, pqActiveObjects::instance().activeServer()); 
+
+    this->DSMProxyHelper->UpdateVTKObjects();
+
   }
   //
   bool DSMProxyCreated() { return this->DSMProxy!=NULL; }
@@ -207,6 +219,7 @@ public:
   int                                       DSMInitialized;
   vtkSmartPointer<vtkSMProxy>               DSMProxy;
   vtkSmartPointer<vtkSMProxy>               DSMProxyHelper;
+  vtkSmartPointer<vtkSMSourceProxy>         SteeringWriter;
   // ---------------------------------------------------------------
   // Principal pipeline of Xdmf[->ExtractBlock]
   // ---------------------------------------------------------------
@@ -885,12 +898,9 @@ void pqDSMViewerPanel::onWriteDataToDSM()
     }
     //
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
-    vtkSmartPointer<vtkSMSourceProxy> XdmfWriter =
-      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4"));
+    vtkSmartPointer<vtkSMSourceProxy> XdmfWriter;
+    XdmfWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4")));
     XdmfWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
-
-    // Delete our reference now and let smart pointer clean up later
-    XdmfWriter->UnRegister(NULL);
 
     pqSMAdaptor::setProxyProperty(
       XdmfWriter->GetProperty("DSMManager"), this->Internals->DSMProxy);
@@ -921,29 +931,16 @@ void pqDSMViewerPanel::onWriteSteeringDataToDSM()
       vtkGenericWarningMacro(<<"Nothing to Write");
       return;
     }
-    //
-    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
-    vtkSmartPointer<vtkSMSourceProxy> SteeringWriter =
-      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "SteeringWriter"));
-    SteeringWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 
-    // Delete our reference now and let smart pointer clean up later
-    SteeringWriter->UnRegister(NULL);
-
-    pqSMAdaptor::setProxyProperty(
-        SteeringWriter->GetProperty("DSMManager"), this->Internals->DSMProxy);
-
-    pqSMAdaptor::setElementProperty(
-        SteeringWriter->GetProperty("GroupPath"), "/PartType1");
 
     pqSMAdaptor::setInputProperty(
-        SteeringWriter->GetProperty("Input"),
+      this->Internals->SteeringWriter->GetProperty("Input"),
       this->Internals->ActiveSourceProxy,
       this->Internals->ActiveSourcePort
       );
 
-    SteeringWriter->UpdateVTKObjects();
-    SteeringWriter->UpdatePipeline();
+    this->Internals->SteeringWriter->UpdateVTKObjects();
+    this->Internals->SteeringWriter->UpdatePipeline();
   }
 }
 //-----------------------------------------------------------------------------
@@ -1213,6 +1210,17 @@ void pqDSMViewerPanel::TrackSource()
         );
         // This updates the ArrayListDomain domain 
         ip->UpdateDependentDomains();
+      }
+      //
+      // make sure the Steering Writer knows where to get data from
+      //
+      if (this->Internals->SteeringWriter) {
+        vtkSMProperty *ip = this->Internals->SteeringWriter->GetProperty("Input");
+        pqSMAdaptor::setInputProperty(
+          ip,
+          this->Internals->ActiveSourceProxy,
+          this->Internals->ActiveSourcePort
+        );
       }
     }
     else {

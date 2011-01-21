@@ -166,7 +166,10 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<SourceProxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
   // The Helper needs a DSM manager
   xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\"/>" << std::endl;
-  // Dummy input
+  // The Helper needs a Steering Writer
+  xmlstring << "<ProxyProperty name=\"SteeringWriter\" command=\"SetSteeringWriter\"/>" << std::endl;
+  
+  // We need an input to the helper so that dependent domains can be updated (field array lists)
   xmlstring << "<InputProperty name=\"Input\" command=\"SetInputConnection\">" << std::endl;
   xmlstring << "<ProxyGroupDomain name=\"groups\"> <Group name=\"sources\"/> <Group name=\"filters\"/> </ProxyGroupDomain>" << std::endl;
   xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkDataObject\"/> </DataTypeDomain>" << std::endl;
@@ -220,6 +223,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueInt", std::string("SetSteeringValueInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueInt", std::string("GetSteeringValueInt" + name).c_str());
+    vtksys::SystemTools::ReplaceString(xml, "SetSteeringType", std::string("SetSteeringType" + name).c_str());
     xmlstring << xml << std::endl;
     hintstring += this->BuildWidgetHints(name.c_str(), xnode);
   }
@@ -237,6 +241,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
 
   xmlstring << "<Hints>" << std::endl;
   xmlstring << "<Property name=\"DSMManager\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"SteeringWriter\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Transform\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Time\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"TimeRange\" show=\"0\"/>" << std::endl;

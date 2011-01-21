@@ -33,6 +33,7 @@
 #include "vtkAbstractParticleWriter.h"
 //
 #include <hdf5.h>
+#include <vector>
 //
 #ifdef VTK_USE_MPI
 class vtkMultiProcessController;
