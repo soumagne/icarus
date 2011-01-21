@@ -67,7 +67,7 @@ int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkDSMProxyHelper::WriteSteeringData(const char *prop, const char *arrayname, int atype, int ftype)
+void vtkDSMProxyHelper::WriteDataSetArrayData(const char *prop, const char *arrayname, int atype, int ftype)
 {
   if (this->SteeringWriter && this->SteeringWriter->GetDSMManager()) {
     std::cout << prop << " " << arrayname << " " << "/Mesh_Nodes#1/NewXYZ" << atype << std::endl;
@@ -109,198 +109,167 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
                  << vtkmsg.str() << 0 << vtkClientServerStream::End;
     return 0;
     }
-  
-  if (!strncmp ("SetSteeringValueInt",method, 19))
-  {
-    int ival[8];
-    int nArgs = 0;
-    //
-    std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueInt", "");
-    std::cout << "Calling SetSteeringValueInt(" << param_name.c_str() << ",";
-    for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
-      if (msg.GetArgument(0, i, &ival[nArgs])) nArgs++;
+
+  //
+  // We need to use these normal ClientServer set/getters
+  //
+  if (!strcmp("SetDSMManager",method) && msg.GetNumberOfArguments(0) == 3) {
+    vtkDSMManager  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDSMManager")) {
+      op->SetDSMManager(temp0);
+      return 1;
     }
-    std::cout << nArgs << "," << "{";
-    for (int i=0; i<nArgs; i++) {
-      std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
+  }
+  if (!strcmp("GetDSMManager",method) && msg.GetNumberOfArguments(0) == 2) {
+    vtkDSMManager  *temp20;
+    temp20 = (op)->GetDSMManager();
+    resultStream.Reset();
+    resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
+    return 1;
+  }
+  if (!strcmp("SetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 3) {
+    vtkSteeringWriter  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkSteeringWriter")) {
+      op->SetSteeringWriter(temp0);
+      return 1;
     }
-    std::cout << ");" << std::endl;
-    if (op && op->GetDSMManager()) {
+  }
+  if (!strcmp("GetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 2) {
+    vtkSteeringWriter  *temp20;
+    temp20 = (op)->GetSteeringWriter();
+    resultStream.Reset();
+    resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
+    return 1;
+  }
+
+  //
+  // If there's no DSM manager, then there's no point doing anything below here ....
+  //
+  if (op && op->GetDSMManager()) {
+    if (!strncmp ("SetSteeringValueInt",method, 19))
+    {
+      int ival[8];
+      int nArgs = 0;
+      //
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueInt", "");
+      std::cout << "Calling SetSteeringValueInt(" << param_name.c_str() << ",";
+      for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
+        if (msg.GetArgument(0, i, &ival[nArgs])) nArgs++;
+      }
+      std::cout << nArgs << "," << "{";
+      for (int i=0; i<nArgs; i++) {
+        std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
+      }
+      std::cout << ");" << std::endl;
       op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
+      return 1;
     }
-    return 1;
-  }
 
-  if (!strncmp ("SetSteeringValueDouble",method, 22))
-  {
-    double dval[8];
-    int nArgs = 0;
-    //
-    std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueDouble", "");
-    std::cout << "Calling SetSteeringValueDouble(" << param_name.c_str() << ",";
-    for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
-      if (msg.GetArgument(0, i, &dval[nArgs])) nArgs++;
-    }
-    std::cout << nArgs << "," << "{";
-    for (int i=0; i<nArgs; i++) {
-      std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
-    }
-    std::cout << ");" << std::endl;
-    if (op && op->GetDSMManager()) {
+    if (!strncmp ("SetSteeringValueDouble",method, 22))
+    {
+      double dval[8];
+      int nArgs = 0;
+      //
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueDouble", "");
+      std::cout << "Calling SetSteeringValueDouble(" << param_name.c_str() << ",";
+      for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
+        if (msg.GetArgument(0, i, &dval[nArgs])) nArgs++;
+      }
+      std::cout << nArgs << "," << "{";
+      for (int i=0; i<nArgs; i++) {
+        std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
+      }
+      std::cout << ");" << std::endl;
       op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
+      return 1;
     }
-    return 1;
-  }
 
-  if (!strncmp ("SetSteeringType",method, 15))
-  {
-    int ival;
-    int nArgs = msg.GetNumberOfArguments(0);
-    //
-    std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringType", "");
-    vtksys::SystemTools::ReplaceString(param_name, "Type", "");
-    std::cout << "Calling SetSteeringType(" << param_name.c_str() << ", ";
-    msg.GetArgument(0, nArgs-1, &ival); 
-    std::cout << ival << ");" << std::endl;
+    if (!strncmp ("SetSteeringType",method, 15))
+    {
+      int ival;
+      int nArgs = msg.GetNumberOfArguments(0);
+      //
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "SetSteeringType", "");
+      vtksys::SystemTools::ReplaceString(param_name, "Type", "");
+      std::cout << "Calling SetSteeringType(" << param_name.c_str() << ", ";
+      msg.GetArgument(0, nArgs-1, &ival); 
+      std::cout << ival << ");" << std::endl;
 
-    if (op && op->GetDSMManager()) {
       msg.GetArgument(0, nArgs-1, &ival); 
       op->ArrayTypesMap[param_name] = ival;
-      if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end())
+      if (ival==0) {
+        op->WriteDataSetArrayData(param_name.c_str(), 
+        "", 
+        op->ArrayTypesMap[param_name],
+        0);
+      }
+      else if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end())
       {
-        op->WriteSteeringData(param_name.c_str(), 
+        op->WriteDataSetArrayData(param_name.c_str(), 
         op->ArrayNamesMap[param_name].c_str(), 
         op->ArrayTypesMap[param_name],
         op->ArrayFieldMap[param_name]);
       }
+      return 1;
     }
-    return 1;
-  }
 
-  if (!strncmp ("SetSteeringArray",method, 16))
-  {
-    char *text;
-    int ival;
-    int nArgs = msg.GetNumberOfArguments(0);
-    //
-    std::string param_name = method;
-    vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
-    std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
-    msg.GetArgument(0, nArgs-1, &text); 
-    msg.GetArgument(0, nArgs-2, &ival); 
-    std::cout << ival << ", " << text << ")" << std::endl;
+    if (!strncmp ("SetSteeringArray",method, 16))
+    {
+      char *text;
+      int ival;
+      int nArgs = msg.GetNumberOfArguments(0);
+      //
+      std::string param_name = method;
+      vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
+      std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
+      msg.GetArgument(0, nArgs-1, &text); 
+      msg.GetArgument(0, nArgs-2, &ival); 
+      std::cout << ival << ", " << text << ")" << std::endl;
 
-/*
-    for (int i=0; i<nArgs; i++) {
-      int t = msg.GetArgumentType(0,i);
-      if (t==vtkClientServerStream::int32_value) {
-        msg.GetArgument(0, i, &ival); 
-        std::cout << ival << (i<(nArgs-1) ? "(int)," : "(int)}");
-      }
-      if (t==vtkClientServerStream::float64_value) {
-        msg.GetArgument(0, i, &dval); 
-        std::cout << dval << (i<(nArgs-1) ? "(double)," : "(double)}");
-      }
-      if (t==vtkClientServerStream::string_value) {
-        msg.GetArgument(0, i, &text); 
-        std::cout << text << (i<(nArgs-1) ? "(string)," : "(string)}");
-      }
-    }
-*/
-    if (op && op->GetDSMManager()) {
       op->ArrayNamesMap[param_name] = text;
       op->ArrayFieldMap[param_name] = ival;
       if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end()) 
       {
-        op->WriteSteeringData(param_name.c_str(), 
+        op->WriteDataSetArrayData(param_name.c_str(), 
         op->ArrayNamesMap[param_name].c_str(), 
         op->ArrayTypesMap[param_name],
         op->ArrayFieldMap[param_name]);
       }
+      return 1;
     }
-    return 1;
-  }
 
-  if (!strncmp ("GetSteeringValueDouble",method, 22)) {
-    if (msg.GetNumberOfArguments(0) == 2) {
-      double temp[2];
-      int nArgs = msg.GetNumberOfArguments(0);
-      std::string param_name = method;
-      vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
-      std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
-
-      if (op && op->GetDSMManager()) {
+    if (!strncmp ("GetSteeringValueDouble",method, 22)) {
+      if (msg.GetNumberOfArguments(0) == 2) {
+        double temp[2];
+        int nArgs = msg.GetNumberOfArguments(0);
+        std::string param_name = method;
+        vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
+//        std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
+        //
         op->GetDSMManager()->GetSteeringValues(param_name.c_str(), 2, temp);
         resultStream.Reset();
         resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(temp,2) << vtkClientServerStream::End;
         return 1;
       }
     }
-  }
 
-  if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
-    if (msg.GetNumberOfArguments(0) == 3) {
-      int temp;
-      int nArgs = msg.GetNumberOfArguments(0);
-      std::string param_name = method;
-      vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
-      std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
-
-      if (op && op->GetDSMManager()) {
+    if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
+      if (msg.GetNumberOfArguments(0) == 3) {
+        int temp;
+        int nArgs = msg.GetNumberOfArguments(0);
+        std::string param_name = method;
+        vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
+        std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
+        //
         op->GetDSMManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
         return 1;
       }
     }
+
   }
-
-  //
-  // We actually need to use these real ClientServer set/getters
-  //
-  if (!strcmp("SetDSMManager",method) && msg.GetNumberOfArguments(0) == 3)
-    {
-    vtkDSMManager  *temp0;
-    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDSMManager"))
-      {
-      op->SetDSMManager(temp0);
-      return 1;
-      }
-    }
-  if (!strcmp("GetDSMManager",method) && msg.GetNumberOfArguments(0) == 2)
-    {
-    vtkDSMManager  *temp20;
-      {
-      temp20 = (op)->GetDSMManager();
-      resultStream.Reset();
-      resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
-      return 1;
-      }
-    }
-  //
-  // We actually need to use these real ClientServer set/getters
-  //
-  if (!strcmp("SetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 3)
-    {
-    vtkSteeringWriter  *temp0;
-    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkSteeringWriter"))
-      {
-      op->SetSteeringWriter(temp0);
-      return 1;
-      }
-    }
-  if (!strcmp("GetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 2)
-    {
-    vtkSteeringWriter  *temp20;
-      {
-      temp20 = (op)->GetSteeringWriter();
-      resultStream.Reset();
-      resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
-      return 1;
-      }
-    }
-
   if (vtkDataObjectAlgorithmCommand(arlu, op,method,msg,resultStream))
     {
     return 1;
@@ -308,3 +277,21 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
 
   return 1;
 }
+
+  /*
+      for (int i=0; i<nArgs; i++) {
+        int t = msg.GetArgumentType(0,i);
+        if (t==vtkClientServerStream::int32_value) {
+          msg.GetArgument(0, i, &ival); 
+          std::cout << ival << (i<(nArgs-1) ? "(int)," : "(int)}");
+        }
+        if (t==vtkClientServerStream::float64_value) {
+          msg.GetArgument(0, i, &dval); 
+          std::cout << dval << (i<(nArgs-1) ? "(double)," : "(double)}");
+        }
+        if (t==vtkClientServerStream::string_value) {
+          msg.GetArgument(0, i, &text); 
+          std::cout << text << (i<(nArgs-1) ? "(string)," : "(string)}");
+        }
+      }
+  */

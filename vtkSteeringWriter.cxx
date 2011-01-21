@@ -139,14 +139,14 @@ void vtkSteeringWriter::CloseFile()
     if (H5Gclose(this->H5GroupId) < 0) {
       vtkErrorMacro(<<"CloseGroup failed");
     }
-    this->H5GroupId = NULL;
+    this->H5GroupId = H5I_BADID;
   }
 
   if (this->H5FileId != H5I_BADID) {
     if (H5Fclose(this->H5FileId) < 0) {
       vtkErrorMacro(<<"CloseFile failed");
     }
-    this->H5FileId = NULL;
+    this->H5FileId = H5I_BADID;
   }
 }
 //----------------------------------------------------------------------------
@@ -449,6 +449,15 @@ void vtkSteeringWriter::WriteData()
   this->UpdateNumPieces = 1;
 #endif
 
+
+  //
+  // Get the input to write and Set Num-Particles
+  vtkDataSet *input = this->GetInput();
+  if (!input) {
+    vtkWarningMacro(<<"No input to select arrays from ");
+    return;
+  }
+
   //
   // Make sure file is open
   //
@@ -456,12 +465,6 @@ void vtkSteeringWriter::WriteData()
     vtkErrorMacro(<<"Couldn't open file " << this->FileName);
     return;
   }
-
-  //
-  // Get the input to write and Set Num-Particles
-  vtkDataSet *input = this->GetInput();
-  
-  if (!input) return;
 
   std::string name = vtksys::SystemTools::GetFilenameName(this->GroupPath);
 
