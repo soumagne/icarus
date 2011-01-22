@@ -100,6 +100,7 @@ public:
   void SetSteeringValues(const char *name, int numberOfElements, int *values)
   {
     DsmManager->SetSteeringValues(name, numberOfElements, values);
+    DsmManager->WriteSteeredData();
   }
 
   // Description:
@@ -107,6 +108,8 @@ public:
   void SetSteeringValues(const char *name, int numberOfElements, double *values)
   {
     DsmManager->SetSteeringValues(name, numberOfElements, values);
+    DsmManager->WriteSteeredData();
+    this->H5DumpLight();
   }
 
   // Description:
