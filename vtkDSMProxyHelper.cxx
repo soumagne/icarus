@@ -52,6 +52,8 @@ vtkDSMProxyHelper::vtkDSMProxyHelper()
   this->SteeringWriter = NULL;
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
+  // start in blocked mode to protect DSM file from spurious writes
+  this->BlockTraffic   = 1;
 }
 //----------------------------------------------------------------------------
 vtkDSMProxyHelper::~vtkDSMProxyHelper()
@@ -98,8 +100,8 @@ void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter* csi)
 //----------------------------------------------------------------------------
 int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)
 {
-  vtkDSMProxyHelper *op = vtkDSMProxyHelper::SafeDownCast(ob);
-  if (!op)
+  vtkDSMProxyHelper *helper = vtkDSMProxyHelper::SafeDownCast(ob);
+  if (!helper)
     {
     vtkOStrStreamWrapper vtkmsg;
     vtkmsg << "Cannot cast " << ob->GetClassName() << " object to vtkDSMProxyHelper.  "
@@ -113,16 +115,29 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   //
   // We need to use these normal ClientServer set/getters
   //
+  if (!strcmp("BlockTraffic",method)) {
+    helper->BlockTraffic = 1;
+    return 1;
+  }
+
+  if (!strcmp("UnblockTraffic",method)) {
+    helper->BlockTraffic = 0;
+    return 1;
+  }
+
+  //
+  // We need to use these normal ClientServer set/getters
+  //
   if (!strcmp("SetDSMManager",method) && msg.GetNumberOfArguments(0) == 3) {
     vtkDSMManager  *temp0;
     if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDSMManager")) {
-      op->SetDSMManager(temp0);
+      helper->SetDSMManager(temp0);
       return 1;
     }
   }
   if (!strcmp("GetDSMManager",method) && msg.GetNumberOfArguments(0) == 2) {
     vtkDSMManager  *temp20;
-    temp20 = (op)->GetDSMManager();
+    temp20 = (helper)->GetDSMManager();
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
     return 1;
@@ -130,13 +145,13 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   if (!strcmp("SetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 3) {
     vtkSteeringWriter  *temp0;
     if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkSteeringWriter")) {
-      op->SetSteeringWriter(temp0);
+      helper->SetSteeringWriter(temp0);
       return 1;
     }
   }
   if (!strcmp("GetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 2) {
     vtkSteeringWriter  *temp20;
-    temp20 = (op)->GetSteeringWriter();
+    temp20 = (helper)->GetSteeringWriter();
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
     return 1;
@@ -145,7 +160,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   //
   // If there's no DSM manager, then there's no point doing anything below here ....
   //
-  if (op && op->GetDSMManager()) {
+  if (!helper->BlockTraffic && helper && helper->GetDSMManager()) {
     if (!strncmp ("SetSteeringValueInt",method, 19))
     {
       int ival[8];
@@ -162,7 +177,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
       }
       std::cout << ");" << std::endl;
-      op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
+      helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
       return 1;
     }
 
@@ -182,7 +197,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
       }
       std::cout << ");" << std::endl;
-      op->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
+      helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
       return 1;
     }
 
@@ -199,19 +214,19 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       std::cout << ival << ");" << std::endl;
 
       msg.GetArgument(0, nArgs-1, &ival); 
-      op->ArrayTypesMap[param_name] = ival;
+      helper->ArrayTypesMap[param_name] = ival;
       if (ival==0) {
-        op->WriteDataSetArrayData(param_name.c_str(), 
+        helper->WriteDataSetArrayData(param_name.c_str(), 
         "", 
-        op->ArrayTypesMap[param_name],
+        helper->ArrayTypesMap[param_name],
         0);
       }
-      else if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end())
+      else if (helper->ArrayTypesMap.find(std::string(param_name)) != helper->ArrayTypesMap.end())
       {
-        op->WriteDataSetArrayData(param_name.c_str(), 
-        op->ArrayNamesMap[param_name].c_str(), 
-        op->ArrayTypesMap[param_name],
-        op->ArrayFieldMap[param_name]);
+        helper->WriteDataSetArrayData(param_name.c_str(), 
+        helper->ArrayNamesMap[param_name].c_str(), 
+        helper->ArrayTypesMap[param_name],
+        helper->ArrayFieldMap[param_name]);
       }
       return 1;
     }
@@ -229,14 +244,14 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       msg.GetArgument(0, nArgs-2, &ival); 
       std::cout << ival << ", " << text << ")" << std::endl;
 
-      op->ArrayNamesMap[param_name] = text;
-      op->ArrayFieldMap[param_name] = ival;
-      if (op->ArrayTypesMap.find(std::string(param_name)) != op->ArrayTypesMap.end()) 
+      helper->ArrayNamesMap[param_name] = text;
+      helper->ArrayFieldMap[param_name] = ival;
+      if (helper->ArrayTypesMap.find(std::string(param_name)) != helper->ArrayTypesMap.end()) 
       {
-        op->WriteDataSetArrayData(param_name.c_str(), 
-        op->ArrayNamesMap[param_name].c_str(), 
-        op->ArrayTypesMap[param_name],
-        op->ArrayFieldMap[param_name]);
+        helper->WriteDataSetArrayData(param_name.c_str(), 
+        helper->ArrayNamesMap[param_name].c_str(), 
+        helper->ArrayTypesMap[param_name],
+        helper->ArrayFieldMap[param_name]);
       }
       return 1;
     }
@@ -247,9 +262,9 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         int nArgs = msg.GetNumberOfArguments(0);
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
-//        std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
+        std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
         //
-        op->GetDSMManager()->GetSteeringValues(param_name.c_str(), 2, temp);
+        helper->GetDSMManager()->GetSteeringValues(param_name.c_str(), 2, temp);
         resultStream.Reset();
         resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(temp,2) << vtkClientServerStream::End;
         return 1;
@@ -264,13 +279,13 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
         std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
         //
-        op->GetDSMManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
+        helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
         return 1;
       }
     }
 
   }
-  if (vtkDataObjectAlgorithmCommand(arlu, op,method,msg,resultStream))
+  if (vtkDataObjectAlgorithmCommand(arlu, helper,method,msg,resultStream))
     {
     return 1;
     }

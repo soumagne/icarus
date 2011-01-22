@@ -175,6 +175,11 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<DataTypeDomain name=\"input_type\"> <DataType value=\"vtkDataObject\"/> </DataTypeDomain>" << std::endl;
   xmlstring << "<InputArrayDomain name=\"input_array\"/>" << std::endl;
   xmlstring << "</InputProperty>" << std::endl;
+
+  xmlstring << "<Property name=\"BlockTraffic\" command=\"BlockTraffic\"> </Property> " << std::endl;
+  xmlstring << "<Property name=\"UnblockTraffic\" command=\"UnblockTraffic\"> </Property> " << std::endl;
+
+
 /*
   // Add a transform so that widgets can fake/trigger updates
   xmlstring << "<ProxyProperty name=\"Transform\" command=\"SetTransform\">" << std::endl;

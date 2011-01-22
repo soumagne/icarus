@@ -56,6 +56,9 @@ public:
   std::map<std::string, int>         ArrayTypesMap;
   std::map<std::string, std::string> ArrayNamesMap;
   std::map<std::string, int>         ArrayFieldMap;
+
+  int                BlockTraffic;
+
 protected:
     vtkDSMProxyHelper();
    ~vtkDSMProxyHelper();

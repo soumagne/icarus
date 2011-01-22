@@ -642,6 +642,13 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
       }
     }
   }
+  //
+  // Once everythihg is setup, allow traffic to and from the DSM
+  //
+  if (this->Internals->DSMProxyHelper) {
+    std::cout << "Sending an UnblockTraffic Command " << std::endl;
+    this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
+  }
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::StartRemovingServer(pqServer *server)
@@ -959,7 +966,7 @@ void pqDSMViewerPanel::onautoSaveImageChecked(int checked) {
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDSMUpdateInformation()
-{
+{  
   double range[2] = { -1.0, -1.0 };
   vtkSMPropertyHelper timerange(this->Internals->DSMProxyHelper, "TimeRangeInfo");
   timerange.UpdateValueFromServer();
@@ -1268,7 +1275,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         }
 //        this->onWriteSteeringDataToDSM();
         std::cout << "Update complete : calling RequestRemoteChannel " << std::endl;
-        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
+//        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
       }
     }
   }
