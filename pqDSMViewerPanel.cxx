@@ -586,6 +586,9 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
   this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
   this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
+  // after changes are accepted, we must release hold of the DSM
+  this->connect(this->Internals->pqObjectInspector,
+    SIGNAL(postaccept()), this, SLOT(onModificationsAccepted()));
 
 /* 
   //
@@ -1275,7 +1278,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
         }
 //        this->onWriteSteeringDataToDSM();
         std::cout << "Update complete : calling RequestRemoteChannel " << std::endl;
-//        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
+        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
       }
     }
   }
@@ -1374,3 +1377,8 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   }
 }
 //-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onModificationsAccepted()
+{
+  std::cout << "onModificationsAccepted: calling RequestRemoteChannel " << std::endl;
+  this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
+}

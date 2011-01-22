@@ -97,6 +97,7 @@ public slots:
   // triggered by updates from simulation
   void onDSMUpdateInformation();
   void onDSMUpdatePipeline();
+  void onModificationsAccepted();
 
   void TrackSource();
 
