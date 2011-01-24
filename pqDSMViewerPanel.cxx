@@ -1379,6 +1379,6 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onModificationsAccepted()
 {
-  std::cout << "onModificationsAccepted: calling RequestRemoteChannel " << std::endl;
-  this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
+//  std::cout << "onModificationsAccepted: calling RequestRemoteChannel " << std::endl;
+//  this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
 }
