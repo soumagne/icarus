@@ -271,6 +271,21 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       }
     }
 
+    if (!strncmp ("GetSteeringScalarDouble",method, 23)) {
+      if (msg.GetNumberOfArguments(0) == 2) {
+        double temp;
+        int nArgs = msg.GetNumberOfArguments(0);
+        std::string param_name = method;
+        vtksys::SystemTools::ReplaceString(param_name, "GetSteeringScalarDouble", "");
+        std::cout << "Calling GetSteeringScalarDouble(" << param_name.c_str() << ");" << std::endl;
+        //
+        helper->GetDSMManager()->GetSteeringValues(param_name.c_str(), 1, &temp);
+        resultStream.Reset();
+        resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(&temp,1) << vtkClientServerStream::End;
+        return 1;
+      }
+    }
+
     if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
       if (msg.GetNumberOfArguments(0) == 3) {
         int temp;

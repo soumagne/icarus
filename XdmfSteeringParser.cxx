@@ -228,6 +228,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueInt", std::string("SetSteeringValueInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueInt", std::string("GetSteeringValueInt" + name).c_str());
+    vtksys::SystemTools::ReplaceString(xml, "GetSteeringScalarInt", std::string("GetSteeringScalarInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringType", std::string("SetSteeringType" + name).c_str());
     xmlstring << xml << std::endl;
     hintstring += this->BuildWidgetHints(name.c_str(), xnode);
@@ -240,6 +241,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueDouble", std::string("SetSteeringValueDouble" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueDouble", std::string("GetSteeringValueDouble" + name).c_str());
+    vtksys::SystemTools::ReplaceString(xml, "GetSteeringScalarDouble", std::string("GetSteeringScalarDouble" + name).c_str());
     xmlstring << xml << std::endl;
     hintstring += this->BuildWidgetHints(name.c_str(), xnode);
   }
