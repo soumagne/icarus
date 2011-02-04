@@ -62,10 +62,6 @@
       <Property name="SendDSMXML"
                 command="SendDSMXML">
       </Property>
-      
-      <Property name="RequestRemoteChannel"
-                command="RequestRemoteChannel">
-      </Property>
 
       <IntVectorProperty
         name="DsmIsServer"
@@ -187,7 +183,6 @@
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-
       <StringVectorProperty
         name="SteeringCommand"
         command="SetSteeringCommand"
@@ -199,6 +194,10 @@
         command="SetDisabledObject"
         number_of_elements="1">
       </StringVectorProperty>
+
+      <Property name="UpdateSteeredObjects"
+                command="UpdateSteeredObjects">
+      </Property>
 
     </Proxy>
 

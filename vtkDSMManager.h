@@ -137,6 +137,8 @@ public:
   // Set/Unset objects
   void SetDisabledObject(char *objectName) { DsmManager->SetDisabledObject(objectName); }
 
+  void   UpdateSteeredObjects() { DsmManager->UpdateSteeredObjects(); }
+
   // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
   // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
@@ -178,7 +180,6 @@ public:
   void   H5DumpXML() { DsmManager->H5DumpXML(); }
   void   GenerateXMFDescription();
   void   SendDSMXML() { DsmManager->SendDSMXML(); }
-  void   RequestRemoteChannel() { DsmManager->RequestRemoteChannel(); }
 
   // Description:
   // If the .dsm_config file exists in the standard location

@@ -1255,8 +1255,6 @@ void pqDSMViewerPanel::onUpdateTimeout()
       vtkSMPropertyHelper ur(this->Internals->DSMProxy, "DsmUpdateReady");
       ur.UpdateValueFromServer();
       if (ur.GetAsInt() != 0) {
-        this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-        //
         vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
         ig.UpdateValueFromServer();
         std::cout << "DSM Received Update : ";
@@ -1276,9 +1274,12 @@ void pqDSMViewerPanel::onUpdateTimeout()
         else {
           std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
         }
-//        this->onWriteSteeringDataToDSM();
-        std::cout << "Update complete : calling RequestRemoteChannel " << std::endl;
-        this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
+
+        this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
+
+        std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
+        this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+        //
       }
     }
   }
