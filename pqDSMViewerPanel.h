@@ -101,9 +101,6 @@ public slots:
 
   void TrackSource();
 
-  void propModified();
-  void testClicked();
-  void test2Clicked();
   void BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex);
 
 private slots:

@@ -328,12 +328,6 @@ QDockWidget("DSM Manager", p)
 
   this->connect(this->Internals->autoSaveImage,
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
-
-  // 3D widget
-  this->connect(this->Internals->testButton,
-    SIGNAL(clicked()), this, SLOT(testClicked()));
-  this->connect(this->Internals->testButton2,
-    SIGNAL(clicked()), this, SLOT(test2Clicked()));
   
   // DSM Commands
   this->connect(this->Internals->addServerDSM,
@@ -358,10 +352,9 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
-//  this->connect(this->Internals->writeToDSM,
-//      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
   this->connect(this->Internals->writeToDSM,
-      SIGNAL(clicked()), this, SLOT(onWriteSteeringDataToDSM()));
+      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
+
   //
   // Link paraview events to callbacks
   //
@@ -1288,19 +1281,6 @@ void pqDSMViewerPanel::onUpdateTimeout()
   this->UpdateTimer->start();
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::propModified()
-{
-  int x = 0;
-}
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::testClicked()
-{
-}
-//-----------------------------------------------------------------------------
-void pqDSMViewerPanel::test2Clicked()
-{
-}
-//-----------------------------------------------------------------------------
 void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
 {
   if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
@@ -1372,7 +1352,7 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   //
   // Experimental, not working yet
   //
-  vtkSMProxy *p = info->ControlledProxy;
+  //  vtkSMProxy *p = info->ControlledProxy;
   if (info->AbstractWidget->IsA("vtkBoxWidget2")) {
     vtkBoxWidget2::SafeDownCast(info->AbstractWidget)->SetRotationEnabled(0);
   }
@@ -1380,6 +1360,4 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onModificationsAccepted()
 {
-//  std::cout << "onModificationsAccepted: calling RequestRemoteChannel " << std::endl;
-//  this->Internals->DSMProxy->InvokeCommand("RequestRemoteChannel");
 }

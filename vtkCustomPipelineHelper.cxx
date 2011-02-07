@@ -101,7 +101,7 @@ void vtkCustomPipelineHelper::RegisterCustomFilters()
 void vtkCustomPipelineHelper::RegisterCustomFilter(const char *xml)
 {
   vtkSMProxyManager *proxyManager = vtkSMProxyManager::GetProxyManager();
-  static int num = 5000;
+  //  static int num = 5000;
   // Make sure name is unique among filters
   vtkSmartPointer<vtkPVXMLParser> parser = vtkSmartPointer<vtkPVXMLParser>::New();
   parser->Parse(xml);
@@ -184,7 +184,7 @@ void vtkCustomPipelineHelper::UpdateAll()
     }
   }
   else if (csp) {
-    for (int i=0; i<csp->GetNumberOfProxies(); i++) {
+    for (unsigned int i=0; i<csp->GetNumberOfProxies(); i++) {
       vtkSMSourceProxy *sp = vtkSMSourceProxy::SafeDownCast(csp->GetProxy(i));
       if (sp) {
         sp->UpdatePipelineInformation();

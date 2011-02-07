@@ -259,7 +259,6 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     if (!strncmp ("GetSteeringValueDouble",method, 22)) {
       if (msg.GetNumberOfArguments(0) == 2) {
         double temp[2];
-        int nArgs = msg.GetNumberOfArguments(0);
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
         std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
@@ -274,7 +273,6 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     if (!strncmp ("GetSteeringScalarDouble",method, 23)) {
       if (msg.GetNumberOfArguments(0) == 2) {
         double temp;
-        int nArgs = msg.GetNumberOfArguments(0);
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringScalarDouble", "");
         std::cout << "Calling GetSteeringScalarDouble(" << param_name.c_str() << ");" << std::endl;
@@ -289,7 +287,6 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
       if (msg.GetNumberOfArguments(0) == 3) {
         int temp;
-        int nArgs = msg.GetNumberOfArguments(0);
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
         std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
