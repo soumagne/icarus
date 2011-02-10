@@ -135,7 +135,7 @@ ADD_PARAVIEW_PLUGIN(
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
     H5FDdsm
-    hdf5_hl
+    vtkhdf5_hl
     Xdmf
     XdmfGenerator
     ${PARAVIEW_HDF5_LIBRARIES} 
