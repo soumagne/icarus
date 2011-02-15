@@ -107,6 +107,12 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
 )
 
+TARGET_LINK_LIBRARIES(
+  CSCS_DSM
+    ${PARAVIEW_HDF5_LIBRARIES}_hl
+    XdmfGenerator
+)
+
 #--------------------------------------------------
 # XdmfGenerator
 #--------------------------------------------------

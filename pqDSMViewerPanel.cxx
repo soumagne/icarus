@@ -1239,6 +1239,7 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUpdateTimeout()
 {
+  // @TODO replace timer with thread
   // make sure we only get one message at a time.
   this->UpdateTimer->stop();
 
@@ -1248,6 +1249,12 @@ void pqDSMViewerPanel::onUpdateTimeout()
       vtkSMPropertyHelper ur(this->Internals->DSMProxy, "DsmUpdateReady");
       ur.UpdateValueFromServer();
       if (ur.GetAsInt() != 0) {
+//      vtkSMPropertyHelper ic(this->Internals->DSMProxy, "DsmIsConnected");
+//      ic.UpdateValueFromServer();
+//      if (ic.GetAsInt() == 0) {
+//        this->Internals->DSMProxy->InvokeCommand("WaitForConnected");
+//      }
+//      this->Internals->DSMProxy->InvokeCommand("WaitForUpdateReady");
         vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
         ig.UpdateValueFromServer();
         std::cout << "DSM Received Update : ";
@@ -1257,11 +1264,11 @@ void pqDSMViewerPanel::onUpdateTimeout()
         }
         else if (ig.GetAsInt()>=1) {
           std::cout << "Pipeline" << std::endl;;
-          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmDataIsModified");
+          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
           dm.UpdateValueFromServer();
           if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
             this->onDSMUpdatePipeline();
-            this->Internals->DSMProxy->InvokeCommand("ClearDsmDataIsModified");
+            this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
           }
         }
         else {
@@ -1272,6 +1279,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
 
         std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+        this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
         //
       }
     }

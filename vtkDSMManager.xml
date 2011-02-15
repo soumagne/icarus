@@ -5,32 +5,32 @@
   <!-- ================================================================ -->
 
   <ProxyGroup name="icarus_helpers">
-    
+
     <!-- ============================================================== -->
     <!-- DSMManager                                                     -->
     <!-- ============================================================== -->
     <Proxy name="DSMManager" class="vtkDSMManager">
-      
+
       <Property name="CreateDSM"
                 command="CreateDSM">
       </Property>      
-      
+
       <Property name="DestroyDSM"
                 command="DestroyDSM">
       </Property>
-      
+
       <Property name="ClearDSM"
                 command="ClearDSM">
       </Property>
-      
+
       <Property name="ConnectDSM"
                 command="ConnectDSM">
       </Property>
-      
+
       <Property name="DisconnectDSM"
                 command="DisconnectDSM">
       </Property>
-      
+
       <Property name="PublishDSM"
                 command="PublishDSM">
       </Property>
@@ -46,19 +46,19 @@
       <Property name="H5Dump"
                 command="H5Dump">
       </Property>
-      
+
       <Property name="H5DumpLight"
                 command="H5DumpLight">
       </Property>
-      
+
       <Property name="H5DumpXML"
                 command="H5DumpXML">
       </Property>
-      
+
       <Property name="GenerateXMFDescription"
                 command="GenerateXMFDescription">
       </Property>
-      
+
       <Property name="SendDSMXML"
                 command="SendDSMXML">
       </Property>
@@ -69,21 +69,21 @@
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
-      
+
       <IntVectorProperty
         name="DsmCommType"
         command="SetDsmCommType"
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
-      
+
       <IntVectorProperty
         name="DsmLocalBufferSize"
         command="SetLocalBufferSizeMBytes"
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
-      
+
       <StringVectorProperty
         name="PublishedServerHostName"
         command="GetServerHostName"
@@ -91,7 +91,7 @@
         number_of_elements="1">
         <SimpleStringInformationHelper/>
       </StringVectorProperty>
-      
+
       <IntVectorProperty
         name="PublishedServerPort"
         command="GetServerPort"
@@ -100,20 +100,20 @@
         default_values="0">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
-      
+
       <StringVectorProperty
         name="ServerHostName"
         command="SetServerHostName"
         number_of_elements="1">
       </StringVectorProperty>
-      
+
       <IntVectorProperty
         name="ServerPort"
         command="SetServerPort"
         number_of_elements="1"
         default_values="0">
       </IntVectorProperty>
-            
+
       <StringVectorProperty
         name="XMFDescriptionFilePath"
         command="SetXMFDescriptionFilePath"
@@ -127,13 +127,17 @@
       </StringVectorProperty>      
 
       <IntVectorProperty
-        name="AcceptedConnection"
-        command="GetAcceptedConnection"
+        name="DsmIsConnected"
+        command="GetDsmIsConnected"
         information_only="1"
         number_of_elements="1"
         default_values="0">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
+
+      <Property name="WaitForConnected"
+                command="WaitForConnected">
+      </Property>
 
       <IntVectorProperty
         name="DsmUpdateReady"
@@ -148,17 +152,21 @@
                 command="ClearDsmUpdateReady">
       </Property>
 
+      <Property name="WaitForUpdateReady"
+                command="WaitForUpdateReady">
+      </Property>
+
       <IntVectorProperty
-        name="DsmDataIsModified"
-        command="GetDsmDataIsModified"
+        name="DsmIsDataModified"
+        command="GetDsmIsDataModified"
         default_values="0"
         information_only="1"
         number_of_elements="1">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-      <Property name="ClearDsmDataIsModified"
-                command="ClearDsmDataIsModified">
+      <Property name="ClearDsmIsDataModified"
+                command="ClearDsmIsDataModified">
       </Property>
 
       <IntVectorProperty
@@ -172,6 +180,10 @@
 
       <Property name="ClearDsmUpdateLevel"
                 command="ClearDsmUpdateLevel">
+      </Property>
+
+      <Property name="UpdateFinalize"
+                command="UpdateFinalize">
       </Property>
 
       <IntVectorProperty

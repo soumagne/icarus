@@ -90,12 +90,12 @@ void vtkDSMManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {
-    vtkDebugMacro(<<"Running vtkDummyController : replacing it");
+    vtkDebugMacro("Running vtkDummyController : replacing it");
     int flag = 0;
     MPI_Initialized(&flag);
     if (flag == 0)
     {
-      vtkDebugMacro(<<"Running without MPI, attempting to initialize ");
+      vtkDebugMacro("Running without MPI, attempting to initialize ");
       //int argc = 1;
       //const char *argv = "D:\\cmakebuild\\pv-shared\\bin\\RelWithDebInfo\\paraview.exe";
       //char **_argv = (char**) &argv;
@@ -115,7 +115,7 @@ void vtkDSMManager::CheckMPIController()
       }
     }
     //
-    vtkDebugMacro(<<"Setting Global MPI controller");
+    vtkDebugMacro("Setting Global MPI controller");
     vtkSmartPointer<vtkMPIController> controller = vtkSmartPointer<vtkMPIController>::New();
     if (flag == 0) controller->Initialize(NULL, NULL, 1);
     this->SetController(controller);
@@ -182,7 +182,7 @@ void vtkDSMManager::GenerateXMFDescription()
     xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "file.h5");
   }
 
-  vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
+  vtkDebugMacro(xdmfGenerator->GetGeneratedFile());
 
   if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
