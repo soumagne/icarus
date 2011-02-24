@@ -844,7 +844,7 @@ void pqDSMViewerPanel::onSCPause()
         this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->infoCurrentSteeringCommand->insert("paused");
     this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
@@ -860,7 +860,7 @@ void pqDSMViewerPanel::onSCPlay()
         this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->infoCurrentSteeringCommand->insert("resumed");
     this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
