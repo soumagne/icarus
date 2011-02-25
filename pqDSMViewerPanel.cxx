@@ -1102,7 +1102,7 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
     //
     // Registering the proxy as a source will create a pipeline source in the browser
     // temporarily disable error messages to squash one warning about Input being
-    // declared but ot registered with the pipeline browser.
+    // declared but not registered with the pipeline browser.
     //
     char proxyName[256];
     sprintf(proxyName, "DSM-Data-%d", current_time);

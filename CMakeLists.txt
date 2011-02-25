@@ -42,7 +42,7 @@ IF (ParaView_BINARY_DIR)
   INCLUDE_DIRECTORIES(
     ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
     ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
-    ${ParaView_CMAKE_DIR}/../Utilities/hdf5-1.8/hl/src
+    ${ParaView_CMAKE_DIR}/../VTK/Utilities/vtkhdf5/hl/src
   )
 ENDIF(ParaView_BINARY_DIR)
 
@@ -135,7 +135,7 @@ ADD_PARAVIEW_PLUGIN(
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
     H5FDdsm
-    hdf5_hl
+    vtkhdf5_hl
     Xdmf
     XdmfGenerator
     ${PARAVIEW_HDF5_LIBRARIES} 
@@ -152,17 +152,17 @@ SET(USE_H5FD_DSM 1)
 ADD_SUBDIRECTORY(XdmfGenerator)
 
 #--------------------------------------------------
-# Testing
-#--------------------------------------------------
-IF(CSCS_DSM_BUILD_TESTING)
-  ADD_SUBDIRECTORY(Testing)
-ENDIF(CSCS_DSM_BUILD_TESTING)
-
-#--------------------------------------------------
 # Converter
 #--------------------------------------------------
 IF(CSCS_DSM_BUILD_TESTING)
   ADD_SUBDIRECTORY(Tools)
+ENDIF(CSCS_DSM_BUILD_TESTING)
+
+#--------------------------------------------------
+# Testing
+#--------------------------------------------------
+IF(CSCS_DSM_BUILD_TESTING)
+  ADD_SUBDIRECTORY(Testing)
 ENDIF(CSCS_DSM_BUILD_TESTING)
 
 #--------------------------------------------------
