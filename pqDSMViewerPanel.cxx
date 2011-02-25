@@ -441,6 +441,8 @@ void pqDSMViewerPanel::LoadSettings()
   }
   // Force XDMF Generation
   this->Internals->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
+  // Time Information
+  this->Internals->hasTimeInfo->setChecked(settings->value("TimeInformation", 0).toBool());
   // Image Save
   this->Internals->autoSaveImage->setChecked(settings->value("AutoSaveImage", 0).toBool());
   QString imageFilePath = settings->value("ImageFilePath").toString();
@@ -479,6 +481,8 @@ void pqDSMViewerPanel::SaveSettings()
   settings->setValue("DescriptionFilePath", this->Internals->xdmfFilePathLineEdit->text());
   // Force XDMF Generation
   settings->setValue("ForceXDMFGeneration", this->Internals->forceXdmfGeneration->isChecked());
+  // Time Information
+  settings->setValue("TimeInformation", this->Internals->hasTimeInfo->isChecked());
   // Image Save
   settings->setValue("AutoSaveImage", this->Internals->autoSaveImage->isChecked());
   settings->setValue("ImageFilePath", this->Internals->imageFilePath->text());
@@ -840,7 +844,7 @@ void pqDSMViewerPanel::onSCPause()
         this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->infoCurrentSteeringCommand->insert("paused");
     this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
@@ -856,7 +860,7 @@ void pqDSMViewerPanel::onSCPlay()
         this->Internals->DSMProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
+    this->Internals->infoCurrentSteeringCommand->insert("resumed");
     this->Internals->DSMProxy->UpdateVTKObjects();
   }
 }
@@ -1141,31 +1145,33 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
 
   // this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
   
-  double tval[1] = { -1.0 };
-  vtkSMPropertyHelper time(this->Internals->DSMProxyHelper, "TimeInfo");
-  time.UpdateValueFromServer();
-  time.Get(tval,1);
-  if (tval[0]!=-1.0) {
-    // Increment the time as new steps appear.
-    // @TODO : To be replaced with GetTimeStep from reader
-    // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
-    // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
-    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-    foreach (pqAnimationScene *scene, scenes) {
-//      this->Internals->CurrentTimeStep = ++current_time;
-      pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-      timekeeper->setTime(tval[0]);
-      scene->setAnimationTime(tval[0]);
-//      QPair<double, double> trange = timekeeper->getTimeRange();
-//      pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
-//      scene->getProxy()->UpdateProperty("AnimationTime");
-    }
-  } else {
+  if (this->Internals->hasTimeInfo->isChecked()) {
+    double tval[1] = { -1.0 };
+    vtkSMPropertyHelper time(this->Internals->DSMProxyHelper, "TimeInfo");
+    time.UpdateValueFromServer();
+    time.Get(tval,1);
+    if (tval[0]!=-1.0) {
+      // Increment the time as new steps appear.
+      // @TODO : To be replaced with GetTimeStep from reader
+      // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
+      // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
       QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
       foreach (pqAnimationScene *scene, scenes) {
-        scene->setAnimationTime(++current_time);
-        this->Internals->CurrentTimeStep = current_time;
+        //      this->Internals->CurrentTimeStep = ++current_time;
+        pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+        timekeeper->setTime(tval[0]);
+        scene->setAnimationTime(tval[0]);
+        //      QPair<double, double> trange = timekeeper->getTimeRange();
+        //      pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
+        //      scene->getProxy()->UpdateProperty("AnimationTime");
       }
+    }
+  } else {
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      scene->setAnimationTime(++current_time);
+      this->Internals->CurrentTimeStep = current_time;
+    }
   }
   //
   // Trigger a render : if changed, everything should update as usual
@@ -1239,6 +1245,7 @@ void pqDSMViewerPanel::TrackSource()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onUpdateTimeout()
 {
+  // @TODO replace timer with thread
   // make sure we only get one message at a time.
   this->UpdateTimer->stop();
 
@@ -1248,6 +1255,12 @@ void pqDSMViewerPanel::onUpdateTimeout()
       vtkSMPropertyHelper ur(this->Internals->DSMProxy, "DsmUpdateReady");
       ur.UpdateValueFromServer();
       if (ur.GetAsInt() != 0) {
+//      vtkSMPropertyHelper ic(this->Internals->DSMProxy, "DsmIsConnected");
+//      ic.UpdateValueFromServer();
+//      if (ic.GetAsInt() == 0) {
+//        this->Internals->DSMProxy->InvokeCommand("WaitForConnected");
+//      }
+//      this->Internals->DSMProxy->InvokeCommand("WaitForUpdateReady");
         vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
         ig.UpdateValueFromServer();
         std::cout << "DSM Received Update : ";
@@ -1257,11 +1270,11 @@ void pqDSMViewerPanel::onUpdateTimeout()
         }
         else if (ig.GetAsInt()>=1) {
           std::cout << "Pipeline" << std::endl;;
-          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmDataIsModified");
+          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
           dm.UpdateValueFromServer();
           if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
             this->onDSMUpdatePipeline();
-            this->Internals->DSMProxy->InvokeCommand("ClearDsmDataIsModified");
+            this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
           }
         }
         else {
@@ -1272,6 +1285,7 @@ void pqDSMViewerPanel::onUpdateTimeout()
 
         std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+        this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
         //
       }
     }

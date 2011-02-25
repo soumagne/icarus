@@ -72,23 +72,29 @@ public:
   int GetServerPort() { return DsmManager->GetServerPort(); }
 
   // Description:
-  // Only valid after a AcceptConnection call has been made.
-  int GetAcceptedConnection() { return DsmManager->GetAcceptedConnection(); }
+  // Only valid after a PublishDSM call has been made.
+  int GetDsmIsConnected() { return DsmManager->GetDsmIsConnected(); }
+  int WaitForConnected() { return DsmManager->WaitForConnected(); }
 
   // Description:
   // Get/Set the update ready flag which triggers the VTK pipeline update.
   int GetDsmUpdateReady() { return DsmManager->GetDsmUpdateReady(); }
-  void ClearDsmUpdateReady() { return DsmManager->ClearDsmUpdateReady(); }
+  void ClearDsmUpdateReady() { DsmManager->ClearDsmUpdateReady(); }
+  int WaitForUpdateReady() { return DsmManager->WaitForUpdateReady(); }
 
   // Description:
   // Get/Set the display update flag which triggers the update the view
-  int  GetDsmDataIsModified() { return DsmManager->GetDsmIsDataModified(); }
-  void ClearDsmDataIsModified() { DsmManager->ClearDsmIsDataModified(); }
+  int  GetDsmIsDataModified() { return DsmManager->GetDsmIsDataModified(); }
+  void ClearDsmIsDataModified() { DsmManager->ClearDsmIsDataModified(); }
 
   // Description:
   // Get/Set the update level flag
   int  GetDsmUpdateLevel() { return DsmManager->GetDsmUpdateLevel(); }
   void ClearDsmUpdateLevel() { DsmManager->ClearDsmUpdateLevel(); }
+
+  // Description:
+  // Release locks and clean up for next update
+  void UpdateFinalize() { DsmManager->UpdateFinalize(); }
 
   // Description:
   // Set the current given steering command.

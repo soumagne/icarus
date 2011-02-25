@@ -13,38 +13,13 @@ ENDIF(WIN32 AND MSVC)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
-IF(NOT PARAVIEW_LOADED)
-  FIND_PACKAGE(ParaView REQUIRED)
-  INCLUDE(${PARAVIEW_USE_FILE})
-  INCLUDE(${PARAVIEW_VTK_DIR}/VTKConfig.cmake)
-  SET(PARAVIEW_LOADED 1)
-  INCLUDE_DIRECTORIES(${MPI_INCLUDE_PATH})
-ELSE(NOT PARAVIEW_LOADED)
-# This is apparently no longer required
-  IF (PARAVIEW_BUILD_QT_GUI)
-    INCLUDE(${QT_USE_FILE})
-  ENDIF (PARAVIEW_BUILD_QT_GUI)
-  INCLUDE_DIRECTORIES(
-    ${PARAVIEW_INCLUDE_DIRS}
-    ${PARAVIEW_GUI_INCLUDE_DIRS}
-    ${PARAVIEW_KWSYS_INCLUDE_DIRS}
-    ${VTK_INCLUDE_DIR}
-    ${MPI_INCLUDE_PATH}
-  )
-ENDIF(NOT PARAVIEW_LOADED)
-
-IF (ParaView_BINARY_DIR)
-  IF (VTK_USE_SYSTEM_LIBXML2)
-    INCLUDE_DIRECTORIES(${LIBXML2_INCLUDE_DIR})
-  ELSE (VTK_USE_SYSTEM_LIBXML2)
-    INCLUDE_DIRECTORIES(${ParaView_BINARY_DIR}/VTK/Utilities/vtklibxml2)
-  ENDIF (VTK_USE_SYSTEM_LIBXML2)
-  INCLUDE_DIRECTORIES(
-    ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
-    ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src
-    ${ParaView_CMAKE_DIR}/../VTK/Utilities/vtkhdf5/hl/src
-  )
-ENDIF(ParaView_BINARY_DIR)
+FIND_PACKAGE(ParaView REQUIRED)
+INCLUDE(${PARAVIEW_USE_FILE})
+INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
+INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
+INCLUDE_DIRECTORIES(
+  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
+  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -89,7 +64,7 @@ encode_files_as_strings(ENCODED_FILTERS
   ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
 )
 
-MESSAGE("${ENCODED_FILTERS}")
+#MESSAGE("${ENCODED_FILTERS}")
 
 #--------------------------------------------------
 # Define Plugin
@@ -134,20 +109,17 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
-    H5FDdsm
-    vtkhdf5_hl
-    Xdmf
+    ${PARAVIEW_HDF5_LIBRARIES}_hl
     XdmfGenerator
-    ${PARAVIEW_HDF5_LIBRARIES} 
 )
 
 #--------------------------------------------------
 # XdmfGenerator
 #--------------------------------------------------
 # USE_H5FD_DSM must be defined to enable DSM suppport in XdmfGenerator
-IF(VTK_USE_MPI)
+IF(XDMF_BUILD_MPI)
   SET(USE_MPI 1)
-ENDIF(VTK_USE_MPI)
+ENDIF(XDMF_BUILD_MPI)
 SET(USE_H5FD_DSM 1)
 ADD_SUBDIRECTORY(XdmfGenerator)
 
