@@ -22,6 +22,12 @@
       </InputProperty>
 
       <StringVectorProperty
+        name="WriteDescription"
+        command="SetWriteDescription"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
         name="GroupPath"
         command="SetGroupPath"
         number_of_elements="1">

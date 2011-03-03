@@ -196,18 +196,18 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     xmlstring << xml << std::endl;
   }
 
-  int numberOfDataArrayProperties = this->ConfigDOM->FindNumberOfElements("DataArrayProperty", interactionNode);
-  for (int index=0; index < numberOfDataArrayProperties; index++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DataArrayProperty", index, interactionNode);
+  int numberOfDataExportProperties = this->ConfigDOM->FindNumberOfElements("DataExportProperty", interactionNode);
+  for (int index=0; index < numberOfDataExportProperties; index++) {
+    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DataExportProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
     std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
-    vtksys::SystemTools::ReplaceString(xml, "<DataArrayProperty", "<StringVectorProperty");
-    vtksys::SystemTools::ReplaceString(xml, "</DataArrayProperty>", 
-      // none_string=\"No Data Write\"
-      "<ArrayListDomain name=\"array_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </ArrayListDomain> "
-      "<FieldDataDomain name=\"field_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </FieldDataDomain> "
-      "</StringVectorProperty>"
-    );
+    //vtksys::SystemTools::ReplaceString(xml, "<DataExportProperty", "<StringVectorProperty");
+    //vtksys::SystemTools::ReplaceString(xml, "</DataExportProperty>", 
+    //  // none_string=\"No Data Write\"
+    //  "<ArrayListDomain name=\"array_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </ArrayListDomain> "
+    //  "<FieldDataDomain name=\"field_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </FieldDataDomain> "
+    //  "</StringVectorProperty>"
+    //);
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringArray", std::string("SetSteeringArray" + name).c_str());
     xmlstring << xml << std::endl;
   }

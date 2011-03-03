@@ -69,14 +69,16 @@ int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkDSMProxyHelper::WriteDataSetArrayData(const char *prop, const char *arrayname, int atype, int ftype)
+void vtkDSMProxyHelper::WriteDataSetArrayData(const char *desc)
 {
   if (this->SteeringWriter && this->SteeringWriter->GetDSMManager()) {
-    std::cout << prop << " " << arrayname << " " << "/Mesh_Nodes#1/NewXYZ" << atype << std::endl;
+    this->SteeringWriter->SetWriteDescription(desc);
+/*
     this->SteeringWriter->SetArrayName(arrayname);
     this->SteeringWriter->SetArrayType(atype);
     this->SteeringWriter->SetFieldType(ftype);
     this->SteeringWriter->SetGroupPath("/Mesh_Nodes#1/NewXYZ");
+*/
     this->SteeringWriter->WriteData();
   }
   else {
@@ -201,58 +203,18 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       return 1;
     }
 
-    if (!strncmp ("SetSteeringType",method, 15))
-    {
-      int ival;
-      int nArgs = msg.GetNumberOfArguments(0);
-      //
-      std::string param_name = method;
-      vtksys::SystemTools::ReplaceString(param_name, "SetSteeringType", "");
-      vtksys::SystemTools::ReplaceString(param_name, "Type", "");
-      std::cout << "Calling SetSteeringType(" << param_name.c_str() << ", ";
-      msg.GetArgument(0, nArgs-1, &ival); 
-      std::cout << ival << ");" << std::endl;
-
-      msg.GetArgument(0, nArgs-1, &ival); 
-      helper->ArrayTypesMap[param_name] = ival;
-      if (ival==0) {
-        helper->WriteDataSetArrayData(param_name.c_str(), 
-        "", 
-        helper->ArrayTypesMap[param_name],
-        0);
-      }
-      else if (helper->ArrayTypesMap.find(std::string(param_name)) != helper->ArrayTypesMap.end())
-      {
-        helper->WriteDataSetArrayData(param_name.c_str(), 
-        helper->ArrayNamesMap[param_name].c_str(), 
-        helper->ArrayTypesMap[param_name],
-        helper->ArrayFieldMap[param_name]);
-      }
-      return 1;
-    }
-
     if (!strncmp ("SetSteeringArray",method, 16))
     {
       char *text;
-      int ival;
       int nArgs = msg.GetNumberOfArguments(0);
       //
       std::string param_name = method;
       vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
       std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
       msg.GetArgument(0, nArgs-1, &text); 
-      msg.GetArgument(0, nArgs-2, &ival); 
-      std::cout << ival << ", " << text << ")" << std::endl;
-
-      helper->ArrayNamesMap[param_name] = text;
-      helper->ArrayFieldMap[param_name] = ival;
-      if (helper->ArrayTypesMap.find(std::string(param_name)) != helper->ArrayTypesMap.end()) 
-      {
-        helper->WriteDataSetArrayData(param_name.c_str(), 
-        helper->ArrayNamesMap[param_name].c_str(), 
-        helper->ArrayTypesMap[param_name],
-        helper->ArrayFieldMap[param_name]);
-      }
+      std::cout << text << ")" << std::endl;
+      helper->GetSteeringWriter()->SetWriteDescription(text);
+//      helper->WriteDataSetArrayData(text);
       return 1;
     }
 

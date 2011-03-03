@@ -100,6 +100,7 @@
 #include "pqObjectInspectorWidget.h"
 #include "pqNamedWidgets.h"
 #include "pq3DWidget.h"
+#include "pqDataExportWidget.h"
 //
 #include "pq3DWidgetInterface.h"
 #include "pqBoxWidget.h"
@@ -254,53 +255,6 @@ public:
   vtkSmartPointer<vtkSMProxy>              TransformProxy;
 };
 //-----------------------------------------------------------------------------
-class dsmStandardWidgets : public pq3DWidgetInterface
-{
-public:
-  pq3DWidget* newWidget(const QString& name, vtkSMProxy* referenceProxy, vtkSMProxy* controlledProxy)
-  {
-    pq3DWidget *widget = 0;
-    if (name == "Plane")
-      {
-      widget = new pqImplicitPlaneWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Box")
-      {
-      widget = new pqBoxWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Handle")
-      {
-      widget = new pqHandleWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "PointSource")
-      {
-      widget = new pqPointSourceWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "LineSource")
-      {
-      widget = new pqLineSourceWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Line")
-      {
-      widget = new pqLineWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Distance")
-      {
-      widget = new pqDistanceWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Sphere")
-      {
-      widget = new pqSphereWidget(referenceProxy, controlledProxy, 0);
-      }
-    else if (name == "Spline")
-      {
-      widget = new pqSplineWidget(referenceProxy, controlledProxy, 0);
-      }
-    return widget;
-    }
-};
-//-----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
 pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
@@ -585,7 +539,10 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
   // after changes are accepted, we must release hold of the DSM
   this->connect(this->Internals->pqObjectInspector,
-    SIGNAL(postaccept()), this, SLOT(onModificationsAccepted()));
+    SIGNAL(preaccept()), this, SLOT(onPreAccept()));
+  // after changes are accepted, we must release hold of the DSM
+  this->connect(this->Internals->pqObjectInspector,
+    SIGNAL(postaccept()), this, SLOT(onPostAccept()));
 
 /* 
   //
@@ -643,9 +600,10 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     }
   }
   //
-  // Once everythihg is setup, allow traffic to and from the DSM
+  // Once everything is setup, allow traffic to and from the DSM
   //
-  if (this->Internals->DSMProxyHelper) {
+  if (this->Internals->DSMProxyHelper) { 
+    this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
     std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
   }
@@ -1372,6 +1330,31 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onModificationsAccepted()
+void pqDSMViewerPanel::onPreAccept()
 {
+  // Get Source objects for DataExportWidgets
+  // @TODO currently we only support one - if we wanted more, we'd
+  // need a separate writer for each I think.
+  QList<pqDataExportWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pqDataExportWidget*>();
+  for (int i=0; i<widgets.size(); i++) {
+    pqDataExportWidget* widget = widgets[i];
+    vtkSMProxy* controlledProxy = widget->getControlledProxy();
+    //
+    // make sure the Steering Writer knows where to get data from
+    //
+    if (this->Internals->SteeringWriter) {
+      vtkSMPropertyHelper ip(this->Internals->SteeringWriter, "Input");
+      ip.Set(controlledProxy,0);
+      vtkSMPropertyHelper svp(this->Internals->SteeringWriter, "WriteDescription");
+      svp.Set(widget->value().toStdString().c_str());
+      this->Internals->SteeringWriter->UpdateVTKObjects();
+      this->Internals->SteeringWriter->UpdatePipeline();
+    }
+  }
+  this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onPostAccept()
+{
+
 }

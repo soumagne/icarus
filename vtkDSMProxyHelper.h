@@ -51,11 +51,7 @@ public:
   virtual void SetSteeringWriter(vtkSteeringWriter*);
   vtkGetObjectMacro(SteeringWriter, vtkSteeringWriter)
 
-  void WriteDataSetArrayData(const char *prop, const char *arrayname, int atype, int ftype);
-
-  std::map<std::string, int>         ArrayTypesMap;
-  std::map<std::string, std::string> ArrayNamesMap;
-  std::map<std::string, int>         ArrayFieldMap;
+  void WriteDataSetArrayData(const char *desc);
 
   int                BlockTraffic;
 

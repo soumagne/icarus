@@ -60,6 +60,10 @@
 // vtksys
 //
 #include <vtksys/SystemTools.hxx>
+#include <vtksys/RegularExpression.hxx>
+#include <vtksys/ios/iostream>
+#include <vtksys/ios/sstream>
+#include <vtksys/stl/stdexcept>
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkSteeringWriter, "$Revision$");
 vtkStandardNewMacro(vtkSteeringWriter);
@@ -75,6 +79,7 @@ vtkSteeringWriter::vtkSteeringWriter()
   //
   this->DSMManager = NULL;
   this->ArrayName  = NULL;
+  this->WriteDescription = NULL;
   //
   this->TimeValue                 = 0.0;
   this->NumberOfParticles         = 0;
@@ -83,6 +88,7 @@ vtkSteeringWriter::vtkSteeringWriter()
   this->GroupPath                 = NULL;
   this->UpdatePiece               = -1;
   this->UpdateNumPieces           = -1;
+  this->WriteFloatAsDouble        = 1;
 #ifdef VTK_USE_MPI
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -133,20 +139,24 @@ vtkPointSet* vtkSteeringWriter::GetInput(int port)
   return vtkPointSet::SafeDownCast(vtkAbstractParticleWriter::GetInput(port));
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::CloseFile()
+void vtkSteeringWriter::CloseFile() 
 {
-  if (this->H5GroupId != H5I_BADID) {
-    if (H5Gclose(this->H5GroupId) < 0) {
-      vtkErrorMacro(<<"CloseGroup failed");
-    }
-    this->H5GroupId = H5I_BADID;
-  }
-
+  this->CloseGroup(this->H5GroupId);
+  //
   if (this->H5FileId != H5I_BADID) {
     if (H5Fclose(this->H5FileId) < 0) {
       vtkErrorMacro(<<"CloseFile failed");
     }
     this->H5FileId = H5I_BADID;
+  }
+}
+//----------------------------------------------------------------------------
+void vtkSteeringWriter::CloseGroup(hid_t gid) {
+  if (this->H5GroupId != H5I_BADID) {
+    if (H5Gclose(this->H5GroupId) < 0) {
+      vtkErrorMacro(<<"CloseGroup failed");
+    }
+    this->H5GroupId = H5I_BADID;
   }
 }
 //----------------------------------------------------------------------------
@@ -204,8 +214,7 @@ int vtkSteeringWriter::OpenFile()
   H5Pclose(dsmFapl);
   dsmFapl = H5I_BADID;
   //
-  std::string path = vtksys::SystemTools::GetFilenamePath(this->GroupPath);
-  this->OpenGroup(path.c_str());
+  std::string path = vtksys::SystemTools::GetFilenamePath(this->GroupPathInternal.c_str());
 
 /*
   std::vector<std::string> dirs;
@@ -222,7 +231,7 @@ int vtkSteeringWriter::OpenFile()
   this->H5GroupId = location;
 */
   if (!this->H5GroupId) {
-    vtkErrorMacro(<< "Initialize: Could not open group " << this->GroupPath);
+    vtkErrorMacro(<< "Initialize: Could not open group " << this->GroupPathInternal.c_str());
     return 0;
   }
   return 1;
@@ -360,7 +369,12 @@ void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata)
 
     switch (finalData->GetDataType()) {
     case VTK_FLOAT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name, finalData);
+      if (0 && this->WriteFloatAsDouble) {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
+      }
+      else {
+        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name, finalData);
+      }
       break;
     case VTK_DOUBLE:
       H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
@@ -458,6 +472,50 @@ void vtkSteeringWriter::WriteData()
     return;
   }
 
+  std::vector<std::string> GroupPaths;
+  std::vector<std::string> ArrayNames;
+  std::vector<int>         ArrayTypes;
+  //
+  if (this->WriteDescription) {
+    std::string str = this->WriteDescription;
+    vtksys::RegularExpression regex_f(":full_path:([^:]*):");
+    vtksys::RegularExpression regex_g(":geometry_path:([^:]*):");
+    vtksys::RegularExpression regex_t(":topology_path:([^:]*):");
+    vtksys::RegularExpression regex_a(":field_path:([^:]*):");
+    regex_f.find(str.c_str());
+    regex_g.find(str.c_str());
+    regex_t.find(str.c_str());
+    regex_a.find(str.c_str());
+    //
+    if (regex_f.match(1).size()>0) {
+      // @TODO : Fix this to write the entire dataset
+    }
+    // points/geometry
+    if (regex_g.match(1).size()>0) {
+      ArrayTypes.push_back(0);
+      GroupPaths.push_back(vtksys::SystemTools::GetFilenamePath(regex_g.match(1)));
+      ArrayNames.push_back(vtksys::SystemTools::GetFilenameName(regex_g.match(1)));
+    }
+    // topology/connectivity
+    if (regex_t.match(1).size()>0) {
+      ArrayTypes.push_back(1);
+      GroupPaths.push_back(vtksys::SystemTools::GetFilenamePath(regex_t.match(1)));
+      ArrayNames.push_back(vtksys::SystemTools::GetFilenameName(regex_t.match(1)));
+    }
+    // scalar/vector
+    if (regex_a.match(1).size()>0) {
+      // @TODO : make sure this handles the array by name
+      ArrayTypes.push_back(2);
+      GroupPaths.push_back(vtksys::SystemTools::GetFilenamePath(regex_a.match(1)));
+      ArrayNames.push_back(vtksys::SystemTools::GetFilenameName(regex_a.match(1)));
+    }
+  }
+  else {
+    ArrayTypes.push_back(this->ArrayType);
+    ArrayNames.push_back(this->ArrayName);
+    GroupPaths.push_back(this->GroupPath);
+  }
+
   //
   // Make sure file is open
   //
@@ -466,48 +524,56 @@ void vtkSteeringWriter::WriteData()
     return;
   }
 
-  std::string name = vtksys::SystemTools::GetFilenameName(this->GroupPath);
+  for (int i=0; i<ArrayTypes.size(); i++) {
+    this->GroupPathInternal = GroupPaths[i];
+    this->ArrayTypeInternal = ArrayTypes[i];
+    this->ArrayNameInternal = ArrayNames[i];
 
-  if (this->ArrayType == 0 && input->IsA("vtkPointSet")) {
-    //
-    // Write coordinate data
-    //
-    vtkSmartPointer<vtkPoints> points = vtkPointSet::SafeDownCast(input)->GetPoints();
-    if (points && points->GetData()) {
-      points->GetData()->SetName("Coords");
-      this->WriteDataArray(name.c_str(), points->GetData());
-    }
-  }
+    this->OpenGroup(GroupPathInternal.c_str());
 
-  if (this->ArrayType == 1 && input->IsA("vtkUnstructuredGrid")) {
-    //
-    // Write connectivity data
-    //
-    vtkSmartPointer<vtkUnstructuredGrid> ug = vtkUnstructuredGrid::SafeDownCast(input);
-    vtkSmartPointer<vtkCellArray> cells = ug->GetCells();
-    if (ug && cells) {
-      cells->GetData()->SetName("Connectivity");
-      this->WriteDataArray(name.c_str(), cells->GetData());
+    if (this->ArrayTypeInternal == 0 && input->IsA("vtkPointSet")) {
+      //
+      // Write coordinate data
+      //
+      vtkSmartPointer<vtkPoints> points = vtkPointSet::SafeDownCast(input)->GetPoints();
+      if (points && points->GetData()) {
+        points->GetData()->SetName("Coords");
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), points->GetData());
+      }
     }
-  }
 
-  if (this->ArrayType == 2 && input->IsA("vtkDataSet")) {
-    if (this->FieldType==0) {
+    if (this->ArrayTypeInternal == 1 && input->IsA("vtkUnstructuredGrid")) {
       //
-      // Write point data
+      // Write connectivity data
       //
-      vtkPointData *pd = input->GetPointData();
-      vtkDataArray *data = pd->GetArray(this->ArrayName);
-      this->WriteDataArray(name.c_str(), data);
+      vtkSmartPointer<vtkUnstructuredGrid> ug = vtkUnstructuredGrid::SafeDownCast(input);
+      vtkSmartPointer<vtkCellArray> cells = ug->GetCells();
+      if (ug && cells) {
+        cells->GetData()->SetName("Connectivity");
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), cells->GetData());
+      }
     }
-    if (this->FieldType==1) {
-      //
-      // Write cell data
-      //
-      vtkCellData *cd = input->GetCellData();
-      vtkDataArray *data = cd->GetArray(this->ArrayName);
-      this->WriteDataArray(name.c_str(), data);
+
+    if (this->ArrayTypeInternal == 2 && input->IsA("vtkDataSet")) {
+      if (this->FieldType==0) {
+        //
+        // Write point data
+        //
+        vtkPointData *pd = input->GetPointData();
+        vtkDataArray *data = pd->GetArray(this->ArrayName);
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), data);
+      }
+      if (this->FieldType==1) {
+        //
+        // Write cell data
+        //
+        vtkCellData *cd = input->GetCellData();
+        vtkDataArray *data = cd->GetArray(this->ArrayName);
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), data);
+      }
     }
+
+    this->CloseGroup(this->H5GroupId);
   }
 
   this->CloseFile();
