@@ -28,8 +28,8 @@
         <rect>
          <x>0</x>
          <y>0</y>
-         <width>428</width>
-         <height>679</height>
+         <width>444</width>
+         <height>777</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -617,69 +617,33 @@
                  </property>
                 </widget>
                </item>
-               <item row="0" column="3">
+              </layout>
+             </widget>
+            </item>
+            <item>
                 <widget class="QLineEdit" name="infoCurrentSteeringCommand">
                  <property name="readOnly">
                   <bool>true</bool>
                  </property>
                 </widget>
                </item>
-              </layout>
-             </widget>
-            </item>
             <item>
              <widget class="QTreeWidget" name="dsmArrayTreeWidget">
-              <property name="enabled">
-               <bool>true</bool>
-              </property>
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="MinimumExpanding">
+               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
               </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>16</height>
-               </size>
+              <column>
+               <property name="text">
+                <string>Cell/Point Array Status</string>
               </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777215</height>
-               </size>
-              </property>
-              <property name="baseSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
+              </column>
              </widget>
             </item>
             <item>
-             <layout class="QVBoxLayout" name="generatedLayout" stretch="0">
-              <property name="sizeConstraint">
-               <enum>QLayout::SetNoConstraint</enum>
-              </property>
-              <item>
-               <spacer name="verticalSpacer_3">
-                <property name="orientation">
-                 <enum>Qt::Vertical</enum>
-                </property>
-                <property name="sizeType">
-                 <enum>QSizePolicy::Expanding</enum>
-                </property>
-                <property name="sizeHint" stdset="0">
-                 <size>
-                  <width>20</width>
-                  <height>40</height>
-                 </size>
-                </property>
-               </spacer>
-              </item>
-             </layout>
+             <layout class="QVBoxLayout" name="generatedLayout"/>
             </item>
            </layout>
           </widget>

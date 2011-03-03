@@ -47,6 +47,7 @@
 #include "vtkFloatArray.h"
 #include "vtkDoubleArray.h"
 #include "vtkCellArray.h"
+#include "vtkCleanUnstructuredGrid.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -542,19 +543,41 @@ void vtkSteeringWriter::WriteData()
       }
     }
 
-    if (this->ArrayTypeInternal == 1 && input->IsA("vtkUnstructuredGrid")) {
+    if (this->ArrayTypeInternal == 1) {
       //
       // Write connectivity data
       //
-      vtkSmartPointer<vtkUnstructuredGrid> ug = vtkUnstructuredGrid::SafeDownCast(input);
-      vtkSmartPointer<vtkCellArray> cells = ug->GetCells();
-      if (ug && cells) {
-        cells->GetData()->SetName("Connectivity");
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), cells->GetData());
+      vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::SafeDownCast(input);
+      vtkSmartPointer<vtkCellArray> cells = grid ? grid->GetCells() : NULL;
+      vtkSmartPointer<vtkIdTypeArray> idarray = cells ? cells->GetData() : NULL;
+      if (!grid && input->IsA("vtkPolyData")) {
+        vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
+        CtoG->SetInput(input);
+        CtoG->Update();
+        grid = vtkUnstructuredGrid::SafeDownCast(CtoG->GetOutput());
+        CtoG->SetInput(NULL);
+        cells = grid ? grid->GetCells() : NULL;
+        vtkSmartPointer<vtkIntArray> intarray = vtkSmartPointer<vtkIntArray>::New();
+        intarray->SetNumberOfComponents(3);
+        intarray->SetNumberOfTuples(cells->GetNumberOfCells());
+        vtkIdType *cellptr = cells->GetPointer();
+        int *triptr = intarray->GetPointer(0);
+        //
+        vtkIdType tindex=0, cindex = 0;
+        for (vtkIdType i=0; i<cells->GetNumberOfCells(); i++) {
+          vtkIdType N = cellptr[cindex++];
+          for (vtkIdType p=0; p<N; p++) {
+            triptr[tindex++] = cellptr[cindex++];
+          }
+        }
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray);
+      }
+      else if (idarray) {
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), idarray);
       }
     }
 
-    if (this->ArrayTypeInternal == 2 && input->IsA("vtkDataSet")) {
+    if (this->ArrayTypeInternal == 2) {
       if (this->FieldType==0) {
         //
         // Write point data
