@@ -48,6 +48,7 @@
 #include "vtkDoubleArray.h"
 #include "vtkCellArray.h"
 #include "vtkCleanUnstructuredGrid.h"
+#include "vtkTriangleFilter.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -551,8 +552,10 @@ void vtkSteeringWriter::WriteData()
       vtkSmartPointer<vtkCellArray> cells = grid ? grid->GetCells() : NULL;
       vtkSmartPointer<vtkIdTypeArray> idarray = cells ? cells->GetData() : NULL;
       if (!grid && input->IsA("vtkPolyData")) {
+        vtkSmartPointer<vtkTriangleFilter> triF = vtkSmartPointer<vtkTriangleFilter>::New();
         vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
-        CtoG->SetInput(input);
+        triF->SetInput(input);
+        CtoG->SetInputConnection(triF->GetOutputPort(0));
         CtoG->Update();
         grid = vtkUnstructuredGrid::SafeDownCast(CtoG->GetOutput());
         CtoG->SetInput(NULL);
@@ -567,7 +570,7 @@ void vtkSteeringWriter::WriteData()
         for (vtkIdType i=0; i<cells->GetNumberOfCells(); i++) {
           vtkIdType N = cellptr[cindex++];
           for (vtkIdType p=0; p<N; p++) {
-            triptr[tindex++] = cellptr[cindex++];
+            triptr[tindex++] = 1+cellptr[cindex++];
           }
         }
         this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray);
