@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>463</width>
-    <height>899</height>
+    <height>808</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -29,7 +29,7 @@
          <x>0</x>
          <y>0</y>
          <width>445</width>
-         <height>859</height>
+         <height>768</height>
         </rect>
        </property>
        <layout class="QVBoxLayout" name="verticalLayout_4">
@@ -584,6 +584,12 @@
            <layout class="QVBoxLayout" name="verticalLayout_5">
             <item>
              <widget class="QGroupBox" name="standardControlBox">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
               <property name="title">
                <string>Standard Controls</string>
               </property>
@@ -633,7 +639,10 @@
                <item row="0" column="2">
                 <widget class="QCheckBox" name="acceptIsPlay">
                  <property name="text">
-                  <string>Accept resumes</string>
+                  <string>Resume on 'Apply'</string>
+                 </property>
+                 <property name="checked">
+                  <bool>true</bool>
                  </property>
                 </widget>
                </item>
@@ -643,14 +652,14 @@
             <item>
              <layout class="QVBoxLayout" name="generatedLayout" stretch="">
               <property name="sizeConstraint">
-               <enum>QLayout::SetMaximumSize</enum>
+               <enum>QLayout::SetMinAndMaxSize</enum>
               </property>
              </layout>
             </item>
             <item>
              <widget class="QTreeWidget" name="dsmArrayTreeWidget">
               <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+               <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
                 <horstretch>0</horstretch>
                 <verstretch>0</verstretch>
                </sizepolicy>
@@ -658,13 +667,13 @@
               <property name="minimumSize">
                <size>
                 <width>0</width>
-                <height>16</height>
+                <height>32</height>
                </size>
               </property>
               <property name="maximumSize">
                <size>
                 <width>16777215</width>
-                <height>16777215</height>
+                <height>16777214</height>
                </size>
               </property>
               <column>

@@ -531,78 +531,48 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   //
   // create an object inspector to manage the settings
   //
-  this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->devTab);
-  this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
-  this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
-  this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
-  this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
-  this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
-  // after changes are accepted, we must release hold of the DSM
-  this->connect(this->Internals->pqObjectInspector,
-    SIGNAL(preaccept()), this, SLOT(onPreAccept()));
-  // after changes are accepted, we must release hold of the DSM
-  this->connect(this->Internals->pqObjectInspector,
-    SIGNAL(postaccept()), this, SLOT(onPostAccept()));
+  if (this->Internals->pqDSMProxyHelper) {
+    this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->devTab);
+    this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
+    this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
+    this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
+    this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
+    this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
+    this->Internals->pqObjectInspector->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    // after changes are accepted, we must release hold of the DSM
+    this->connect(this->Internals->pqObjectInspector,
+      SIGNAL(preaccept()), this, SLOT(onPreAccept()));
+    // after changes are accepted, we must release hold of the DSM
+    this->connect(this->Internals->pqObjectInspector,
+      SIGNAL(postaccept()), this, SLOT(onPostAccept()));
 
-/* 
-  //
-  // Do any of the DSMHelperProxy properties have widgets attached
-  //
-  // Obsolete : We do this in the parser now : keep for future use : just in case
-  //
-  vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
-  while (!iter->IsAtEnd()) {
-    vtkPVXMLElement *h = iter->GetProperty()->GetHints();
-    int N = h ? h->GetNumberOfNestedElements() : 0;
-    if (N>0) {
-      //
-      SteeringGUIWidgetInfo &info = SteeringWidgetMap[iter->GetKey()];
-      info.Property = iter->GetProperty();
-      //
-      for (int i=0; i<N; i++) {
-        vtkPVXMLElement *n = h->GetNestedElement(i);
-        if (n->GetName()==std::string("AssociatedGrid")) {
-          this->Internals->DSMProxyHelper;
-          info.AssociatedGrid = n->GetAttribute("name");
-        }
-        if (n->GetName()==std::string("WidgetControl")) {
-          info.WidgetType = n->GetAttribute("name");
+    //
+    // Get info about pqWidgets and SMProxy object that are bound to steering controls
+    //
+    // debug : this->Internals->pqObjectInspector->dumpObjectTree();
+    SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
+    // Turn off visibility for all 3D widgets initially
+    QList<pq3DWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pq3DWidget*>();
+    for (int i=0; i<widgets.size(); i++) {
+      pq3DWidget* widget = widgets[i];
+      widget->hideWidget();
+      vtkSMProxy* controlledProxy = widget->getControlledProxy();
+      vtkSMProxy* referenceProxy = widget->getReferenceProxy();
+      for (SteeringGUIWidgetMap::iterator it=SteeringWidgetMap.begin(); it!=SteeringWidgetMap.end(); ++it) 
+      {
+        const char *propertyname = it->first.c_str();
+        if (controlledProxy->GetProperty(propertyname)) {
+          it->second.ControlledProxy = controlledProxy;
+          it->second.ReferenceProxy  = referenceProxy;
+          it->second.pqWidget        = widget;
+          it->second.WidgetProxy     = widget->getWidgetProxy();
+          it->second.AbstractWidget  = widget->getWidgetProxy()->GetWidget();
         }
       }
     }
-    iter->Next();
-  }
-  iter->Delete();
-*/
-  
-  //
-  // Get info about pqWidgets and SMProxy object that are bound to steering controls
-  //
-  // debug : this->Internals->pqObjectInspector->dumpObjectTree();
-  SteeringGUIWidgetMap &SteeringWidgetMap = this->Internals->SteeringParser->GetSteeringWidgetMap();
-  // Turn off visibility for all 3D widgets initially
-  QList<pq3DWidget*> widgets = this->Internals->pqObjectInspector->findChildren<pq3DWidget*>();
-  for (int i=0; i<widgets.size(); i++) {
-    pq3DWidget* widget = widgets[i];
-    widget->hideWidget();
-    vtkSMProxy* controlledProxy = widget->getControlledProxy();
-    vtkSMProxy* referenceProxy = widget->getReferenceProxy();
-    for (SteeringGUIWidgetMap::iterator it=SteeringWidgetMap.begin(); it!=SteeringWidgetMap.end(); ++it) 
-    {
-      const char *propertyname = it->first.c_str();
-      if (controlledProxy->GetProperty(propertyname)) {
-        it->second.ControlledProxy = controlledProxy;
-        it->second.ReferenceProxy  = referenceProxy;
-        it->second.pqWidget        = widget;
-        it->second.WidgetProxy     = widget->getWidgetProxy();
-        it->second.AbstractWidget  = widget->getWidgetProxy()->GetWidget();
-      }
-    }
-  }
-  //
-  // Once everything is setup, allow traffic to and from the DSM
-  //
-  if (this->Internals->DSMProxyHelper) { 
+    //
+    // Once everything is setup, allow traffic to and from the DSM
+    //
     this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
     std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
@@ -891,12 +861,12 @@ void pqDSMViewerPanel::RunScript()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onWriteSteeringDataToDSM()
 {
+/*
   if (this->DSMReady()) {
     if (!this->Internals->ActiveSourceProxy) {
       vtkGenericWarningMacro(<<"Nothing to Write");
       return;
     }
-
 
     pqSMAdaptor::setInputProperty(
       this->Internals->SteeringWriter->GetProperty("Input"),
@@ -907,6 +877,7 @@ void pqDSMViewerPanel::onWriteSteeringDataToDSM()
     this->Internals->SteeringWriter->UpdateVTKObjects();
     this->Internals->SteeringWriter->UpdatePipeline();
   }
+*/
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::SaveSnapshot() {
@@ -1178,7 +1149,8 @@ void pqDSMViewerPanel::TrackSource()
         // This updates the ArrayListDomain domain 
         ip->UpdateDependentDomains();
       }
-      //
+/*
+      // Obsolete : Steering Writer is now driven in pre-post Accept
       // make sure the Steering Writer knows where to get data from
       //
       if (this->Internals->SteeringWriter) {
@@ -1189,6 +1161,7 @@ void pqDSMViewerPanel::TrackSource()
           this->Internals->ActiveSourcePort
         );
       }
+*/
     }
     else {
       this->Internals->ActiveSourceProxy = NULL;
@@ -1332,6 +1305,17 @@ void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPreAccept()
 {
+  //
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onPostAccept()
+{
+  // 
+  // @TODO Find a way to 'accept' all 3D widgets so that we can
+  // trigger the writer with the correct values
+  //
+  pqActiveObjects::instance().activeView()->forceRender();
+
   // Get Source objects for DataExportWidgets
   // @TODO currently we only support one - if we wanted more, we'd
   // need a separate writer for each I think.
@@ -1354,7 +1338,36 @@ void pqDSMViewerPanel::onPreAccept()
   this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onPostAccept()
-{
+// Useful snippet below, please do not delete.
+//-----------------------------------------------------------------------------
 
-}
+/* 
+  //
+  // Do any of the DSMHelperProxy properties have widgets attached
+  //
+  // Obsolete : We do this in the parser now : keep for future use : just in case
+  //
+  vtkSMPropertyIterator *iter=this->Internals->DSMProxyHelper->NewPropertyIterator();
+  while (!iter->IsAtEnd()) {
+    vtkPVXMLElement *h = iter->GetProperty()->GetHints();
+    int N = h ? h->GetNumberOfNestedElements() : 0;
+    if (N>0) {
+      //
+      SteeringGUIWidgetInfo &info = SteeringWidgetMap[iter->GetKey()];
+      info.Property = iter->GetProperty();
+      //
+      for (int i=0; i<N; i++) {
+        vtkPVXMLElement *n = h->GetNestedElement(i);
+        if (n->GetName()==std::string("AssociatedGrid")) {
+          this->Internals->DSMProxyHelper;
+          info.AssociatedGrid = n->GetAttribute("name");
+        }
+        if (n->GetName()==std::string("WidgetControl")) {
+          info.WidgetType = n->GetAttribute("name");
+        }
+      }
+    }
+    iter->Next();
+  }
+  iter->Delete();
+*/
