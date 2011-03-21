@@ -43,6 +43,7 @@ class vtkDSMManager;
 class vtkPointSet;
 class vtkDataArray;
 class vtkPointData;
+class vtkCellArray;
 
 class VTK_EXPORT vtkSteeringWriter : public vtkAbstractParticleWriter
 {
@@ -128,6 +129,7 @@ protected:
   void CopyFromVector(int offset, vtkDataArray *source, vtkDataArray *dest);
   void H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray);
   void WriteDataArray(const char *name, vtkDataArray *array);
+  void WriteConnectivityTriangles(vtkCellArray *cells);
 
   // Overide information to only permit PolyData as input
   virtual int FillInputPortInformation(int, vtkInformation *info);

@@ -550,7 +550,6 @@ void vtkSteeringWriter::WriteData()
       //
       vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::SafeDownCast(input);
       vtkSmartPointer<vtkCellArray> cells = grid ? grid->GetCells() : NULL;
-      vtkSmartPointer<vtkIdTypeArray> idarray = cells ? cells->GetData() : NULL;
       if (!grid && input->IsA("vtkPolyData")) {
         vtkSmartPointer<vtkTriangleFilter> triF = vtkSmartPointer<vtkTriangleFilter>::New();
         vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
@@ -560,23 +559,10 @@ void vtkSteeringWriter::WriteData()
         grid = vtkUnstructuredGrid::SafeDownCast(CtoG->GetOutput());
         CtoG->SetInput(NULL);
         cells = grid ? grid->GetCells() : NULL;
-        vtkSmartPointer<vtkIntArray> intarray = vtkSmartPointer<vtkIntArray>::New();
-        intarray->SetNumberOfComponents(3);
-        intarray->SetNumberOfTuples(cells->GetNumberOfCells());
-        vtkIdType *cellptr = cells->GetPointer();
-        int *triptr = intarray->GetPointer(0);
-        //
-        vtkIdType tindex=0, cindex = 0;
-        for (vtkIdType i=0; i<cells->GetNumberOfCells(); i++) {
-          vtkIdType N = cellptr[cindex++];
-          for (vtkIdType p=0; p<N; p++) {
-            triptr[tindex++] = 1+cellptr[cindex++];
-          }
-        }
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray);
+        this->WriteConnectivityTriangles(cells);
       }
-      else if (idarray) {
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), idarray);
+      else if (cells) {
+        this->WriteConnectivityTriangles(cells);
       }
     }
 
@@ -603,6 +589,23 @@ void vtkSteeringWriter::WriteData()
   }
 
   this->CloseFile();
+}
+//----------------------------------------------------------------------------
+void vtkSteeringWriter::WriteConnectivityTriangles(vtkCellArray *cells) {
+  vtkSmartPointer<vtkIntArray> intarray = vtkSmartPointer<vtkIntArray>::New();
+  intarray->SetNumberOfComponents(3);
+  intarray->SetNumberOfTuples(cells->GetNumberOfCells());
+  vtkIdType *cellptr = cells->GetPointer();
+  int *triptr = intarray->GetPointer(0);
+  //
+  vtkIdType tindex=0, cindex = 0;
+  for (vtkIdType i=0; i<cells->GetNumberOfCells(); i++) {
+    vtkIdType N = cellptr[cindex++];
+    for (vtkIdType p=0; p<N; p++) {
+      triptr[tindex++] = 1+cellptr[cindex++];
+    }
+  }
+  this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray);
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::PrintSelf(ostream& os, vtkIndent indent)
