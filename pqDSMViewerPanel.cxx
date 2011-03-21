@@ -1086,7 +1086,8 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
       // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
       QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
       foreach (pqAnimationScene *scene, scenes) {
-        //      this->Internals->CurrentTimeStep = ++current_time;
+        ++current_time;
+        this->Internals->CurrentTimeStep = current_time;
         pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
         timekeeper->setTime(tval[0]);
         scene->setAnimationTime(tval[0]);
@@ -1109,6 +1110,9 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
     pqActiveObjects::instance().activeView()->render();
     if (this->Internals->autoSaveImage->isChecked()) {
       this->SaveSnapshot();
+    }
+    if (this->Internals->autoExport->isChecked()) {
+      this->ExportData();
     }
     if (this->Internals->runScript->isChecked()) {
       this->RunScript();
@@ -1310,11 +1314,21 @@ void pqDSMViewerPanel::onPreAccept()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPostAccept()
 {
+  this->ExportData();
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::ExportData()
+{
   // 
   // @TODO Find a way to 'accept' all 3D widgets so that we can
   // trigger the writer with the correct values
   //
   pqActiveObjects::instance().activeView()->forceRender();
+
+  vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, "ReloadFreeBodyMesh");
+  rm.Set(0);
+  rm.Set(1);
+  this->Internals->DSMProxyHelper->UpdateVTKObjects();
 
   // Get Source objects for DataExportWidgets
   // @TODO currently we only support one - if we wanted more, we'd
@@ -1335,7 +1349,6 @@ void pqDSMViewerPanel::onPostAccept()
       this->Internals->SteeringWriter->UpdatePipeline();
     }
   }
-  this->Internals->DSMProxy->InvokeCommand("H5DumpLight");
 }
 //-----------------------------------------------------------------------------
 // Useful snippet below, please do not delete.

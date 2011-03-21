@@ -77,6 +77,7 @@ public slots:
   void onautoSaveImageChecked(int);
   void SaveSnapshot();
   void RunScript();
+  void ExportData();
 
   void onUpdateTimeout();
 
