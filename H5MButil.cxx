@@ -383,7 +383,7 @@ bool H5MB_collect(H5MB_tree_type *treestruct, MPI_Comm comm)
   //
   // Do an exchange between all processes
   //
-  size_t len = data.str().size();
+  int len = (int)data.str().size();
   Debug("size to send is " << len);
 
   // Collect all the trees into one big string

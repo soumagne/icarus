@@ -81,7 +81,7 @@ vtkDSMManager::~vtkDSMManager()
 #endif
 }
 //----------------------------------------------------------------------------
-bool vtkDSMManager::DestroyDSM()
+int vtkDSMManager::DestroyDSM()
 {
   return this->DsmManager->DestroyDSM();
 }
@@ -123,7 +123,7 @@ void vtkDSMManager::CheckMPIController()
   }
 }
 //----------------------------------------------------------------------------
-bool vtkDSMManager::ReadDSMConfigFile()
+int vtkDSMManager::ReadDSMConfigFile()
 {
   this->CheckMPIController();
   //
@@ -146,7 +146,7 @@ bool vtkDSMManager::ReadDSMConfigFile()
   return this->DsmManager->ReadDSMConfigFile();
 }
 //----------------------------------------------------------------------------
-bool vtkDSMManager::CreateDSM()
+int vtkDSMManager::CreateDSM()
 {
   this->CheckMPIController();
 

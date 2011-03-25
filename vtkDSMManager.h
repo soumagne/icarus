@@ -120,14 +120,14 @@ public:
 
   // Description:
   // Get values and associated name for the corresponding int interaction.
-  bool GetSteeringValues(const char *name, int numberOfElements, int *values)
+  int GetSteeringValues(const char *name, int numberOfElements, int *values)
   {
     return DsmManager->GetSteeringValues(name, numberOfElements, values);
   }
 
   // Description:
   // Get values and associated name for the corresponding double interaction.
-  bool GetSteeringValues(const char *name, int numberOfElements, double *values)
+  int GetSteeringValues(const char *name, int numberOfElements, double *values)
   {
     return DsmManager->GetSteeringValues(name, numberOfElements, values);
   }
@@ -174,8 +174,8 @@ public:
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
 
-  bool   CreateDSM();
-  bool   DestroyDSM();
+  int    CreateDSM();
+  int    DestroyDSM();
   void   ClearDSM() { DsmManager->ClearDSM(); }
   void   ConnectDSM() { DsmManager->ConnectDSM(); }
   void   DisconnectDSM() { DsmManager->DisconnectDSM(); }
@@ -194,7 +194,7 @@ public:
   // information can be read. This is for use the by a DSM client.
   // DSM servers write their .dsm_config when PublishDSM() is called
   // Returns false if the .dsm_config file is not read
-  bool   ReadDSMConfigFile();
+  int    ReadDSMConfigFile();
 
 //BTX
   #ifdef VTK_USE_MPI
