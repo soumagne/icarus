@@ -262,7 +262,10 @@ QDockWidget("DSM Manager", p)
   this->Internals = new pqInternals(this);
   this->Internals->setupUi(this);
   //
-
+  // Set up update thread
+  this->UpdateThread = new pqUpdateThread(this);
+  this->connect(this->UpdateThread,
+      SIGNAL(dsmUpdate()), this, SLOT(onDSMUpdate()), Qt::QueuedConnection);
   //
   // Link GUI object events to callbacks
   //
@@ -574,11 +577,6 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
     //  std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
-
-    this->UpdateThread = new pqUpdateThread(this);
-    this->connect(this->UpdateThread,
-        SIGNAL(dsmUpdate()), this, SLOT(onDSMUpdate()), Qt::QueuedConnection);
-    this->UpdateThread->start();
   }
 }
 //----------------------------------------------------------------------------
@@ -642,6 +640,8 @@ bool pqDSMViewerPanel::DSMReady()
       this->Internals->DSMProxy->UpdateVTKObjects();
       this->Internals->DSMProxy->InvokeCommand("CreateDSM");
       this->Internals->DSMInitialized = 1;
+      //
+      this->UpdateThread->start();
     }
     else if (client) {
       this->Internals->DSMProxy->InvokeCommand("ReadDSMConfigFile");

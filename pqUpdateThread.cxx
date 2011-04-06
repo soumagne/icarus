@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqDSMViewerPanel.h
+  Module                  : pqUpdateThread.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
