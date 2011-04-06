@@ -117,6 +117,7 @@
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
+#include "vtkSMCommandProperty.h"
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
@@ -249,6 +250,10 @@ public:
   // ---------------------------------------------------------------
   vtkSmartPointer<vtkSMProxy>               ActiveSourceProxy;
   int                                       ActiveSourcePort;
+  // ---------------------------------------------------------------
+  // DataExport commands
+  // ---------------------------------------------------------------
+  vtkTimeStamp                              LastExportTime;
   //
   //
   vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
@@ -537,8 +542,12 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
     this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
     this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
-    this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector);
-    this->Internals->pqObjectInspector->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Expanding);
+    this->Internals->pqObjectInspector->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::MinimumExpanding);
+    this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector); 
+
+    QSpacerItem *verticalSpacer = new QSpacerItem(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
+    this->Internals->pqObjectInspector->layout()->addItem(verticalSpacer);
+
     // after changes are accepted, we must release hold of the DSM
     this->connect(this->Internals->pqObjectInspector,
       SIGNAL(preaccept()), this, SLOT(onPreAccept()));
@@ -576,6 +585,8 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
     //  std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
+    //
+    this->Internals->LastExportTime.Modified();
   }
 }
 //----------------------------------------------------------------------------
@@ -1330,11 +1341,6 @@ void pqDSMViewerPanel::ExportData()
   //
   pqActiveObjects::instance().activeView()->forceRender();
 
-  vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, "ReloadFreeBodyMesh");
-  rm.Set(0);
-  rm.Set(1);
-  this->Internals->DSMProxyHelper->UpdateVTKObjects();
-
   // Get Source objects for DataExportWidgets
   // @TODO currently we only support one - if we wanted more, we'd
   // need a separate writer for each I think.
@@ -1342,18 +1348,33 @@ void pqDSMViewerPanel::ExportData()
   for (int i=0; i<widgets.size(); i++) {
     pqDataExportWidget* widget = widgets[i];
     vtkSMProxy* controlledProxy = widget->getControlledProxy();
-    //
-    // make sure the Steering Writer knows where to get data from
-    //
-    if (this->Internals->SteeringWriter) {
-      vtkSMPropertyHelper ip(this->Internals->SteeringWriter, "Input");
-      ip.Set(controlledProxy,0);
-      vtkSMPropertyHelper svp(this->Internals->SteeringWriter, "WriteDescription");
-      svp.Set(widget->value().toStdString().c_str());
-      this->Internals->SteeringWriter->UpdateVTKObjects();
-      this->Internals->SteeringWriter->UpdatePipeline();
+    
+    // was the associated command 'clicked' (modified)
+    QString command = widget->getCommandProperty();
+    vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DSMProxyHelper->GetProperty(command.toAscii().data()));
+    if (cp->GetMTime()>this->Internals->LastExportTime) {
+      //// force the associated command to be sent
+      //QString command = widget->getCommandProperty();
+      //vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, command.toAscii().data());
+      //rm.Set(0);
+      //rm.Set(1);
+      //this->Internals->DSMProxyHelper->UpdateVTKObjects();
+
+      //
+      // make sure the Steering Writer knows where to get data from
+      //
+      if (this->Internals->SteeringWriter) {
+        vtkSMPropertyHelper ip(this->Internals->SteeringWriter, "Input");
+        ip.Set(controlledProxy,0);
+        vtkSMPropertyHelper svp(this->Internals->SteeringWriter, "WriteDescription");
+        svp.Set(widget->value().toStdString().c_str());
+        this->Internals->SteeringWriter->UpdateVTKObjects();
+        this->Internals->SteeringWriter->UpdatePipeline();
+      }
     }
   }
+  //
+  this->Internals->LastExportTime.Modified();
 }
 //-----------------------------------------------------------------------------
 // Useful snippet below, please do not delete.
