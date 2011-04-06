@@ -117,6 +117,7 @@
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
+#include "pqUpdateThread.h"
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
@@ -254,8 +255,6 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
   vtkSmartPointer<vtkSMProxy>              TransformProxy;
 };
-//-----------------------------------------------------------------------------
-//
 //----------------------------------------------------------------------------
 pqDSMViewerPanel::pqDSMViewerPanel(QWidget* p) :
 QDockWidget("DSM Manager", p)
@@ -263,10 +262,6 @@ QDockWidget("DSM Manager", p)
   this->Internals = new pqInternals(this);
   this->Internals->setupUi(this);
   //
-  this->UpdateTimer = new QTimer(this);
-  this->UpdateTimer->setInterval(10);
-  connect(this->UpdateTimer, SIGNAL(timeout()), this, SLOT(onUpdateTimeout()));
-  this->UpdateTimer->start();
 
   //
   // Link GUI object events to callbacks
@@ -354,8 +349,11 @@ pqDSMViewerPanel::~pqDSMViewerPanel()
 
   this->DeleteSteeringWidgets();
 
-  if (this->UpdateTimer) delete this->UpdateTimer;
-  this->UpdateTimer = NULL;
+  if (this->UpdateThread) {
+    // TODO terminate thread cleanly
+    delete this->UpdateThread;
+  }
+  this->UpdateThread = NULL;
 }
 //----------------------------------------------------------------------------
 void pqDSMViewerPanel::LoadSettings()
@@ -576,6 +574,11 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
     //  std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
+
+    this->UpdateThread = new pqUpdateThread(this);
+    this->connect(this->UpdateThread,
+        SIGNAL(dsmUpdate()), this, SLOT(onDSMUpdate()), Qt::QueuedConnection);
+    this->UpdateThread->start();
   }
 }
 //----------------------------------------------------------------------------
@@ -1178,56 +1181,53 @@ void pqDSMViewerPanel::TrackSource()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::onUpdateTimeout()
+void pqDSMViewerPanel::onDSMWaitForUpdate()
 {
-  // @TODO replace timer with thread
-  // make sure we only get one message at a time.
-  this->UpdateTimer->stop();
-
-  // we don't want to create anything just to inspect it, so test flags only
   if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized) {
     if (this->DSMReady()) {
-      vtkSMPropertyHelper ur(this->Internals->DSMProxy, "DsmUpdateReady");
-      ur.UpdateValueFromServer();
-      if (ur.GetAsInt() != 0) {
-//      vtkSMPropertyHelper ic(this->Internals->DSMProxy, "DsmIsConnected");
-//      ic.UpdateValueFromServer();
-//      if (ic.GetAsInt() == 0) {
-//        this->Internals->DSMProxy->InvokeCommand("WaitForConnected");
-//      }
-//      this->Internals->DSMProxy->InvokeCommand("WaitForUpdateReady");
-        vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
-        ig.UpdateValueFromServer();
-        std::cout << "DSM Received Update : ";
-        if (ig.GetAsInt()==0) {
-          std::cout << "Information" << std::endl;;
-          this->onDSMUpdateInformation();
+      if (this->Internals->dsmIsServer->isChecked()) {
+        vtkSMPropertyHelper ic(this->Internals->DSMProxy, "DsmIsConnected");
+        ic.UpdateValueFromServer();
+        if (ic.GetAsInt() == 0) {
+          cerr << "onWaitForConnected" << endl;
+          this->Internals->DSMProxy->InvokeCommand("WaitForConnected");
+          cerr << "Connected" << endl;
         }
-        else if (ig.GetAsInt()>=1) {
-          std::cout << "Pipeline" << std::endl;;
-          vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
-          dm.UpdateValueFromServer();
-          if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
-            this->onDSMUpdatePipeline();
-            this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
-          }
-        }
-        else {
-          std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
-        }
-
-        this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
-
-        std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
-        this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-        this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
-        //
       }
+      this->Internals->DSMProxy->InvokeCommand("WaitForUpdateReady");
+    }
+  } else {
+    sleep(1);
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDSMViewerPanel::onDSMUpdate()
+{
+  vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
+  ig.UpdateValueFromServer();
+  std::cout << "DSM Received Update : ";
+  if (ig.GetAsInt()==0) {
+    std::cout << "Information" << std::endl;;
+    this->onDSMUpdateInformation();
+  }
+  else if (ig.GetAsInt()>=1) {
+    std::cout << "Pipeline" << std::endl;;
+    vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
+    dm.UpdateValueFromServer();
+    if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
+      this->onDSMUpdatePipeline();
+      this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
     }
   }
+  else {
+    std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
+  }
 
-  // restart the timer before we exit
-  this->UpdateTimer->start();
+  this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
+
+  std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
+  this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+  this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)

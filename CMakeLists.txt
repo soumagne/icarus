@@ -43,7 +43,9 @@ IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
       ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqUpdateThread.h
   )
+
   # invoke macro that adds the refinement and display controls panel
   ADD_PARAVIEW_DOCK_WINDOW(
     DSM_IFACE 
@@ -96,6 +98,7 @@ ADD_PARAVIEW_PLUGIN(
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqUpdateThread.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
     ${DSM_UI_SOURCES}

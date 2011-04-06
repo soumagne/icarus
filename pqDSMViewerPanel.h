@@ -32,7 +32,6 @@
 //
 #include <vector>
 // Core Qt 
-class QTimer;
 class QGraphicsScene;
 class QTreeWidgetItem;
 class QSpinBox;
@@ -51,6 +50,7 @@ class vtkSMProperty;
 class vtkSMRepresentationProxy;
 class XdmfSteeringParser;
 struct SteeringGUIWidgetInfo;
+class pqUpdateThread;
 
 class pqDSMViewerPanel : public QDockWidget
 {
@@ -79,8 +79,6 @@ public slots:
   void RunScript();
   void ExportData();
 
-  void onUpdateTimeout();
-
   void onPublishDSM();
   void onUnpublishDSM();
 
@@ -95,7 +93,9 @@ public slots:
   void onWriteDataToDSM();
   void onWriteSteeringDataToDSM();
 
+  void onDSMWaitForUpdate();
   // triggered by updates from simulation
+  void onDSMUpdate();
   void onDSMUpdateInformation();
   void onDSMUpdatePipeline();
   void onPreAccept();
@@ -121,7 +121,7 @@ protected:
 
   class pqInternals;
   pqInternals     *Internals;
-  QTimer          *UpdateTimer;
+  pqUpdateThread  *UpdateThread;
 
 protected slots:
 
