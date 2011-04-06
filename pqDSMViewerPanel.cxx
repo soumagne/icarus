@@ -574,7 +574,7 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
     // Once everything is setup, allow traffic to and from the DSM
     //
     this->Internals->pqDSMProxyHelper->setDefaultPropertyValues();
-    std::cout << "Sending an UnblockTraffic Command " << std::endl;
+    //  std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DSMProxyHelper->InvokeCommand("UnblockTraffic");
   }
 }
@@ -1314,7 +1314,12 @@ void pqDSMViewerPanel::onPreAccept()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPostAccept()
 {
+//  if (ExportCommandChecked) {
   this->ExportData();
+// }
+  if (this->Internals->acceptIsPlay->isChecked()) {
+    this->onSCPlay();
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::ExportData()

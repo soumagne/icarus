@@ -623,7 +623,7 @@
                   </sizepolicy>
                  </property>
                  <property name="toolTip">
-                  <string>Save an image after every new data triggered render</string>
+                  <string/>
                  </property>
                  <property name="text">
                   <string>Auto-Run Python Script</string>
@@ -681,7 +681,7 @@
                   </sizepolicy>
                  </property>
                  <property name="toolTip">
-                  <string>Save an image after every new data triggered render</string>
+                  <string/>
                  </property>
                  <property name="text">
                   <string>Re-Export Data every update</string>
