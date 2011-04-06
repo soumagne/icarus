@@ -1196,38 +1196,38 @@ void pqDSMViewerPanel::onDSMWaitForUpdate()
       }
       this->Internals->DSMProxy->InvokeCommand("WaitForUpdateReady");
     }
-  } else {
-    sleep(1);
   }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onDSMUpdate()
 {
-  vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
-  ig.UpdateValueFromServer();
-  std::cout << "DSM Received Update : ";
-  if (ig.GetAsInt()==0) {
-    std::cout << "Information" << std::endl;;
-    this->onDSMUpdateInformation();
-  }
-  else if (ig.GetAsInt()>=1) {
-    std::cout << "Pipeline" << std::endl;;
-    vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
-    dm.UpdateValueFromServer();
-    if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
-      this->onDSMUpdatePipeline();
-      this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
+  if (this->Internals->DSMProxyCreated() && this->Internals->DSMInitialized) {
+    vtkSMPropertyHelper ig(this->Internals->DSMProxy, "DsmUpdateLevel");
+    ig.UpdateValueFromServer();
+    std::cout << "DSM Received Update : ";
+    if (ig.GetAsInt()==0) {
+      std::cout << "Information" << std::endl;;
+      this->onDSMUpdateInformation();
     }
-  }
-  else {
-    std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
-  }
+    else if (ig.GetAsInt()>=1) {
+      std::cout << "Pipeline" << std::endl;;
+      vtkSMPropertyHelper dm(this->Internals->DSMProxy, "DsmIsDataModified");
+      dm.UpdateValueFromServer();
+      if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
+        this->onDSMUpdatePipeline();
+        this->Internals->DSMProxy->InvokeCommand("ClearDsmIsDataModified");
+      }
+    }
+    else {
+      std::cout << "Update level " << ig.GetAsInt() << " not yet supported, please check simulation code " << std::endl;;
+    }
 
-  this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
+    this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
 
-  std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
-  this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
-  this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
+    std::cout << "Update complete : calling UpdateFinalize" << std::endl;
+    this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+    this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
+  }
 }
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
