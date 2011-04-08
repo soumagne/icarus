@@ -128,8 +128,9 @@ protected:
 
   void CopyFromVector(int offset, vtkDataArray *source, vtkDataArray *dest);
   void H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray);
-  void WriteDataArray(const char *name, vtkDataArray *array);
-  void WriteConnectivityTriangles(vtkCellArray *cells);
+  void WriteDataArray(const char *name, vtkDataArray *indata, 
+    bool store_offsets, std::vector<int> &parallelOffsets);
+  void WriteConnectivityTriangles(vtkCellArray *cells, std::vector<int> &parallelOffsets);
 
   // Overide information to only permit PolyData as input
   virtual int FillInputPortInformation(int, vtkInformation *info);
@@ -139,6 +140,10 @@ protected:
   virtual int RequestInformation(vtkInformation* request,
       vtkInformationVector** inputVector,
       vtkInformationVector* outputVector);
+
+//BTX
+  bool GatherDataArrayInfo(vtkDataArray *data, int &datatype, int &numComponents);
+//ETX
 
   //
   // Internal Variables

@@ -58,6 +58,8 @@
 //
 #include <cstdlib>
 #include <algorithm>
+#include <functional>
+#include <numeric>
 //
 // vtksys
 //
@@ -299,154 +301,182 @@ void vtkSteeringWriter::CopyFromVector(int offset, vtkDataArray *source, vtkData
   }
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t file_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray)
+void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t disk_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray)
 {
-  hid_t H5DataSetID = H5Dcreate(this->H5GroupId, array_name, mem_type, file_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+  hid_t H5DataSetID = H5Dcreate(this->H5GroupId, array_name, mem_type, disk_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (H5DataSetID<0) {
     vtkErrorMacro(<<"Dataset open failed for " << array_name);
   } else {
     void *dataptr = dataarray->GetVoidPointer(0);
-    H5Dwrite(H5DataSetID, mem_type, mem_space, file_space, H5P_DEFAULT, dataptr);
+    H5Dwrite(H5DataSetID, mem_type, mem_space, disk_space, H5P_DEFAULT, dataptr);
     H5Dclose(H5DataSetID);
   }
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata)
+struct vtkSW_datainfo {
+  int  datatype;
+  int  numC;
+  vtkSW_datainfo() : datatype(-1), numC(-1) {};
+};
+//----------------------------------------------------------------------------
+bool vtkSteeringWriter::GatherDataArrayInfo(vtkDataArray *data, int &datatype, int &numComponents)
 {
-#define SPLIT_ARRAYS 0
+#ifdef VTK_USE_MPI
+  std::vector< vtkSW_datainfo > datatypes(this->UpdateNumPieces);
+  if (data) {
+    ((vtkSW_datainfo*)&datatypes[this->UpdatePiece])->datatype = data->GetDataType();
+    ((vtkSW_datainfo*)&datatypes[this->UpdatePiece])->numC     = data->GetNumberOfComponents();
+  }
+  vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(
+    this->Controller->GetCommunicator()); 
+  int result = com->AllGather((char*)&datatypes[this->UpdatePiece], (char*)&datatypes[0], sizeof(vtkSW_datainfo));
+  for (int i=0; i<this->UpdateNumPieces; i++) {
+    vtkSW_datainfo &newdata = datatypes[i];
+    if (newdata.datatype!=-1) {
+      datatype = newdata.datatype;
+      numComponents = newdata.numC;
+    }
+  }
+  return (result == 1) ;
+#else
+  return 1;
+#endif
+}
+//----------------------------------------------------------------------------
+void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata, 
+  bool store_offsets, std::vector<int> &parallelOffsets)
+{
+  vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator()); 
+  if (com == 0) {
+    vtkErrorMacro("MPICommunicator needed for this filter");
+    return;
+  }
+  // if a process has zero points/scalars, then this routine is entered with
+  // a null pointer, we must find out what the other processes are sending 
+  // and do an empty send with the same type etc.
+  vtkSmartPointer<vtkDataArray> data;
+  if (0 && this->UpdateNumPieces>1) {
+    int correctType = -1, numComponents = -1;
+    std::string correctName;
+//    GatherDataArrayInfo(indata, correctType, numComponents);
+    if (!indata) {
+      vtkDebugMacro(<<"NULL data found, used MPI_Gather to find :" 
+        << " DataType " << correctType
+        << " Name " << name
+        << " NumComponents " << numComponents);
+      data = vtkDataArray::CreateDataArray(correctType);
+      data->Delete(); // smartpointer copied it
+      data->SetNumberOfComponents(numComponents);
+      data->SetName(correctName.c_str());
+    }
+    else {
+      data = indata;
+    }
+  }
+  else data = indata;
 
-  vtkSmartPointer<vtkDataArray> data = indata;
   //
-
-  hid_t mem_space = H5S_ALL;
-  hid_t file_space = -1;
-
-  herr_t r=0;
   int Nt = data->GetNumberOfTuples();
   int Nc = data->GetNumberOfComponents();
-  hsize_t     count_mem[2] = { Nt, Nc };
-  int rank = 1;
-//  hsize_t     offset_mem[] = { 0 };
-  //
-  vtkSmartPointer<vtkDataArray> component;
+  int totaltuples = Nt;
+  int rank = (Nc>1) ? 2 : 1 ;
 
-  // we copy from original to a single component array
-  count_mem[0] = Nt;
-#if SPLIT_ARRAYS==1
-    if (Nc>1) {
-      component.TakeReference(data->NewInstance());
-      component->SetNumberOfComponents(1);
-      component->SetNumberOfTuples(Nt);
-      component->WriteVoidPointer(0, Nt);
+  //
+  // if parallel, we must find the total amount (on disk) to be written for this array
+  //
+  std::vector<int> ArrayOffsets(this->UpdateNumPieces+1);
+  ArrayOffsets[0] = 0;
+  if (this->UpdateNumPieces>1) {
+    std::vector<int> TuplesPerProcess(this->UpdateNumPieces);
+    com->AllGather(&Nt, &TuplesPerProcess[0], 1);
+    totaltuples = std::accumulate(TuplesPerProcess.begin(), TuplesPerProcess.end(), 0);
+    std::partial_sum(TuplesPerProcess.begin(), TuplesPerProcess.end(), ArrayOffsets.begin()+1);
+    if (store_offsets) {
+      parallelOffsets = ArrayOffsets;
     }
-#else
-  if (Nc>1) rank = 2;
-#endif 
+  }
+  //
+  hsize_t  mem_size[2]    = { Nt, Nc };
+  hsize_t  disk_size[2]   = { totaltuples, Nc };
+  hsize_t  disk_slab[2]   = { Nt, Nc };
+  hsize_t  disk_offset[2] = { ArrayOffsets[this->UpdatePiece], 0 };
+  hid_t    mem_space      = H5Screate_simple(rank, mem_size, NULL); 
+  hid_t    disk_space     = H5Screate_simple(rank, disk_size, NULL); 
+  if (Nt!=totaltuples) {
+    H5Sselect_hyperslab(disk_space, H5S_SELECT_SET, disk_offset, NULL, disk_slab, NULL);    
+  }
 
   char typestring[128];
 
-#if SPLIT_ARRAYS==1
-  for (int c=0; c<Nc; c++) {
-#endif 
-    // shape
-    mem_space = H5Screate_simple(rank, count_mem, NULL);
-
-    // single vector write or component by component
-    vtkSmartPointer<vtkDataArray> finalData = data;
-#if SPLIT_ARRAYS==1
-    if (Nc>1) {
-      sprintf(buffer,"_%i", c);
-      name = name.append(buffer);
-
-      this->CopyFromVector(c, data, component);
-      finalData = component;
+  switch (data->GetDataType()) {
+  case VTK_FLOAT:
+    if (0 && this->WriteFloatAsDouble) {
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, data);
     }
     else {
-      // we don't need a hyperslab here because we're writing 
-      // a contiguous block from mem to disk with the same flat shape
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_FLOAT, this->H5FileId, name, data);
     }
-#else
-    file_space = H5Screate_simple(rank, count_mem, NULL);
-#endif
-
-    switch (finalData->GetDataType()) {
-    case VTK_FLOAT:
-      if (0 && this->WriteFloatAsDouble) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
-      }
-      else {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_FLOAT, this->H5FileId, name, finalData);
-      }
-      break;
-    case VTK_DOUBLE:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, finalData);
-      break;
-    case VTK_CHAR:
-      if (VTK_TYPE_CHAR_IS_SIGNED) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
-      }
-      else {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
-      }
-      break;
-    case VTK_SIGNED_CHAR:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SCHAR, this->H5FileId, name, finalData);
-      break;
-    case VTK_UNSIGNED_CHAR:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UCHAR, this->H5FileId, name, finalData);
-      break;
-    case VTK_SHORT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_SHORT, this->H5FileId, name, finalData);
-      break;
-    case VTK_UNSIGNED_SHORT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_USHORT, this->H5FileId, name, finalData);
-      break;
-    case VTK_INT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_INT, this->H5FileId, name, finalData);
-      break;
-    case VTK_UNSIGNED_INT:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_UINT, this->H5FileId, name, finalData);
-      break;
-    case VTK_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name, finalData);
-      break;
-    case VTK_UNSIGNED_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULONG, this->H5FileId, name, finalData);
-      break;
-    case VTK_LONG_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
-      break;
-    case VTK_UNSIGNED_LONG_LONG:
-      H5WriteDataArray(mem_space, file_space, H5T_NATIVE_ULLONG, this->H5FileId, name, finalData);
-      break;
-    case VTK_ID_TYPE:
-      if (VTK_SIZEOF_ID_TYPE==8) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LLONG, this->H5FileId, name, finalData);
-      }
-      else if (VTK_SIZEOF_ID_TYPE==4) {
-        H5WriteDataArray(mem_space, file_space, H5T_NATIVE_LONG, this->H5FileId, name, finalData);
-      }
-      break;
-    default:
-      vtkErrorMacro(<<"Unexpected data type");
+    break;
+  case VTK_DOUBLE:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, data);
+    break;
+  case VTK_CHAR:
+    if (VTK_TYPE_CHAR_IS_SIGNED) {
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_SCHAR, this->H5FileId, name, data);
     }
-    if (mem_space!=H5S_ALL) {
-      if (H5Sclose(mem_space)<0) vtkErrorMacro(<<"memshape : HANDLE_H5S_CLOSE_ERR");
-      mem_space = H5S_ALL;
+    else {
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_UCHAR, this->H5FileId, name, data);
     }
-    if (r<0) {
-      vtkErrorMacro(<<"Array write failed for name " << name);
-    } else {
-      vtkDebugMacro(<<"Wrote " << name << " " << Nt << " " << Nc << " " << typestring); 
+    break;
+  case VTK_SIGNED_CHAR:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_SCHAR, this->H5FileId, name, data);
+    break;
+  case VTK_UNSIGNED_CHAR:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_UCHAR, this->H5FileId, name, data);
+    break;
+  case VTK_SHORT:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_SHORT, this->H5FileId, name, data);
+    break;
+  case VTK_UNSIGNED_SHORT:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_USHORT, this->H5FileId, name, data);
+    break;
+  case VTK_INT:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_INT, this->H5FileId, name, data);
+    break;
+  case VTK_UNSIGNED_INT:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_UINT, this->H5FileId, name, data);
+    break;
+  case VTK_LONG:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_LONG, this->H5FileId, name, data);
+    break;
+  case VTK_UNSIGNED_LONG:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_ULONG, this->H5FileId, name, data);
+    break;
+  case VTK_LONG_LONG:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_LLONG, this->H5FileId, name, data);
+    break;
+  case VTK_UNSIGNED_LONG_LONG:
+    H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_ULLONG, this->H5FileId, name, data);
+    break;
+  case VTK_ID_TYPE:
+    if (VTK_SIZEOF_ID_TYPE==8) {
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_LLONG, this->H5FileId, name, data);
     }
-#if SPLIT_ARRAYS==1
+    else if (VTK_SIZEOF_ID_TYPE==4) {
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_LONG, this->H5FileId, name, data);
+    }
+    break;
+  default:
+    vtkErrorMacro(<<"Unexpected data type");
   }
-#endif 
-  if (file_space!=-1) {
-    if (H5Sclose(file_space)<0) vtkErrorMacro(<<"file_space : HANDLE_H5S_CLOSE_ERR");
-    file_space = H5S_ALL;
+  if (mem_space!=H5S_ALL) {
+    if (H5Sclose(mem_space)<0) vtkErrorMacro(<<"memshape : HANDLE_H5S_CLOSE_ERR");
+    mem_space = H5S_ALL;
   }
-
+  vtkDebugMacro(<<"Wrote " << name << " " << Nt << " " << Nc << " " << typestring); 
+  if (disk_space!=H5S_ALL) {
+    if (H5Sclose(disk_space)<0) vtkErrorMacro(<<"disk_space : HANDLE_H5S_CLOSE_ERR");
+  }
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::WriteData()
@@ -526,6 +556,8 @@ void vtkSteeringWriter::WriteData()
     return;
   }
 
+  std::vector<int> ParallelOffsets(this->UpdateNumPieces+1);
+
   for (int i=0; i<ArrayTypes.size(); i++) {
     this->GroupPathInternal = GroupPaths[i];
     this->ArrayTypeInternal = ArrayTypes[i];
@@ -535,18 +567,23 @@ void vtkSteeringWriter::WriteData()
 
     if (this->ArrayTypeInternal == 0 && input->IsA("vtkPointSet")) {
       //
-      // Write coordinate data
+      // Write coordinate data, because points on each process must be offset
+      // by the ID of previous processes for connectivity, we store the offsets
+      // store_offsets = true, apply_offsets=false
       //
       vtkSmartPointer<vtkPoints> points = vtkPointSet::SafeDownCast(input)->GetPoints();
       if (points && points->GetData()) {
         points->GetData()->SetName("Coords");
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), points->GetData());
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), points->GetData(), true, ParallelOffsets);
       }
     }
 
     if (this->ArrayTypeInternal == 1) {
       //
-      // Write connectivity data
+      // Write connectivity data, because points on each process must be offset
+      // by the ID of previous processes for connectivity, we apply the offsets
+      // computed for the points
+      // store_offsets = false, apply_offsets=true
       //
       vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::SafeDownCast(input);
       vtkSmartPointer<vtkCellArray> cells = grid ? grid->GetCells() : NULL;
@@ -559,10 +596,10 @@ void vtkSteeringWriter::WriteData()
         grid = vtkUnstructuredGrid::SafeDownCast(CtoG->GetOutput());
         CtoG->SetInput(NULL);
         cells = grid ? grid->GetCells() : NULL;
-        this->WriteConnectivityTriangles(cells);
+        this->WriteConnectivityTriangles(cells, ParallelOffsets);
       }
       else if (cells) {
-        this->WriteConnectivityTriangles(cells);
+        this->WriteConnectivityTriangles(cells, ParallelOffsets);
       }
     }
 
@@ -573,7 +610,7 @@ void vtkSteeringWriter::WriteData()
         //
         vtkPointData *pd = input->GetPointData();
         vtkDataArray *data = pd->GetArray(this->ArrayName);
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), data);
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), data, false, ParallelOffsets);
       }
       if (this->FieldType==1) {
         //
@@ -581,7 +618,7 @@ void vtkSteeringWriter::WriteData()
         //
         vtkCellData *cd = input->GetCellData();
         vtkDataArray *data = cd->GetArray(this->ArrayName);
-        this->WriteDataArray(this->ArrayNameInternal.c_str(), data);
+        this->WriteDataArray(this->ArrayNameInternal.c_str(), data, false, ParallelOffsets);
       }
     }
 
@@ -591,7 +628,9 @@ void vtkSteeringWriter::WriteData()
   this->CloseFile();
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::WriteConnectivityTriangles(vtkCellArray *cells) {
+void vtkSteeringWriter::WriteConnectivityTriangles(vtkCellArray *cells,
+  std::vector<int> &parallelOffsets) 
+{
   vtkSmartPointer<vtkIntArray> intarray = vtkSmartPointer<vtkIntArray>::New();
   intarray->SetNumberOfComponents(3);
   intarray->SetNumberOfTuples(cells->GetNumberOfCells());
@@ -602,10 +641,11 @@ void vtkSteeringWriter::WriteConnectivityTriangles(vtkCellArray *cells) {
   for (vtkIdType i=0; i<cells->GetNumberOfCells(); i++) {
     vtkIdType N = cellptr[cindex++];
     for (vtkIdType p=0; p<N; p++) {
-      triptr[tindex++] = 1+cellptr[cindex++];
+      triptr[tindex++] = 1+cellptr[cindex++]+parallelOffsets[this->UpdatePiece];
     }
   }
-  this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray);
+
+  this->WriteDataArray(this->ArrayNameInternal.c_str(), intarray, false, parallelOffsets);
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::PrintSelf(ostream& os, vtkIndent indent)

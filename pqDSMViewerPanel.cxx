@@ -1229,8 +1229,9 @@ void pqDSMViewerPanel::onUpdateTimeout()
 
         this->Internals->DSMProxy->InvokeCommand("UpdateSteeredObjects");
 
-        std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
+//        std::cout << "Update complete : calling ClearDsmUpdateReady " << std::endl;
         this->Internals->DSMProxy->InvokeCommand("ClearDsmUpdateReady");
+//        std::cout << "Update complete : calling UpdateFinalize " << std::endl;
         this->Internals->DSMProxy->InvokeCommand("UpdateFinalize");
         //
       }
@@ -1372,6 +1373,7 @@ void pqDSMViewerPanel::ExportData()
         this->Internals->SteeringWriter->UpdatePipeline();
       }
     }
+//    this->Internals->DSMProxy->InvokeCommand("H5Dump");
   }
   //
   this->Internals->LastExportTime.Modified();
