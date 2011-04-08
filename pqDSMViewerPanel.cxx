@@ -1123,7 +1123,7 @@ void pqDSMViewerPanel::onDSMUpdatePipeline()
       this->SaveSnapshot();
     }
     if (this->Internals->autoExport->isChecked()) {
-      this->ExportData();
+      this->ExportData(true);
     }
     if (this->Internals->runScript->isChecked()) {
       this->RunScript();
@@ -1326,15 +1326,14 @@ void pqDSMViewerPanel::onPreAccept()
 //-----------------------------------------------------------------------------
 void pqDSMViewerPanel::onPostAccept()
 {
-//  if (ExportCommandChecked) {
-  this->ExportData();
-// }
+  this->ExportData(false);
+  // 
   if (this->Internals->acceptIsPlay->isChecked()) {
     this->onSCPlay();
   }
 }
 //-----------------------------------------------------------------------------
-void pqDSMViewerPanel::ExportData()
+void pqDSMViewerPanel::ExportData(bool force)
 {
   // 
   // @TODO Find a way to 'accept' all 3D widgets so that we can
@@ -1353,14 +1352,13 @@ void pqDSMViewerPanel::ExportData()
     // was the associated command 'clicked' (modified)
     QString command = widget->getCommandProperty();
     vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DSMProxyHelper->GetProperty(command.toAscii().data()));
-    if (cp->GetMTime()>this->Internals->LastExportTime) {
-      //// force the associated command to be sent
-      //QString command = widget->getCommandProperty();
-      //vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, command.toAscii().data());
-      //rm.Set(0);
-      //rm.Set(1);
-      //this->Internals->DSMProxyHelper->UpdateVTKObjects();
-
+    if (force || cp->GetMTime()>this->Internals->LastExportTime) {
+      if (force) {
+        //vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, command.toAscii().data());
+        //rm.Set(0);
+        //rm.Set(1);
+        //this->Internals->DSMProxyHelper->UpdateVTKObjects();
+      }
       //
       // make sure the Steering Writer knows where to get data from
       //
