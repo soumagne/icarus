@@ -1354,10 +1354,10 @@ void pqDSMViewerPanel::ExportData(bool force)
     vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DSMProxyHelper->GetProperty(command.toAscii().data()));
     if (force || cp->GetMTime()>this->Internals->LastExportTime) {
       if (force) {
-        //vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, command.toAscii().data());
-        //rm.Set(0);
-        //rm.Set(1);
-        //this->Internals->DSMProxyHelper->UpdateVTKObjects();
+        vtkSMPropertyHelper rm(this->Internals->DSMProxyHelper, command.toAscii().data());
+        rm.Set(0);
+        rm.Set(1);
+        this->Internals->DSMProxyHelper->UpdateVTKObjects();
       }
       //
       // make sure the Steering Writer knows where to get data from
