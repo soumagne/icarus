@@ -77,7 +77,7 @@ public slots:
   void onautoSaveImageChecked(int);
   void SaveSnapshot();
   void RunScript();
-  void ExportData();
+  void ExportData(bool force);
 
   void onPublishDSM();
   void onUnpublishDSM();
