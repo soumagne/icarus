@@ -65,7 +65,6 @@ vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *g
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   this->Pipeline.TakeReference(vtkSMCompoundSourceProxy::SafeDownCast(pm->NewProxy(name, group)));
-  this->Pipeline->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 }
 //----------------------------------------------------------------------------
 vtkCustomPipelineHelper::~vtkCustomPipelineHelper()
@@ -137,7 +136,6 @@ void vtkCustomPipelineHelper::AddToRenderView(
 {
   // Create a representation proxy for the pipeline
   vtkSMProxy *reprProxy = viewModuleProxy->CreateDefaultRepresentation(this->Pipeline, 0);
-  reprProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
   pqSMAdaptor::setInputProperty(reprProxy->GetProperty("Input"), this->Pipeline, 0);
   pqSMAdaptor::setElementProperty(reprProxy->GetProperty("Visibility"), visible);
   reprProxy->UpdateVTKObjects();

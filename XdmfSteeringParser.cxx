@@ -22,16 +22,35 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "XdmfSteeringParser.h"
+//
+// libxml, must come before any stl includes
+//
+#include <libxml/globals.h>
+#include <libxml/parser.h>
+#include <libxml/tree.h>
+#include <libxml/xinclude.h>
+#include <libxml/xpath.h>
+#include <libxml/xpathInternals.h>
+//
+// STL
+//
+#include <string>
+#include <iostream>
+#include <cstdlib>
+//
+// Xdmf
 //
 #include "XdmfDOM.h"
 #include "XdmfTopology.h"
 //
+// Our generator
+//
+#include "XdmfSteeringParser.h"
+//
+// vtk
+//
 #include <vtksys/RegularExpression.hxx>
 #include <vtksys/SystemTools.hxx>
-#include <string>
-#include <iostream>
-#include <cstdlib>
 //
 #include "vtkType.h"
 //
@@ -156,6 +175,13 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   return(XDMF_SUCCESS);
 }
 //----------------------------------------------------------------------------
+std::string GetXMLString(XdmfConstString str)
+{
+  std::string value = std::string(str);
+  free((void*)str);
+  return value;
+}
+//----------------------------------------------------------------------------
 int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
 {
   std::ostringstream xmlstring;
@@ -179,7 +205,6 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<Property name=\"BlockTraffic\" command=\"BlockTraffic\"> </Property> " << std::endl;
   xmlstring << "<Property name=\"UnblockTraffic\" command=\"UnblockTraffic\"> </Property> " << std::endl;
 
-
 /*
   // Add a transform so that widgets can fake/trigger updates
   xmlstring << "<ProxyProperty name=\"Transform\" command=\"SetTransform\">" << std::endl;
@@ -187,20 +212,30 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<ProxyListDomain name=\"proxy_list\"> <Proxy group=\"extended_sources\" name=\"Transform3\" /> </ProxyListDomain>" << std::endl;
   xmlstring << "</ProxyProperty>" << std::endl;
 */
+
   int numberOfCommandProperties = this->ConfigDOM->FindNumberOfElements("CommandProperty", interactionNode);
   for (int index=0; index < numberOfCommandProperties; index++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("CommandProperty", index, interactionNode);
-    std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
-    vtksys::SystemTools::ReplaceString(xml, "ExecuteSteeringCommand", std::string("ExecuteSteeringCommand" + name).c_str());
-    xmlstring << xml << std::endl;
+    XdmfXmlNode xnode = this->ConfigDOM->FindElement("CommandProperty", index, interactionNode);
+    // make sure the CommandProperty uses vtkSIIntVectorProperty
+    xmlSetProp(xnode, (xmlChar *)"si_class", (xmlChar *)"vtkSIIntVectorProperty");
+    // Set the Command to be ExecuteSteeringCommand + the name of the command
+    std::string    name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
+    std::string command = "ExecuteSteeringCommand" + name;
+    xmlSetProp(xnode, (xmlChar *)"command", (xmlChar *)command.c_str());
+    //
+    xmlstring << this->ConfigDOM->Serialize(xnode) << std::endl;
   }
 
   int numberOfDataExportProperties = this->ConfigDOM->FindNumberOfElements("DataExportProperty", interactionNode);
   for (int index=0; index < numberOfDataExportProperties; index++) {
-    XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DataExportProperty", index, interactionNode);
-    std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    XdmfXmlNode xnode = this->ConfigDOM->FindElement("DataExportProperty", index, interactionNode);
+    // make sure the DataExportProperty property uses vtkSIStringVectorProperty
+    xmlSetProp(xnode, (xmlChar *)"si_class", (xmlChar *)"vtkSIStringVectorProperty");
+    // Set the Command to be SetSteeringArray + the name of the command
+    std::string    name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
+    std::string command = "SetSteeringArray" + name;
+    xmlSetProp(xnode, (xmlChar *)"command", (xmlChar *)command.c_str());
+    //
     //vtksys::SystemTools::ReplaceString(xml, "<DataExportProperty", "<StringVectorProperty");
     //vtksys::SystemTools::ReplaceString(xml, "</DataExportProperty>", 
     //  // none_string=\"No Data Write\"
@@ -208,8 +243,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
     //  "<FieldDataDomain name=\"field_list\" > <RequiredProperties> <Property name=\"Input\" function=\"Input\"/> </RequiredProperties> </FieldDataDomain> "
     //  "</StringVectorProperty>"
     //);
-    vtksys::SystemTools::ReplaceString(xml, "SetSteeringArray", std::string("SetSteeringArray" + name).c_str());
-    xmlstring << xml << std::endl;
+    xmlstring << this->ConfigDOM->Serialize(xnode) << std::endl;
   }
 
   int numberOfStringProperties = this->ConfigDOM->FindNumberOfElements("StringVectorProperty", interactionNode);

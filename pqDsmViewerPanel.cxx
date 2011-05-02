@@ -163,7 +163,6 @@ public:
   void CreateDsmProxy() {
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DsmProxy.TakeReference(pm->NewProxy("icarus_helpers", "DsmManager"));
-    this->DsmProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DsmProxy->UpdatePropertyInformation();
   }
   // 
@@ -174,12 +173,10 @@ public:
     //
     vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
     this->DsmProxyHelper.TakeReference(pm->NewProxy("icarus_helpers", "DsmProxyHelper"));
-    this->DsmProxyHelper->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     this->DsmProxyHelper->UpdatePropertyInformation();
     this->DsmProxyHelper->UpdateVTKObjects();
     //
     this->TransformProxy.TakeReference(pm->NewProxy("extended_sources", "Transform3"));
-    this->TransformProxy->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 //    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
     //
     // Set our Transform object in the HelperProxy for later use
@@ -190,7 +187,6 @@ public:
     //
     // We will also be needing a vtkSteeringWriter, so create that now
     this->SteeringWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "SteeringWriter")));
-    this->SteeringWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
     pqSMAdaptor::setProxyProperty(this->SteeringWriter->GetProperty("DsmManager"), this->DsmProxy);
     pqSMAdaptor::setElementProperty(this->SteeringWriter->GetProperty("GroupPath"), "/PartType1");
     this->SteeringWriter->UpdateVTKObjects();
@@ -851,7 +847,6 @@ void pqDsmViewerPanel::onWriteDataToDSM()
     vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter;
     XdmfWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4")));
-    XdmfWriter->SetConnectionID(pqActiveObjects::instance().activeServer()->GetConnectionID());
 
     pqSMAdaptor::setProxyProperty(
       XdmfWriter->GetProperty("DsmManager"), this->Internals->DsmProxy);
