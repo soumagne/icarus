@@ -47,11 +47,11 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
-#undef  vtkDebugMacro
-#define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
+//#undef  vtkDebugMacro
+//#define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
 
-#undef  vtkErrorMacro
-#define vtkErrorMacro(a) H5FDdsmExternalError(a)
+//#undef  vtkErrorMacro
+//#define vtkErrorMacro(a) H5FDdsmExternalError(a)
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDSMManager, "$Revision$");
 vtkStandardNewMacro(vtkDSMManager);
@@ -182,7 +182,7 @@ void vtkDSMManager::GenerateXMFDescription()
     xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "file.h5");
   }
 
-  vtkDebugMacro(xdmfGenerator->GetGeneratedFile());
+  vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
 
   if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
