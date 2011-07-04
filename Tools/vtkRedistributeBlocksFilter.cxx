@@ -206,7 +206,7 @@ int vtkRedistributeBlocksFilter::RequestData(
   com->AllGather(&numDataSets, &BlocksPerProcess[0], 1);
   int totalblocks = vtkstd::accumulate(BlocksPerProcess.begin(), BlocksPerProcess.end(), 0);
   vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
-  vtkstd::partial_sum(BlocksPerProcess.begin(), BlocksPerProcess.end(), PartialSum.begin()); // +1 ?
+  vtkstd::partial_sum(BlocksPerProcess.begin(), BlocksPerProcess.end(), PartialSum.begin()+1);
 
   //
   // Allocate blocks to each process, build a list of who will get what
