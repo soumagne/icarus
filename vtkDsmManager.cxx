@@ -36,7 +36,7 @@
 #include "vtkSMProxyManager.h"
 #include "vtkClientServerInterpreter.h"
 #include "vtkClientServerInterpreterInitializer.h"
-#include "vtkPVProxyDefinitionManager.h"
+#include "vtkSMProxyDefinitionManager.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
