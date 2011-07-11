@@ -51,7 +51,7 @@
            <enum>QTabWidget::West</enum>
           </property>
           <property name="currentIndex">
-           <number>2</number>
+           <number>0</number>
           </property>
           <property name="elideMode">
            <enum>Qt::ElideRight</enum>
@@ -471,7 +471,7 @@
             </item>
            </layout>
           </widget>
-          <widget class="QWidget" name="tab">
+          <widget class="QWidget" name="advancedtab">
            <attribute name="title">
             <string>Advanced Controls</string>
            </attribute>
@@ -740,12 +740,12 @@
              <layout class="QVBoxLayout" name="generatedLayout"/>
             </item>
             <item>
-             <spacer name="verticalSpacer_4">
+             <spacer name="steeringSpacer">
               <property name="orientation">
                <enum>Qt::Vertical</enum>
               </property>
               <property name="sizeType">
-               <enum>QSizePolicy::Preferred</enum>
+               <enum>QSizePolicy::Expanding</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>

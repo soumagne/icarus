@@ -537,7 +537,8 @@ void pqDSMViewerPanel::ParseXMLTemplate(const char *filepath)
   // create an object inspector to manage the settings
   //
   if (this->Internals->pqDSMProxyHelper) {
-    this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->devTab);
+    this->Internals->steeringSpacer->changeSize(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
+    this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->steeringTab);
     this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
     this->Internals->pqObjectInspector->setProxy(this->Internals->pqDSMProxyHelper);
     this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
