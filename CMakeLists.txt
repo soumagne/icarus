@@ -17,9 +17,6 @@ FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
 INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
-INCLUDE_DIRECTORIES(
-  ${ParaView_CMAKE_DIR}/../Utilities/H5FDdsm/src
-  ${ParaView_BINARY_DIR}/Utilities/H5FDdsm/src)
 
 #--------------------------------------------------
 # Set project include directories 
