@@ -270,7 +270,7 @@ QDockWidget("DSM Manager", p)
   // Set up update thread
   this->NotificationThread = new pqNotificationThread(this);
   this->connect(this->NotificationThread,
-      SIGNAL(dsmUpdate()), this, SLOT(onDsmUpdate()), Qt::QueuedConnection);
+      SIGNAL(dsmNotified()), this, SLOT(onNotified()), Qt::QueuedConnection);
   //
   // Link GUI object events to callbacks
   //
@@ -629,7 +629,7 @@ bool pqDsmViewerPanel::DsmReady()
     bool server = (this->Internals->dsmIsServer->isChecked() || this->Internals->dsmIsStandalone->isChecked());
     bool client = (this->Internals->dsmIsClient->isChecked() || this->Internals->dsmIsStandalone->isChecked());
     pqSMAdaptor::setElementProperty(
-      this->Internals->DsmProxy->GetProperty("DsmIsServer"), server);
+      this->Internals->DsmProxy->GetProperty("IsServer"), server);
     //
     if (server) {
       if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
@@ -1198,7 +1198,7 @@ void pqDsmViewerPanel::onWaitForNotification()
   if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
     if (this->DsmReady()) {
       if (this->Internals->dsmIsServer->isChecked()) {
-        vtkSMPropertyHelper ic(this->Internals->DsmProxy, "DsmIsConnected");
+        vtkSMPropertyHelper ic(this->Internals->DsmProxy, "IsConnected");
         ic.UpdateValueFromServer();
         if (ic.GetAsInt() == 0) {
           cerr << "onWaitForConnected" << endl;
@@ -1206,7 +1206,9 @@ void pqDsmViewerPanel::onWaitForNotification()
           cerr << "Connected" << endl;
         }
       }
+      cerr << "onWaitForNotification" << endl;
       this->Internals->DsmProxy->InvokeCommand("WaitForNotification");
+      cerr << "Notified" << endl;
     }
   }
 }
@@ -1223,7 +1225,7 @@ void pqDsmViewerPanel::onNotified()
       dm.UpdateValueFromServer();
       if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
         this->UpdateDsmPipeline();
-        this->Internals->DsmProxy->InvokeCommand("ClearDsmIsDataModified");
+        this->Internals->DsmProxy->InvokeCommand("ClearIsDataModified");
       }
     }
     else if (ig.GetAsInt() == 1) {

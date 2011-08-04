@@ -39,7 +39,7 @@ pqNotificationThread::~pqNotificationThread() {
 void pqNotificationThread::run() {
   while (!this->Terminating) {
     this->DsmViewerPanel->onWaitForNotification();
-    emit dsmUpdate();
+    emit dsmNotified();
   }
 }
 

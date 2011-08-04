@@ -37,7 +37,7 @@ public:
   ~pqNotificationThread();
 
 signals:
-  void dsmUpdate();
+  void dsmNotified();
 
 protected:
   void run();
