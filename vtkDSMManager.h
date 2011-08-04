@@ -43,58 +43,131 @@ public:
   vtkTypeRevisionMacro(vtkDSMManager,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
+  H5FDdsmBuffer *GetDsmBuffer() { return(DsmManager->GetDsmBuffer()); }
+
   // Description:
   // Set/Get the size of the buffer to be reserved on this process
   // the DSM total size will be the sum of the local sizes from all processes
   void SetLocalBufferSizeMBytes(int size) { DsmManager->SetLocalBufferSizeMBytes(size); }
-  int GetLocalBufferSizeMBytes() { return DsmManager->GetLocalBufferSizeMBytes(); }
+  int  GetLocalBufferSizeMBytes() { return(DsmManager->GetLocalBufferSizeMBytes()); }
 
   // Description:
   // Set/Get DsmIsServer info
-  void SetDsmIsServer(int isServer) { DsmManager->SetDsmIsServer(isServer); }
-  int GetDsmIsServer() { return DsmManager->GetDsmIsServer(); }
+  void SetIsServer(int isServer) { DsmManager->SetIsServer(isServer); }
+  int  GetIsServer() { return(DsmManager->GetIsServer()); }
 
   // Description:
   // Set/Get the interprocess communication subsystem
-  void SetDsmCommType(int type) { DsmManager->SetDsmCommType(type); }
-  int GetDsmCommType() { return DsmManager->GetDsmCommType(); }
+  void SetInterCommType(int commType) { DsmManager->SetInterCommType(commType); }
+  int  GetInterCommType() { return(DsmManager->GetInterCommType()); }
 
   // Description:
   // Set/Get the published host name of our connection.
   // Real value valid after a PublishDSM call has been made.
   void SetServerHostName(const char* serverHostName) { DsmManager->SetServerHostName(serverHostName); }
-  const char *GetServerHostName() { return DsmManager->GetServerHostName(); }
+  const char *GetServerHostName() { return(DsmManager->GetServerHostName()); }
 
   // Description:
   // Set/Get the published port of our connection.
   // Real value valid after a PublishDSM call has been made.
   void SetServerPort(int port) { DsmManager->SetServerPort(port); }
-  int GetServerPort() { return DsmManager->GetServerPort(); }
+  int  GetServerPort() { return(DsmManager->GetServerPort()); }
 
   // Description:
   // Only valid after a PublishDSM call has been made.
-  int GetDsmIsConnected() { return DsmManager->GetDsmIsConnected(); }
-  int WaitForConnected() { return DsmManager->WaitForConnected(); }
+  int GetIsConnected() { return(DsmManager->GetIsConnected()); }
+  int WaitForConnection() { return(DsmManager->WaitForConnection()); }
 
   // Description:
-  // Get/Set the update ready flag which triggers the VTK pipeline update.
-  int GetDsmUpdateReady() { return DsmManager->GetDsmUpdateReady(); }
-  void ClearDsmUpdateReady() { DsmManager->ClearDsmUpdateReady(); }
-  int WaitForUpdateReady() { return DsmManager->WaitForUpdateReady(); }
+  // Wait for a notification - notifications are used to trigger user
+  // defined tasks and are usually sent once the file has been closed
+  // but can also be sent on demand.
+  int  GetIsNotified() { return(DsmManager->GetIsNotified()); }
+  void ClearIsNotified() { DsmManager->ClearIsNotified(); }
+  int  WaitForNotification() { return(DsmManager->WaitForNotification()); }
+  void NotificationFinalize() { DsmManager->NotificationFinalize(); }
+
+  // Description:
+  // Get the notification flag - Only valid if GetDsmIsNotified is true.
+  int  GetNotification() { return(DsmManager->GetNotification()); }
+  void ClearNotification() { DsmManager->ClearNotification(); }
 
   // Description:
   // Get/Set the display update flag which triggers the update the view
-  int  GetDsmIsDataModified() { return DsmManager->GetDsmIsDataModified(); }
-  void ClearDsmIsDataModified() { DsmManager->ClearDsmIsDataModified(); }
+  int  GetIsDataModified() { return(DsmManager->GetIsDataModified()); }
+  void ClearIsDataModified() { DsmManager->ClearIsDataModified(); }
 
   // Description:
-  // Get/Set the update level flag
-  int  GetDsmUpdateLevel() { return DsmManager->GetDsmUpdateLevel(); }
-  void ClearDsmUpdateLevel() { DsmManager->ClearDsmUpdateLevel(); }
+  // Create a new DSM buffer of type DsmType using a local length of
+  // LocalBufferSizeMBytes and the given MpiComm.
+  int Create();
 
   // Description:
-  // Release locks and clean up for next update
-  void UpdateFinalize() { DsmManager->UpdateFinalize(); }
+  // Destroy the current DSM buffer.
+  int Destroy();
+
+  // Description:
+  // Clear the DSM storage.
+  int ClearStorage() { return(DsmManager->ClearStorage()); }
+
+  // Description:
+  // Connect to a remote DSM manager (called by client).
+  int Connect() { return(DsmManager->Connect()); }
+
+  // Description:
+  // When using static inter-communicators, create a new inter-communicator
+  // linking both managers together (called by client and server).
+  int ConnectInterComm() { return(DsmManager->ConnectInterComm()); }
+
+  // Description:
+  // Disconnect the manager from the remote end (called by client and server).
+  int Disconnect() { return(DsmManager->Disconnect()); }
+
+  // Description:
+  // Make the DSM manager listen for new incoming connection (called by server).
+  int Publish() { return(DsmManager->Publish()); }
+
+  // Description:
+  // Stop the listening service (called by server).
+  int Unpublish() { return(DsmManager->Unpublish()); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (complete output).
+  void H5Dump() { DsmManager->H5Dump(); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (hierarchical output).
+  void H5DumpLight() { DsmManager->H5DumpLight(); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (XML output).
+  void H5DumpXML() { DsmManager->H5DumpXML(); }
+
+  // Description:
+  // Generate an Xdmf description file.
+  void GenerateXMFDescription();
+
+  // Description:
+  // (Debug) Send an XML string.
+  void SendDSMXML() { DsmManager->SendDSMXML(); }
+
+  // Description:
+  // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
+  // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
+  // object to see if a string is present
+  void SetXMLStringSend(const char *XMLStringSend) { DsmManager->SetXMLStringSend(XMLStringSend); }
+  const char *GetXMLStringReceive() { return(DsmManager->GetXMLStringReceive()); }
+  void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
+
+  // Description:
+  // If the .dsm_client_config file exists in the standard location
+  // $ENV{H5FD_DSM_CONFIG_PATH}/.dsm_client_config then the server/port/mode
+  // information can be read. This is for use the by a DSM client.
+  // DSM servers write their .dsm_client_config when Publish() is called
+  // Returns false if the .dsm_client_config file is not read.
+  int ReadConfigFile();
+
+  void UpdateSteeredObjects() { DsmManager->UpdateSteeredObjects(); }
 
   // Description:
   // Set the current given steering command.
@@ -115,43 +188,32 @@ public:
   {
     DsmManager->SetSteeringValues(name, numberOfElements, values);
     DsmManager->WriteSteeredData();
-    this->H5DumpLight();
   }
 
   // Description:
   // Get values and associated name for the corresponding int interaction.
   int GetSteeringValues(const char *name, int numberOfElements, int *values)
   {
-    return DsmManager->GetSteeringValues(name, numberOfElements, values);
+    return(DsmManager->GetSteeringValues(name, numberOfElements, values));
   }
 
   // Description:
   // Get values and associated name for the corresponding double interaction.
   int GetSteeringValues(const char *name, int numberOfElements, double *values)
   {
-    return DsmManager->GetSteeringValues(name, numberOfElements, values);
+    return(DsmManager->GetSteeringValues(name, numberOfElements, values));
   }
 
   // Description:
   // Return 1 if the Interactions group exists, 0 otherwise
   int GetInteractionsGroupPresent()
   {
-    return DsmManager->GetInteractionsGroupPresent();
+    return(DsmManager->GetInteractionsGroupPresent());
   }
 
   // Description:
   // Set/Unset objects
   void SetDisabledObject(char *objectName) { DsmManager->SetDisabledObject(objectName); }
-
-  void   UpdateSteeredObjects() { DsmManager->UpdateSteeredObjects(); }
-
-  // Description:
-  // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
-  // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
-  // object to see if a string is present
-  void SetXMLStringSend(const char *XMLStringSend) { DsmManager->SetXMLStringSend(XMLStringSend); }
-  const char *GetXMLStringReceive() { return DsmManager->GetXMLStringReceive(); }
-  void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
 
   // Description:
   // The helper proxy used to generate (steering) panel controls must be created
@@ -159,10 +221,6 @@ public:
   // let it do the registration and creation of the proxy.
   void SetHelperProxyXMLString(const char *xmlstring);
   vtkGetStringMacro(HelperProxyXMLString);
-
-  // Description:
-  // Get the associated DSM buffer handle
-  H5FDdsmBuffer *GetDSMHandle() { return DsmManager->GetDSMHandle(); }
 
 //BTX
   // Description:
@@ -175,28 +233,6 @@ public:
   // or to the XDMF template used to generate a proper XDMF file.
   vtkSetStringMacro(XMFDescriptionFilePath);
   vtkGetStringMacro(XMFDescriptionFilePath);
-
-  int    CreateDSM();
-  int    DestroyDSM();
-  void   ClearDSM() { DsmManager->ClearDSM(); }
-  void   ConnectDSM() { DsmManager->ConnectDSM(); }
-  void   DisconnectDSM() { DsmManager->DisconnectDSM(); }
-  void   PublishDSM() { DsmManager->PublishDSM(); }
-  void   UnpublishDSM() { DsmManager->UnpublishDSM(); }
-  void   H5Dump() { DsmManager->H5Dump(); }
-  void   H5DumpLight() {  DsmManager->H5DumpLight(); }
-  void   H5DumpXML() { DsmManager->H5DumpXML(); }
-  void   GenerateXMFDescription();
-  void   SendDSMXML() { DsmManager->SendDSMXML(); }
-
-  // Description:
-  // If the .dsm_config file exists in the standard location
-  // $ENV{DSM_CONFIG_PATH}/.dsm_config or in the location set by
-  // @CMAKE{H5FDdsm_CONFIG_PATH}/.dsm_config then the server/port/mode
-  // information can be read. This is for use the by a DSM client.
-  // DSM servers write their .dsm_config when PublishDSM() is called
-  // Returns false if the .dsm_config file is not read
-  int    ReadDSMConfigFile();
 
 //BTX
   #ifdef VTK_USE_MPI

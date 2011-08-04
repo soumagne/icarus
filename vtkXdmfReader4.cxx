@@ -51,7 +51,7 @@ vtkXdmfReader4::~vtkXdmfReader4()
 void vtkXdmfReader4::SetDSMManager(vtkDSMManager* dsmmanager)
 {
   this->DSMManager = dsmmanager;
-  this->SetDsmBuffer(dsmmanager->GetDSMHandle());
+  this->SetDsmBuffer(dsmmanager->GetDsmBuffer());
 }
 //----------------------------------------------------------------------------
 bool vtkXdmfReader4::PrepareDsmBufferDocument()

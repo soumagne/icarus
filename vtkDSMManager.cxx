@@ -81,9 +81,9 @@ vtkDSMManager::~vtkDSMManager()
 #endif
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::DestroyDSM()
+int vtkDSMManager::Destroy()
 {
-  return this->DsmManager->DestroyDSM();
+  return(this->DsmManager->Destroy());
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::CheckMPIController()
@@ -123,7 +123,7 @@ void vtkDSMManager::CheckMPIController()
   }
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::ReadDSMConfigFile()
+int vtkDSMManager::ReadConfigFile()
 {
   this->CheckMPIController();
   //
@@ -131,7 +131,7 @@ int vtkDSMManager::ReadDSMConfigFile()
   //
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  this->DsmManager->SetCommunicator(*communicator->GetMPIComm()->GetHandle());
+  this->DsmManager->SetMpiComm(*communicator->GetMPIComm()->GetHandle());
 
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
@@ -143,10 +143,10 @@ int vtkDSMManager::ReadDSMConfigFile()
   return 0;
 #endif
 
-  return this->DsmManager->ReadDSMConfigFile();
+  return(this->DsmManager->ReadConfigFile());
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::CreateDSM()
+int vtkDSMManager::Create()
 {
   this->CheckMPIController();
 
@@ -155,7 +155,7 @@ int vtkDSMManager::CreateDSM()
   //
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  this->DsmManager->SetCommunicator(*communicator->GetMPIComm()->GetHandle());
+  this->DsmManager->SetMpiComm(*communicator->GetMPIComm()->GetHandle());
 
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
@@ -167,15 +167,15 @@ int vtkDSMManager::CreateDSM()
   return 0;
 #endif
 
-  return this->DsmManager->CreateDSM();
+  return(this->DsmManager->Create());
 }
 //----------------------------------------------------------------------------
 void vtkDSMManager::GenerateXMFDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
-  if (this->GetDSMHandle()) {
-    xdmfGenerator->SetDsmBuffer(this->GetDSMHandle());
+  if (this->GetDsmBuffer()) {
+    xdmfGenerator->SetDsmBuffer(this->GetDsmBuffer());
     xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "DSM:file.h5");
   }
   else {
@@ -184,7 +184,7 @@ void vtkDSMManager::GenerateXMFDescription()
 
   vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
 
-  if (this->GetDSMHandle()) this->GetDSMHandle()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
+  if (this->GetDsmBuffer()) this->GetDsmBuffer()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
 }
 

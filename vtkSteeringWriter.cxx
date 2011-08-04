@@ -213,7 +213,7 @@ int vtkSteeringWriter::OpenFile()
     vtkErrorMacro(<<"File not closed");
   }
   hid_t dsmFapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(dsmFapl, MPI_COMM_WORLD, this->DSMManager->GetDSMHandle());
+  H5Pset_fapl_dsm(dsmFapl, MPI_COMM_WORLD, this->DSMManager->GetDsmBuffer());
   this->H5FileId = H5Fopen("dsm", H5F_ACC_RDWR, dsmFapl);
   H5Pclose(dsmFapl);
   dsmFapl = H5I_BADID;
