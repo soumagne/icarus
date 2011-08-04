@@ -30,7 +30,7 @@
 #include "XdmfArray.h"
 #include "XdmfHDF.h"
 #include "hdf5_hl.h"
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 #include "H5FDdsm.h"
 
 typedef std::pair<std::string, XdmfArray *> HeavyType;
@@ -59,9 +59,9 @@ H5MBCallback::H5MBCallback(MPI_Comm comm)
   this->AccessPlist = -1;
 }
 //----------------------------------------------------------------------------
-void  H5MBCallback::SetDSMManager(vtkDSMManager *dsmmanager)
+void  H5MBCallback::SetDsmManager(vtkDsmManager *dsmmanager)
 {
-  this->DSMManager = dsmmanager;
+  this->DsmManager = dsmmanager;
 }
 //----------------------------------------------------------------------------
 XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfConstString access)
@@ -117,9 +117,9 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
       Error("file access property list creation failed");
     }
     // If using DSM - Set up file access property list with DSM handle
-    if (this->DSMManager && ds->GetDomain()==std::string("DSM")) {      
+    if (this->DsmManager && ds->GetDomain()==std::string("DSM")) {
       H5FD_dsm_init();
-      status = H5Pset_fapl_dsm(this->AccessPlist, MPI_COMM_WORLD, this->DSMManager->GetDsmBuffer());
+      status = H5Pset_fapl_dsm(this->AccessPlist, MPI_COMM_WORLD, this->DsmManager->GetDsmBuffer());
     }
     else {
       filename = std::string(ds->GetWorkingDirectory()) + "/" + FileName;

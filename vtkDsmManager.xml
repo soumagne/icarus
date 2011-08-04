@@ -7,9 +7,9 @@
   <ProxyGroup name="icarus_helpers">
 
     <!-- ============================================================== -->
-    <!-- DSMManager                                                     -->
+    <!-- DsmManager                                                     -->
     <!-- ============================================================== -->
-    <Proxy name="DSMManager" class="vtkDSMManager">
+    <Proxy name="DsmManager" class="vtkDsmManager">
 
       <Property name="Create"
                 command="Create">

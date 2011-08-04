@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDSMManager.h
+  Module                  : vtkDsmManager.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,12 +22,12 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-// .NAME vtkDSMManager - Create/Expose an Xdmf DSM to Paraview
+// .NAME vtkDsmManager - Create/Expose an Xdmf DSM to Paraview
 // .SECTION Description
 // Create/Expose an Xdmf DSM to Paraview
 
-#ifndef __vtkDSMManager_h
-#define __vtkDSMManager_h
+#ifndef __vtkDsmManager_h
+#define __vtkDsmManager_h
 
 #include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkObject.h"       // Base class
@@ -36,11 +36,11 @@
 
 class vtkMultiProcessController;
 
-class VTK_EXPORT vtkDSMManager : public vtkObject
+class VTK_EXPORT vtkDsmManager : public vtkObject
 {
 public:
-  static vtkDSMManager *New();
-  vtkTypeRevisionMacro(vtkDSMManager,vtkObject);
+  static vtkDsmManager *New();
+  vtkTypeRevisionMacro(vtkDsmManager,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   H5FDdsmBuffer *GetDsmBuffer() { return(DsmManager->GetDsmBuffer()); }
@@ -63,18 +63,18 @@ public:
 
   // Description:
   // Set/Get the published host name of our connection.
-  // Real value valid after a PublishDSM call has been made.
+  // Real value valid after a Publish call has been made.
   void SetServerHostName(const char* serverHostName) { DsmManager->SetServerHostName(serverHostName); }
   const char *GetServerHostName() { return(DsmManager->GetServerHostName()); }
 
   // Description:
   // Set/Get the published port of our connection.
-  // Real value valid after a PublishDSM call has been made.
+  // Real value valid after a Publish call has been made.
   void SetServerPort(int port) { DsmManager->SetServerPort(port); }
   int  GetServerPort() { return(DsmManager->GetServerPort()); }
 
   // Description:
-  // Only valid after a PublishDSM call has been made.
+  // Wait for a connection - Only valid after a Publish call has been made.
   int GetIsConnected() { return(DsmManager->GetIsConnected()); }
   int WaitForConnection() { return(DsmManager->WaitForConnection()); }
 
@@ -258,8 +258,8 @@ public:
 //ETX
 
 protected:
-     vtkDSMManager();
-    ~vtkDSMManager();
+     vtkDsmManager();
+    ~vtkDsmManager();
 
     //
     // Internal Variables
@@ -287,8 +287,8 @@ protected:
     //ETX
 
 private:
-    vtkDSMManager(const vtkDSMManager&);  // Not implemented.
-    void operator=(const vtkDSMManager&);  // Not implemented.
+    vtkDsmManager(const vtkDsmManager&);  // Not implemented.
+    void operator=(const vtkDsmManager&);  // Not implemented.
 };
 
 #endif

@@ -46,7 +46,7 @@ class vtkPointData;
 class vtkUnstructuredGrid;
 class vtkDataSet;
 class vtkMultiBlockDataSet;
-class vtkDSMManager;
+class vtkDsmManager;
 //BTX
 class H5MBCallback;
 //ETX
@@ -104,8 +104,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDSMManager(vtkDSMManager*);
-  vtkGetObjectMacro(DSMManager, vtkDSMManager);
+  virtual void SetDsmManager(vtkDsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkDsmManager);
 
   // Description:
   // Specify the domain name under which the grid/grids will be written
@@ -227,7 +227,7 @@ protected:
   int     UpdateNumPieces;
 
   // Used for DSM write
-  vtkDSMManager *DSMManager;
+  vtkDsmManager *DsmManager;
 
   //
   // Internal Variables

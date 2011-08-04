@@ -53,7 +53,7 @@
 #include "vtkGenericCell.h"
 #include "vtkMath.h"
 //
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 //
 #include <stdlib.h>
 #include <sstream>
@@ -80,7 +80,7 @@
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter4);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, Controller, vtkMultiProcessController);
-vtkCxxSetObjectMacro(vtkXdmfWriter4, DSMManager, vtkDSMManager);
+vtkCxxSetObjectMacro(vtkXdmfWriter4, DsmManager, vtkDsmManager);
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
 #ifdef JB_DEBUG__
@@ -121,7 +121,7 @@ vtkXdmfWriter4::vtkXdmfWriter4()
   this->TimeStep                   = 0;
   this->TopologyConstant           = 0;
   this->GeometryConstant           = 0;
-  this->DSMManager                 = NULL;
+  this->DsmManager                 = NULL;
   this->TemporalCollection         = 1;
 
   this->BuildMode                  = VTK_XDMF_BUILD_ALL;
@@ -295,7 +295,7 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
     hdf5group << XDMFW_GROUP_SEPARATOR << "Block_" << index;
   }
   hdf5group << ends;
-  if (this->DSMManager) {
+  if (this->DsmManager) {
     hdf5name = "DSM:" + hdf5name;
   }
   this->SetHeavyDataFileName(hdf5name.c_str());
@@ -478,9 +478,9 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
   }
 
   if (this->UpdatePiece==0) {
-    if (this->DSMManager) {
+    if (this->DsmManager) {
       XdmfConstString xml = outputDOM->Serialize();
-      this->DSMManager->SetXMLStringSend(xml);
+      this->DsmManager->SetXMLStringSend(xml);
     }
     else {
       outputDOM->Write(this->XdmfFileName.c_str());
@@ -532,7 +532,7 @@ int vtkXdmfWriter4::RequestData(
   //
   if (!this->Callback) {
     this->Callback = new H5MBCallback(mpiComm);
-    this->Callback->SetDSMManager(this->DSMManager);
+    this->Callback->SetDsmManager(this->DsmManager);
   }
 #endif
 
@@ -586,8 +586,8 @@ int vtkXdmfWriter4::RequestData(
   this->Callback->Synchronize();
   if (timeStepDOM) {
     this->WriteOutputXML(outputDOM, timeStepDOM, current_time);
-    if (this->DSMManager) {
-      this->DSMManager->SendDSMXML();
+    if (this->DsmManager) {
+      this->DsmManager->SendDSMXML();
     }
   }
 

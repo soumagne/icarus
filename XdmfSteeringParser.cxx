@@ -163,9 +163,9 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   //
   xmlstring << "<ServerManagerConfiguration>" << std::endl;
   xmlstring << "<ProxyGroup name=\"icarus_helpers\">" << std::endl;
-  xmlstring << "<SourceProxy name=\"DSMProxyHelper\" class=\"vtkDSMProxyHelper\">" << std::endl;
+  xmlstring << "<SourceProxy name=\"DsmProxyHelper\" class=\"vtkDsmProxyHelper\">" << std::endl;
   // The Helper needs a DSM manager
-  xmlstring << "<ProxyProperty name=\"DSMManager\" command=\"SetDSMManager\"/>" << std::endl;
+  xmlstring << "<ProxyProperty name=\"DsmManager\" command=\"SetDsmManager\"/>" << std::endl;
   // The Helper needs a Steering Writer
   xmlstring << "<ProxyProperty name=\"SteeringWriter\" command=\"SetSteeringWriter\"/>" << std::endl;
   
@@ -247,7 +247,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   }
 
   xmlstring << "<Hints>" << std::endl;
-  xmlstring << "<Property name=\"DSMManager\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"DsmManager\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"SteeringWriter\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Transform\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Time\" show=\"0\"/>" << std::endl;

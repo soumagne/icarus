@@ -29,7 +29,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 //
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 //
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkXdmfReader4);
@@ -38,7 +38,7 @@ vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
 vtkXdmfReader4::vtkXdmfReader4()
 {
   this->Controller = NULL;
-  this->DSMManager = 0;
+  this->DsmManager = 0;
   this->TimeRange[0] = 0.0;
   this->TimeRange[1] = 0.0;
 }
@@ -48,17 +48,17 @@ vtkXdmfReader4::~vtkXdmfReader4()
   this->SetController(NULL);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfReader4::SetDSMManager(vtkDSMManager* dsmmanager)
+void vtkXdmfReader4::SetDsmManager(vtkDsmManager* dsmmanager)
 {
-  this->DSMManager = dsmmanager;
+  this->DsmManager = dsmmanager;
   this->SetDsmBuffer(dsmmanager->GetDsmBuffer());
 }
 //----------------------------------------------------------------------------
 bool vtkXdmfReader4::PrepareDsmBufferDocument()
 {
-  if (this->DSMManager && this->DSMManager->GetXMLStringReceive()) {
+  if (this->DsmManager && this->DsmManager->GetXMLStringReceive()) {
     this->SetReadFromInputString(1);
-    this->SetInputString(this->DSMManager->GetXMLStringReceive());
+    this->SetInputString(this->DsmManager->GetXMLStringReceive());
   }
   return true;
 }
@@ -70,7 +70,7 @@ int vtkXdmfReader4::RequestInformation(
 {
   int result = vtkXdmfReader::RequestInformation(request, inputVector, outputVector);
   //
-  if (this->DSMManager) {
+  if (this->DsmManager) {
     vtkInformation *outInfo = outputVector->GetInformationObject(0);
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->TimeRange, 2);
   }

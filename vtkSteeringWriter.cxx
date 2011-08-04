@@ -19,7 +19,7 @@
 
 =========================================================================*/
 #include "vtkSteeringWriter.h"
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 #include "H5FDdsm.h"
 #include "H5MButil.h"
 
@@ -72,7 +72,7 @@
 vtkCxxRevisionMacro(vtkSteeringWriter, "$Revision$");
 vtkStandardNewMacro(vtkSteeringWriter);
 #ifdef VTK_USE_MPI
-vtkCxxSetObjectMacro(vtkSteeringWriter, DSMManager, vtkDSMManager);
+vtkCxxSetObjectMacro(vtkSteeringWriter, DsmManager, vtkDsmManager);
 vtkCxxSetObjectMacro(vtkSteeringWriter, Controller, vtkMultiProcessController);
 #endif
 //----------------------------------------------------------------------------
@@ -81,7 +81,7 @@ vtkSteeringWriter::vtkSteeringWriter()
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(0);
   //
-  this->DSMManager = NULL;
+  this->DsmManager = NULL;
   this->ArrayName  = NULL;
   this->WriteDescription = NULL;
   //
@@ -103,7 +103,7 @@ vtkSteeringWriter::~vtkSteeringWriter()
 { 
   delete []this->ArrayName;
   this->CloseFile();
-  this->SetDSMManager(NULL);
+  this->SetDsmManager(NULL);
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -213,7 +213,7 @@ int vtkSteeringWriter::OpenFile()
     vtkErrorMacro(<<"File not closed");
   }
   hid_t dsmFapl = H5Pcreate(H5P_FILE_ACCESS);
-  H5Pset_fapl_dsm(dsmFapl, MPI_COMM_WORLD, this->DSMManager->GetDsmBuffer());
+  H5Pset_fapl_dsm(dsmFapl, MPI_COMM_WORLD, this->DsmManager->GetDsmBuffer());
   this->H5FileId = H5Fopen("dsm", H5F_ACC_RDWR, dsmFapl);
   H5Pclose(dsmFapl);
   dsmFapl = H5I_BADID;

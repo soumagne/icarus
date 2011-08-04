@@ -39,7 +39,7 @@
 class vtkMultiProcessController;
 #endif
 //
-class vtkDSMManager;
+class vtkDsmManager;
 class vtkPointSet;
 class vtkDataArray;
 class vtkPointData;
@@ -66,8 +66,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDSMManager(vtkDSMManager*);
-  vtkGetObjectMacro(DSMManager, vtkDSMManager);
+  virtual void SetDsmManager(vtkDsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkDsmManager);
 
   //BTX
 #ifdef VTK_USE_MPI
@@ -171,7 +171,7 @@ protected:
   //BTX
 #ifdef VTK_USE_MPI
   //ETX
-  vtkDSMManager *DSMManager;
+  vtkDsmManager *DsmManager;
   vtkMultiProcessController* Controller;
   //BTX
 #endif

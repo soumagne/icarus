@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDSMManager.cxx
+  Module                  : vtkDsmManager.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,7 +22,7 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 //
 #include "vtkObjectFactory.h"
 //
@@ -40,10 +40,10 @@
 #include "vtkMPI.h"
 #include "vtkMPIController.h"
 #include "vtkMPICommunicator.h"
-vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
+vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 #endif
 //
-#include "vtkDSMProxyHelper.h"
+#include "vtkDsmProxyHelper.h"
 #include "XdmfGenerator.h"
 
 //----------------------------------------------------------------------------
@@ -53,10 +53,10 @@ vtkCxxSetObjectMacro(vtkDSMManager, Controller, vtkMultiProcessController);
 //#undef  vtkErrorMacro
 //#define vtkErrorMacro(a) H5FDdsmExternalError(a)
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkDSMManager, "$Revision$");
-vtkStandardNewMacro(vtkDSMManager);
+vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
+vtkStandardNewMacro(vtkDsmManager);
 //----------------------------------------------------------------------------
-vtkDSMManager::vtkDSMManager() 
+vtkDsmManager::vtkDsmManager()
 {
   this->UpdatePiece             = 0;
   this->UpdateNumPieces         = 0;
@@ -70,7 +70,7 @@ vtkDSMManager::vtkDSMManager()
   this->DsmManager              = new H5FDdsmManager();
 }
 //----------------------------------------------------------------------------
-vtkDSMManager::~vtkDSMManager()
+vtkDsmManager::~vtkDsmManager()
 { 
   this->SetXMFDescriptionFilePath(NULL);
   this->SetHelperProxyXMLString(NULL);
@@ -81,12 +81,12 @@ vtkDSMManager::~vtkDSMManager()
 #endif
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::Destroy()
+int vtkDsmManager::Destroy()
 {
   return(this->DsmManager->Destroy());
 }
 //----------------------------------------------------------------------------
-void vtkDSMManager::CheckMPIController()
+void vtkDsmManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {
@@ -123,7 +123,7 @@ void vtkDSMManager::CheckMPIController()
   }
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::ReadConfigFile()
+int vtkDsmManager::ReadConfigFile()
 {
   this->CheckMPIController();
   //
@@ -146,7 +146,7 @@ int vtkDSMManager::ReadConfigFile()
   return(this->DsmManager->ReadConfigFile());
 }
 //----------------------------------------------------------------------------
-int vtkDSMManager::Create()
+int vtkDsmManager::Create()
 {
   this->CheckMPIController();
 
@@ -170,7 +170,7 @@ int vtkDSMManager::Create()
   return(this->DsmManager->Create());
 }
 //----------------------------------------------------------------------------
-void vtkDSMManager::GenerateXMFDescription()
+void vtkDsmManager::GenerateXMFDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
@@ -189,7 +189,7 @@ void vtkDSMManager::GenerateXMFDescription()
 }
 
 //----------------------------------------------------------------------------
-void vtkDSMManager::SetHelperProxyXMLString(const char *xmlstring)
+void vtkDsmManager::SetHelperProxyXMLString(const char *xmlstring)
 {
   if ( this->HelperProxyXMLString == NULL && xmlstring == NULL) { return; }
   if ( this->HelperProxyXMLString && xmlstring && (!strcmp(this->HelperProxyXMLString,xmlstring))) { return; } 
@@ -209,16 +209,16 @@ void vtkDSMManager::SetHelperProxyXMLString(const char *xmlstring)
 }
 
 //----------------------------------------------------------------------------
-void vtkDSMManager::RegisterHelperProxy(const char *xmlstring) 
+void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
 {
-  // Register a constructor function for the DSMProxyHelper
-  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
-  // Pass the DSMProxyHelper XML into the proxy manager for use by NewProxy(...)
+  // Register a constructor function for the DsmProxyHelper
+  vtkProcessModule::InitializeInterpreter(DsmProxyHelperInit);
+  // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
   vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring);
 }
 
 //----------------------------------------------------------------------------
-void vtkDSMManager::PrintSelf(ostream& os, vtkIndent indent)
+void vtkDsmManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

@@ -57,14 +57,14 @@
         number_of_elements="1">
       </StringVectorProperty>
 
-      <ProxyProperty name="DSMManager" 
-                     command="SetDSMManager">
+      <ProxyProperty name="DsmManager" 
+                     command="SetDsmManager">
         <ProxyGroupDomain name="groups">
           <Group name="icarus_helpers"/>
         </ProxyGroupDomain>
         <ProxyListDomain name="proxy_list">
           <Proxy group="icarus_helpers" 
-                 name="DSMManager" />
+                 name="DsmManager" />
         </ProxyListDomain>
         <Documentation>
           The DSM Manager

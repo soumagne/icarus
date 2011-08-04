@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDSMProxyHelper.cxx
+  Module                  : vtkDsmProxyHelper.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,7 +22,7 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "vtkDSMProxyHelper.h"
+#include "vtkDsmProxyHelper.h"
 //
 #include "vtkInformation.h"
 #include "vtkObjectFactory.h"
@@ -35,20 +35,20 @@
 //
 #include "vtkSmartPointer.h"
 //
-#include "vtkDSMManager.h"
+#include "vtkDsmManager.h"
 #include "vtkSteeringWriter.h"
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
 int vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
-int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
+int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkDSMProxyHelper);
-vtkCxxSetObjectMacro(vtkDSMProxyHelper, DSMManager, vtkDSMManager);
-vtkCxxSetObjectMacro(vtkDSMProxyHelper, SteeringWriter, vtkSteeringWriter);
+vtkStandardNewMacro(vtkDsmProxyHelper);
+vtkCxxSetObjectMacro(vtkDsmProxyHelper, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkDsmProxyHelper, SteeringWriter, vtkSteeringWriter);
 //----------------------------------------------------------------------------
-vtkDSMProxyHelper::vtkDSMProxyHelper() 
+vtkDsmProxyHelper::vtkDsmProxyHelper()
 {
-  this->DSMManager     = NULL;
+  this->DsmManager     = NULL;
   this->SteeringWriter = NULL;
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
@@ -56,22 +56,22 @@ vtkDSMProxyHelper::vtkDSMProxyHelper()
   this->BlockTraffic   = 1;
 }
 //----------------------------------------------------------------------------
-vtkDSMProxyHelper::~vtkDSMProxyHelper()
+vtkDsmProxyHelper::~vtkDsmProxyHelper()
 { 
-  this->SetDSMManager(NULL);
+  this->SetDsmManager(NULL);
   this->SetSteeringWriter(NULL);
 }
 //----------------------------------------------------------------------------
-int vtkDSMProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
+int vtkDsmProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
 {
   info->Set(vtkAlgorithm::INPUT_REQUIRED_DATA_TYPE(), "vtkDataObject");
   info->Set(vtkAlgorithm::INPUT_IS_OPTIONAL(), 1);
   return 1;
 }
 //----------------------------------------------------------------------------
-void vtkDSMProxyHelper::WriteDataSetArrayData(const char *desc)
+void vtkDsmProxyHelper::WriteDataSetArrayData(const char *desc)
 {
-  if (this->SteeringWriter && this->SteeringWriter->GetDSMManager()) {
+  if (this->SteeringWriter && this->SteeringWriter->GetDsmManager()) {
     this->SteeringWriter->SetWriteDescription(desc);
 /*
     this->SteeringWriter->SetArrayName(arrayname);
@@ -84,29 +84,29 @@ void vtkDSMProxyHelper::WriteDataSetArrayData(const char *desc)
   else {
     std::cout << "Steering writer called with invalid DSM setup " << std::endl;
   }
-  this->DSMManager->H5DumpLight();
+  this->DsmManager->H5DumpLight();
 }
 
 //----------------------------------------------------------------------------
-vtkObjectBase *vtkDSMProxyHelperClientServerNewCommand()
+vtkObjectBase *vtkDsmProxyHelperClientServerNewCommand()
 {
-  return vtkDSMProxyHelper::New();
+  return vtkDsmProxyHelper::New();
 }
 //----------------------------------------------------------------------------
-void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter* csi)
+void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter* csi)
 {
   vtkObject_Init(csi);
-  csi->AddNewInstanceFunction("vtkDSMProxyHelper", vtkDSMProxyHelperClientServerNewCommand);
-  csi->AddCommandFunction("vtkDSMProxyHelper", vtkDSMProxyHelperCommand);
+  csi->AddNewInstanceFunction("vtkDsmProxyHelper", vtkDsmProxyHelperClientServerNewCommand);
+  csi->AddCommandFunction("vtkDsmProxyHelper", vtkDsmProxyHelperCommand);
 }
 //----------------------------------------------------------------------------
-int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)
+int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)
 {
-  vtkDSMProxyHelper *helper = vtkDSMProxyHelper::SafeDownCast(ob);
+  vtkDsmProxyHelper *helper = vtkDsmProxyHelper::SafeDownCast(ob);
   if (!helper)
     {
     vtkOStrStreamWrapper vtkmsg;
-    vtkmsg << "Cannot cast " << ob->GetClassName() << " object to vtkDSMProxyHelper.  "
+    vtkmsg << "Cannot cast " << ob->GetClassName() << " object to vtkDsmProxyHelper.  "
            << "This probably means the class specifies the incorrect superclass in vtkTypeMacro.";
     resultStream.Reset();
     resultStream << vtkClientServerStream::Error
@@ -130,16 +130,16 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   //
   // We need to use these normal ClientServer set/getters
   //
-  if (!strcmp("SetDSMManager",method) && msg.GetNumberOfArguments(0) == 3) {
-    vtkDSMManager  *temp0;
-    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDSMManager")) {
-      helper->SetDSMManager(temp0);
+  if (!strcmp("SetDsmManager",method) && msg.GetNumberOfArguments(0) == 3) {
+    vtkDsmManager  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDsmManager")) {
+      helper->SetDsmManager(temp0);
       return 1;
     }
   }
-  if (!strcmp("GetDSMManager",method) && msg.GetNumberOfArguments(0) == 2) {
-    vtkDSMManager  *temp20;
-    temp20 = (helper)->GetDSMManager();
+  if (!strcmp("GetDsmManager",method) && msg.GetNumberOfArguments(0) == 2) {
+    vtkDsmManager  *temp20;
+    temp20 = (helper)->GetDsmManager();
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
     return 1;
@@ -162,7 +162,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   //
   // If there's no DSM manager, then there's no point doing anything below here ....
   //
-  if (!helper->BlockTraffic && helper && helper->GetDSMManager()) {
+  if (!helper->BlockTraffic && helper && helper->GetDsmManager()) {
     if (!strncmp ("SetSteeringValueInt",method, 19))
     {
       int ival[8];
@@ -179,7 +179,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
       }
       std::cout << ");" << std::endl;
-      helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
+      helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
       return 1;
     }
 
@@ -199,7 +199,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
       }
       std::cout << ");" << std::endl;
-      helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
+      helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
       return 1;
     }
 
@@ -225,7 +225,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
         std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
         //
-        helper->GetDSMManager()->GetSteeringValues(param_name.c_str(), 2, temp);
+        helper->GetDsmManager()->GetSteeringValues(param_name.c_str(), 2, temp);
         resultStream.Reset();
         resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(temp,2) << vtkClientServerStream::End;
         return 1;
@@ -239,7 +239,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringScalarDouble", "");
         std::cout << "Calling GetSteeringScalarDouble(" << param_name.c_str() << ");" << std::endl;
         //
-        helper->GetDSMManager()->GetSteeringValues(param_name.c_str(), 1, &temp);
+        helper->GetDsmManager()->GetSteeringValues(param_name.c_str(), 1, &temp);
         resultStream.Reset();
         resultStream << vtkClientServerStream::Reply << vtkClientServerStream::InsertArray(&temp,1) << vtkClientServerStream::End;
         return 1;
@@ -253,7 +253,7 @@ int VTK_EXPORT vtkDSMProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
         std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
         //
-        helper->GetDSMManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
+        helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
         return 1;
       }
     }

@@ -31,16 +31,16 @@ INCLUDE_DIRECTORIES(
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
   OPTION(CSCS_DSM_BUILD_TESTING "Build DSM plugin testing" OFF)
-  IF(CSCS_DSM_BUILD_TESTING)
-    SET(DSM_PANEL_CLASS pqDSMViewerPanel_testing)
-  ELSE(CSCS_DSM_BUILD_TESTING)
-    SET(DSM_PANEL_CLASS pqDSMViewerPanel)
-  ENDIF(CSCS_DSM_BUILD_TESTING)
+#  IF(CSCS_DSM_BUILD_TESTING)
+#    SET(DSM_PANEL_CLASS pqDsmViewerPanel_testing)
+#  ELSE(CSCS_DSM_BUILD_TESTING)
+    SET(DSM_PANEL_CLASS pqDsmViewerPanel)
+#  ENDIF(CSCS_DSM_BUILD_TESTING)
 
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
       ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqUpdateThread.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqNotificationThread.h
   )
 
   # invoke macro that adds the refinement and display controls panel
@@ -73,20 +73,20 @@ ADD_PARAVIEW_PLUGIN(
   "1.0" 
 
   SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
   SERVER_MANAGER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
   SERVER_SOURCES
     ${ENCODED_FILTERS}
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDSMProxyHelper.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomPipelineHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
@@ -95,7 +95,7 @@ ADD_PARAVIEW_PLUGIN(
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqUpdateThread.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqNotificationThread.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
     ${DSM_UI_SOURCES}

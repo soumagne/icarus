@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDSMProxyHelper.h
+  Module                  : vtkDsmProxyHelper.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,31 +22,31 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-// .NAME vtkDSMProxyHelper - Manipulate Proxy objects created from steering XML
+// .NAME vtkDsmProxyHelper - Manipulate Proxy objects created from steering XML
 // .SECTION Description
 // Create/Expose a proxies via the steering XML
 
-#ifndef __vtkDSMProxyHelper_h
-#define __vtkDSMProxyHelper_h
+#ifndef __vtkDsmProxyHelper_h
+#define __vtkDsmProxyHelper_h
 
 #include "vtkDataObjectAlgorithm.h"    // Base class
 #include <map>
 
 // BTX
-class vtkDSMManager;
+class vtkDsmManager;
 class vtkSteeringWriter;
 class vtkClientServerInterpreter;
-extern "C" void VTK_EXPORT DSMProxyHelperInit(vtkClientServerInterpreter *csi);
+extern "C" void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter *csi);
 //ETX
 
-class VTK_EXPORT vtkDSMProxyHelper : public vtkDataObjectAlgorithm
+class VTK_EXPORT vtkDsmProxyHelper : public vtkDataObjectAlgorithm
 {
 public:
-  static vtkDSMProxyHelper *New();
-  vtkTypeMacro(vtkDSMProxyHelper,vtkDataObjectAlgorithm);
+  static vtkDsmProxyHelper *New();
+  vtkTypeMacro(vtkDsmProxyHelper,vtkDataObjectAlgorithm);
 
-  virtual void SetDSMManager(vtkDSMManager*);
-  vtkGetObjectMacro(DSMManager, vtkDSMManager)
+  virtual void SetDsmManager(vtkDsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkDsmManager)
 
   virtual void SetSteeringWriter(vtkSteeringWriter*);
   vtkGetObjectMacro(SteeringWriter, vtkSteeringWriter)
@@ -56,17 +56,17 @@ public:
   int                BlockTraffic;
 
 protected:
-    vtkDSMProxyHelper();
-   ~vtkDSMProxyHelper();
+    vtkDsmProxyHelper();
+   ~vtkDsmProxyHelper();
 
   int FillInputPortInformation(int port, vtkInformation* info);
 
-  vtkDSMManager     *DSMManager;
+  vtkDsmManager     *DsmManager;
   vtkSteeringWriter *SteeringWriter;
 
 private:
-    vtkDSMProxyHelper(const vtkDSMProxyHelper&);  // Not implemented.
-    void operator=(const vtkDSMProxyHelper&);  // Not implemented.
+    vtkDsmProxyHelper(const vtkDsmProxyHelper&);  // Not implemented.
+    void operator=(const vtkDsmProxyHelper&);  // Not implemented.
 };
 
 #endif

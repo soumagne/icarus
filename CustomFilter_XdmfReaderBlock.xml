@@ -2,12 +2,12 @@
   <CustomProxyDefinition name="XdmfReaderBlock" group="sources">
     <CompoundSourceProxy id="355" servers="1">
       <Proxy group="sources" type="XdmfReader4" id="212" servers="1" compound_name="XdmfReader1">
-        <Property name="DSMManager" id="212.DSMManager" number_of_elements="1">
+        <Property name="DsmManager" id="212.DsmManager" number_of_elements="1">
           <Proxy value="215"/>
-          <Domain name="groups" id="212.DSMManager.groups">
+          <Domain name="groups" id="212.DsmManager.groups">
             <Group value="icarus_helpers"/>
           </Domain>
-          <Domain name="proxy_list" id="212.DSMManager.proxy_list">
+          <Domain name="proxy_list" id="212.DsmManager.proxy_list">
             <Proxy value="215"/>
           </Domain>
         </Property>
@@ -43,13 +43,13 @@
       <ExposedProperties>
         <Property name="BlockIndices" proxy_name="ExtractBlock1" exposed_name="BlockIndices"/>
         <Property name="FileName" proxy_name="XdmfReader1" exposed_name="FileName"/>
-        <Property name="DSMManager" proxy_name="XdmfReader1" exposed_name="DSMManager"/>
+        <Property name="DsmManager" proxy_name="XdmfReader1" exposed_name="DsmManager"/>
         <Property name="TimeRange" proxy_name="XdmfReader1" exposed_name="TimeRange"/>
         <Property name="Input" proxy_name="ExtractBlock1" exposed_name="Input"/>
       </ExposedProperties>
       <Hints>
         <Property name="FileName" show="0"/>
-        <Property name="DSMManager" show="0"/>
+        <Property name="DsmManager" show="0"/>
       </Hints>
       <OutputPort name="Output" proxy="ExtractBlock1" port_index="0"/>
     </CompoundSourceProxy>

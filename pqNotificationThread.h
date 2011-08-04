@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqUpdateThread.cxx
+  Module                  : pqNotificationThread.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,24 +22,29 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "pqUpdateThread.h"
+#ifndef _pqNotificationThread_h
+#define _pqNotificationThread_h
 
-#include "pqDSMViewerPanel.h"
+#include <QThread>
 
-pqUpdateThread::pqUpdateThread(pqDSMViewerPanel *p) {
-  this->DSMViewerPanel = p;
-  this->Terminating = false;
-}
-//----------------------------------------------------------------------------
-pqUpdateThread::~pqUpdateThread() {
-  this->Terminating = true;
-  wait();
-}
-//----------------------------------------------------------------------------
-void pqUpdateThread::run() {
-  while (!this->Terminating) {
-    this->DSMViewerPanel->onDSMWaitForUpdate();
-    emit dsmUpdate();
-  }
-}
+class pqDsmViewerPanel;
 
+class pqNotificationThread : public QThread
+{
+  Q_OBJECT
+public:
+  pqNotificationThread(pqDsmViewerPanel* p);
+  ~pqNotificationThread();
+
+signals:
+  void dsmUpdate();
+
+protected:
+  void run();
+
+private:
+  pqDsmViewerPanel* DsmViewerPanel;
+  bool Terminating;
+};
+
+#endif /* _pqNotificationThread_h */

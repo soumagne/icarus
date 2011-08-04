@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqDSMViewerPanel.h
+  Module                  : pqDsmViewerPanel.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,8 +22,8 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#ifndef _pqDSMViewerPanel_h
-#define _pqDSMViewerPanel_h
+#ifndef _pqDsmViewerPanel_h
+#define _pqDsmViewerPanel_h
 
 #include <QDockWidget>
 #include <QPointer>
@@ -50,19 +50,19 @@ class vtkSMProperty;
 class vtkSMRepresentationProxy;
 class XdmfSteeringParser;
 struct SteeringGUIWidgetInfo;
-class pqUpdateThread;
+class pqNotificationThread;
 
-class pqDSMViewerPanel : public QDockWidget
+class pqDsmViewerPanel : public QDockWidget
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqDSMViewerPanel(QWidget* p = NULL);
- ~pqDSMViewerPanel();
+  pqDsmViewerPanel(QWidget* p = NULL);
+ ~pqDsmViewerPanel();
 
-  bool DSMProxyReady();
-  bool DSMReady();
+  bool DsmProxyReady();
+  bool DsmReady();
 
 signals:
 
@@ -70,7 +70,7 @@ public slots:
   void StartRemovingServer(pqServer *server);
   void onActiveViewChanged(pqView* view);
 
-  void onAddServerDSM();
+  void onAddDsmServer();
 
   void onBrowseFile();
   void onBrowseFileImage();
@@ -79,8 +79,8 @@ public slots:
   void RunScript();
   void ExportData(bool force);
 
-  void onPublishDSM();
-  void onUnpublishDSM();
+  void onPublish();
+  void onUnpublish();
 
   void onArrayItemChanged(QTreeWidgetItem*, int);
 
@@ -93,11 +93,11 @@ public slots:
   void onWriteDataToDSM();
   void onWriteSteeringDataToDSM();
 
-  void onDSMWaitForUpdate();
+  void onWaitForNotification();
   // triggered by updates from simulation
-  void onDSMUpdate();
-  void onDSMUpdateInformation();
-  void onDSMUpdatePipeline();
+  void onNotified();
+  void UpdateDsmInformation();
+  void UpdateDsmPipeline();
   void onPreAccept();
   void onPostAccept();
 
@@ -121,7 +121,7 @@ protected:
 
   class pqInternals;
   pqInternals     *Internals;
-  pqUpdateThread  *UpdateThread;
+  pqNotificationThread  *NotificationThread;
 
 protected slots:
 

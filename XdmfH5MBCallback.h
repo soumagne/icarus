@@ -29,7 +29,7 @@
 #include "vtkSmartPointer.h"
 
 class ArrayMap;
-class vtkDSMManager;
+class vtkDsmManager;
 //----------------------------------------------------------------------------
 class H5MBCallback :
   public XdmfOpenCallback,
@@ -50,7 +50,7 @@ class H5MBCallback :
     // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
     // disk. The DSM manager is assumed to be created and initialized before
     // being passed into this routine
-    void SetDSMManager(vtkDSMManager*);
+    void SetDsmManager(vtkDsmManager*);
 
   private:
     MPI_Comm Communicator;
@@ -59,7 +59,7 @@ class H5MBCallback :
     H5MB_tree_type *tree;
     ArrayMap       *dataArrays;
     // Used for DSM write
-    vtkSmartPointer<vtkDSMManager> DSMManager;
+    vtkSmartPointer<vtkDsmManager> DsmManager;
     hid_t AccessPlist;
 
 }; 
