@@ -13,6 +13,7 @@ ENDIF(WIN32 AND MSVC)
 #--------------------------------------------------
 # Find and Use ParaView
 #--------------------------------------------------
+SET(QT_USE_QTNETWORK TRUE)
 FIND_PACKAGE(ParaView REQUIRED)
 INCLUDE(${PARAVIEW_USE_FILE})
 INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)

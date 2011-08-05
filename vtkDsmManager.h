@@ -85,7 +85,10 @@ public:
   int  GetIsNotified() { return(DsmManager->GetIsNotified()); }
   void ClearIsNotified() { DsmManager->ClearIsNotified(); }
   int  WaitForNotification() { return(DsmManager->WaitForNotification()); }
-  void NotificationFinalize() { DsmManager->NotificationFinalize(); }
+  void NotificationFinalize();
+  void *NotificationThread();
+//  void WaitForNotificationFinalize();
+//  void SignalNotificationFinalize();
 
   // Description:
   // Get the notification flag - Only valid if GetDsmIsNotified is true.
@@ -125,7 +128,7 @@ public:
 
   // Description:
   // Make the DSM manager listen for new incoming connection (called by server).
-  int Publish() { return(DsmManager->Publish()); }
+  int Publish();
 
   // Description:
   // Stop the listening service (called by server).
@@ -286,6 +289,10 @@ protected:
     H5FDdsmManager *DsmManager;
     //ETX
 
+    //BTX
+    struct vtkDsmManagerInternals;
+    vtkDsmManagerInternals *DsmManagerInternals;
+    //ETX
 private:
     vtkDsmManager(const vtkDsmManager&);  // Not implemented.
     void operator=(const vtkDsmManager&);  // Not implemented.

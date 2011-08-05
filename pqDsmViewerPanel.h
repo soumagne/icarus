@@ -93,6 +93,7 @@ public slots:
   void onWriteDataToDSM();
   void onWriteSteeringDataToDSM();
 
+  void onNewNotificationSocket();
   void onWaitForNotification();
   // triggered by updates from simulation
   void onNotified();

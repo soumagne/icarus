@@ -45,16 +45,49 @@ vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 //
 #include "vtkDsmProxyHelper.h"
 #include "XdmfGenerator.h"
+#include "vtkPVOptions.h"
+#include "vtkClientSocket.h"
 
-//----------------------------------------------------------------------------
-//#undef  vtkDebugMacro
-//#define vtkDebugMacro(a) H5FDdsmExternalDebug(a)
-
-//#undef  vtkErrorMacro
-//#define vtkErrorMacro(a) H5FDdsmExternalError(a)
+#ifdef _WIN32
+  #include <windows.h>
+#else
+  #include <pthread.h>
+#endif
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
+//----------------------------------------------------------------------------
+struct vtkDsmManager::vtkDsmManagerInternals
+{
+  vtkSmartPointer<vtkClientSocket> NotificationSocket;
+
+#ifdef _WIN32
+  DWORD  NotificationThreadPtr;
+  HANDLE NotificationThreadHandle;
+#else
+  pthread_t NotificationThreadPtr;
+#endif
+};
+
+//----------------------------------------------------------------------------
+extern "C"{
+#ifdef _WIN32
+  VTK_EXPORT DWORD WINAPI vtkDsmManagerNotificationThread(void *dsmManagerPtr)
+  {
+    vtkDsmManager *dsmManager = (vtkDsmManager *)dsmManagerPtr;
+    dsmManager->NotificationThread();
+    return(0);
+  }
+#else
+  VTK_EXPORT void *
+  vtkDsmManagerNotificationThread(void *dsmManagerPtr)
+  {
+    vtkDsmManager *dsmManager = (vtkDsmManager *)dsmManagerPtr;
+    return(dsmManager->NotificationThread());
+  }
+#endif
+}
+
 //----------------------------------------------------------------------------
 vtkDsmManager::vtkDsmManager()
 {
@@ -68,7 +101,9 @@ vtkDsmManager::vtkDsmManager()
   this->XMFDescriptionFilePath  = NULL;
   this->HelperProxyXMLString    = NULL;
   this->DsmManager              = new H5FDdsmManager();
+  this->DsmManagerInternals     = new vtkDsmManagerInternals;
 }
+
 //----------------------------------------------------------------------------
 vtkDsmManager::~vtkDsmManager()
 { 
@@ -80,13 +115,10 @@ vtkDsmManager::~vtkDsmManager()
   this->SetController(NULL);
 #endif
 }
+
 //----------------------------------------------------------------------------
-int vtkDsmManager::Destroy()
-{
-  return(this->DsmManager->Destroy());
-}
-//----------------------------------------------------------------------------
-void vtkDsmManager::CheckMPIController()
+void
+vtkDsmManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {
@@ -122,28 +154,24 @@ void vtkDsmManager::CheckMPIController()
     vtkMPIController::SetGlobalController(controller);
   }
 }
+
 //----------------------------------------------------------------------------
-int vtkDsmManager::ReadConfigFile()
+void* vtkDsmManager::NotificationThread()
 {
-  this->CheckMPIController();
-  //
-  // Get the raw MPI_Comm handle
-  //
-  vtkMPICommunicator *communicator
-  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-  this->DsmManager->SetMpiComm(*communicator->GetMPIComm()->GetHandle());
+  this->WaitForConnection();
+  this->DsmManagerInternals->NotificationSocket->Send("C", 1);
 
-#ifdef VTK_USE_MPI
-  this->UpdatePiece     = this->Controller->GetLocalProcessId();
-  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
-#else
-  this->UpdatePiece     = 0;
-  this->UpdateNumPieces = 1;
-  vtkErrorMacro(<<"No MPI");
-  return 0;
-#endif
-
-  return(this->DsmManager->ReadConfigFile());
+  while (this->DsmManager->GetIsConnected()) {
+    if (this->WaitForNotification() > 0) {
+      this->DsmManagerInternals->NotificationSocket->Send("N", 1);
+//      this->WaitForNotificationFinalize();
+    }
+  }
+  return((void *)this);
+}
+void vtkDsmManager::NotificationFinalize()
+{
+  this->DsmManager->NotificationFinalize();
 }
 //----------------------------------------------------------------------------
 int vtkDsmManager::Create()
@@ -167,8 +195,48 @@ int vtkDsmManager::Create()
   return 0;
 #endif
 
+  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+  vtkPVOptions *pvOptions = pm->GetOptions();
+  const char *pvClientHostName = pvOptions->GetClientHostName();
+  const int notificationPort = 21999;
+  if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
+    vtkstd::cout << "Creating notification channel to "
+        << pvClientHostName << " on port " << notificationPort << "...";
+    this->DsmManagerInternals->NotificationSocket = vtkSmartPointer<vtkClientSocket>::New();
+    int result = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName, notificationPort);
+    if (result == 0) {
+      vtkstd::cout << "OK" << vtkstd::endl;
+    } else {
+      vtkErrorMacro("Failed to connect notification socket with client "
+          << pvClientHostName << ":" << notificationPort);
+      this->DsmManagerInternals->NotificationSocket = NULL;
+    }
+  }
   return(this->DsmManager->Create());
 }
+
+//----------------------------------------------------------------------------
+int vtkDsmManager::Destroy()
+{
+  return(this->DsmManager->Destroy());
+}
+
+//----------------------------------------------------------------------------
+int vtkDsmManager::Publish()
+{
+  this->DsmManager->Publish();
+#ifdef _WIN32
+  this->DsmManagerInternals->NotificationThreadHandle = CreateThread(NULL, 0,
+      vtkDsmManagerNotificationThread, (void *) this, 0,
+      &this->DsmManagerInternals->NotificationThreadPtr);
+#else
+  // Start another thread to handle DSM requests from other nodes
+  pthread_create(&this->DsmManagerInternals->NotificationThreadPtr, NULL,
+      &vtkDsmManagerNotificationThread, (void *) this);
+#endif
+  return(1);
+}
+
 //----------------------------------------------------------------------------
 void vtkDsmManager::GenerateXMFDescription()
 {
@@ -186,6 +254,30 @@ void vtkDsmManager::GenerateXMFDescription()
 
   if (this->GetDsmBuffer()) this->GetDsmBuffer()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
+}
+
+//----------------------------------------------------------------------------
+int vtkDsmManager::ReadConfigFile()
+{
+  this->CheckMPIController();
+  //
+  // Get the raw MPI_Comm handle
+  //
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
+  this->DsmManager->SetMpiComm(*communicator->GetMPIComm()->GetHandle());
+
+#ifdef VTK_USE_MPI
+  this->UpdatePiece     = this->Controller->GetLocalProcessId();
+  this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+#else
+  this->UpdatePiece     = 0;
+  this->UpdateNumPieces = 1;
+  vtkErrorMacro(<<"No MPI");
+  return 0;
+#endif
+
+  return(this->DsmManager->ReadConfigFile());
 }
 
 //----------------------------------------------------------------------------
