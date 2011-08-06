@@ -73,7 +73,7 @@ public:
   
 protected:
   vtkSplitBlocksFilter();
-  ~vtkSplitBlocksFilter();
+  virtual ~vtkSplitBlocksFilter();
 
   // Description:
   // We accept any old data as input, preferably multi-block

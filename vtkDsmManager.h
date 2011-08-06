@@ -261,8 +261,8 @@ public:
 //ETX
 
 protected:
-     vtkDsmManager();
-    ~vtkDsmManager();
+    vtkDsmManager();
+    virtual ~vtkDsmManager();
 
     //
     // Internal Variables

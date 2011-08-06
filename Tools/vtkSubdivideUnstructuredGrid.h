@@ -36,7 +36,7 @@ public:
 
 protected:
   vtkSubdivideUnstructuredGrid();
-  ~vtkSubdivideUnstructuredGrid() {};
+  virtual ~vtkSubdivideUnstructuredGrid() {};
 
   // Description:
   virtual int FillInputPortInformation(int port, vtkInformation* info);

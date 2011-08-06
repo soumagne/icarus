@@ -144,8 +144,8 @@ public:
   void CloseHDFFile();
 
 protected:
-   vtkXdmfWriter4();
-  ~vtkXdmfWriter4();
+  vtkXdmfWriter4();
+  virtual ~vtkXdmfWriter4();
   //
 
 //BTX

@@ -58,8 +58,8 @@ public:
   vtkGetMacro(DefaultNullDataType, int)
 
 protected:
-   vtkFlattenOneBlock();
-  ~vtkFlattenOneBlock();
+  vtkFlattenOneBlock();
+  virtual ~vtkFlattenOneBlock();
 
   int BlockIndex;
   int DefaultNullDataType;

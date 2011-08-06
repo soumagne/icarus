@@ -40,8 +40,8 @@ public:
      return new vtkCustomPipelineHelper(name, group);
    }
    //
-   vtkCustomPipelineHelper(const char *name, const char *group);
-  ~vtkCustomPipelineHelper();
+  vtkCustomPipelineHelper(const char *name, const char *group);
+  virtual ~vtkCustomPipelineHelper();
   //
   static void UnRegisterCustomFilters();
   static void RegisterCustomFilters();

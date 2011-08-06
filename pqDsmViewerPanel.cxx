@@ -150,7 +150,7 @@ public:
   };
 
   //
-  ~pqInternals() {
+  virtual ~pqInternals() {
     this->DsmProxyHelper     = NULL;
     this->SteeringWriter     = NULL;
     this->XdmfReader         = NULL;

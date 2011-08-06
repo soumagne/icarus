@@ -34,7 +34,7 @@ class pqNotificationThread : public QThread
   Q_OBJECT
 public:
   pqNotificationThread(pqDsmViewerPanel* p);
-  ~pqNotificationThread();
+  virtual ~pqNotificationThread();
 
 signals:
   void dsmNotified();

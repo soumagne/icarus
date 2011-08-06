@@ -64,8 +64,8 @@ public:
   vtkSetVector2Macro(TimeRange, double);
 
 protected:
-   vtkXdmfReader4();
-  ~vtkXdmfReader4();
+  vtkXdmfReader4();
+  virtual ~vtkXdmfReader4();
   //
   bool PrepareDsmBufferDocument();
 

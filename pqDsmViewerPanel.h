@@ -59,7 +59,7 @@ class pqDsmViewerPanel : public QDockWidget
 public:
   /// constructor
   pqDsmViewerPanel(QWidget* p = NULL);
- ~pqDsmViewerPanel();
+  virtual ~pqDsmViewerPanel();
 
   bool DsmProxyReady();
   bool DsmReady();

@@ -119,7 +119,7 @@ public:
 
 protected:
   vtkSteeringWriter();
-  ~vtkSteeringWriter();
+  virtual ~vtkSteeringWriter();
   //
   int OpenFile();
   int OpenGroup(const char *pathwithoutname);

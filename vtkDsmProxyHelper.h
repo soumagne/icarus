@@ -56,8 +56,8 @@ public:
   int                BlockTraffic;
 
 protected:
-    vtkDsmProxyHelper();
-   ~vtkDsmProxyHelper();
+  vtkDsmProxyHelper();
+  virtual ~vtkDsmProxyHelper();
 
   int FillInputPortInformation(int port, vtkInformation* info);
 

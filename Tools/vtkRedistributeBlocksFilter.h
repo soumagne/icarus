@@ -61,7 +61,7 @@ public:
 
 protected:
   vtkRedistributeBlocksFilter();
-  ~vtkRedistributeBlocksFilter();
+  virtual ~vtkRedistributeBlocksFilter();
 
   // Description:
   // We accept any old data as input, preferably multi-block
