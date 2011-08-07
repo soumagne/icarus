@@ -35,12 +35,10 @@
 #include <QTableWidget>
 #include <QMessageBox>
 #include <QProgressDialog>
-#include <QTimer>
 #include <QInputDialog>
 #include <QFileDialog>
 #include <QUrl>
 #include <QDesktopServices>
-//#include <QThread>
 #include <QTime>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -119,7 +117,6 @@
 #include "H5FDdsmComm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
-//#include "pqNotificationThread.h"
 #include "vtkSMCommandProperty.h"
 //
 #include <vtksys/SystemTools.hxx>
@@ -276,11 +273,7 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->TcpNotificationServer, SIGNAL(newConnection()),
                     SLOT(onNewNotificationSocket()));
   this->Internals->TcpNotificationServer->listen(QHostAddress::Any, 21999);
-  //
-  // Set up update thread
-//  this->NotificationThread = new pqNotificationThread(this);
-//  this->connect(this->NotificationThread,
-//      SIGNAL(dsmNotified()), this, SLOT(onNotified()), Qt::QueuedConnection);
+
   //
   // Link GUI object events to callbacks
   //
@@ -372,11 +365,6 @@ pqDsmViewerPanel::~pqDsmViewerPanel()
     delete this->Internals->TcpNotificationServer;
   }
   this->Internals->TcpNotificationServer = NULL;
-//  if (this->NotificationThread) {
-//    // TODO terminate thread cleanly
-//    delete this->NotificationThread;
-//  }
-//  this->NotificationThread = NULL;
 }
 //----------------------------------------------------------------------------
 void pqDsmViewerPanel::LoadSettings()
@@ -667,8 +655,6 @@ bool pqDsmViewerPanel::DsmReady()
       this->Internals->DsmProxy->UpdateVTKObjects();
       this->Internals->DsmProxy->InvokeCommand("Create");
       this->Internals->DsmInitialized = 1;
-      //
-//      this->NotificationThread->start();
     }
     else if (client) {
       this->Internals->DsmProxy->InvokeCommand("ReadConfigFile");
@@ -887,27 +873,6 @@ void pqDsmViewerPanel::onWriteDataToDSM()
 void pqDsmViewerPanel::RunScript()
 {
   std::string scriptname = this->Internals->scriptPath->text().toStdString();
-}
-//-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onWriteSteeringDataToDSM()
-{
-/*
-  if (this->DsmReady()) {
-    if (!this->Internals->ActiveSourceProxy) {
-      vtkGenericWarningMacro(<<"Nothing to Write");
-      return;
-    }
-
-    pqSMAdaptor::setInputProperty(
-      this->Internals->SteeringWriter->GetProperty("Input"),
-      this->Internals->ActiveSourceProxy,
-      this->Internals->ActiveSourcePort
-      );
-
-    this->Internals->SteeringWriter->UpdateVTKObjects();
-    this->Internals->SteeringWriter->UpdatePipeline();
-  }
-*/
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::SaveSnapshot() {
@@ -1219,26 +1184,7 @@ void pqDsmViewerPanel::onNewNotificationSocket()
     this->Internals->TcpNotificationServer->close();
   }
 }
-//-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onWaitForNotification()
-{
-  if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
-    if (this->DsmReady()) {
-      if (this->Internals->dsmIsServer->isChecked()) {
-        vtkSMPropertyHelper ic(this->Internals->DsmProxy, "IsConnected");
-        ic.UpdateValueFromServer();
-        if (ic.GetAsInt() == 0) {
-          cerr << "onWaitForConnection" << endl;
-          this->Internals->DsmProxy->InvokeCommand("WaitForConnection");
-          cerr << "Connected" << endl;
-        }
-      }
-      cerr << "onWaitForNotification" << endl;
-      this->Internals->DsmProxy->InvokeCommand("WaitForNotification");
-      cerr << "Notified" << endl;
-    }
-  }
-}
+
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onNotified()
 {
@@ -1246,15 +1192,15 @@ void pqDsmViewerPanel::onNotified()
   char notificationCode = notification[0];
   switch (notificationCode) {
     case 'C':
-      std::cout << "DSM is now connected" << std::endl;
+      std::cout << "New DSM connection established" << std::endl;
       break;
     case 'N':
       if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
         vtkSMPropertyHelper ig(this->Internals->DsmProxy, "Notification");
         ig.UpdateValueFromServer();
-        std::cout << "DSM Received Notification: ";
+        std::cout << "Received notification ";
         if (ig.GetAsInt() == 0) {
-          std::cout << "New Data" << std::endl;
+          std::cout << "\"New Data\"...";
           vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
           dm.UpdateValueFromServer();
           if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
@@ -1263,18 +1209,17 @@ void pqDsmViewerPanel::onNotified()
           }
         }
         else if (ig.GetAsInt() == 1) {
-          std::cout << "New Information" << std::endl;
+          std::cout << "\"New Information\"...";
           this->UpdateDsmInformation();
         } else {
           std::cout << "Notification " << ig.GetAsInt() <<
               " not yet supported, please check simulation code " << std::endl;
         }
 
-    //    this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
+        this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
 
-    //    std::cout << "Update complete : calling NotificationFinalize" << std::endl;
-        this->Internals->DsmProxy->InvokeCommand("ClearNotification");
-        this->Internals->DsmProxy->InvokeCommand("NotificationFinalize");
+        std::cout << "Updated" << std::endl;
+        this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
       }
       break;
     default:

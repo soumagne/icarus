@@ -26,31 +26,13 @@
 #define _pqDsmViewerPanel_h
 
 #include <QDockWidget>
-#include <QPointer>
-//
-#include <vtkSmartPointer.h>
-//
-#include <vector>
 // Core Qt 
-class QGraphicsScene;
 class QTreeWidgetItem;
-class QSpinBox;
-class QComboBox;
-class QDoubleSpinBox;
-class QLabel;
 // Servermanager and views
 class pqServer;
 class pqView;
-// 3D widget control
-class pq3DWidget;
-// Proxies
-class vtkSMProxy;
-class vtkSMSourceProxy;
-class vtkSMProperty;
-class vtkSMRepresentationProxy;
-class XdmfSteeringParser;
+
 struct SteeringGUIWidgetInfo;
-class pqNotificationThread;
 
 class pqDsmViewerPanel : public QDockWidget
 {
@@ -91,10 +73,8 @@ public slots:
 
   // Sending data to DSM
   void onWriteDataToDSM();
-  void onWriteSteeringDataToDSM();
 
   void onNewNotificationSocket();
-  void onWaitForNotification();
   // triggered by updates from simulation
   void onNotified();
   void UpdateDsmInformation();
@@ -121,8 +101,7 @@ protected:
   void ChangeItemState(QTreeWidgetItem *item);
 
   class pqInternals;
-  pqInternals     *Internals;
-  pqNotificationThread  *NotificationThread;
+  pqInternals *Internals;
 
 protected slots:
 

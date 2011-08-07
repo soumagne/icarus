@@ -170,15 +170,15 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       //
       std::string param_name = method;
       vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueInt", "");
-      std::cout << "Calling SetSteeringValueInt(" << param_name.c_str() << ",";
-      for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
+      // std::cout << "Calling SetSteeringValueInt(" << param_name.c_str() << ",";
+      for (int i = 0; i < msg.GetNumberOfArguments(0); i++) {
         if (msg.GetArgument(0, i, &ival[nArgs])) nArgs++;
       }
-      std::cout << nArgs << "," << "{";
-      for (int i=0; i<nArgs; i++) {
-        std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
-      }
-      std::cout << ");" << std::endl;
+      // std::cout << nArgs << "," << "{";
+      // for (int i = 0; i < nArgs; i++) {
+      //   std::cout << ival[i] << (i<(nArgs-1) ? "," : "}");
+      // }
+      // std::cout << ");" << std::endl;
       helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
       return 1;
     }
@@ -190,15 +190,15 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       //
       std::string param_name = method;
       vtksys::SystemTools::ReplaceString(param_name, "SetSteeringValueDouble", "");
-      std::cout << "Calling SetSteeringValueDouble(" << param_name.c_str() << ",";
-      for (int i=0; i<msg.GetNumberOfArguments(0); i++) {
+      // std::cout << "Calling SetSteeringValueDouble(" << param_name.c_str() << ",";
+      for (int i = 0; i < msg.GetNumberOfArguments(0); i++) {
         if (msg.GetArgument(0, i, &dval[nArgs])) nArgs++;
       }
-      std::cout << nArgs << "," << "{";
-      for (int i=0; i<nArgs; i++) {
-        std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
-      }
-      std::cout << ");" << std::endl;
+      // std::cout << nArgs << "," << "{";
+      // for (int i = 0; i < nArgs; i++) {
+      //   std::cout << dval[i] << (i<(nArgs-1) ? "," : "}");
+      // }
+      // std::cout << ");" << std::endl;
       helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
       return 1;
     }
@@ -210,11 +210,11 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       //
       std::string param_name = method;
       vtksys::SystemTools::ReplaceString(param_name, "SetSteeringArray", "");
-      std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
+      // std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
       msg.GetArgument(0, nArgs-1, &text); 
-      std::cout << text << ")" << std::endl;
+      // std::cout << text << ")" << std::endl;
       helper->GetSteeringWriter()->SetWriteDescription(text);
-//      helper->WriteDataSetArrayData(text);
+      // helper->WriteDataSetArrayData(text);
       return 1;
     }
 
@@ -223,7 +223,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         double temp[2];
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringValueDouble", "");
-        std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
+        // std::cout << "Calling GetSteeringValueDouble(" << param_name.c_str() << ");" << std::endl;
         //
         helper->GetDsmManager()->GetSteeringValues(param_name.c_str(), 2, temp);
         resultStream.Reset();
@@ -237,7 +237,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         double temp;
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "GetSteeringScalarDouble", "");
-        std::cout << "Calling GetSteeringScalarDouble(" << param_name.c_str() << ");" << std::endl;
+        // std::cout << "Calling GetSteeringScalarDouble(" << param_name.c_str() << ");" << std::endl;
         //
         helper->GetDsmManager()->GetSteeringValues(param_name.c_str(), 1, &temp);
         resultStream.Reset();
@@ -251,7 +251,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
         int temp;
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
-        std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
+        // std::cout << "Calling ExecuteSteeringCommand(" << param_name.c_str() << ");" << std::endl;
         //
         helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), 1, &temp);
         return 1;

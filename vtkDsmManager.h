@@ -85,10 +85,13 @@ public:
   int  GetIsNotified() { return(DsmManager->GetIsNotified()); }
   void ClearIsNotified() { DsmManager->ClearIsNotified(); }
   int  WaitForNotification() { return(DsmManager->WaitForNotification()); }
-  void NotificationFinalize();
   void *NotificationThread();
-//  void WaitForNotificationFinalize();
-//  void SignalNotificationFinalize();
+
+  // Description:
+  // Signal/Wait for the pipeline update to be finished (only valid when
+  // a new notification has been received)
+  void SignalUpdated();
+  void WaitForUpdated();
 
   // Description:
   // Get the notification flag - Only valid if GetDsmIsNotified is true.

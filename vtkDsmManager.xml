@@ -135,18 +135,6 @@
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-      <Property name="WaitForConnection"
-                command="WaitForConnection">
-      </Property>
-
-      <Property name="WaitForNotification"
-                command="WaitForNotification">
-      </Property>
-
-      <Property name="NotificationFinalize"
-                command="NotificationFinalize">
-      </Property>
-
       <IntVectorProperty
         name="Notification"
         command="GetNotification"
@@ -155,10 +143,6 @@
         number_of_elements="1">
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
-
-      <Property name="ClearNotification"
-                command="ClearNotification">
-      </Property>
 
       <IntVectorProperty
         name="IsDataModified"
@@ -171,6 +155,10 @@
 
       <Property name="ClearIsDataModified"
                 command="ClearIsDataModified">
+      </Property>
+
+      <Property name="SignalUpdated"
+                command="SignalUpdated">
       </Property>
 
       <IntVectorProperty

@@ -59,6 +59,37 @@ vtkStandardNewMacro(vtkDsmManager);
 //----------------------------------------------------------------------------
 struct vtkDsmManager::vtkDsmManagerInternals
 {
+  vtkDsmManagerInternals() {
+    this->NotificationThreadPtr = 0;
+#ifdef _WIN32
+    this->NotificationThreadHandle = NULL;
+#endif
+
+    this->IsUpdated = false;
+#ifdef _WIN32
+  #if (WINVER < _WIN32_WINNT_LONGHORN)
+    this->UpdatedEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("UpdatedEvent"));
+  #else
+    InitializeCriticalSection  (&this->UpdatedCritSection);
+    InitializeConditionVariable(&this->UpdatedCond);
+  #endif
+#else
+    pthread_mutex_init(&this->UpdatedMutex, NULL);
+    pthread_cond_init (&this->UpdatedCond, NULL);
+#endif
+  }
+  ~vtkDsmManagerInternals() {
+#ifdef _WIN32
+  #if (WINVER < _WIN32_WINNT_LONGHORN)
+    CloseHandle(this->UpdatedEvent);
+  #else
+    DeleteCriticalSection(&this->UpdatedCritSection);
+  #endif
+#else
+    pthread_mutex_destroy(&this->UpdatedMutex);
+    pthread_cond_destroy (&this->UpdatedCond);
+#endif
+  }
   vtkSmartPointer<vtkClientSocket> NotificationSocket;
 
 #ifdef _WIN32
@@ -66,6 +97,19 @@ struct vtkDsmManager::vtkDsmManagerInternals
   HANDLE NotificationThreadHandle;
 #else
   pthread_t NotificationThreadPtr;
+#endif
+
+  bool                    IsUpdated;
+#ifdef _WIN32
+#if (WINVER < _WIN32_WINNT_LONGHORN)
+  HANDLE                  UpdatedEvent;
+#else
+  CRITICAL_SECTION        UpdatedCritSection;
+  CONDITION_VARIABLE      UpdatedCond;
+#endif
+#else
+  pthread_mutex_t         UpdatedMutex;
+  pthread_cond_t          UpdatedCond;
 #endif
 };
 
@@ -111,6 +155,8 @@ vtkDsmManager::~vtkDsmManager()
   this->SetHelperProxyXMLString(NULL);
   if (this->DsmManager) delete this->DsmManager;  
   this->DsmManager = NULL;
+  if (this->DsmManagerInternals) delete this->DsmManagerInternals;
+  this->DsmManagerInternals = NULL;
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -164,15 +210,78 @@ void* vtkDsmManager::NotificationThread()
   while (this->DsmManager->GetIsConnected()) {
     if (this->WaitForNotification() > 0) {
       this->DsmManagerInternals->NotificationSocket->Send("N", 1);
-//      this->WaitForNotificationFinalize();
+      this->WaitForUpdated();
     }
   }
   return((void *)this);
 }
-void vtkDsmManager::NotificationFinalize()
+
+//----------------------------------------------------------------------------
+void vtkDsmManager::SignalUpdated()
 {
+#ifdef _WIN32
+#if (WINVER >= _WIN32_WINNT_LONGHORN)
+  EnterCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
+#endif
+#else
+  pthread_mutex_lock(&this->DsmManagerInternals->UpdatedMutex);
+#endif
+  this->DsmManagerInternals->IsUpdated = true;
+#ifdef _WIN32
+#if (WINVER < _WIN32_WINNT_LONGHORN)
+  SetEvent(this->DsmManagerInternals->UpdatedEvent);
+#else
+  WakeConditionVariable(&this->DsmManagerInternals->UpdatedCond);
+  LeaveCriticalSection (&this->DsmManagerInternals->UpdatedCritSection);
+#endif
+#else
+  pthread_cond_signal(&this->DsmManagerInternals->UpdatedCond);
+  vtkDebugMacro("Sent updated condition signal");
+  pthread_mutex_unlock(&this->DsmManagerInternals->UpdatedMutex);
+#endif
+
+  this->DsmManager->ClearNotification();
   this->DsmManager->NotificationFinalize();
 }
+
+//----------------------------------------------------------------------------
+void vtkDsmManager::WaitForUpdated()
+{
+#ifdef _WIN32
+#if (WINVER >= _WIN32_WINNT_LONGHORN)
+  EnterCriticalSection(&this->UpdatedCritSection);
+#endif
+#else
+  pthread_mutex_lock(&this->DsmManagerInternals->UpdatedMutex);
+#endif
+  while (!this->DsmManagerInternals->IsUpdated) {
+    vtkDebugMacro("Thread going into wait for pipeline updated...");
+#ifdef _WIN32
+#if (WINVER < _WIN32_WINNT_LONGHORN)
+    WaitForSingleObject(this->DsmManagerInternals->UpdatedEvent, INFINITE);
+    ResetEvent(this->DsmManagerInternals->UpdatedEvent);
+#else
+    SleepConditionVariableCS(&this->DsmManagerInternals->UpdatedCond,
+        &this->DsmManagerInternals->UpdatedCritSection, INFINITE);
+#endif
+#else
+    pthread_cond_wait(&this->DsmManagerInternals->UpdatedCond,
+        &this->DsmManagerInternals->UpdatedMutex);
+#endif
+    vtkDebugMacro("Thread received updated signal");
+  }
+  if (this->DsmManagerInternals->IsUpdated) {
+    this->DsmManagerInternals->IsUpdated = true;
+  }
+#ifdef _WIN32
+#if (WINVER >= _WIN32_WINNT_LONGHORN)
+  LeaveCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
+#endif
+#else
+  pthread_mutex_unlock(&this->DsmManagerInternals->UpdatedMutex);
+#endif
+}
+
 //----------------------------------------------------------------------------
 int vtkDsmManager::Create()
 {
@@ -200,12 +309,12 @@ int vtkDsmManager::Create()
   const char *pvClientHostName = pvOptions->GetClientHostName();
   const int notificationPort = 21999;
   if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
-    vtkstd::cout << "Creating notification channel to "
+    vtkstd::cout << "Creating notification socket to "
         << pvClientHostName << " on port " << notificationPort << "...";
     this->DsmManagerInternals->NotificationSocket = vtkSmartPointer<vtkClientSocket>::New();
     int result = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName, notificationPort);
     if (result == 0) {
-      vtkstd::cout << "OK" << vtkstd::endl;
+      vtkstd::cout << "Connected" << vtkstd::endl;
     } else {
       vtkErrorMacro("Failed to connect notification socket with client "
           << pvClientHostName << ":" << notificationPort);
