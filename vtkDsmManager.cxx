@@ -249,7 +249,7 @@ void vtkDsmManager::WaitForUpdated()
 {
 #ifdef _WIN32
 #if (WINVER >= _WIN32_WINNT_LONGHORN)
-  EnterCriticalSection(&this->UpdatedCritSection);
+  EnterCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
 #endif
 #else
   pthread_mutex_lock(&this->DsmManagerInternals->UpdatedMutex);
