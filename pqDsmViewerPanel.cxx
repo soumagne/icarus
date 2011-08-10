@@ -398,7 +398,7 @@ void pqDsmViewerPanel::LoadSettings()
   QString descFilePath = settings->value("DescriptionFilePath").toString();
   if(!descFilePath.isEmpty()) {
     this->Internals->xdmfFilePathLineEdit->insert(descFilePath);
-    this->ParseXMLTemplate(descFilePath.toStdString().c_str());
+    this->ParseXMLTemplate(descFilePath.toLatin1().data());
   }
   // Force XDMF Generation
   this->Internals->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
@@ -667,7 +667,7 @@ bool pqDsmViewerPanel::DsmReady()
     // Create GUI controls from template
     //
     if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
-      this->ParseXMLTemplate(this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
+      this->ParseXMLTemplate(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
     }
   }
   return this->Internals->DsmInitialized;
@@ -697,7 +697,7 @@ void pqDsmViewerPanel::onBrowseFile()
     QString fileName = dialog.selectedFiles().at(0);
     this->Internals->xdmfFilePathLineEdit->clear();
     this->Internals->xdmfFilePathLineEdit->insert(fileName);
-    this->ParseXMLTemplate(fileName.toStdString().c_str());
+    this->ParseXMLTemplate(fileName.toLatin1().data());
   }
 }
 //-----------------------------------------------------------------------------
@@ -711,7 +711,7 @@ void pqDsmViewerPanel::onBrowseFileImage()
   dialog.setViewMode(QFileDialog::Detail);
   dialog.setFileMode(QFileDialog::AnyFile);
   if(dialog.exec()) {
-    std::string fileName = dialog.selectedFiles().at(0).toStdString();
+    std::string fileName = dialog.selectedFiles().at(0).toLatin1().data();
     this->Internals->imageFilePath->clear();
     fileName = vtksys::SystemTools::GetFilenamePath(fileName) + "/" +
       vtksys::SystemTools::GetFilenameWithoutLastExtension(fileName) + ".xxxxx.png";
@@ -726,7 +726,7 @@ void pqDsmViewerPanel::onPublish()
       QString hostname = this->Internals->dsmServerName->currentText();
       pqSMAdaptor::setElementProperty(
           this->Internals->DsmProxy->GetProperty("ServerHostName"),
-          hostname.toStdString().c_str());
+          hostname.toLatin1().data().c_str());
 
       pqSMAdaptor::setElementProperty(
           this->Internals->DsmProxy->GetProperty("ServerPort"),
@@ -751,8 +751,8 @@ void pqDsmViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
   this->ChangeItemState(item);
 
   GridMap &steeringConfig = this->Internals->SteeringParser->GetSteeringConfig();
-  std::string gridname = item->data(0, 1).toString().toStdString();
-  std::string attrname = item->text(0).toStdString();
+  std::string gridname = item->data(0, 1).toString().toLatin1().data();
+  std::string attrname = item->text(0).toLatin1().data();
 
   pqSMAdaptor::setElementProperty(
     this->Internals->DsmProxy->GetProperty("DisabledObject"),
@@ -872,11 +872,11 @@ void pqDsmViewerPanel::onWriteDataToDSM()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::RunScript()
 {
-  std::string scriptname = this->Internals->scriptPath->text().toStdString();
+  std::string scriptname = this->Internals->scriptPath->text().toLatin1().data();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::SaveSnapshot() {
-  std::string pngname = this->Internals->imageFilePath->text().toStdString();
+  std::string pngname = this->Internals->imageFilePath->text().toLatin1().data();
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
   sprintf(buffer, pngname.c_str(), this->Internals->CurrentTimeStep);  
@@ -916,7 +916,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
 {
   bool force_generate     = false;
   static int current_time = 0;
-  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
+  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
   //
 #ifdef DISABLE_DISPLAY
   if (this->DsmReady()) {
@@ -951,16 +951,16 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
       pqSMAdaptor::setElementProperty(
         this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), 
-        this->Internals->xdmfFilePathLineEdit->text().toStdString().c_str());
+        this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
       this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
     }
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_TEMPLATE) {
       force_generate = this->Internals->forceXdmfGeneration->isChecked();
       // Only re-generate if the description file path has changed or if force is set to true
-      if ((xdmf_description_file_path != this->Internals->xdmfFilePathLineEdit->text().toStdString()) 
+      if ((xdmf_description_file_path != this->Internals->xdmfFilePathLineEdit->text().toLatin1().data()) 
         || this->Internals->CreateObjects || force_generate) 
       {
-        xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toStdString();
+        xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
         // Generate xdmf file for reading
         // Send the whole string representing the DOM and not just the file path so that the 
         // template file does not to be present on the server anymore
@@ -1351,7 +1351,7 @@ void pqDsmViewerPanel::ExportData(bool force)
         vtkSMPropertyHelper ip(this->Internals->SteeringWriter, "Input");
         ip.Set(controlledProxy,0);
         vtkSMPropertyHelper svp(this->Internals->SteeringWriter, "WriteDescription");
-        svp.Set(widget->value().toStdString().c_str());
+        svp.Set(widget->value().toLatin1().data());
         this->Internals->SteeringWriter->UpdateVTKObjects();
         this->Internals->SteeringWriter->UpdatePipeline();
       }
