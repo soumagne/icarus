@@ -61,6 +61,8 @@
 #include "vtkSMPropertyLink.h"
 #include "vtkSMOutputPort.h"
 #include "vtkSMCompoundSourceProxy.h"
+#include "vtkSMProxyDefinitionManager.h"
+
 #include "vtkPVDataInformation.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkProcessModule.h"
@@ -495,6 +497,9 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
     pqSMAdaptor::setElementProperty(
       this->Internals->DsmProxy->GetProperty("HelperProxyXMLString"), HelperProxyXML.c_str());
     this->Internals->DsmProxy->UpdateProperty("HelperProxyXMLString");
+
+//    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
+
     // and register on the client too 
     vtkDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
     // now create an actual proxy
