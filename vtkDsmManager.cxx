@@ -53,6 +53,7 @@ vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 #else
   #include <pthread.h>
 #endif
+
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
@@ -307,18 +308,26 @@ int vtkDsmManager::Create()
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
   vtkPVOptions *pvOptions = pm->GetOptions();
   const char *pvClientHostName = pvOptions->GetClientHostName();
-  const int notificationPort = 21999;
+  int notificationPort = VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT;
   if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
-    vtkstd::cout << "Creating notification socket to "
-        << pvClientHostName << " on port " << notificationPort << "...";
+    int r, tryConnect = 0;
     this->DsmManagerInternals->NotificationSocket = vtkSmartPointer<vtkClientSocket>::New();
-    int result = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName, notificationPort);
-    if (result == 0) {
-      vtkstd::cout << "Connected" << vtkstd::endl;
-    } else {
-      vtkErrorMacro("Failed to connect notification socket with client "
-          << pvClientHostName << ":" << notificationPort);
+    do {
+      vtkstd::cout << "Creating notification socket to "
+          << pvClientHostName << " on port " << notificationPort << "...";
+      r = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName,
+          notificationPort);
+      if (r == 0) {
+        vtkstd::cout << "Connected" << vtkstd::endl;
+      } else {
+        vtkstd::cout << "Failed to connect" << vtkstd::endl;
+        tryConnect++;
+        notificationPort++;
+      }
+    } while (r < 0 && tryConnect < 5);
+    if (r < 0) {
       this->DsmManagerInternals->NotificationSocket = NULL;
+      return(-1);
     }
   }
   return(this->DsmManager->Create());
@@ -334,6 +343,7 @@ int vtkDsmManager::Destroy()
 int vtkDsmManager::Publish()
 {
   this->DsmManager->Publish();
+  if (this->UpdatePiece == 0) {
 #ifdef _WIN32
   this->DsmManagerInternals->NotificationThreadHandle = CreateThread(NULL, 0,
       vtkDsmManagerNotificationThread, (void *) this, 0,
@@ -343,6 +353,7 @@ int vtkDsmManager::Publish()
   pthread_create(&this->DsmManagerInternals->NotificationThreadPtr, NULL,
       &vtkDsmManagerNotificationThread, (void *) this);
 #endif
+  }
   return(1);
 }
 

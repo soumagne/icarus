@@ -272,7 +272,8 @@ QDockWidget("DSM Manager", p)
   this->Internals->TcpNotificationServer = new QTcpServer(this);
   this->connect(this->Internals->TcpNotificationServer, SIGNAL(newConnection()),
                     SLOT(onNewNotificationSocket()));
-  this->Internals->TcpNotificationServer->listen(QHostAddress::Any, 21999);
+  this->Internals->TcpNotificationServer->listen(QHostAddress::Any,
+      VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT);
 
   //
   // Link GUI object events to callbacks
