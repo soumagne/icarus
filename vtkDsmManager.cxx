@@ -35,6 +35,7 @@
 #include "vtkSMObject.h"
 #include "vtkSMProxyManager.h"
 #include "vtkClientServerInterpreter.h"
+#include "vtkClientServerInterpreterInitializer.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -424,7 +425,10 @@ void vtkDsmManager::SetHelperProxyXMLString(const char *xmlstring)
 void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
 {
   // Register a constructor function for the DsmProxyHelper
-  vtkProcessModule::InitializeInterpreter(DsmProxyHelperInit);
+  vtkClientServerInterpreterInitializer *Initializer = vtkClientServerInterpreterInitializer::GetInitializer();
+//  this->ClientServerInterpreter = vtkClientServerInterpreter::New();
+//  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
+  Initializer->RegisterCallback(&::DSMProxyHelperInit);
   // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
   vtkSMObject::GetProxyManager()->LoadConfigurationXML(xmlstring);
 }

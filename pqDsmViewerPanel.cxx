@@ -64,7 +64,6 @@
 #include "vtkPVDataInformation.h"
 #include "vtkPVCompositeDataInformation.h"
 #include "vtkProcessModule.h"
-#include "vtkProcessModuleConnectionManager.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
 #include "vtkAbstractWidget.h"
