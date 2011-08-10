@@ -131,7 +131,7 @@ int vtkFlattenOneBlock::RequestData(
   }
   else {
     inputD = vtkDataSet::SafeDownCast(inputC->GetBlock(this->BlockIndex-1));
-    dsout->ShallowCopy(inputD);
+    if (inputD) dsout->ShallowCopy(inputD);
     return 1;
   }
   return 0;
