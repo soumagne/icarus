@@ -1336,7 +1336,7 @@ void pqDsmViewerPanel::ExportData(bool force)
     
     // was the associated command 'clicked' (modified)
     QString command = widget->getCommandProperty();
-    vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DsmProxyHelper->GetProperty(command.toAscii().data()));
+    vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DsmProxyHelper->GetProperty(command.toLatin1().data()));
     if (force || cp->GetMTime()>this->Internals->LastExportTime) {
       if (force) {
         vtkSMPropertyHelper rm(this->Internals->DsmProxyHelper, command.toAscii().data());
