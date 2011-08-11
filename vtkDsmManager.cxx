@@ -428,8 +428,8 @@ void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
   // Register a constructor function for the DsmProxyHelper
   vtkClientServerInterpreterInitializer *Initializer = vtkClientServerInterpreterInitializer::GetInitializer();
 //  this->ClientServerInterpreter = vtkClientServerInterpreter::New();
-//  vtkProcessModule::InitializeInterpreter(DSMProxyHelperInit);
-  Initializer->RegisterCallback(&::DSMProxyHelperInit);
+//  vtkProcessModule::InitializeInterpreter(DsmProxyHelperInit);
+  Initializer->RegisterCallback(&::DsmProxyHelperInit);
   // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
 //  vtkSMObject::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
   vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);

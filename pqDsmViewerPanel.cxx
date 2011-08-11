@@ -726,7 +726,7 @@ void pqDsmViewerPanel::onPublish()
       QString hostname = this->Internals->dsmServerName->currentText();
       pqSMAdaptor::setElementProperty(
           this->Internals->DsmProxy->GetProperty("ServerHostName"),
-          hostname.toLatin1().data().c_str());
+          hostname.toLatin1().data());
 
       pqSMAdaptor::setElementProperty(
           this->Internals->DsmProxy->GetProperty("ServerPort"),
