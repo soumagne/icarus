@@ -650,6 +650,10 @@ bool pqDsmViewerPanel::DsmReady()
         this->Internals->DsmInterCommType);
       //
       pqSMAdaptor::setElementProperty(
+        this->Internals->DsmProxy->GetProperty("UseStaticInterComm"),
+        this->Internals->staticInterCommBox->isChecked());
+      //
+      pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("LocalBufferSizeMBytes"),
         this->Internals->dsmSizeSpinBox->value());
       //
