@@ -64,6 +64,12 @@ public:
   int  GetInterCommType() { return(DsmManager->GetInterCommType()); }
 
   // Description:
+  // Set/Get UseStaticInterComm -- Force to use static MPI comm model
+  // when dynamic MPI communication is not supported by the system
+  void SetUseStaticInterComm(int value) { DsmManager->SetUseStaticInterComm(value); }
+  int  GetUseStaticInterComm() { return(DsmManager->GetUseStaticInterComm()); }
+
+  // Description:
   // Set/Get the published host name of our connection.
   // Real value valid after a Publish call has been made.
   void SetServerHostName(const char* serverHostName) { DsmManager->SetServerHostName(serverHostName); }
@@ -121,11 +127,6 @@ public:
   // Description:
   // Connect to a remote DSM manager (called by client).
   int Connect() { return(DsmManager->Connect()); }
-
-  // Description:
-  // When using static inter-communicators, create a new inter-communicator
-  // linking both managers together (called by client and server).
-  int ConnectInterComm() { return(DsmManager->ConnectInterComm()); }
 
   // Description:
   // Disconnect the manager from the remote end (called by client and server).
