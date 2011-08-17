@@ -191,7 +191,7 @@ vtkDsmManager::CheckMPIController()
             << "MPI distribution with threads enabled" << vtkstd::endl;
         }
         else {
-          vtkstd::cout << "MPI_THREAD_MULTIPLE is OK" << vtkstd::endl;
+          vtkstd::cout << "MPI_THREAD_MULTIPLE is OK (DSM override)" << vtkstd::endl;
         }
       }
     }

@@ -20,6 +20,22 @@ INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
 INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
+# If using system hdf5
+#--------------------------------------------------
+IF (NOT TARGET "hdf5")
+  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+ENDIF (NOT TARGET "hdf5")
+
+#--------------------------------------------------
+# If using system h5fddsm
+#--------------------------------------------------
+IF (NOT TARGET "H5FDdsm")
+  FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
+  INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
+ENDIF (NOT TARGET "H5FDdsm")
+
+#--------------------------------------------------
 # Set project include directories 
 #--------------------------------------------------
 INCLUDE_DIRECTORIES(
@@ -108,7 +124,9 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
-    ${PARAVIEW_HDF5_LIBRARIES}_hl
+    H5FDdsm
+    hdf5
+    hdf5_hl
     XdmfGenerator
 )
 
