@@ -49,11 +49,20 @@ public:
 signals:
 
 public slots:
-  void StartRemovingServer(pqServer *server);
+  // Server Add/Remove notifications
+  void onServerAdded(pqServer *server);
+  void onStartRemovingServer(pqServer *server);
+  // Active View changes
   void onActiveViewChanged(pqView* view);
 
+  // Enable/Disable DSM operation (server listening)
+  void onPublish();
+  void onUnpublish();
+
+  // User actions to edit DSM server locations
   void onAddDsmServer();
 
+  // User activated steering actions
   void onBrowseFile();
   void onBrowseFileImage();
   void onautoSaveImageChecked(int);
@@ -61,8 +70,6 @@ public slots:
   void RunScript();
   void ExportData(bool force);
 
-  void onPublish();
-  void onUnpublish();
 
   void onArrayItemChanged(QTreeWidgetItem*, int);
 

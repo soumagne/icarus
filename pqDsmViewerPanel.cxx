@@ -320,7 +320,10 @@ QDockWidget("DSM Manager", p)
     pqApplicationCore::instance()->getServerManagerModel();
 
   this->connect(smModel, SIGNAL(aboutToRemoveServer(pqServer *)),
-    this, SLOT(StartRemovingServer(pqServer *)));
+    this, SLOT(onStartRemovingServer(pqServer *)));
+
+  this->connect(smModel, SIGNAL(serverAdded(pqServer *)),
+    this, SLOT(onServerAdded(pqServer *)));
 
   //
   //
@@ -386,6 +389,8 @@ void pqDsmViewerPanel::LoadSettings()
   this->Internals->dsmSizeSpinBox->setValue(settings->value("Size", 0).toInt());
   // Method
   this->Internals->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
+  // Static Communicator
+  this->Internals->staticInterCommBox->setChecked(settings->value("StaticCommunicator", 0).toBool());
   // Port
   this->Internals->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
   // Client/Server/Standalone
@@ -430,6 +435,8 @@ void pqDsmViewerPanel::SaveSettings()
   settings->setValue("Size", this->Internals->dsmSizeSpinBox->value());
   // Method
   settings->setValue("Communication", this->Internals->xdmfCommTypeComboBox->currentIndex());
+  // Static Communicator
+  settings->setValue("StaticCommunicator", this->Internals->staticInterCommBox->isChecked());
   // Port
   settings->setValue("Port", this->Internals->xdmfCommPort->value());
   // Client/Server/Standalone
@@ -596,7 +603,23 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
   }
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::StartRemovingServer(pqServer *server)
+void pqDsmViewerPanel::onServerAdded(pqServer *server)
+{
+  // for static communicator
+  if (this->Internals->staticInterCommBox->isChecked()) {
+    this->Internals->CreateDsmProxy();
+    // Force the DSM to be recreated 
+    if (this->DsmReady()) {
+      // don't do anything here as weneed to let notification socket
+      // tell the gui that a connection has been made
+    }
+    else {
+      vtkGenericWarningMacro(<<"Static communicator error");      
+    }
+  }
+}
+//----------------------------------------------------------------------------
+void pqDsmViewerPanel::onStartRemovingServer(pqServer *server)
 {
   if (this->Internals->DsmProxyCreated()) {
     this->Internals->DsmProxy->InvokeCommand("Destroy");
@@ -1186,6 +1209,10 @@ void pqDsmViewerPanel::onNewNotificationSocket()
     this->connect(this->Internals->TcpNotificationSocket, SIGNAL(readyRead()),
         SLOT(onNotified()));
     this->Internals->TcpNotificationServer->close();
+  }
+
+  if (this->Internals->staticInterCommBox->isChecked()) {
+    this->onPublish();
   }
 }
 
