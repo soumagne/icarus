@@ -46,12 +46,10 @@
 #include "vtkPVXMLParser.h"
 #include "vtkSMObject.h"
 #include "vtkSMProxyManager.h"
-//
-#include "pqSMAdaptor.h"
-#include "pqActiveObjects.h"
-#include "pqServer.h"
+#include "vtkSMPropertyHelper.h"
 //
 #include <sstream>
+#include <list>
 //----------------------------------------------------------------------------
 extern const char *CustomFilter_TransformBlock;
 extern const char *CustomFilter_XdmfReaderBlock;
@@ -136,17 +134,22 @@ void vtkCustomPipelineHelper::AddToRenderView(
 {
   // Create a representation proxy for the pipeline
   vtkSMProxy *reprProxy = viewModuleProxy->CreateDefaultRepresentation(this->Pipeline, 0);
-  pqSMAdaptor::setInputProperty(reprProxy->GetProperty("Input"), this->Pipeline, 0);
-  pqSMAdaptor::setElementProperty(reprProxy->GetProperty("Visibility"), visible);
+  //
+  vtkSMPropertyHelper(reprProxy, "Input").Set(this->Pipeline, 0);
+  vtkSMPropertyHelper(reprProxy, "Visibility").Set(visible);
   reprProxy->UpdateVTKObjects();
   // 
-  pqSMAdaptor::addProxyProperty(viewModuleProxy->GetProperty("Representations"), reprProxy);
+  vtkSMProxyProperty* proxyProp = vtkSMProxyProperty::SafeDownCast(viewModuleProxy->GetProperty("Representations"));
+  if(proxyProp) {
+    proxyProp->AddProxy(reprProxy);
+  }
+
   viewModuleProxy->UpdateVTKObjects();
 }
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::SetInput(vtkSMSourceProxy *proxy, int outport)
 {
-  pqSMAdaptor::setInputProperty(this->Pipeline->GetProperty("Input"), proxy, outport);
+  vtkSMPropertyHelper(this->Pipeline, "Input").Set(proxy, outport);
 }
 //----------------------------------------------------------------------------
 vtkSMOutputPort *vtkCustomPipelineHelper::GetOutputPort(unsigned int port)
