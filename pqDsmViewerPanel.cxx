@@ -267,8 +267,8 @@ QDockWidget("DSM Manager", p)
 
  // Create a new notification socket
   this->Internals->TcpNotificationServer = new QTcpServer(this);
-  this->connect(this->Internals->TcpNotificationServer, SIGNAL(newConnection()),
-                    SLOT(onNewNotificationSocket()));
+  this->connect(this->Internals->TcpNotificationServer, 
+    SIGNAL(newConnection()), SLOT(onNewNotificationSocket()));
   this->Internals->TcpNotificationServer->listen(QHostAddress::Any,
       VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT);
 
@@ -1206,8 +1206,8 @@ void pqDsmViewerPanel::onNewNotificationSocket()
       this->Internals->TcpNotificationServer->nextPendingConnection();
 
   if (this->Internals->TcpNotificationSocket) {
-    this->connect(this->Internals->TcpNotificationSocket, SIGNAL(readyRead()),
-        SLOT(onNotified()));
+    this->connect(this->Internals->TcpNotificationSocket, 
+      SIGNAL(readyRead()), SLOT(onNotified()), Qt::QueuedConnection);
     this->Internals->TcpNotificationServer->close();
   }
 
