@@ -71,6 +71,32 @@
            </attribute>
            <layout class="QVBoxLayout" name="verticalLayout_2">
             <item>
+             <widget class="QPushButton" name="publish">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Enable DSM data routing</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="unpublish">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="text">
+               <string>Disable DSM data routing</string>
+              </property>
+             </widget>
+            </item>
+            <item>
              <widget class="QGroupBox" name="dsmSettingBox">
               <property name="title">
                <string>HDF5 DSM Settings</string>
@@ -79,34 +105,8 @@
                <property name="horizontalSpacing">
                 <number>6</number>
                </property>
-               <item row="7" column="0" colspan="3">
-                <widget class="QPushButton" name="unpublish">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Disable DSM data routing</string>
-                 </property>
-                </widget>
-               </item>
-               <item row="6" column="0" colspan="3">
-                <widget class="QPushButton" name="publish">
-                 <property name="sizePolicy">
-                  <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-                   <horstretch>0</horstretch>
-                   <verstretch>0</verstretch>
-                  </sizepolicy>
-                 </property>
-                 <property name="text">
-                  <string>Enable DSM data routing</string>
-                 </property>
-                </widget>
-               </item>
                <item row="4" column="1" colspan="2">
-                <widget class="QComboBox" name="xdmfCommTypeComboBox">
+                <widget class="QComboBox" name="dsmInterCommType">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -134,7 +134,7 @@
                 </widget>
                </item>
                <item row="2" column="1" colspan="2">
-                <widget class="QSpinBox" name="xdmfCommPort">
+                <widget class="QSpinBox" name="dsmInterCommPort">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -153,7 +153,7 @@
                 </widget>
                </item>
                <item row="4" column="0">
-                <widget class="QLabel" name="xdmfCommTypeLabel">
+                <widget class="QLabel" name="dsmInterCommTypeLabel">
                  <property name="minimumSize">
                   <size>
                    <width>150</width>
@@ -179,7 +179,7 @@
                 </widget>
                </item>
                <item row="3" column="1" colspan="2">
-                <widget class="QSpinBox" name="dsmSizeSpinBox">
+                <widget class="QSpinBox" name="dsmSize">
                  <property name="sizePolicy">
                   <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                    <horstretch>0</horstretch>
@@ -265,7 +265,7 @@
                 </widget>
                </item>
                <item row="2" column="0">
-                <widget class="QLabel" name="xdmfCommPortLabel">
+                <widget class="QLabel" name="dsmInterCommPortLabel">
                  <property name="minimumSize">
                   <size>
                    <width>150</width>
@@ -282,6 +282,32 @@
                  <property name="text">
                   <string>Use Static Inter-Communicator</string>
                  </property>
+                </widget>
+               </item>
+               <item row="6" column="0">
+                <widget class="QLabel" name="dsmDistributionTypeLabel">
+                 <property name="text">
+                  <string>Distribution Type</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="6" column="1" colspan="2">
+                <widget class="QComboBox" name="dsmDistributionType">
+                 <item>
+                  <property name="text">
+                   <string>Linear</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Block Cyclic</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>Random Block Cyclic</string>
+                  </property>
+                 </item>
                 </widget>
                </item>
               </layout>
@@ -382,33 +408,6 @@
                 </widget>
                </item>
               </layout>
-             </widget>
-            </item>
-            <item>
-             <widget class="QTreeWidget" name="dsmArrayTreeWidget">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>32</height>
-               </size>
-              </property>
-              <property name="maximumSize">
-               <size>
-                <width>16777215</width>
-                <height>16777214</height>
-               </size>
-              </property>
-              <column>
-               <property name="text">
-                <string>Cell/Point Array Status</string>
-               </property>
-              </column>
              </widget>
             </item>
             <item>
@@ -654,6 +653,33 @@
                 </widget>
                </item>
               </layout>
+             </widget>
+            </item>
+            <item>
+             <widget class="QTreeWidget" name="dsmArrayTreeWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>32</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>16777215</width>
+                <height>16777214</height>
+               </size>
+              </property>
+              <column>
+               <property name="text">
+                <string>Cell/Point Array Status</string>
+               </property>
+              </column>
              </widget>
             </item>
             <item>
