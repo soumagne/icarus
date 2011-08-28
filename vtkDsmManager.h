@@ -64,6 +64,11 @@ public:
   int  GetInterCommType() { return(DsmManager->GetInterCommType()); }
 
   // Description:
+  // Set/Get the DSM distribution type
+  void SetDsmType(int type) { DsmManager->SetDsmType(type); }
+  int  GetDsmType() { return(DsmManager->GetDsmType()); }
+
+  // Description:
   // Set/Get UseStaticInterComm -- Force to use static MPI comm model
   // when dynamic MPI communication is not supported by the system
   void SetUseStaticInterComm(int value) { DsmManager->SetUseStaticInterComm(value); }

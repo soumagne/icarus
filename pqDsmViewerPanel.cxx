@@ -115,6 +115,7 @@
 //
 #include "vtkDsmManager.h"
 #include "H5FDdsmComm.h"
+#include "H5FDdsmDriver.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
 #include "vtkSMCommandProperty.h"
@@ -134,16 +135,17 @@ class pqDsmViewerPanel::pqInternals : public QObject, public Ui::DsmViewerPanel
 public:
   pqInternals(pqDsmViewerPanel* p) : QObject(p)
   {
-    this->DsmInitialized     = false;
-    this->DsmListening       = false;
-    this->ActiveSourcePort   = 0;
-    this->ActiveView         = NULL;
-    this->pqObjectInspector  = NULL;
-    this->pqDsmProxyHelper   = NULL;
-    this->SteeringParser     = NULL;
-    this->CurrentTimeStep    = 0;
-    this->DsmInterCommType   = 0;
-    this->CreateObjects      = true;
+    this->DsmInitialized      = false;
+    this->DsmListening        = false;
+    this->ActiveSourcePort    = 0;
+    this->ActiveView          = NULL;
+    this->pqObjectInspector   = NULL;
+    this->pqDsmProxyHelper    = NULL;
+    this->SteeringParser      = NULL;
+    this->CurrentTimeStep     = 0;
+    this->DsmInterCommType    = 0;
+    this->DsmDistributionType = 0;
+    this->CreateObjects       = true;
   };
 
   //
@@ -223,6 +225,7 @@ public:
   vtkSmartPointer<vtkSMProxy>               DsmProxyHelper;
   bool                                      DsmListening;
   int                                       DsmInterCommType;
+  int                                       DsmDistributionType;
   QTcpServer*                               TcpNotificationServer;
   QTcpSocket*                               TcpNotificationSocket;
   vtkSmartPointer<vtkSMSourceProxy>         SteeringWriter;
@@ -386,11 +389,13 @@ void pqDsmViewerPanel::LoadSettings()
   // Active server
   this->Internals->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
   // Size
-  this->Internals->dsmSizeSpinBox->setValue(settings->value("Size", 0).toInt());
+  this->Internals->dsmSize->setValue(settings->value("Size", 0).toInt());
+  // Distribution Type
+  this->Internals->dsmDistributionType->setCurrentIndex(settings->value("DistributionType", 0).toInt());
   // Method
-  this->Internals->xdmfCommTypeComboBox->setCurrentIndex(settings->value("Communication", 0).toInt());
+  this->Internals->dsmInterCommType->setCurrentIndex(settings->value("Communication", 0).toInt());
   // Port
-  this->Internals->xdmfCommPort->setValue(settings->value("Port", 0).toInt());
+  this->Internals->dsmInterCommPort->setValue(settings->value("Port", 0).toInt());
   // Client/Server/Standalone
   this->Internals->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
   this->Internals->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
@@ -430,11 +435,13 @@ void pqDsmViewerPanel::SaveSettings()
   // Active server
   settings->setValue("Selected", this->Internals->dsmServerName->currentIndex());
   // Size
-  settings->setValue("Size", this->Internals->dsmSizeSpinBox->value());
+  settings->setValue("Size", this->Internals->dsmSize->value());
+  // Distribution Type
+  settings->setValue("DistributionType", this->Internals->dsmDistributionType->currentIndex());
   // Method
-  settings->setValue("Communication", this->Internals->xdmfCommTypeComboBox->currentIndex());
+  settings->setValue("Communication", this->Internals->dsmInterCommType->currentIndex());
   // Port
-  settings->setValue("Port", this->Internals->xdmfCommPort->value());
+  settings->setValue("Port", this->Internals->dsmInterCommPort->value());
   // Client/Server/Standalone
   settings->setValue("dsmServer", this->Internals->dsmIsServer->isChecked());
   settings->setValue("dsmClient", this->Internals->dsmIsClient->isChecked());
@@ -636,13 +643,13 @@ bool pqDsmViewerPanel::DsmReady()
       this->Internals->DsmProxy->GetProperty("IsServer"), server);
     //
     if (server) {
-      if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("MPI")) {
+      if (this->Internals->dsmInterCommType->currentText() == QString("MPI")) {
         this->Internals->DsmInterCommType = H5FD_DSM_COMM_MPI;
       }
-      else if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("Sockets")) {
+      else if (this->Internals->dsmInterCommType->currentText() == QString("Sockets")) {
         this->Internals->DsmInterCommType = H5FD_DSM_COMM_SOCKET;
       }
-      else if (this->Internals->xdmfCommTypeComboBox->currentText() == QString("MPI_RMA")) {
+      else if (this->Internals->dsmInterCommType->currentText() == QString("MPI_RMA")) {
         this->Internals->DsmInterCommType = H5FD_DSM_COMM_MPI_RMA;
       }
       pqSMAdaptor::setElementProperty(
@@ -653,9 +660,22 @@ bool pqDsmViewerPanel::DsmReady()
         this->Internals->DsmProxy->GetProperty("UseStaticInterComm"),
         this->Internals->staticInterCommBox->isChecked());
       //
+      if (this->Internals->dsmDistributionType->currentText() == QString("Linear")) {
+        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_UNIFORM;
+      }
+      else if (this->Internals->dsmDistributionType->currentText() == QString("Block Cyclic")) {
+        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
+      }
+      else if (this->Internals->dsmDistributionType->currentText() == QString("Random Block Cyclic")) {
+        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_BLOCK_RANDOM;
+      }
+      pqSMAdaptor::setElementProperty(
+        this->Internals->DsmProxy->GetProperty("DistributionType"),
+        this->Internals->DsmDistributionType);
+      //
       pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("LocalBufferSizeMBytes"),
-        this->Internals->dsmSizeSpinBox->value());
+        this->Internals->dsmSize->value());
       //
       this->Internals->DsmProxy->UpdateVTKObjects();
       this->Internals->DsmProxy->InvokeCommand("Create");
@@ -734,7 +754,7 @@ void pqDsmViewerPanel::onPublish()
 
       pqSMAdaptor::setElementProperty(
           this->Internals->DsmProxy->GetProperty("ServerPort"),
-          this->Internals->xdmfCommPort->value());
+          this->Internals->dsmInterCommPort->value());
     }
     this->Internals->DsmProxy->UpdateVTKObjects();
     this->Internals->DsmProxy->InvokeCommand("Publish");
