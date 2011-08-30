@@ -410,7 +410,7 @@ void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata,
 
   switch (data->GetDataType()) {
   case VTK_FLOAT:
-    if (0 && this->WriteFloatAsDouble) {
+    if (this->WriteFloatAsDouble) {
       H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, data);
     }
     else {
