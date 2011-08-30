@@ -66,10 +66,10 @@ public slots:
 
   void onArrayItemChanged(QTreeWidgetItem*, int);
 
-  void onSCRestart();
-  void onSCPause();
-  void onSCPlay();
-  void onSCWriteDisk();
+  void onPause();
+  void onPlay();
+
+  void onWriteDataToDisk();
 
   // Sending data to DSM
   void onWriteDataToDSM();

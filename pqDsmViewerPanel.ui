@@ -295,7 +295,7 @@
                 <widget class="QComboBox" name="dsmDistributionType">
                  <item>
                   <property name="text">
-                   <string>Linear</string>
+                   <string>Contiguous</string>
                   </property>
                  </item>
                  <item>
@@ -725,7 +725,7 @@
               </property>
               <layout class="QGridLayout" name="gridLayout_2">
                <item row="0" column="0">
-                <widget class="QToolButton" name="scPause">
+                <widget class="QToolButton" name="pause">
                  <property name="text">
                   <string>pause</string>
                  </property>
@@ -736,7 +736,7 @@
                 </widget>
                </item>
                <item row="0" column="1">
-                <widget class="QToolButton" name="scPlay">
+                <widget class="QToolButton" name="play">
                  <property name="text">
                   <string>play</string>
                  </property>
@@ -747,7 +747,7 @@
                 </widget>
                </item>
                <item row="0" column="2">
-                <widget class="QToolButton" name="dsmWriteDisk">
+                <widget class="QToolButton" name="writeToDisk">
                  <property name="text">
                   <string>DSM/Disk</string>
                  </property>

@@ -116,6 +116,7 @@
 #include "vtkDsmManager.h"
 #include "H5FDdsmComm.h"
 #include "H5FDdsmDriver.h"
+#include "H5FDdsm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
 #include "vtkSMCommandProperty.h"
@@ -137,6 +138,7 @@ public:
   {
     this->DsmInitialized      = false;
     this->DsmListening        = false;
+    this->PauseRequested      = false;
     this->ActiveSourcePort    = 0;
     this->ActiveView          = NULL;
     this->pqObjectInspector   = NULL;
@@ -224,6 +226,7 @@ public:
   vtkSmartPointer<vtkSMProxy>               DsmProxy;
   vtkSmartPointer<vtkSMProxy>               DsmProxyHelper;
   bool                                      DsmListening;
+  bool                                      PauseRequested;
   int                                       DsmInterCommType;
   int                                       DsmDistributionType;
   QTcpServer*                               TcpNotificationServer;
@@ -304,14 +307,14 @@ QDockWidget("DSM Manager", p)
     SIGNAL(clicked()), this, SLOT(onUnpublish()));
 
   // Steering commands
-  this->connect(this->Internals->scPause,
-      SIGNAL(clicked()), this, SLOT(onSCPause()));
+  this->connect(this->Internals->pause,
+      SIGNAL(clicked()), this, SLOT(onPause()));
 
-  this->connect(this->Internals->scPlay,
-      SIGNAL(clicked()), this, SLOT(onSCPlay()));
+  this->connect(this->Internals->play,
+      SIGNAL(clicked()), this, SLOT(onPlay()));
 
-  this->connect(this->Internals->dsmWriteDisk,
-      SIGNAL(clicked()), this, SLOT(onSCWriteDisk()));
+  this->connect(this->Internals->writeToDisk,
+      SIGNAL(clicked()), this, SLOT(onWriteDataToDisk()));
 
   this->connect(this->Internals->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
@@ -660,7 +663,7 @@ bool pqDsmViewerPanel::DsmReady()
         this->Internals->DsmProxy->GetProperty("UseStaticInterComm"),
         this->Internals->staticInterCommBox->isChecked());
       //
-      if (this->Internals->dsmDistributionType->currentText() == QString("Linear")) {
+      if (this->Internals->dsmDistributionType->currentText() == QString("Contiguous")) {
         this->Internals->DsmDistributionType = H5FD_DSM_TYPE_UNIFORM;
       }
       else if (this->Internals->dsmDistributionType->currentText() == QString("Block Cyclic")) {
@@ -804,23 +807,27 @@ void pqDsmViewerPanel::ChangeItemState(QTreeWidgetItem *item)
     this->ChangeItemState(child);
   }
 }
+
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onSCPause()
+void pqDsmViewerPanel::onPause()
 {
-  if (this->DsmReady()) {
+  if (this->DsmReady() && !this->Internals->PauseRequested) {
     const char *steeringCmd = "pause";
     pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("SteeringCommand"),
         steeringCmd);
     this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert("paused");
+    this->Internals->infoCurrentSteeringCommand->insert("pause requested");
+    this->Internals->PauseRequested = true;
     this->Internals->DsmProxy->UpdateVTKObjects();
   }
 }
+
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onSCPlay()
+void pqDsmViewerPanel::onPlay()
 {
-  if (this->DsmReady()) {
+  if (this->DsmReady() &&
+      (this->Internals->infoCurrentSteeringCommand->text() == QString("paused"))) {
     const char *steeringCmd = "play";
     pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("SteeringCommand"),
@@ -833,21 +840,9 @@ void pqDsmViewerPanel::onSCPlay()
     this->Internals->DsmProxy->UpdateVTKObjects();
   }
 }
+
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onSCRestart()
-{
-  if (this->DsmReady()) {
-    const char *steeringCmd = "restart";
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        steeringCmd);
-    this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->Internals->DsmProxy->UpdateVTKObjects();
-  }
-}
-//-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onSCWriteDisk()
+void pqDsmViewerPanel::onWriteDataToDisk()
 {
   if (this->DsmReady()) {
     const char *steeringCmd = "disk";
@@ -1224,30 +1219,43 @@ void pqDsmViewerPanel::onNotified()
         vtkSMPropertyHelper ig(this->Internals->DsmProxy, "Notification");
         ig.UpdateValueFromServer();
         std::cout << "Received notification ";
-        if (ig.GetAsInt() == 0) {
-          std::cout << "\"New Data\"...";
-          vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
-          dm.UpdateValueFromServer();
-          if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
-            this->UpdateDsmPipeline();
-            this->Internals->DsmProxy->InvokeCommand("ClearIsDataModified");
-          }
+        switch (ig.GetAsInt()) {
+          case H5FD_DSM_NEW_DATA:
+            {
+              std::cout << "\"New Data\"...";
+              vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
+              dm.UpdateValueFromServer();
+              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
+                this->UpdateDsmPipeline();
+                this->Internals->DsmProxy->InvokeCommand("ClearIsDataModified");
+              }
+              this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
+            }
+            break;
+          case H5FD_DSM_NEW_INFORMATION:
+            std::cout << "\"New Information\"...";
+            this->UpdateDsmInformation();
+            break;
+          case H5FD_DSM_WAIT:
+            std::cout << "\"Wait\"...";
+            this->onPause();
+            this->Internals->infoCurrentSteeringCommand->clear();
+            this->Internals->infoCurrentSteeringCommand->insert("paused");
+            this->Internals->PauseRequested = false;
+            break;
+          default:
+            std::cout << "Notification " << ig.GetAsInt() <<
+                " not yet supported, please check simulation code " << std::endl;
+            break;
         }
-        else if (ig.GetAsInt() == 1) {
-          std::cout << "\"New Information\"...";
-          this->UpdateDsmInformation();
-        } else {
-          std::cout << "Notification " << ig.GetAsInt() <<
-              " not yet supported, please check simulation code " << std::endl;
-        }
-
-        this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
 
         std::cout << "Updated" << std::endl;
         this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
       }
       break;
     default:
+      std::cerr << "Received wrong notification code, expected \'C\' or \'N\' and received "
+      << "\'" << notificationCode << "\'" << std::endl;
       break;
   }
 }
@@ -1339,7 +1347,7 @@ void pqDsmViewerPanel::onPostAccept()
   this->ExportData(false);
   // 
   if (this->Internals->acceptIsPlay->isChecked()) {
-    this->onSCPlay();
+    this->onPlay();
   }
 }
 //-----------------------------------------------------------------------------
