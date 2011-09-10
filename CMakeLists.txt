@@ -20,20 +20,20 @@ INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
 INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
-# If using system hdf5
+# Find and Use System liba (only needed on WIN32)
 #--------------------------------------------------
-IF (NOT TARGET "hdf5")
-  FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
-  INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
-ENDIF (NOT TARGET "hdf5")
-
+IF(WIN32 AND MSVC)
+  IF (NOT TARGET "hdf5")
+    FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
+    INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
+  ENDIF (NOT TARGET "hdf5")
+  #--------------------------------------------------
+  IF (NOT TARGET "H5FDdsm")
+    FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
+    INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
+  ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
-# If using system h5fddsm
-#--------------------------------------------------
-IF (NOT TARGET "H5FDdsm")
-  FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
-  INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
-ENDIF (NOT TARGET "H5FDdsm")
+ENDIF(WIN32 AND MSVC)
 
 #--------------------------------------------------
 # Set project include directories 
