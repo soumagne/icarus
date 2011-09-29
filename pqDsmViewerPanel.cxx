@@ -834,7 +834,8 @@ void pqDsmViewerPanel::ChangeItemState(QTreeWidgetItem *item)
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onPause()
 {
-  if (this->DsmReady() && !this->Internals->PauseRequested) {
+  if (this->DsmReady() && !this->Internals->PauseRequested &&
+      (this->Internals->infoCurrentSteeringCommand->text() != QString("paused"))) {
     const char *steeringCmd = "pause";
     pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("SteeringCommand"),
