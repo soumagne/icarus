@@ -85,6 +85,9 @@
             </item>
             <item>
              <widget class="QPushButton" name="unpublish">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                 <horstretch>0</horstretch>
@@ -93,6 +96,13 @@
               </property>
               <property name="text">
                <string>Disable DSM data routing</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QCheckBox" name="lockSettings">
+              <property name="text">
+               <string>Lock/Unlock Settings</string>
               </property>
              </widget>
             </item>
@@ -571,6 +581,9 @@
             </item>
             <item>
              <widget class="QGroupBox" name="imageSaveBox_2">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="title">
                <string>Python Script</string>
               </property>
@@ -748,6 +761,9 @@
                </item>
                <item row="0" column="2">
                 <widget class="QToolButton" name="writeToDisk">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
                  <property name="text">
                   <string>DSM/Disk</string>
                  </property>
@@ -797,6 +813,9 @@
            <layout class="QVBoxLayout" name="verticalLayout_6">
             <item>
              <widget class="QGroupBox" name="sourceBox">
+              <property name="enabled">
+               <bool>false</bool>
+              </property>
               <property name="sizePolicy">
                <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                 <horstretch>0</horstretch>

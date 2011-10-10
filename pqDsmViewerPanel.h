@@ -55,6 +55,9 @@ public slots:
   // Active View changes
   void onActiveViewChanged(pqView* view);
 
+  // Enable / Disable setting blocks
+  void onLockSettings(int state);
+
   // Enable/Disable DSM operation (server listening)
   void onPublish();
   void onUnpublish();

@@ -358,6 +358,10 @@ QDockWidget("DSM Manager", p)
     this, SLOT(onActiveViewChanged(pqView*)));
 
   //
+  // Lock settings so that users cannot break anything
+  this->connect(this->Internals->lockSettings,
+      SIGNAL(stateChanged(int)), this, SLOT(onLockSettings(int)));
+  //
   this->LoadSettings();
 }
 //----------------------------------------------------------------------------
@@ -721,6 +725,17 @@ bool pqDsmViewerPanel::DsmReady()
     }
   }
   return this->Internals->DsmInitialized;
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::onLockSettings(int state)
+{
+  bool locked = (state == Qt::Checked) ? true : false;
+  this->Internals->dsmSettingBox->setEnabled(!locked);
+  this->Internals->descriptionFileSettingBox->setEnabled(!locked);
+  this->Internals->autoDisplayDSM->setEnabled(!locked);
+  this->Internals->storeDsmContents->setEnabled(!locked);
+  this->Internals->imageSaveBox->setEnabled(!locked);
+  this->Internals->autoExport->setEnabled(!locked);
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onAddDsmServer()
