@@ -36,6 +36,8 @@
 #include <QMessageBox>
 #include <QProgressDialog>
 #include <QInputDialog>
+#include <QFile>
+#include <QTextStream>
 #include <QFileDialog>
 #include <QUrl>
 #include <QDesktopServices>
@@ -972,9 +974,9 @@ void pqDsmViewerPanel::UpdateDsmInformation()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
-  bool force_generate     = false;
   static int current_time = 0;
-  static std::string xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
+  bool forceXdmfGeneration = false;
+  static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
   //
 #ifdef DISABLE_DISPLAY
   if (this->DsmReady()) {
@@ -1007,27 +1009,34 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
+      // Read file from GUI and send the string to the server for convenience
+      QFile file(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
+      if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        vtkGenericWarningMacro(<< "Could not open description file");
+
+      QTextStream xdmfDescription(&file);
       pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), 
-        this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
-      this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
+          this->Internals->DsmProxy->GetProperty("XdmfDescription"),
+          xdmfDescription.readAll().toLatin1().constData());
+      this->Internals->DsmProxy->UpdateVTKObjects();
+      file.close();
     }
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_TEMPLATE) {
-      force_generate = this->Internals->forceXdmfGeneration->isChecked();
+      forceXdmfGeneration = this->Internals->forceXdmfGeneration->isChecked();
       // Only re-generate if the description file path has changed or if force is set to true
-      if ((xdmf_description_file_path != this->Internals->xdmfFilePathLineEdit->text().toLatin1().data()) 
-        || this->Internals->CreateObjects || force_generate) 
+      if ((descriptionFilePath != this->Internals->xdmfFilePathLineEdit->text().toLatin1().data())
+        || this->Internals->CreateObjects || forceXdmfGeneration)
       {
-        xdmf_description_file_path = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
+        descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
         // Generate xdmf file for reading
         // Send the whole string representing the DOM and not just the file path so that the 
-        // template file does not to be present on the server anymore
+        // template file does not need to be present on the server anymore
         pqSMAdaptor::setElementProperty(
-            this->Internals->DsmProxy->GetProperty("XMFDescriptionFilePath"),
+            this->Internals->DsmProxy->GetProperty("XdmfTemplateDescription"),
             this->Internals->SteeringParser->GetConfigDOM()->Serialize());
 
         this->Internals->DsmProxy->UpdateVTKObjects();
-        this->Internals->DsmProxy->InvokeCommand("GenerateXMFDescription");
+        this->Internals->DsmProxy->InvokeCommand("GenerateXdmfDescription");
       }
     }
   }

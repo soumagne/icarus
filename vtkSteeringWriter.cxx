@@ -558,7 +558,7 @@ void vtkSteeringWriter::WriteData()
 
   std::vector<int> ParallelOffsets(this->UpdateNumPieces+1);
 
-  for (int i=0; i<ArrayTypes.size(); i++) {
+  for (unsigned int i=0; i<ArrayTypes.size(); i++) {
     this->GroupPathInternal = GroupPaths[i];
     this->ArrayTypeInternal = ArrayTypes[i];
     this->ArrayNameInternal = ArrayNames[i];

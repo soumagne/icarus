@@ -145,7 +145,7 @@ vtkDsmManager::vtkDsmManager()
   this->Controller              = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
-  this->XMFDescriptionFilePath  = NULL;
+  this->XdmfTemplateDescription = NULL;
   this->HelperProxyXMLString    = NULL;
   this->DsmManager              = new H5FDdsmManager();
   this->DsmManagerInternals     = new vtkDsmManagerInternals;
@@ -154,7 +154,7 @@ vtkDsmManager::vtkDsmManager()
 //----------------------------------------------------------------------------
 vtkDsmManager::~vtkDsmManager()
 { 
-  this->SetXMFDescriptionFilePath(NULL);
+  this->SetXdmfTemplateDescription(NULL);
   this->SetHelperProxyXMLString(NULL);
   if (this->DsmManager) delete this->DsmManager;  
   this->DsmManager = NULL;
@@ -360,21 +360,20 @@ int vtkDsmManager::Publish()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::GenerateXMFDescription()
+void vtkDsmManager::GenerateXdmfDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
   if (this->GetDsmBuffer()) {
     xdmfGenerator->SetDsmBuffer(this->GetDsmBuffer());
-    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "DSM:file.h5");
-  }
-  else {
-    xdmfGenerator->Generate((const char*)this->GetXMFDescriptionFilePath(), "file.h5");
+    xdmfGenerator->Generate((const char*)this->GetXdmfTemplateDescription(), "DSM:file.h5");
+  } else {
+    vtkErrorMacro("GenerateXdmfDescription failed: no DSM buffer found")
   }
 
   vtkDebugMacro(<< xdmfGenerator->GetGeneratedFile());
+  this->SetXdmfDescription(xdmfGenerator->GetGeneratedFile());
 
-  if (this->GetDsmBuffer()) this->GetDsmBuffer()->SetXMLDescription(xdmfGenerator->GetGeneratedFile());
   delete xdmfGenerator;
 }
 

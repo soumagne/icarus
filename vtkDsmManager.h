@@ -158,8 +158,16 @@ public:
   void H5DumpXML() { DsmManager->H5DumpXML(); }
 
   // Description:
-  // Generate an Xdmf description file.
-  void GenerateXMFDescription();
+  // Generate an Xdmf description file. The generated file is automatically set
+  // to the DSM buffer.
+  void GenerateXdmfDescription();
+
+  // Description:
+  // Set the Xdmf description file.
+  virtual void SetXdmfDescription(const char *description) {
+    if (DsmManager->GetDsmBuffer()) DsmManager->GetDsmBuffer()->SetXMLDescription(description);
+    this->Modified();
+  }
 
   // Description:
   // (Debug) Send an XML string.
@@ -243,10 +251,10 @@ public:
 //ETX
 
   // Description:
-  // Set/Get the file path pointing either to an XDMF description file
-  // or to the XDMF template used to generate a proper XDMF file.
-  vtkSetStringMacro(XMFDescriptionFilePath);
-  vtkGetStringMacro(XMFDescriptionFilePath);
+  // Set/Get the XdmfTemplateDescription file, this can be a path
+  // or a string containing the description.
+  vtkSetStringMacro(XdmfTemplateDescription);
+  vtkGetStringMacro(XdmfTemplateDescription);
 
 //BTX
   #ifdef VTK_USE_MPI
@@ -294,7 +302,7 @@ protected:
 #endif
 
     //
-    char           *XMFDescriptionFilePath;
+    char           *XdmfTemplateDescription;
     char           *HelperProxyXMLString;
     //BTX
     H5FDdsmManager *DsmManager;

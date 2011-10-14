@@ -55,8 +55,8 @@
                 command="H5DumpXML">
       </Property>
 
-      <Property name="GenerateXMFDescription"
-                command="GenerateXMFDescription">
+      <Property name="GenerateXdmfDescription"
+                command="GenerateXdmfDescription">
       </Property>
 
       <Property name="SendDSMXML"
@@ -129,8 +129,14 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-        name="XMFDescriptionFilePath"
-        command="SetXMFDescriptionFilePath"
+        name="XdmfDescription"
+        command="SetXdmfDescription"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="XdmfTemplateDescription"
+        command="SetXdmfTemplateDescription"
         number_of_elements="1">
       </StringVectorProperty>
 
