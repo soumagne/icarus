@@ -118,8 +118,9 @@ XdmfInt32 H5MBCallback::DoOpen(XdmfHeavyData *ds, XdmfConstString name, XdmfCons
     }
     // If using DSM - Set up file access property list with DSM handle
     if (this->DsmManager && ds->GetDomain()==std::string("DSM")) {
-      H5FD_dsm_init();
-      status = H5Pset_fapl_dsm(this->AccessPlist, MPI_COMM_WORLD, this->DsmManager->GetDsmBuffer());
+      H5FD_dsm_set_manager(this->DsmManager->GetDsmManager());
+      status = H5Pset_fapl_dsm(this->AccessPlist,
+          this->DsmManager->GetDsmManager()->GetMpiComm(), NULL, 0);
     }
     else {
       filename = std::string(ds->GetWorkingDirectory()) + "/" + FileName;

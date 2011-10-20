@@ -20,7 +20,7 @@
       </StringVectorProperty>
 
       <ProxyProperty name="DsmManager" 
-                     command="SetDsmManager">
+                     command="SetVtkDsmManager">
         <ProxyGroupDomain name="groups">
           <Group name="icarus_helpers"/>
         </ProxyGroupDomain>

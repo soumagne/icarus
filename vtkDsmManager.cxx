@@ -364,8 +364,8 @@ void vtkDsmManager::GenerateXdmfDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
-  if (this->GetDsmBuffer()) {
-    xdmfGenerator->SetDsmBuffer(this->GetDsmBuffer());
+  if (this->GetDsmManager()) {
+    xdmfGenerator->SetDsmManager(this->GetDsmManager());
     xdmfGenerator->Generate((const char*)this->GetXdmfTemplateDescription(), "DSM:file.h5");
   } else {
     vtkErrorMacro("GenerateXdmfDescription failed: no DSM buffer found")

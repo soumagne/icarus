@@ -117,8 +117,6 @@
 #include "ui_pqDsmViewerPanel.h"
 //
 #include "vtkDsmManager.h"
-#include "H5FDdsmComm.h"
-#include "H5FDdsmDriver.h"
 #include "H5FDdsm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"

@@ -38,7 +38,7 @@ vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
 vtkXdmfReader4::vtkXdmfReader4()
 {
   this->Controller = NULL;
-  this->DsmManager = 0;
+  this->VtkDsmManager = 0;
   this->TimeRange[0] = 0.0;
   this->TimeRange[1] = 0.0;
 }
@@ -48,17 +48,17 @@ vtkXdmfReader4::~vtkXdmfReader4()
   this->SetController(NULL);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfReader4::SetDsmManager(vtkDsmManager* dsmmanager)
+void vtkXdmfReader4::SetVtkDsmManager(vtkDsmManager* dsmmanager)
 {
-  this->DsmManager = dsmmanager;
-  this->SetDsmBuffer(dsmmanager->GetDsmBuffer());
+  this->VtkDsmManager = dsmmanager;
+  this->SetDsmManager(dsmmanager->GetDsmManager());
 }
 //----------------------------------------------------------------------------
-bool vtkXdmfReader4::PrepareDsmBufferDocument()
+bool vtkXdmfReader4::PrepareDsmManagerDocument()
 {
-  if (this->DsmManager && this->DsmManager->GetXMLStringReceive()) {
+  if (this->VtkDsmManager && this->VtkDsmManager->GetXMLStringReceive()) {
     this->SetReadFromInputString(1);
-    this->SetInputString(this->DsmManager->GetXMLStringReceive());
+    this->SetInputString(this->VtkDsmManager->GetXMLStringReceive());
   }
   return true;
 }
@@ -70,7 +70,7 @@ int vtkXdmfReader4::RequestInformation(
 {
   int result = vtkXdmfReader::RequestInformation(request, inputVector, outputVector);
   //
-  if (this->DsmManager) {
+  if (this->VtkDsmManager) {
     vtkInformation *outInfo = outputVector->GetInformationObject(0);
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->TimeRange, 2);
   }

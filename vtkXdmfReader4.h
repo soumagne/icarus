@@ -54,8 +54,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data reading instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkDsmManager);
+  virtual void SetVtkDsmManager(vtkDsmManager*);
+  vtkGetObjectMacro(VtkDsmManager, vtkDsmManager);
 
   // Description:
   // Get the time range for the simulation run
@@ -67,7 +67,7 @@ protected:
   vtkXdmfReader4();
   virtual ~vtkXdmfReader4();
   //
-  bool PrepareDsmBufferDocument();
+  bool PrepareDsmManagerDocument();
 
 
   int RequestInformation(
@@ -80,7 +80,7 @@ protected:
   //
   vtkMultiProcessController* Controller;
   // Used for DSM write
-  vtkDsmManager *DsmManager;
+  vtkDsmManager *VtkDsmManager;
   double         TimeRange[2];
 
 private:
