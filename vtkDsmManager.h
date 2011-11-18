@@ -146,18 +146,6 @@ public:
   int Unpublish() { return(DsmManager->Unpublish()); }
 
   // Description:
-  // Dump out the content of the DSM buffer (complete output).
-  void H5Dump() { DsmManager->H5Dump(); }
-
-  // Description:
-  // Dump out the content of the DSM buffer (hierarchical output).
-  void H5DumpLight() { DsmManager->H5DumpLight(); }
-
-  // Description:
-  // Dump out the content of the DSM buffer (XML output).
-  void H5DumpXML() { DsmManager->H5DumpXML(); }
-
-  // Description:
   // Generate an Xdmf description file. The generated file is automatically set
   // to the DSM buffer.
   void GenerateXdmfDescription();

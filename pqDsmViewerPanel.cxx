@@ -976,12 +976,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   bool forceXdmfGeneration = false;
   static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
   //
-#ifdef DISABLE_DISPLAY
-  if (this->DsmReady()) {
-    this->Internals->DsmProxy->InvokeCommand("H5DumpLight");
-  }
-#else
-  //
   vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
   if (!this->Internals->XdmfViewer || this->Internals->storeDsmContents->isChecked()) {
     // set create objects flag
@@ -1131,8 +1125,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   }
   //
   this->Internals->CreateObjects = false;
-
-  // this->Internals->DsmProxy->InvokeCommand("H5DumpLight");
   
   if (this->Internals->hasTimeInfo->isChecked()) {
     double tval[1] = { -1.0 };
@@ -1178,7 +1170,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       this->RunScript();
     }
   }
-#endif //DISABLE_DISPLAY
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::TrackSource()
@@ -1438,7 +1429,6 @@ void pqDsmViewerPanel::ExportData(bool force)
         this->Internals->SteeringWriter->UpdatePipeline();
       }
     }
-//    this->Internals->DsmProxy->InvokeCommand("H5Dump");
   }
   //
   this->Internals->LastExportTime.Modified();

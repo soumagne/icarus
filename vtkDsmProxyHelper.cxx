@@ -84,7 +84,6 @@ void vtkDsmProxyHelper::WriteDataSetArrayData(const char *desc)
   else {
     std::cout << "Steering writer called with invalid DSM setup " << std::endl;
   }
-  this->DsmManager->H5DumpLight();
 }
 
 //----------------------------------------------------------------------------
