@@ -30,7 +30,7 @@ IF(WIN32 AND MSVC)
   #--------------------------------------------------
   IF (NOT TARGET "H5FDdsm")
     FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
-    INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
+    INCLUDE_DIRECTORIES(${H5FD_DSM_INCLUDE_DIR})
   ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
 ENDIF(WIN32 AND MSVC)

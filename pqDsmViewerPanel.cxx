@@ -64,6 +64,8 @@
 #include "vtkSMOutputPort.h"
 #include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMProxyDefinitionManager.h"
+#include "vtkSMProxySelectionModel.h"
+#include "vtkSMSessionProxyManager.h"
 
 #include "vtkPVDataInformation.h"
 #include "vtkPVCompositeDataInformation.h"
@@ -82,7 +84,6 @@
 #include "pqPropertyLinks.h"
 #include "pqProxy.h"
 #include "pqServer.h"
-#include "pqServerManagerSelectionModel.h"
 #include "pqServerManagerModelItem.h"
 #include "pqServerManagerModel.h"
 #include "pqObjectBuilder.h"
@@ -167,7 +168,7 @@ public:
   }
   //
   void CreateDsmProxy() {
-    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
     this->DsmProxy.TakeReference(pm->NewProxy("icarus_helpers", "DsmManager"));
     this->DsmProxy->UpdatePropertyInformation();
   }
@@ -177,7 +178,7 @@ public:
       this->CreateDsmProxy();
     }
     //
-    vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+    vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
     this->DsmProxyHelper.TakeReference(pm->NewProxy("icarus_helpers", "DsmProxyHelper"));
     this->DsmProxyHelper->UpdatePropertyInformation();
     this->DsmProxyHelper->UpdateVTKObjects();
@@ -336,13 +337,9 @@ QDockWidget("DSM Manager", p)
   //
   ////////////
   //keep self up to date whenever a new source becomes the active one
-  pqServerManagerSelectionModel *selection =
-    pqApplicationCore::instance()->getSelectionModel();
-
-  this->connect(selection, 
-    SIGNAL(currentChanged(pqServerManagerModelItem*)), 
-    this, SLOT(TrackSource())
-    );
+  this->connect(&pqActiveObjects::instance(), 
+    SIGNAL(sourceChanged(pqPipelineSource*)),
+    this, SLOT(TrackSource()));
 
   this->connect(smModel,
     SIGNAL(sourceAdded(pqPipelineSource*)),
@@ -907,7 +904,7 @@ void pqDsmViewerPanel::onWriteDataToDSM()
       return;
     }
     //
-    vtkSMProxyManager* pm = vtkSMProxy::GetProxyManager();
+    vtkSMProxyManager* pm = vtkSMProxyManager::GetProxyManager();
     vtkSmartPointer<vtkSMSourceProxy> XdmfWriter;
     XdmfWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4")));
 
@@ -976,7 +973,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   bool forceXdmfGeneration = false;
   static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
   //
-  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   if (!this->Internals->XdmfViewer || this->Internals->storeDsmContents->isChecked()) {
     // set create objects flag
     this->Internals->CreateObjects = true;
@@ -1175,8 +1172,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
 void pqDsmViewerPanel::TrackSource()
 {
   //find the active filter
-  pqServerManagerModelItem *item =
-    pqApplicationCore::instance()->getSelectionModel()->currentItem();
+  pqPipelineSource* item = pqActiveObjects::instance().activeSource();
   if (item)
   {
     pqOutputPort* port = qobject_cast<pqOutputPort*>(item);
@@ -1313,7 +1309,7 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   // Create a pipeline with XdmfReader+FlattenOneBlock+Transform filters inside it
   // [This can be extended to any number of internal filters]
   //
-  vtkSMProxyManager *pm = vtkSMProxy::GetProxyManager();
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   CustomPipeline widgetPipeline;
   widgetPipeline.TakeReference(vtkCustomPipelineHelper::New("filters", "TransformBlock"));
   this->Internals->WidgetPipelines.push_back(widgetPipeline);

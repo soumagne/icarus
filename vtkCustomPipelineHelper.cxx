@@ -32,6 +32,8 @@
 #include "vtkObjectFactory.h"
 #include "vtkSMInputProperty.h"
 #include "vtkSMProxyManager.h"
+#include "vtkSMProxyDefinitionManager.h"
+#include "vtkSMSessionProxyManager.h"
 #include "vtkSMSourceProxy.h"
 #include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMProxyProperty.h"
@@ -75,7 +77,8 @@ void vtkCustomPipelineHelper::UnRegisterCustomFilters()
 {
   static bool once = true;
   if (once) {
-    vtkSMProxyManager *proxyManager = vtkSMProxyManager::GetProxyManager();
+    vtkSMSessionProxyManager *proxyManager =
+      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
     for (vtkCustomPipelineHelperSpace::stringpairlist::iterator it=vtkCustomPipelineHelperSpace::RegisteredFilters.begin();
       it!=vtkCustomPipelineHelperSpace::RegisteredFilters.end(); ++it) 
     {
@@ -97,7 +100,8 @@ void vtkCustomPipelineHelper::RegisterCustomFilters()
 //----------------------------------------------------------------------------
 void vtkCustomPipelineHelper::RegisterCustomFilter(const char *xml)
 {
-  vtkSMProxyManager *proxyManager = vtkSMProxyManager::GetProxyManager();
+  vtkSMSessionProxyManager *proxyManager =
+    vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
   //  static int num = 5000;
   // Make sure name is unique among filters
   vtkSmartPointer<vtkPVXMLParser> parser = vtkSmartPointer<vtkPVXMLParser>::New();

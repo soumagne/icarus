@@ -37,6 +37,7 @@
 #include "vtkClientServerInterpreter.h"
 #include "vtkClientServerInterpreterInitializer.h"
 #include "vtkSMProxyDefinitionManager.h"
+#include "vtkSMSessionProxyManager.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -431,7 +432,13 @@ void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
   Initializer->RegisterCallback(&::DsmProxyHelperInit);
   // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
 //  vtkSMObject::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
-  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
+  // Look inside the group name that are tracked
+  vtkSMSessionProxyManager* pxm =
+      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+  vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
+
+  pxdm->LoadConfigurationXMLFromString(xmlstring);
+/////  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
 //  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 }
 
