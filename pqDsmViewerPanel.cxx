@@ -679,6 +679,9 @@ bool pqDsmViewerPanel::DsmReady()
       else if (this->Internals->dsmInterCommType->currentText() == QString("MPI_RMA")) {
         this->Internals->DsmInterCommType = H5FD_DSM_COMM_MPI_RMA;
       }
+      else if (this->Internals->dsmInterCommType->currentText() == QString("DMAPP")) {
+        this->Internals->DsmInterCommType = H5FD_DSM_COMM_DMAPP;
+      }
       pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("InterCommType"),
         this->Internals->DsmInterCommType);

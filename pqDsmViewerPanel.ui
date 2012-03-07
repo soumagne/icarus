@@ -128,17 +128,22 @@
                  </property>
                  <item>
                   <property name="text">
-                   <string>MPI</string>
-                  </property>
-                 </item>
-                 <item>
-                  <property name="text">
                    <string>Sockets</string>
                   </property>
                  </item>
                  <item>
                   <property name="text">
+                   <string>MPI</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
                    <string>MPI_RMA</string>
+                  </property>
+                 </item>
+                 <item>
+                  <property name="text">
+                   <string>DMAPP</string>
                   </property>
                  </item>
                 </widget>
