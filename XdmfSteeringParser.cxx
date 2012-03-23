@@ -217,7 +217,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   for (int index=0; index < numberOfCommandProperties; index++) {
     XdmfXmlNode xnode = this->ConfigDOM->FindElement("CommandProperty", index, interactionNode);
     // make sure the CommandProperty uses vtkSIIntVectorProperty
-    xmlSetProp(xnode, (xmlChar *)"si_class", (xmlChar *)"vtkSIIntVectorProperty");
+    xmlSetProp(xnode, (xmlChar *)"si_class", (xmlChar *)"vtkSIProperty");
     // Set the Command to be ExecuteSteeringCommand + the name of the command
     std::string    name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
     std::string command = "ExecuteSteeringCommand" + name;

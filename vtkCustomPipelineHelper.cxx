@@ -77,12 +77,13 @@ void vtkCustomPipelineHelper::UnRegisterCustomFilters()
 {
   static bool once = true;
   if (once) {
-    vtkSMSessionProxyManager *proxyManager =
-      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
+    vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+    pm->GetActiveSession();
+    vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();   
     for (vtkCustomPipelineHelperSpace::stringpairlist::iterator it=vtkCustomPipelineHelperSpace::RegisteredFilters.begin();
       it!=vtkCustomPipelineHelperSpace::RegisteredFilters.end(); ++it) 
     {
-      proxyManager->UnRegisterCustomProxyDefinition(it->first.c_str(),it->second.c_str());
+      pxm->UnRegisterCustomProxyDefinition(it->first.c_str(),it->second.c_str());
     }
     once = false;
   }

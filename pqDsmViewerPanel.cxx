@@ -86,7 +86,6 @@
 #include "pqServer.h"
 #include "pqServerManagerModelItem.h"
 #include "pqServerManagerModel.h"
-#include "pqObjectBuilder.h"
 #include "pqSMAdaptor.h"
 #include "pqTreeWidgetCheckHelper.h"
 #include "pqTreeWidgetItemObject.h"
@@ -100,8 +99,8 @@
 #include "pqDisplayPolicy.h"
 #include "pqAnimationScene.h"
 #include "pqTimeKeeper.h"
+#include "pqApplyPropertiesManager.h"
 //
-#include "pqObjectInspectorWidget.h"
 #include "pqNamedWidgets.h"
 #include "pq3DWidget.h"
 #include "pqDataExportWidget.h"
@@ -117,6 +116,7 @@
 //
 #include "ui_pqDsmViewerPanel.h"
 //
+#include "pqDsmObjectInspector.h"
 #include "vtkDsmManager.h"
 #include "H5FDdsm.h"
 #include "XdmfSteeringParser.h"
@@ -240,7 +240,7 @@ public:
   // Display of controls via object inspector panel
   // ---------------------------------------------------------------
   XdmfSteeringParser                       *SteeringParser;
-  pqObjectInspectorWidget                  *pqObjectInspector;
+  pqDsmObjectInspector                     *pqObjectInspector;
   pqProxy                                  *pqDsmProxyHelper;
   // ---------------------------------------------------------------
   // Pipelines for steerable objects, one per 3D widget
@@ -561,7 +561,7 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
   //
   if (this->Internals->pqDsmProxyHelper) {
     this->Internals->steeringSpacer->changeSize(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
-    this->Internals->pqObjectInspector = new pqObjectInspectorWidget(this->Internals->steeringTab);
+    this->Internals->pqObjectInspector = new pqDsmObjectInspector(this->Internals->steeringTab);
     this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
     this->Internals->pqObjectInspector->setProxy(this->Internals->pqDsmProxyHelper);
     this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
@@ -972,6 +972,8 @@ void pqDsmViewerPanel::UpdateDsmInformation()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
+//  H5FD_dsm_dump();
+
   static int current_time = 0;
   bool forceXdmfGeneration = false;
   static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
@@ -1351,7 +1353,7 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 
   //
   // We need to map the user interactions in the widget to the transform in this mini-pipeline.
-  // Note that the 3Dwidget was created automatically by the pqObjectInspectorWidget when the XML
+  // Note that the 3Dwidget was created automatically by the pqDsmObjectInspector when the XML
   // was parsed, and this was before any actual filters were created
   //
   vtkSMProxyProperty *transform = vtkSMProxyProperty::SafeDownCast(

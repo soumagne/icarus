@@ -33,6 +33,7 @@
 #include "vtkObject.h"       // Base class
 
 #include "H5FDdsmManager.h"
+#include "H5FDdsmTools.h"
 
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 22001
 
@@ -144,6 +145,18 @@ public:
   // Description:
   // Stop the listening service (called by server).
   int Unpublish() { return(DsmManager->Unpublish()); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (complete output).
+//  void H5Dump() { H5FD_dsm_dump(); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (hierarchical output).
+//  void H5DumpLight() { H5FD_dsm_dumpLight(); }
+
+  // Description:
+  // Dump out the content of the DSM buffer (XML output).
+//  void H5DumpXML() { H5FD_dsm_dumpXML(); }
 
   // Description:
   // Generate an Xdmf description file. The generated file is automatically set

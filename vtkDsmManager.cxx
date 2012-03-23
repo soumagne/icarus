@@ -38,6 +38,10 @@
 #include "vtkClientServerInterpreterInitializer.h"
 #include "vtkSMProxyDefinitionManager.h"
 #include "vtkSMSessionProxyManager.h"
+#include "vtkSMSession.h"
+#include "vtkPVSessionBase.h"
+#include "vtkPVSessionServer.h"
+#include "vtkPVSessionCore.h"
 //
 #ifdef VTK_USE_MPI
 #include "vtkMPI.h"
@@ -427,17 +431,34 @@ void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
 {
   // Register a constructor function for the DsmProxyHelper
   vtkClientServerInterpreterInitializer *Initializer = vtkClientServerInterpreterInitializer::GetInitializer();
-//  this->ClientServerInterpreter = vtkClientServerInterpreter::New();
-//  vtkProcessModule::InitializeInterpreter(DsmProxyHelperInit);
   Initializer->RegisterCallback(&::DsmProxyHelperInit);
-  // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
-//  vtkSMObject::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
-  // Look inside the group name that are tracked
-  vtkSMSessionProxyManager* pxm =
-      vtkSMProxyManager::GetProxyManager()->GetActiveSessionProxyManager();
-  vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
 
-  pxdm->LoadConfigurationXMLFromString(xmlstring);
+  // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
+    vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+    int rank = pm->GetPartitionId();
+    vtkProcessModule::ProcessTypes ptype = pm->GetProcessType();
+    if (ptype == vtkProcessModule::PROCESS_CLIENT) {
+      vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+      pm->GetActiveSession();
+      vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();
+      vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
+      pxdm->LoadConfigurationXMLFromString(xmlstring);
+    }
+    else /* if (ptype == vtkProcessModule::PROCESS_SERVER) */ {
+      vtkPVSessionServer *serverSession =
+          vtkPVSessionServer::SafeDownCast(pm->GetActiveSession());
+      vtkSIProxyDefinitionManager* pxdm =
+          serverSession->GetSessionCore()->GetProxyDefinitionManager();
+      pxdm->LoadConfigurationXMLFromString(xmlstring);
+    }
+
+
+//  if (pm) {
+//    pm->GetActiveSession();
+//    vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();
+//    vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
+//    pxdm->LoadConfigurationXMLFromString(xmlstring);
+//  }
 /////  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
 //  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 }

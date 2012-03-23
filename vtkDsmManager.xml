@@ -43,6 +43,18 @@
                 command="ReadConfigFile">
       </Property>
 
+      <Property name="H5Dump"
+                command="H5Dump">
+      </Property>
+
+      <Property name="H5DumpLight"
+                command="H5DumpLight">
+      </Property>
+
+      <Property name="H5DumpXML"
+                command="H5DumpXML">
+      </Property>
+
       <Property name="GenerateXdmfDescription"
                 command="GenerateXdmfDescription">
       </Property>
