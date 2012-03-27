@@ -46,6 +46,9 @@ protected:
 
 protected slots:
 
+  /// override default accept - so we can open the DSM in parallel
+  void accept();
+
 };
 
 #endif

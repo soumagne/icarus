@@ -147,6 +147,18 @@ public:
   int Unpublish() { return(DsmManager->Unpublish()); }
 
   // Description:
+  // Open the DSM from all nodes of the parallel application, 
+  // Currently this is for paraview use and uses H5F_ACC_RDONLY
+  // but R/W support can be added if necessary
+  // returns 1 on success, 0 on fail
+  int OpenCollective() { return (DsmManager->OpenDSM(H5F_ACC_RDONLY)); }
+
+  // Description:
+  // Close the DSM from all nodes of the parallel application, 
+  // returns 1 on success, 0 on fail
+  int CloseCollective() { return (DsmManager->CloseDSM()); }
+
+  // Description:
   // Dump out the content of the DSM buffer (complete output).
 //  void H5Dump() { H5FD_dsm_dump(); }
 

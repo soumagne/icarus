@@ -39,6 +39,14 @@
                 command="Unpublish">
       </Property>
 
+      <Property name="OpenCollective"
+                command="OpenCollective">
+      </Property>
+
+      <Property name="CloseCollective"
+                command="CloseCollective">
+      </Property>
+
       <Property name="ReadConfigFile"
                 command="ReadConfigFile">
       </Property>

@@ -572,10 +572,10 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
     QSpacerItem *verticalSpacer = new QSpacerItem(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
     this->Internals->pqObjectInspector->layout()->addItem(verticalSpacer);
 
-    // after changes are accepted, we must release hold of the DSM
+    // before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
       SIGNAL(preaccept()), this, SLOT(onPreAccept()));
-    // after changes are accepted, we must release hold of the DSM
+    // after changes are accepted
     this->connect(this->Internals->pqObjectInspector,
       SIGNAL(postaccept()), this, SLOT(onPostAccept()));
 
@@ -949,6 +949,7 @@ void pqDsmViewerPanel::onautoSaveImageChecked(int checked) {
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmInformation()
 {  
+  this->Internals->DsmProxy->InvokeCommand("OpenCollective");
   double range[2] = { -1.0, -1.0 };
   vtkSMPropertyHelper timerange(this->Internals->DsmProxyHelper, "TimeRangeInfo");
   timerange.UpdateValueFromServer();
@@ -968,11 +969,13 @@ void pqDsmViewerPanel::UpdateDsmInformation()
       }
     }
   }
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
 //  H5FD_dsm_dump();
+  this->Internals->DsmProxy->InvokeCommand("OpenCollective");
 
   static int current_time = 0;
   bool forceXdmfGeneration = false;
@@ -1172,6 +1175,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       this->RunScript();
     }
   }
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::TrackSource()
