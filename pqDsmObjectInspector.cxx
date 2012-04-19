@@ -170,5 +170,5 @@ void pqDsmObjectInspector::accept()
 {
 //  emit this->preaccept();
   this->pqObjectInspectorWidget::accept();
-//  emit this->postaccept();
+  emit this->postaccept();
 }

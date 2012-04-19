@@ -246,7 +246,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     }
 
     if (!strncmp ("ExecuteSteeringCommand",method, 22)) {
-      if (msg.GetNumberOfArguments(0) == 3) {
+      if (msg.GetNumberOfArguments(0) == 2) {
         int temp;
         std::string param_name = method;
         vtksys::SystemTools::ReplaceString(param_name, "ExecuteSteeringCommand", "");
