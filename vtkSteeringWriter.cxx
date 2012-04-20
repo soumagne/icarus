@@ -302,13 +302,15 @@ void vtkSteeringWriter::CopyFromVector(int offset, vtkDataArray *source, vtkData
   }
 }
 //----------------------------------------------------------------------------
-void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t disk_space, hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray)
+void vtkSteeringWriter::H5WriteDataArray(hid_t mem_space, hid_t disk_space,
+    hsize_t mem_type, hid_t group_id, const char *array_name, vtkDataArray *dataarray, bool convert)
 {
   hid_t H5DataSetID = H5Dcreate(this->H5GroupId, array_name, mem_type, disk_space, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
   if (H5DataSetID<0) {
     vtkErrorMacro(<<"Dataset open failed for " << array_name);
   } else {
     void *dataptr = dataarray->GetVoidPointer(0);
+    if (convert) mem_type = H5T_NATIVE_FLOAT;
     H5Dwrite(H5DataSetID, mem_type, mem_space, disk_space, H5P_DEFAULT, dataptr);
     H5Dclose(H5DataSetID);
   }
@@ -412,7 +414,7 @@ void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata,
   switch (data->GetDataType()) {
   case VTK_FLOAT:
     if (this->WriteFloatAsDouble) {
-      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, data);
+      H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_DOUBLE, this->H5FileId, name, data, true);
     }
     else {
       H5WriteDataArray(mem_space, disk_space, H5T_NATIVE_FLOAT, this->H5FileId, name, data);
