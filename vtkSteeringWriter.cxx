@@ -18,6 +18,15 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+#include "vtkToolkits.h" // For VTK_USE_MPI
+#ifdef VTK_USE_MPI
+  #include "vtkMPI.h"
+  #include "vtkMPIController.h"
+  #include "vtkMPICommunicator.h"
+#endif
+// Otherwise
+#include "vtkMultiProcessController.h"
+
 #include "vtkSteeringWriter.h"
 #include "vtkDsmManager.h"
 #include "H5FDdsm.h"

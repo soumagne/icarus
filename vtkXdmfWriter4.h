@@ -34,7 +34,6 @@
 #ifndef __vtkXdmfWriter4_h
 #define __vtkXdmfWriter4_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI
 #include "vtkSmartPointer.h" // For vtkSmartPointer
 #include "vtkXdmfWriter.h"
 #include <vtkstd/string>

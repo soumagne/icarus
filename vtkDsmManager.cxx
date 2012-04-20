@@ -43,12 +43,14 @@
 #include "vtkPVSessionServer.h"
 #include "vtkPVSessionCore.h"
 //
+#include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
-#include "vtkMPI.h"
-#include "vtkMPIController.h"
-#include "vtkMPICommunicator.h"
-vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
+ #include "vtkMPI.h"
+ #include "vtkMPIController.h"
+ #include "vtkMPICommunicator.h"
 #endif
+// Otherwise
+#include "vtkMultiProcessController.h"
 //
 #include "vtkDsmProxyHelper.h"
 #include "XdmfGenerator.h"
@@ -64,6 +66,7 @@ vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
+vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 struct vtkDsmManager::vtkDsmManagerInternals
 {
@@ -171,8 +174,7 @@ vtkDsmManager::~vtkDsmManager()
 }
 
 //----------------------------------------------------------------------------
-void
-vtkDsmManager::CheckMPIController()
+void vtkDsmManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {

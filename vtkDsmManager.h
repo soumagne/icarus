@@ -29,11 +29,10 @@
 #ifndef __vtkDsmManager_h
 #define __vtkDsmManager_h
 
-#include "vtkToolkits.h"     // For VTK_USE_MPI 
 #include "vtkObject.h"       // Base class
 
 #include "H5FDdsmManager.h"
-#include "H5FDdsmTools.h"
+//#include "H5FDdsmTools.h"
 
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
@@ -269,21 +268,13 @@ public:
   vtkSetStringMacro(XdmfTemplateDescription);
   vtkGetStringMacro(XdmfTemplateDescription);
 
-//BTX
-  #ifdef VTK_USE_MPI
-//ETX
-//BTX
-    // Description:
-    // Set/Get the controller use in compositing (set to
-    // the global controller by default)
-    // If not using the default, this must be called before any
-    // other methods.
-    virtual void SetController(vtkMultiProcessController* controller);
-    vtkGetObjectMacro(Controller, vtkMultiProcessController);
-//ETX
-//BTX
-  #endif
-//ETX
+  // Description:
+  // Set/Get the controller use in compositing (set to
+  // the global controller by default)
+  // If not using the default, this must be called before any
+  // other methods.
+  virtual void SetController(vtkMultiProcessController* controller);
+  vtkGetObjectMacro(Controller, vtkMultiProcessController);
 
 //BTX
     // Registers our XML for the auto-generated steering proxy
@@ -302,17 +293,13 @@ protected:
     int            UpdatePiece;
     int            UpdateNumPieces;
 
-    //BTX
-#ifdef VTK_USE_MPI
     // If the user is running paraview client in stand-alone mode and not
     // an mpijob, the mpi controller will be a vtkDummyController
     // check for this and replace with an MPI controller if necessary when
     // first setting up a DSM object
     void CheckMPIController();
 
-    //ETX
     vtkMultiProcessController *Controller;
-#endif
 
     //
     char           *XdmfTemplateDescription;
