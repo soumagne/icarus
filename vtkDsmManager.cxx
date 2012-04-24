@@ -329,7 +329,11 @@ int vtkDsmManager::Create()
       } else {
         vtkstd::cout << "Failed to connect" << vtkstd::endl;
         tryConnect++;
-        notificationPort++;
+#ifdef _WIN32
+        Sleep(1000);
+#else
+        sleep(1);
+#endif
       }
     } while (r < 0 && tryConnect < 5);
     if (r < 0) {

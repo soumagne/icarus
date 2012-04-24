@@ -35,7 +35,7 @@
 #include "H5FDdsmManager.h"
 #include "H5FDdsmTools.h"
 
-#define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 22001
+#define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
 class vtkMultiProcessController;
 
