@@ -1,0 +1,138 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Sources                                                          -->
+  <!-- ================================================================ -->
+
+
+  <!-- ================================================================ -->
+  <!-- Sources                                                          -->
+  <!-- ================================================================ -->
+  
+  <ProxyGroup name="sources">
+
+    <!-- ============================================================= -->
+    <!-- H5Part                                                        -->
+    <!-- ============================================================= -->
+    <SourceProxy
+     name="H5PartDsm"
+     class="vtkH5PartDsmReader">
+      <!--
+      base_proxygroup="sources"
+      base_proxyname="H5Part"
+      -->
+
+      <ProxyProperty name="DsmManager"
+                     command="SetDsmManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers"
+                 name="DsmManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+      <IntVectorProperty
+         name="GenerateVertexCells"
+         command="SetGenerateVertexCells"
+         number_of_elements="1"
+         default_values="1" >
+        <BooleanDomain name="bool"/>
+      </IntVectorProperty>
+
+      <StringVectorProperty
+         name="Xarray"
+         command="SetXarray"
+         default_values="X"
+         default_regex_delimiter=","
+         default_regex="[Xx]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="Yarray"
+         command="SetYarray"
+         default_values="Y"
+         default_regex_delimiter=","
+         default_regex="[Yy]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="Zarray"
+         command="SetZarray"
+         default_values="Z"
+         default_regex_delimiter=","
+         default_regex="[Zz]$"
+         number_of_elements="1">
+        <Documentation>
+          This property lists which point array to use for coordinates.
+        </Documentation>
+        <StringListDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList" />
+          </RequiredProperties>
+        </StringListDomain>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayInfo"
+         information_only="1">
+        <ArraySelectionInformationHelper attribute_name="Point"/>
+      </StringVectorProperty>
+
+      <StringVectorProperty
+         name="PointArrayStatus"
+         command="SetPointArrayStatus"
+         number_of_elements="0"
+         repeat_command="1"
+         number_of_elements_per_command="2"
+         element_types="2 0"
+         information_property="PointArrayInfo"
+         label="Point Arrays">
+        <ArraySelectionDomain name="array_list">
+          <RequiredProperties>
+            <Property name="PointArrayInfo" function="ArrayList"/>
+          </RequiredProperties>
+        </ArraySelectionDomain>
+        <Documentation>
+          This property lists which point-centered arrays to read.
+        </Documentation>
+      </StringVectorProperty>
+
+      <CommandProperty
+        name="FileModified"
+        label="touch file"
+        command="SetFileModified"
+        si_class="vtkSIProperty">
+      </CommandProperty>
+
+      <Hints>
+        <Property name="DsmManager" show="0"/>
+        <Property name="FileModified" show="0"/>
+      </Hints>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>

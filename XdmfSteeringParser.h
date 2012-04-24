@@ -30,6 +30,7 @@
 
 #include <sstream>
 #include <string>
+#include <vector>
 #include <map>
 
 //
@@ -103,12 +104,20 @@ public:
     return this->HelperProxyString;
   }
   //
+  bool GetHasH5Part() { return this->HasH5Part; }
+  std::vector<std::string> GetH5PartStrings() {
+    return this->H5PartStrings;
+  }
+  //
 protected:
   XdmfDOM             *ConfigDOM;
   GridMap              SteeringConfig;
   SteeringGUIWidgetMap SteeringWidgetMap;
   std::string          HelperProxyString;
   std::map<int, int>   GridTypeMap;
+  //
+  bool                     HasH5Part;
+  std::vector<std::string> H5PartStrings;
 };
 
 #endif /* __XdmfSteeringParser_h */

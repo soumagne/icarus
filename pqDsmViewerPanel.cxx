@@ -157,6 +157,7 @@ public:
     this->DsmProxyHelper     = NULL;
     this->SteeringWriter     = NULL;
     this->XdmfReader         = NULL;
+    this->H5PartReader       = NULL;
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
@@ -235,6 +236,7 @@ public:
   // ---------------------------------------------------------------
   vtkSmartPointer<vtkCustomPipelineHelper>  XdmfViewer;
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
+  vtkSmartPointer<vtkSMSourceProxy>         H5PartReader;
   bool                                      CreateObjects;
   // ---------------------------------------------------------------
   // Display of controls via object inspector panel
@@ -993,12 +995,26 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     this->Internals->XdmfViewer = vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock");
 
     //
-    // Connect our DSM manager to the reader
+    // Create a new H5PartReader proxy and register it with the system
+    //
+    this->Internals->H5PartReader.TakeReference(
+      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "H5PartDsm")));
+
+    //
+    // Connect our DSM manager to the reader (Xdmf)
     //
     pqSMAdaptor::setProxyProperty(
       this->Internals->XdmfViewer->Pipeline->GetProperty("DsmManager"), this->Internals->DsmProxy
     );
     this->Internals->XdmfViewer->Pipeline->UpdateProperty("DsmManager");
+
+    //
+    // Connect our DSM manager to the reader (H5Part)
+    //
+    pqSMAdaptor::setProxyProperty(
+      this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+    );
+    this->Internals->H5PartReader->UpdateProperty("DsmManager");
   }
 
   //
@@ -1049,7 +1065,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   // first update the reader
   //
   if (this->Internals->CreateObjects) {
-    bool multiblock = false;
+      bool multiblock = false;
     vtkSMCompoundSourceProxy *pipeline1 = vtkSMCompoundSourceProxy::SafeDownCast(
       this->Internals->XdmfViewer->Pipeline);
     this->Internals->XdmfReader = vtkSMSourceProxy::SafeDownCast(pipeline1->GetProxy("XdmfReader1"));
@@ -1092,6 +1108,49 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     this->Internals->XdmfViewer->UpdateAll();
 
     //
+    // If H5Part present, update that too
+    //
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      std::vector<std::string> H5PartStrings = this->Internals->SteeringParser->GetH5PartStrings();
+
+      pqSMAdaptor::setElementProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("Xarray"), H5PartStrings[1].c_str()); 
+      pqSMAdaptor::setElementProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("Yarray"), H5PartStrings[2].c_str()); 
+      pqSMAdaptor::setElementProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("Zarray"), H5PartStrings[3].c_str()); 
+      pqSMAdaptor::setElementProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("GenerateVertexCells"), 1); 
+      
+      this->Internals->H5PartReader->UpdatePipeline();
+
+      //
+      // Registering the proxy as a source will create a pipeline source in the browser
+      // temporarily disable error messages to squash one warning about Input being
+      // declared but not registered with the pipeline browser.
+      //
+      char proxyName[256];
+      sprintf(proxyName, "DSM-h5part-%d", current_time);
+      pqApplicationCore::instance()->disableOutputWindow();
+      pm->RegisterProxy("sources", proxyName, this->Internals->H5PartReader);
+      pqApplicationCore::instance()->enableOutputWindow();
+
+      //
+      // Set status of registered pipeline source to unmodified 
+      //
+      pqPipelineSource* source = pqApplicationCore::instance()->
+        getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->H5PartReader);
+      source->setModifiedState(pqProxy::UNMODIFIED);
+
+      //
+      // (on First creation), make the output of the pipeline source visible.
+      //
+      pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
+      pqOutputPort *port = source->getOutputPort(0);
+      display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
+    }
+    
+    //
     // Registering the proxy as a source will create a pipeline source in the browser
     // temporarily disable error messages to squash one warning about Input being
     // declared but not registered with the pipeline browser.
@@ -1127,6 +1186,10 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     {
       (*w)->UpdateAll();
     }
+
+    this->Internals->H5PartReader->InvokeCommand("FileModified");
+    this->Internals->H5PartReader->UpdatePipeline();
+    
   }
   //
   this->Internals->CreateObjects = false;

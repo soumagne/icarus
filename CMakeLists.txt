@@ -30,7 +30,7 @@ INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
 INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
-# Find and Use System liba (only needed on WIN32)
+# Find and Use System libs (only needed on WIN32)
 #--------------------------------------------------
 IF(WIN32 AND MSVC)
   IF (NOT TARGET "hdf5")
@@ -44,6 +44,14 @@ IF(WIN32 AND MSVC)
   ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
 ENDIF(WIN32 AND MSVC)
+
+#--------------------------------------------------
+# DSM H5Part Reader needs pv-meshless
+#--------------------------------------------------
+INCLUDE_DIRECTORIES(
+  ${CSCS_Plugins_SOURCE_DIR}/pv-meshless
+  ${CSCS_Plugins_SOURCE_DIR}/pv-meshless/h5part
+)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -105,12 +113,14 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx
   SERVER_SOURCES
     ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
@@ -136,6 +146,7 @@ ADD_PARAVIEW_PLUGIN(
 
 TARGET_LINK_LIBRARIES(
   CSCS_DSM
+    pv_meshless
     H5FDdsm
     hdf5
     hdf5_hl

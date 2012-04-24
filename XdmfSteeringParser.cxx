@@ -55,9 +55,21 @@
 #include "vtkType.h"
 //
 //----------------------------------------------------------------------------
+// Utility
+//----------------------------------------------------------------------------
+std::string GetXMLString(XdmfConstString str)
+{
+  std::string value = std::string(str);
+  free((void*)str);
+  return value;
+}
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
+  this->HasH5Part  = false;
 }
 //----------------------------------------------------------------------------
 XdmfSteeringParser::~XdmfSteeringParser()
@@ -98,7 +110,7 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   XdmfXmlNode domainNode;
   int numberOfGrids;
 
-  XdmfXmlNode interactionNode;
+  XdmfXmlNode interactionNode, h5PartNode;
 
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = new XdmfDOM();
@@ -110,6 +122,25 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     delete this->ConfigDOM;
     this->ConfigDOM = NULL;
     return(XDMF_FAIL);
+  }
+
+  //////////////////////////////////////////////////////////////////////
+  // H5Part
+  h5PartNode = this->ConfigDOM->FindElement("H5Part");
+  this->HasH5Part = (h5PartNode!=NULL);
+  if (this->HasH5Part) {
+    XdmfXmlNode stepNode = this->ConfigDOM->FindElement("Step", 0, h5PartNode);
+    std::string  step = GetXMLString(this->ConfigDOM->GetAttribute(stepNode, "Name"));
+    this->H5PartStrings.push_back(step);
+    XdmfXmlNode XNode = this->ConfigDOM->FindElement("Xarray", 0, h5PartNode);
+    std::string     x = GetXMLString(this->ConfigDOM->GetAttribute(XNode, "Name"));
+    this->H5PartStrings.push_back(x);
+    XdmfXmlNode YNode = this->ConfigDOM->FindElement("Yarray", 0, h5PartNode);
+    std::string     y = GetXMLString(this->ConfigDOM->GetAttribute(YNode, "Name"));
+    this->H5PartStrings.push_back(y);
+    XdmfXmlNode ZNode = this->ConfigDOM->FindElement("Zarray", 0, h5PartNode);
+    std::string     z = GetXMLString(this->ConfigDOM->GetAttribute(ZNode, "Name"));
+    this->H5PartStrings.push_back(z);
   }
 
   //////////////////////////////////////////////////////////////////////
@@ -173,13 +204,6 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   }
 
   return(XDMF_SUCCESS);
-}
-//----------------------------------------------------------------------------
-std::string GetXMLString(XdmfConstString str)
-{
-  std::string value = std::string(str);
-  free((void*)str);
-  return value;
 }
 //----------------------------------------------------------------------------
 int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)

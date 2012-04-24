@@ -162,7 +162,7 @@ protected:
   int     UpdateNumPieces;
 
   vtkDsmManager *DsmManager;
-  vtkMultiProcessController* Controller;
+  vtkMultiProcessController *Controller;
 
 private:
   vtkSteeringWriter(const vtkSteeringWriter&);  // Not implemented.
