@@ -52,6 +52,11 @@ protected:
   virtual void CloseFileIntermediate();
   //
   vtkDsmManager *DsmManager;
+  bool           UsingCachedHandle;
+
+  //BTX
+  H5PartFile *H5Part_open_file_dsm();
+  //ETX
 
 private:
   vtkH5PartDsmReader(const vtkH5PartDsmReader&);  // Not implemented.

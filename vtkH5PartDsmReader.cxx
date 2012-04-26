@@ -108,7 +108,8 @@ vtkStandardNewMacro(vtkH5PartDsmReader);
 //----------------------------------------------------------------------------
 vtkH5PartDsmReader::vtkH5PartDsmReader()
 {
-  this->DsmManager = NULL;
+  this->DsmManager        = NULL;
+  this->UsingCachedHandle = 0;
 }
 //----------------------------------------------------------------------------
 vtkH5PartDsmReader::~vtkH5PartDsmReader()
@@ -121,9 +122,48 @@ void vtkH5PartDsmReader::CloseFile()
 {
   if (this->H5FileId != NULL)
     {
-    H5PartCloseFile(this->H5FileId);
-    this->H5FileId = NULL;
+    H5PartFile *f = this->H5FileId;
+  	herr_t r = 0;
+    // delete everything unless we're using cached stuff
+	  if ( f->block && f->close_block ) {
+		  (*f->close_block) ( f );
+	  }
+	  if ( f->multiblock && f->close_multiblock ) {
+		  (*f->close_multiblock) ( f );
+	  }
+	  if( f->shape != H5S_ALL ) {
+		  r = H5Sclose( f->shape );
+	  }
+	  if( f->timegroup >= 0 ) {
+		  r = H5Gclose( f->timegroup );
+	  }
+	  if( f->diskshape != H5S_ALL ) {
+		  r = H5Sclose( f->diskshape );
+	  }
+	  if( f->memshape != H5S_ALL ) {
+		  r = H5Sclose( f->memshape );
+	  }
+	  if( f->xfer_prop != H5P_DEFAULT ) {
+		  r = H5Pclose( f->xfer_prop );
+	  }
+    if( f->create_prop != H5P_DEFAULT ) {
+	    r = H5Pclose( f->create_prop );
     }
+    if (!this->UsingCachedHandle) {
+	    if( f->access_prop != H5P_DEFAULT ) {
+		    r = H5Pclose( f->access_prop );
+	    }  
+	    if ( f->file ) {
+		    r = H5Fclose( f->file );
+	    }
+    }
+	  /* free memory from H5PartFile struct */
+	  if( f->pnparticles ) {
+		  free( f->pnparticles );
+	  }
+	  free( f );
+    this->H5FileId = NULL;
+  }
 }
 //----------------------------------------------------------------------------
 void vtkH5PartDsmReader::CloseFileIntermediate()
@@ -134,7 +174,7 @@ void vtkH5PartDsmReader::CloseFileIntermediate()
 // This is a piece of code taken out of H5Part, but with lots of if()
 // clauses removed since we know we are using parallel/dsm etc etc
 //----------------------------------------------------------------------------
-static H5PartFile* H5Part_open_file_custom(const char *filename, const char flags, MPI_Comm comm) 
+H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm() 
 {
 	H5PartFile *f = NULL;
 
@@ -146,22 +186,17 @@ static H5PartFile* H5Part_open_file_custom(const char *filename, const char flag
 		f->multiblock = NULL;
 		f->close_multiblock = NULL;
 
-	f->flags = flags;
+	f->flags = H5PART_READ;
 
-	/* set default step name */
+	// set default step name 
 	strncpy ( f->groupname_step, H5PART_GROUPNAME_STEP, H5PART_STEPNAME_LEN );
 	f->stepno_width = 0;
 
-	f->xfer_prop = f->create_prop = H5P_DEFAULT;
-	f->access_prop = H5Pcreate (H5P_FILE_ACCESS);
-	if (f->access_prop < 0) {
+	f->comm = this->DsmManager->GetDsmManager()->GetMpiComm();
+	if (MPI_Comm_size (f->comm, &f->nprocs) != MPI_SUCCESS) {
 		goto error_cleanup;
 	}
-
-	if (MPI_Comm_size (comm, &f->nprocs) != MPI_SUCCESS) {
-		goto error_cleanup;
-	}
-	if (MPI_Comm_rank (comm, &f->myproc) != MPI_SUCCESS) {
+	if (MPI_Comm_rank (f->comm, &f->myproc) != MPI_SUCCESS) {
 		goto error_cleanup;
 	}
 
@@ -170,17 +205,30 @@ static H5PartFile* H5Part_open_file_custom(const char *filename, const char flag
 		goto error_cleanup;
 	}
 
-	/* select the HDF5 VFD - JB force DSM */
-	if (H5Pset_fapl_dsm ( f->access_prop, comm, NULL, 0 ) < 0) {
-		goto error_cleanup;
-	}
-
-	f->comm = comm;
-  f->file = H5Fopen(filename, H5F_ACC_RDONLY, f->access_prop);
+  // If the DSM has been opened by some other object using the dsm manager
+  // then we can make use of cached handles and save multiple open/closes
+  f->xfer_prop = f->create_prop = H5P_DEFAULT;
+  if (this->DsmManager->GetDsmManager()->IsOpenDSM()) {
+	  f->access_prop = this->DsmManager->GetDsmManager()->GetCachedFileAccessHandle();
+    f->file = this->DsmManager->GetDsmManager()->GetCachedFileHandle();
+    this->UsingCachedHandle = true;
+  }
+  else {
+    this->UsingCachedHandle = false;
+	  f->access_prop = H5Pcreate (H5P_FILE_ACCESS);
+	  if (f->access_prop < 0) {
+		  goto error_cleanup;
+	  }
+    // select the H5FDdsm VFD
+	  if (H5Pset_fapl_dsm ( f->access_prop, f->comm, NULL, 0 ) < 0) {
+		  goto error_cleanup;
+	  }
+    f->file = H5Fopen("dsm", H5F_ACC_RDONLY, f->access_prop);
 	
-	if (f->file < 0) {
-		goto error_cleanup;
-	}
+	  if (f->file < 0) {
+		  goto error_cleanup;
+	  }
+  }
 	f->nparticles  = 0;
 	f->timegroup   = -1;
 	f->shape       = H5S_ALL;
@@ -207,15 +255,13 @@ static H5PartFile* H5Part_open_file_custom(const char *filename, const char flag
 //----------------------------------------------------------------------------
 int vtkH5PartDsmReader::OpenFile()
 {
-  if (FileModifiedTime>FileOpenedTime)
-    {
-    this->CloseFile();
-    }
+  if (!this->DsmManager) {
+    vtkWarningMacro("vtkH5PartDsmReader OpenFile aborted, no DSM manager");
+  }
 
   if (!this->H5FileId)
     {
-    this->H5FileId = H5Part_open_file_custom(
-      "DSM", H5PART_READ, this->DsmManager->GetDsmManager()->GetMpiComm());
+    this->H5FileId = H5Part_open_file_dsm();
     this->FileOpenedTime.Modified();
     }
 
@@ -224,6 +270,12 @@ int vtkH5PartDsmReader::OpenFile()
     vtkErrorMacro(<< "Initialize: Could not open DSM");
     return 0;
     }
+
+  //
+  // When using DSM, we currently only allow step#0 to be opened
+  // so force timestep to zero
+  //
+  this->ActualTimeStep = 0;
 
   return 1;
 }
