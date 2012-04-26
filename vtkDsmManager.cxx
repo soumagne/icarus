@@ -355,7 +355,6 @@ int vtkDsmManager::Destroy()
 //----------------------------------------------------------------------------
 int vtkDsmManager::Publish()
 {
-  this->DsmManager->Publish();
   if (this->UpdatePiece == 0) {
 #ifdef _WIN32
   this->DsmManagerInternals->NotificationThreadHandle = CreateThread(NULL, 0,
@@ -367,6 +366,7 @@ int vtkDsmManager::Publish()
       &vtkDsmManagerNotificationThread, (void *) this);
 #endif
   }
+  this->DsmManager->Publish();
   return(1);
 }
 
