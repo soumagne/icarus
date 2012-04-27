@@ -1014,7 +1014,10 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     pqSMAdaptor::setProxyProperty(
       this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
     );
+    pqSMAdaptor::setElementProperty(
+      this->Internals->H5PartReader->GetProperty("ExportPartitionBoxes"), 1); 
     this->Internals->H5PartReader->UpdateProperty("DsmManager");
+    this->Internals->H5PartReader->UpdateProperty("ExportPartitionBoxes");
   }
 
   //
