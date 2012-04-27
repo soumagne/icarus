@@ -280,6 +280,34 @@ int vtkH5PartDsmReader::OpenFile()
   return 1;
 }
 //----------------------------------------------------------------------------
+int vtkH5PartDsmReader::ProcessRequest(vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector)
+{
+  if (this->DsmManager) { 
+    if (!this->DsmManager->GetDsmManager()->IsOpenDSM()) {
+      std::cout << "inside ProcessRequest without an open DSM file" << std::endl;
+      return 1;
+    }
+  }
+  int result = this->Superclass::ProcessRequest(request, inputVector, outputVector);
+
+  return result;
+}
+//----------------------------------------------------------------------------
+int vtkH5PartDsmReader::RequestInformation(
+  vtkInformation *request,
+  vtkInformationVector **inputVector,
+  vtkInformationVector *outputVector)
+{
+  int result = vtkH5PartReader::RequestInformation(request, inputVector, outputVector);
+  //
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+  return result;
+}
+//----------------------------------------------------------------------------
 void vtkH5PartDsmReader::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);

@@ -51,6 +51,15 @@ protected:
   virtual void CloseFile();
   virtual void CloseFileIntermediate();
   //
+  int ProcessRequest(vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector);
+
+  int RequestInformation(
+    vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector);
+  //
   vtkDsmManager *DsmManager;
   bool           UsingCachedHandle;
 

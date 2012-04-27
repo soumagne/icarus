@@ -69,6 +69,9 @@ protected:
   //
   bool PrepareDsmManagerDocument();
 
+  int ProcessRequest(vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector);
 
   int RequestInformation(
     vtkInformation *request,
@@ -79,6 +82,7 @@ protected:
   // User Variables
   //
   vtkMultiProcessController* Controller;
+
   // Used for DSM write
   vtkDsmManager *VtkDsmManager;
   double         TimeRange[2];

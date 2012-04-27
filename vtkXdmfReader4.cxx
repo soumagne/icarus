@@ -37,10 +37,11 @@ vtkCxxSetObjectMacro(vtkXdmfReader4, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 vtkXdmfReader4::vtkXdmfReader4()
 {
-  this->Controller = NULL;
+  this->Controller    = NULL;
   this->VtkDsmManager = 0;
-  this->TimeRange[0] = 0.0;
-  this->TimeRange[1] = 0.0;
+  this->TimeRange[0]  = 0.0;
+  this->TimeRange[1]  = 0.0;
+  this->SetFileName("DSM");
 }
 //----------------------------------------------------------------------------
 vtkXdmfReader4::~vtkXdmfReader4()
@@ -63,6 +64,21 @@ bool vtkXdmfReader4::PrepareDsmManagerDocument()
   return true;
 }
 //----------------------------------------------------------------------------
+int vtkXdmfReader4::ProcessRequest(vtkInformation *request,
+    vtkInformationVector **inputVector,
+    vtkInformationVector *outputVector)
+{
+  if (this->VtkDsmManager) { 
+    if (!this->VtkDsmManager->GetDsmManager()->IsOpenDSM()) {
+      std::cout << "inside ProcessRequest without an open DSM file" << std::endl;
+      return 1;
+    }
+  }
+  int result = this->Superclass::ProcessRequest(request, inputVector, outputVector);
+
+  return result;
+}
+//----------------------------------------------------------------------------
 int vtkXdmfReader4::RequestInformation(
   vtkInformation *request,
   vtkInformationVector **inputVector,
@@ -70,11 +86,9 @@ int vtkXdmfReader4::RequestInformation(
 {
   int result = vtkXdmfReader::RequestInformation(request, inputVector, outputVector);
   //
-  if (this->VtkDsmManager) {
-    vtkInformation *outInfo = outputVector->GetInformationObject(0);
-    outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), this->TimeRange, 2);
-  }
-  //
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   return result;
 }
 //----------------------------------------------------------------------------
