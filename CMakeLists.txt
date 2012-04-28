@@ -50,10 +50,19 @@ ENDIF(WIN32 AND MSVC)
 #--------------------------------------------------
 # DSM H5Part Reader needs pv-meshless
 #--------------------------------------------------
-INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless
-  ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless/h5part
-)
+IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+  INCLUDE_DIRECTORIES(
+    ${CSCS_Plugins_SOURCE_DIR}/pv-meshless
+    ${CSCS_Plugins_SOURCE_DIR}/pv-meshless/h5part
+  )
+ENDIF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+
+IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+  INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless
+    ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless/h5part
+  )
+ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
 
 #--------------------------------------------------
 # Set project include directories 
