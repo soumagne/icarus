@@ -64,6 +64,10 @@ public:
   int  GetInterCommType() { return(DsmManager->GetInterCommType()); }
 
   // Description:
+  // Set the DSM block length when using H5FD_DSM_TYPE_BLOCK_CYCLIC
+  void SetBlockLength(int blockLength) { DsmManager->SetBlockLength(blockLength); }
+
+  // Description:
   // Set/Get the DSM distribution type
   void SetDsmType(int type) { DsmManager->SetDsmType(type); }
   int  GetDsmType() { return(DsmManager->GetDsmType()); }

@@ -398,6 +398,8 @@ void pqDsmViewerPanel::LoadSettings()
   this->Internals->dsmSize->setValue(settings->value("Size", 0).toInt());
   // Distribution Type
   this->Internals->dsmDistributionType->setCurrentIndex(settings->value("DistributionType", 0).toInt());
+  // Block Size
+  this->Internals->dsmBlockLength->setValue(settings->value("BlockLength", 0).toInt());
   // Method
   this->Internals->dsmInterCommType->setCurrentIndex(settings->value("Communication", 0).toInt());
   // Static Communicator
@@ -446,6 +448,8 @@ void pqDsmViewerPanel::SaveSettings()
   settings->setValue("Size", this->Internals->dsmSize->value());
   // Distribution Type
   settings->setValue("DistributionType", this->Internals->dsmDistributionType->currentIndex());
+  // Distribution Type
+  settings->setValue("BlockLength", this->Internals->dsmBlockLength->value());
   // Method
   settings->setValue("Communication", this->Internals->dsmInterCommType->currentIndex());
   // Static Communicator
@@ -704,6 +708,10 @@ bool pqDsmViewerPanel::DsmReady()
       pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("DistributionType"),
         this->Internals->DsmDistributionType);
+      //
+      pqSMAdaptor::setElementProperty(
+        this->Internals->DsmProxy->GetProperty("BlockLength"),
+        this->Internals->dsmBlockLength->value());
       //
       pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("LocalBufferSizeMBytes"),

@@ -325,6 +325,29 @@
                  </item>
                 </widget>
                </item>
+               <item row="7" column="0">
+                <widget class="QLabel" name="dsmBlockLengthLabel">
+                 <property name="text">
+                  <string>Block Length</string>
+                 </property>
+                </widget>
+               </item>
+               <item row="7" column="1" colspan="2">
+                <widget class="QSpinBox" name="dsmBlockLength">
+                 <property name="minimum">
+                  <number>256</number>
+                 </property>
+                 <property name="maximum">
+                  <number>4194304</number>
+                 </property>
+                 <property name="singleStep">
+                  <number>256</number>
+                 </property>
+                 <property name="value">
+                  <number>2048</number>
+                 </property>
+                </widget>
+               </item>
               </layout>
              </widget>
             </item>

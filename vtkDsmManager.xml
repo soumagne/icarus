@@ -100,6 +100,13 @@
       </IntVectorProperty>
 
       <IntVectorProperty
+        name="BlockLength"
+        command="SetBlockLength"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
         name="LocalBufferSizeMBytes"
         command="SetLocalBufferSizeMBytes"
         number_of_elements="1"
