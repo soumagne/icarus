@@ -62,6 +62,7 @@ protected:
   //
   vtkDsmManager *DsmManager;
   bool           UsingCachedHandle;
+  double         ReadTime;
 
   //BTX
   H5PartFile *H5Part_open_file_dsm();

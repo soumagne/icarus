@@ -62,6 +62,15 @@
 //
 #include "vtkDummyController.h"
 #include "vtkDsmManager.h"
+//
+#include "vtkToolkits.h" // For VTK_USE_MPI
+#ifdef VTK_USE_MPI
+ #include "vtkMPI.h"
+ #include "vtkMPIController.h"
+ #include "vtkMPICommunicator.h"
+#endif
+// Otherwise
+#include "vtkMultiProcessController.h"
 
 //
 // #define PARALLEL_IO 1 must be before include of h5part
@@ -75,8 +84,6 @@
 #include <algorithm>
 
 //----------------------------------------------------------------------------
-static unsigned			_debug = H5PART_VERB_ERROR;
-static char *__funcname;
 // we must be using parallel IO to be here
 #define H5PART_GROUPNAME_STEP	"Step"
 //----------------------------------------------------------------------------
@@ -110,6 +117,7 @@ vtkH5PartDsmReader::vtkH5PartDsmReader()
 {
   this->DsmManager        = NULL;
   this->UsingCachedHandle = 0;
+  this->ReadTime = 0;
 }
 //----------------------------------------------------------------------------
 vtkH5PartDsmReader::~vtkH5PartDsmReader()
@@ -164,6 +172,13 @@ void vtkH5PartDsmReader::CloseFile()
 	  free( f );
     this->H5FileId = NULL;
   }
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->DsmManager->GetController()->GetCommunicator());
+  communicator->Barrier();
+  this->ReadTime = MPI_Wtime() - this->ReadTime;
+  if (this->DsmManager->GetController()->GetLocalProcessId() == 0)
+    std::cout << "H5Part Reader read time: " << this->ReadTime << std::endl;
+  this->ReadTime = 0;
 }
 //----------------------------------------------------------------------------
 void vtkH5PartDsmReader::CloseFileIntermediate()
@@ -255,6 +270,10 @@ H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm()
 //----------------------------------------------------------------------------
 int vtkH5PartDsmReader::OpenFile()
 {
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->DsmManager->GetController()->GetCommunicator());
+  communicator->Barrier();
+  this->ReadTime = MPI_Wtime();
   if (!this->DsmManager) {
     vtkWarningMacro("vtkH5PartDsmReader OpenFile aborted, no DSM manager");
   }
