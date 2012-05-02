@@ -1495,9 +1495,7 @@ void pqDsmViewerPanel::ExportData(bool force)
     vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DsmProxyHelper->GetProperty(command.toLatin1().data()));
     if (force || cp->GetMTime()>this->Internals->LastExportTime) {
       if (force) {
-        vtkSMPropertyHelper rm(this->Internals->DsmProxyHelper, command.toAscii().data());
-        rm.Set(0);
-        rm.Set(1);
+        cp->Modified();
         this->Internals->DsmProxyHelper->UpdateVTKObjects();
       }
       //
