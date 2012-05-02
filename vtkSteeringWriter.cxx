@@ -132,6 +132,21 @@ int vtkSteeringWriter::FillOutputPortInformation(
   return 1;
 }
 //----------------------------------------------------------------------------
+vtkSmartPointer<vtkDataSet> SW_Copy(vtkDataSet *d) {
+  vtkSmartPointer<vtkDataSet> result;
+  result.TakeReference(d->NewInstance());
+  result->ShallowCopy(d);
+  result->CopyInformation(d);
+  result->SetSource(NULL);
+  return result;
+}
+//----------------------------------------------------------------------------
+vtkSmartPointer<vtkDataSet> SW_CopyOutput(vtkAlgorithm *a, int port) {
+  a->Update();
+  vtkDataSet *dobj = vtkDataSet::SafeDownCast(a->GetOutputDataObject(port));
+  return SW_Copy(dobj);
+}
+//----------------------------------------------------------------------------
 int vtkSteeringWriter::RequestInformation(
     vtkInformation *vtkNotUsed(request),
     vtkInformationVector **inputVector,
@@ -159,18 +174,18 @@ void vtkSteeringWriter::CloseFile()
   if (this->H5FileId != H5I_BADID) {
     if (H5Fclose(this->H5FileId) < 0) {
       vtkErrorMacro(<<"CloseFile failed");
-    }
-    this->H5FileId = H5I_BADID;
   }
+    this->H5FileId = H5I_BADID;
+}
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::CloseGroup(hid_t gid) {
   if (this->H5GroupId != H5I_BADID) {
-    if (H5Gclose(this->H5GroupId) < 0) {
-      vtkErrorMacro(<<"CloseGroup failed");
-    }
-    this->H5GroupId = H5I_BADID;
+  if (H5Gclose(this->H5GroupId) < 0) {
+    vtkErrorMacro(<<"CloseGroup failed");
   }
+  this->H5GroupId = H5I_BADID;
+}
 }
 //----------------------------------------------------------------------------
 int vtkSteeringWriter::OpenGroup(const char *pathwithoutname) {
@@ -248,7 +263,7 @@ int vtkSteeringWriter::OpenFile()
     vtkErrorMacro(<< "Initialize: Could not open group " << this->GroupPathInternal.c_str());
     return 0;
   }
-  return 1;
+   return 1;
 }
 //----------------------------------------------------------------------------
 template <class T1, class T2>
@@ -507,13 +522,26 @@ void vtkSteeringWriter::WriteData()
   this->UpdateNumPieces = 1;
 #endif
 
-
   //
   // Get the input to write and Set Num-Particles
+  //
   vtkDataSet *input = this->GetInput();
   if (!input) {
     vtkWarningMacro(<<"No input to select arrays from ");
     return;
+  }
+  //
+  // To correctly write connectivity, we need to have an unstructured grid
+  // (for convenience, we could do it using polydata, but it makes the writer simpler).
+  //
+  vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::SafeDownCast(input);
+  if (!grid && input->IsA("vtkPolyData")) {
+    vtkSmartPointer<vtkTriangleFilter> triF = vtkSmartPointer<vtkTriangleFilter>::New();
+    vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
+    triF->SetInput(SW_Copy(input));
+    CtoG->SetInputConnection(triF->GetOutputPort(0));
+    grid = vtkUnstructuredGrid::SafeDownCast(SW_CopyOutput(CtoG, 0));
+    input = grid;
   }
 
   std::vector<std::string> GroupPaths;
@@ -597,16 +625,8 @@ void vtkSteeringWriter::WriteData()
       // computed for the points
       // store_offsets = false, apply_offsets=true
       //
-      vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::SafeDownCast(input);
       vtkSmartPointer<vtkCellArray> cells = grid ? grid->GetCells() : NULL;
-      if (!grid && input->IsA("vtkPolyData")) {
-        vtkSmartPointer<vtkTriangleFilter> triF = vtkSmartPointer<vtkTriangleFilter>::New();
-        vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
-        triF->SetInput(input);
-        CtoG->SetInputConnection(triF->GetOutputPort(0));
-        CtoG->Update();
-        grid = vtkUnstructuredGrid::SafeDownCast(CtoG->GetOutput());
-        CtoG->SetInput(NULL);
+      if (input->IsA("vtkPolyData")) {
         cells = grid ? grid->GetCells() : NULL;
         this->WriteConnectivityTriangles(cells, ParallelOffsets);
       }
