@@ -1022,10 +1022,10 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     pqSMAdaptor::setProxyProperty(
       this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
     );
-    pqSMAdaptor::setElementProperty(
-      this->Internals->H5PartReader->GetProperty("ExportPartitionBoxes"), 1); 
+    //pqSMAdaptor::setElementProperty(
+    //  this->Internals->H5PartReader->GetProperty("ExportPartitionBoxes"), 1); 
     this->Internals->H5PartReader->UpdateProperty("DsmManager");
-    this->Internals->H5PartReader->UpdateProperty("ExportPartitionBoxes");
+    //this->Internals->H5PartReader->UpdateProperty("ExportPartitionBoxes");
   }
 
   //
@@ -1328,7 +1328,9 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 void pqDsmViewerPanel::onNotified()
 {
   QByteArray notification = this->Internals->TcpNotificationSocket->readAll();
+  double ts_notif, te_notif;
   char notificationCode = notification[0];
+  ts_notif = vtksys::SystemTools::GetTime ();
   switch (notificationCode) {
     case 'C':
       std::cout << "New DSM connection established" << std::endl;
@@ -1377,6 +1379,8 @@ void pqDsmViewerPanel::onNotified()
       << "\'" << notificationCode << "\'" << std::endl;
       break;
   }
+  te_notif = vtksys::SystemTools::GetTime ();
+  std::cout << "Notification processed in " << te_notif - ts_notif << " s" << std::endl;
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
