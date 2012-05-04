@@ -1234,6 +1234,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       this->Internals->CurrentTimeStep = current_time;
     }
   }
+
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
   //
   // Trigger a render : if changed, everything should update as usual
   if (pqActiveObjects::instance().activeView())
@@ -1249,7 +1251,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       this->RunScript();
     }
   }
-  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::TrackSource()
