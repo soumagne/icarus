@@ -23,110 +23,11 @@
 
 =========================================================================*/
 #include "pqDsmObjectInspector.h"
-
-// Qt includes
-#include <QTreeWidget>
-#include <QTreeWidgetItem>
-#include <QVariant>
-#include <QSpinBox>
-#include <QDoubleSpinBox>
-#include <QLabel>
-#include <QComboBox>
-#include <QTableWidget>
-#include <QMessageBox>
-#include <QProgressDialog>
-#include <QInputDialog>
-#include <QFile>
-#include <QTextStream>
-#include <QFileDialog>
-#include <QUrl>
-#include <QDesktopServices>
-#include <QTime>
-#include <QTcpServer>
-#include <QTcpSocket>
-
-// VTK includes
-
-// ParaView Server Manager includes
-#include "vtkSMPropertyHelper.h"
-#include "vtkSMInputProperty.h"
-#include "vtkSMProxyManager.h"
-#include "vtkSMSourceProxy.h"
-#include "vtkSMStringVectorProperty.h"
-#include "vtkSMIntVectorProperty.h"
-#include "vtkSMArraySelectionDomain.h"
-#include "vtkSMProxyProperty.h"
-#include "vtkSMViewProxy.h"
-#include "vtkSMRepresentationProxy.h"
-#include "vtkSMNewWidgetRepresentationProxy.h"
-#include "vtkSMPropertyIterator.h"
-#include "vtkSMPropertyLink.h"
-#include "vtkSMOutputPort.h"
-#include "vtkSMCompoundSourceProxy.h"
-#include "vtkSMProxyDefinitionManager.h"
-#include "vtkSMProxySelectionModel.h"
-#include "vtkSMSessionProxyManager.h"
-
-#include "vtkPVDataInformation.h"
-#include "vtkPVCompositeDataInformation.h"
-#include "vtkProcessModule.h"
-#include "vtkPVXMLElement.h"
-#include "vtkPVXMLParser.h"
-#include "vtkAbstractWidget.h"
-#include "vtkBoxWidget2.h"
-
-// ParaView includes
-#include "pqActiveServer.h"
-#include "pqApplicationCore.h"
-#include "pqSettings.h"
-#include "pqOutputPort.h"
-#include "pqPipelineSource.h"
-#include "pqPropertyLinks.h"
-#include "pqProxy.h"
-#include "pqServer.h"
-#include "pqServerManagerModelItem.h"
-#include "pqServerManagerModel.h"
-#include "pqSMAdaptor.h"
-#include "pqTreeWidgetCheckHelper.h"
-#include "pqTreeWidgetItemObject.h"
-#include "pqTreeWidget.h"
-#include "pqTreeWidgetItem.h"
-#include "pqView.h"
-#include "pqRenderView.h"
-#include "pqActiveView.h"
-#include "pqDataRepresentation.h"
-#include "pqActiveObjects.h"
-#include "pqDisplayPolicy.h"
-#include "pqAnimationScene.h"
-#include "pqTimeKeeper.h"
 #include "pqApplyPropertiesManager.h"
-//
-#include "pqObjectInspectorWidget.h"
-#include "pqNamedWidgets.h"
-#include "pq3DWidget.h"
-#include "pqDataExportWidget.h"
-//
-#include "pq3DWidgetInterface.h"
-#include "pqBoxWidget.h"
-#include "pqDistanceWidget.h"
-#include "pqImplicitPlaneWidget.h"
-#include "pqLineSourceWidget.h"
-#include "pqPointSourceWidget.h"
-#include "pqSphereWidget.h"
-#include "pqSplineWidget.h"
-//
-#include "ui_pqDsmViewerPanel.h"
-//
-#include "vtkDsmManager.h"
-#include "H5FDdsm.h"
-#include "XdmfSteeringParser.h"
-#include "vtkCustomPipelineHelper.h"
-#include "vtkSMCommandProperty.h"
-//
-#include <vtksys/SystemTools.hxx>
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+#include "pqApplicationCore.h"
+#include "pqActiveObjects.h"
+
+#include <QPushButton>
 //----------------------------------------------------------------------------
 pqDsmObjectInspector::pqDsmObjectInspector(QWidget* p) : pqObjectInspectorWidget(p)
 {

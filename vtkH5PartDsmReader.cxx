@@ -1,10 +1,11 @@
 /*=========================================================================
 
-  Project                 : pv-meshless
-  Module                  : vtkH5PartDsmReader.h
-  Revision of last commit : $Rev: 884 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2010-04-06 12:03:55 +0200 #$
+  Project                 : Icarus
+  Module                  : vtkH5PartDsmReader.cxx
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
   You may use modify and and distribute this code freely providing
@@ -17,6 +18,9 @@
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
 =========================================================================*/
 #include "vtkH5PartDsmReader.h"
 //
@@ -24,43 +28,7 @@
 #include "vtkInformationVector.h"
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkDataArraySelection.h"
-#include "vtkPointData.h"
-#include "vtkPoints.h"
-#include "vtkPolyData.h"
-#include "vtkDataArray.h"
 //
-#include "vtkCharArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkShortArray.h"
-#include "vtkUnsignedShortArray.h"
-#include "vtkLongArray.h"
-#include "vtkUnsignedLongArray.h"
-#include "vtkLongLongArray.h"
-#include "vtkUnsignedLongLongArray.h"
-#include "vtkIntArray.h"
-#include "vtkUnsignedIntArray.h"
-#include "vtkFloatArray.h"
-#include "vtkDoubleArray.h"
-#include "vtkCellArray.h"
-//
-#include <vtksys/SystemTools.hxx>
-#include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
-//
-#include "vtkCharArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkCharArray.h"
-#include "vtkShortArray.h"
-#include "vtkUnsignedShortArray.h"
-#include "vtkIntArray.h"
-#include "vtkLongArray.h"
-#include "vtkFloatArray.h"
-#include "vtkDoubleArray.h"
-#include "vtkSmartPointer.h"
-#include "vtkExtentTranslator.h"
-//
-#include "vtkDummyController.h"
 #include "vtkDsmManager.h"
 //
 #include "vtkToolkits.h" // For VTK_USE_MPI
@@ -76,12 +44,8 @@
 // #define PARALLEL_IO 1 must be before include of h5part
 //
 #define PARALLEL_IO 1
-#include "H5FDdsm.h"
 #include "H5Part.h"
-#include "H5PartTypes.h"
-#include "H5PartErrors.h"
-#include "string.h"
-#include <algorithm>
+#include "H5FDdsm.h"
 
 //----------------------------------------------------------------------------
 // we must be using parallel IO to be here
@@ -131,7 +95,6 @@ void vtkH5PartDsmReader::CloseFile()
   if (this->H5FileId != NULL)
     {
     H5PartFile *f = this->H5FileId;
-  	herr_t r = 0;
     // delete everything unless we're using cached stuff
 	  if ( f->block && f->close_block ) {
 		  (*f->close_block) ( f );
@@ -140,29 +103,29 @@ void vtkH5PartDsmReader::CloseFile()
 		  (*f->close_multiblock) ( f );
 	  }
 	  if( f->shape != H5S_ALL ) {
-		  r = H5Sclose( f->shape );
+		  H5Sclose( f->shape );
 	  }
 	  if( f->timegroup >= 0 ) {
-		  r = H5Gclose( f->timegroup );
+		  H5Gclose( f->timegroup );
 	  }
 	  if( f->diskshape != H5S_ALL ) {
-		  r = H5Sclose( f->diskshape );
+		  H5Sclose( f->diskshape );
 	  }
 	  if( f->memshape != H5S_ALL ) {
-		  r = H5Sclose( f->memshape );
+		  H5Sclose( f->memshape );
 	  }
 	  if( f->xfer_prop != H5P_DEFAULT ) {
-		  r = H5Pclose( f->xfer_prop );
+		  H5Pclose( f->xfer_prop );
 	  }
     if( f->create_prop != H5P_DEFAULT ) {
-	    r = H5Pclose( f->create_prop );
+	    H5Pclose( f->create_prop );
     }
     if (!this->UsingCachedHandle) {
 	    if( f->access_prop != H5P_DEFAULT ) {
-		    r = H5Pclose( f->access_prop );
+		    H5Pclose( f->access_prop );
 	    }  
 	    if ( f->file ) {
-		    r = H5Fclose( f->file );
+		    H5Fclose( f->file );
 	    }
     }
 	  /* free memory from H5PartFile struct */

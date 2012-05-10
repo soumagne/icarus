@@ -26,20 +26,11 @@
 //
 #include "vtkObjectFactory.h"
 //
-#include <vtksys/SystemTools.hxx>
-#include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
-//
-#include "vtkSmartPointer.h"
 #include "vtkProcessModule.h"
-#include "vtkSMObject.h"
 #include "vtkSMProxyManager.h"
-#include "vtkClientServerInterpreter.h"
 #include "vtkClientServerInterpreterInitializer.h"
 #include "vtkSMProxyDefinitionManager.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkSMSession.h"
-#include "vtkPVSessionBase.h"
 #include "vtkPVSessionServer.h"
 #include "vtkPVSessionCore.h"
 //
@@ -549,33 +540,22 @@ void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
   Initializer->RegisterCallback(&::DsmProxyHelperInit);
 
   // Pass the DsmProxyHelper XML into the proxy manager for use by NewProxy(...)
-    vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
-    int rank = pm->GetPartitionId();
-    vtkProcessModule::ProcessTypes ptype = pm->GetProcessType();
-    if (ptype == vtkProcessModule::PROCESS_CLIENT) {
-      vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-      pm->GetActiveSession();
-      vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();
-      vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
-      pxdm->LoadConfigurationXMLFromString(xmlstring);
-    }
-    else /* if (ptype == vtkProcessModule::PROCESS_SERVER) */ {
-      vtkPVSessionServer *serverSession =
-          vtkPVSessionServer::SafeDownCast(pm->GetActiveSession());
-      vtkSIProxyDefinitionManager* pxdm =
-          serverSession->GetSessionCore()->GetProxyDefinitionManager();
-      pxdm->LoadConfigurationXMLFromString(xmlstring);
-    }
-
-
-//  if (pm) {
-//    pm->GetActiveSession();
-//    vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();
-//    vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
-//    pxdm->LoadConfigurationXMLFromString(xmlstring);
-//  }
-/////  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->LoadConfigurationXMLFromString(xmlstring);
-//  vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
+  vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+  vtkProcessModule::ProcessTypes ptype = pm->GetProcessType();
+  if (ptype == vtkProcessModule::PROCESS_CLIENT) {
+    vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+    pm->GetActiveSession();
+    vtkSMSessionProxyManager* pxm = pm->GetActiveSessionProxyManager();
+    vtkSMProxyDefinitionManager* pxdm = pxm->GetProxyDefinitionManager();
+    pxdm->LoadConfigurationXMLFromString(xmlstring);
+  }
+  else /* if (ptype == vtkProcessModule::PROCESS_SERVER) */ {
+    vtkPVSessionServer *serverSession =
+        vtkPVSessionServer::SafeDownCast(pm->GetActiveSession());
+    vtkSIProxyDefinitionManager* pxdm =
+        serverSession->GetSessionCore()->GetProxyDefinitionManager();
+    pxdm->LoadConfigurationXMLFromString(xmlstring);
+  }
 }
 
 //----------------------------------------------------------------------------

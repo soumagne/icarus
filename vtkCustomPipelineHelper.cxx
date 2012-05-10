@@ -24,33 +24,17 @@
 =========================================================================*/
 #include "vtkCustomPipelineHelper.h"
 
-#include <XdmfDOM.h>
-
-// VTK includes
-
 // ParaView Server Manager includes
-#include "vtkObjectFactory.h"
-#include "vtkSMInputProperty.h"
 #include "vtkSMProxyManager.h"
-#include "vtkSMProxyDefinitionManager.h"
 #include "vtkSMSessionProxyManager.h"
-#include "vtkSMSourceProxy.h"
 #include "vtkSMCompoundSourceProxy.h"
 #include "vtkSMProxyProperty.h"
 #include "vtkSMViewProxy.h"
 #include "vtkSMRepresentationProxy.h"
-#include "vtkSMPropertyIterator.h"
-#include "vtkSMPropertyLink.h"
-#include "vtkSMOutputPort.h"
-#include "vtkPVDataInformation.h"
-#include "vtkProcessModule.h"
 #include "vtkPVXMLElement.h"
 #include "vtkPVXMLParser.h"
-#include "vtkSMObject.h"
-#include "vtkSMProxyManager.h"
 #include "vtkSMPropertyHelper.h"
 //
-#include <sstream>
 #include <list>
 //----------------------------------------------------------------------------
 extern const char *CustomFilter_TransformBlock;

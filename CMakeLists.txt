@@ -119,13 +119,13 @@ ADD_PARAVIEW_PLUGIN(
   SERVER_MANAGER_XML 
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
+    #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
     ${ICARUS_H5PART_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
+    #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
@@ -134,8 +134,8 @@ ADD_PARAVIEW_PLUGIN(
     ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomPipelineHelper.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+    #${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
+    #${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
   GUI_INTERFACES 
     ${DSM_IFACE}
   GUI_SOURCES

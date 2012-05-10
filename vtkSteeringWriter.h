@@ -1,21 +1,25 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
+  Project                 : Icarus
   Module                  : vtkSteeringWriter.h
-  Revision of last commit : $Rev: 153 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
 // .NAME vtkSteeringWriter - Write H5Part (HDF5) Particle files
@@ -27,19 +31,16 @@
 #define __vtkSteeringWriter_h
 
 #include "vtkSmartPointer.h" // For vtkSmartPointer
-#include <vtkstd/string>     // for strings
-#include <vtkstd/vector>     // for vectors
 #include "vtkAbstractParticleWriter.h"
 //
 #include <hdf5.h>
 #include <string>
+#include <vector>
 //
 class vtkMultiProcessController;
 //
 class vtkDsmManager;
 class vtkPointSet;
-class vtkDataArray;
-class vtkPointData;
 class vtkCellArray;
 
 class VTK_EXPORT vtkSteeringWriter : public vtkAbstractParticleWriter

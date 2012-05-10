@@ -1,23 +1,38 @@
 /*=========================================================================
 
-  Project                 : vtkCSCS
-  Module                  : vtkSteeringWriter.h
-  Revision of last commit : $Rev: 153 $
-  Author of last commit   : $Author: biddisco $
-  Date of last commit     : $Date:: 2006-07-12 10:09:37 +0200 #$
+  Project                 : Icarus
+  Module                  : vtkSteeringWriter.cxx
+
+  Authors:
+     John Biddiscombe     Jerome Soumagne
+     biddisco@cscs.ch     soumagne@cscs.ch
 
   Copyright (C) CSCS - Swiss National Supercomputing Centre.
-  You may use modify and and distribute this code freely providing 
-  1) This copyright notice appears on all copies of source code 
+  You may use modify and and distribute this code freely providing
+  1) This copyright notice appears on all copies of source code
   2) An acknowledgment appears with any substantial usage of the code
-  3) If this code is contributed to any other open source project, it 
-  must not be reformatted such that the indentation, bracketing or 
-  overall style is modified significantly. 
+  3) If this code is contributed to any other open source project, it
+  must not be reformatted such that the indentation, bracketing or
+  overall style is modified significantly.
 
   This software is distributed WITHOUT ANY WARRANTY; without even the
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
+  This work has received funding from the European Community's Seventh
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+
 =========================================================================*/
+#include "vtkSteeringWriter.h"
+//
+#include "vtkInformation.h"
+#include "vtkObjectFactory.h"
+#include "vtkPointData.h"
+#include "vtkCellData.h"
+#include "vtkUnstructuredGrid.h"
+#include "vtkCellArray.h"
+#include "vtkCleanUnstructuredGrid.h"
+#include "vtkTriangleFilter.h"
+//
 #include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
   #include "vtkMPI.h"
@@ -26,57 +41,16 @@
 #endif
 // Otherwise
 #include "vtkMultiProcessController.h"
-
-#include "vtkSteeringWriter.h"
-#include "vtkDsmManager.h"
-#include "H5FDdsm.h"
-#include "H5MButil.h"
-
-#include "vtkInformation.h"
-#include "vtkInformationVector.h"
-#include "vtkObjectFactory.h"
-#include "vtkStreamingDemandDrivenPipeline.h"
-#include "vtkPointData.h"
-#include "vtkCellData.h"
-#include "vtkPoints.h"
-#include "vtkPointSet.h"
-#include "vtkDataArray.h"
-#include "vtkUnstructuredGrid.h"
-//
-#include "vtkCharArray.h"
-#include "vtkUnsignedCharArray.h"
-#include "vtkShortArray.h"
-#include "vtkUnsignedShortArray.h"
-#include "vtkLongArray.h"
-#include "vtkUnsignedLongArray.h"
-#include "vtkLongLongArray.h"
-#include "vtkUnsignedLongLongArray.h"
-#include "vtkIntArray.h"
-#include "vtkUnsignedIntArray.h"
-#include "vtkFloatArray.h"
-#include "vtkDoubleArray.h"
-#include "vtkCellArray.h"
-#include "vtkCleanUnstructuredGrid.h"
-#include "vtkTriangleFilter.h"
-//
-#ifdef VTK_USE_MPI
-#include "vtkMPI.h"
-#include "vtkMultiProcessController.h"
-#include "vtkMPICommunicator.h"
-#endif
-//
-#include <cstdlib>
-#include <algorithm>
-#include <functional>
-#include <numeric>
 //
 // vtksys
 //
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
-#include <vtksys/ios/iostream>
-#include <vtksys/ios/sstream>
-#include <vtksys/stl/stdexcept>
+//
+#include "vtkDsmManager.h"
+#include "H5FDdsm.h"
+//
+#include <numeric>
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkSteeringWriter, "$Revision$");
 vtkStandardNewMacro(vtkSteeringWriter);

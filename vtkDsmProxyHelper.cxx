@@ -30,10 +30,6 @@
 #include "vtkClientServerStream.h"
 //
 #include <vtksys/SystemTools.hxx>
-#include <vtksys/RegularExpression.hxx>
-#include <vtkstd/vector>
-//
-#include "vtkSmartPointer.h"
 //
 #include "vtkDsmManager.h"
 #include "vtkSteeringWriter.h"
