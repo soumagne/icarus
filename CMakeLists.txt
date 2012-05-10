@@ -50,19 +50,25 @@ ENDIF(WIN32 AND MSVC)
 #--------------------------------------------------
 # DSM H5Part Reader needs pv-meshless
 #--------------------------------------------------
-IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
-  INCLUDE_DIRECTORIES(
-    ${CSCS_Plugins_SOURCE_DIR}/pv-meshless
-    ${CSCS_Plugins_SOURCE_DIR}/pv-meshless/h5part
-  )
-ENDIF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+OPTION(ICARUS_USE_H5PART "Build H5Part DSM reader" OFF)
+IF(ICARUS_USE_H5PART)
+  IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+    INCLUDE_DIRECTORIES(
+      ${CSCS_Plugins_SOURCE_DIR}/pv-meshless
+      ${CSCS_Plugins_SOURCE_DIR}/pv-meshless/h5part
+    )
+  ENDIF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
 
-IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
-  INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless
-    ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless/h5part
-  )
-ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+    INCLUDE_DIRECTORIES(
+      ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless
+      ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless/h5part
+    )
+  ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+
+  SET(ICARUS_H5PART_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml)
+  SET(ICARUS_H5PART_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx)
+ENDIF(ICARUS_USE_H5PART)
 
 #--------------------------------------------------
 # Set project include directories 
@@ -76,16 +82,9 @@ INCLUDE_DIRECTORIES(
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
-  OPTION(CSCS_DSM_BUILD_TESTING "Build DSM plugin testing" OFF)
-#  IF(CSCS_DSM_BUILD_TESTING)
-#    SET(DSM_PANEL_CLASS pqDsmViewerPanel_testing)
-#  ELSE(CSCS_DSM_BUILD_TESTING)
-    SET(DSM_PANEL_CLASS pqDsmViewerPanel)
-#  ENDIF(CSCS_DSM_BUILD_TESTING)
-
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.h
   )
 
@@ -93,14 +92,14 @@ IF(PARAVIEW_BUILD_QT_GUI)
   ADD_PARAVIEW_DOCK_WINDOW(
     DSM_IFACE 
     DSM_IFACE_SRCS 
-    CLASS_NAME 
-      ${DSM_PANEL_CLASS}
+    CLASS_NAME
+      pqDsmViewerPanel
     DOCK_AREA 
       Left Right Top Bottom
   )
   QT4_WRAP_UI(
     DSM_UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
   )
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
@@ -108,8 +107,6 @@ encode_files_as_strings(ENCODED_FILTERS
   ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
 )
-
-#MESSAGE("${ENCODED_FILTERS}")
 
 #--------------------------------------------------
 # Define Plugin
@@ -124,14 +121,14 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml
+    ${ICARUS_H5PART_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx
+    ${ICARUS_H5PART_SOURCES}
   SERVER_SOURCES
     ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
@@ -142,7 +139,7 @@ ADD_PARAVIEW_PLUGIN(
     ${DSM_IFACE}
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
@@ -152,17 +149,19 @@ ADD_PARAVIEW_PLUGIN(
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Icarus_Readers.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/${DSM_PANEL_CLASS}.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
 )
 
-TARGET_LINK_LIBRARIES(
-  CSCS_DSM
-    pv_meshless
-    H5FDdsm
-    hdf5
-    hdf5_hl
-    XdmfGenerator
-)
+TARGET_LINK_LIBRARIES(CSCS_DSM XdmfGenerator)
+
+IF(WIN32 AND MSVC)
+  TARGET_LINK_LIBRARIES(CSCS_DSM H5FDdsm hdf5)
+ENDIF(WIN32 AND MSVC)
+
+IF(ICARUS_USE_H5PART)
+  TARGET_LINK_LIBRARIES(CSCS_DSM pv_meshless)
+ENDIF(ICARUS_USE_H5PART)
+
 
 #--------------------------------------------------
 # XdmfGenerator
@@ -177,16 +176,12 @@ ADD_SUBDIRECTORY(XdmfGenerator)
 #--------------------------------------------------
 # Converter
 #--------------------------------------------------
-IF(CSCS_DSM_BUILD_TESTING)
-  ADD_SUBDIRECTORY(Tools)
-ENDIF(CSCS_DSM_BUILD_TESTING)
+# ADD_SUBDIRECTORY(Tools)
 
 #--------------------------------------------------
 # Testing
 #--------------------------------------------------
-IF(CSCS_DSM_BUILD_TESTING)
-  ADD_SUBDIRECTORY(Testing)
-ENDIF(CSCS_DSM_BUILD_TESTING)
+# ADD_SUBDIRECTORY(Testing)
 
 #--------------------------------------------------
 # Install
