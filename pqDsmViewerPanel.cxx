@@ -69,6 +69,7 @@
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
 #include "vtkSMCommandProperty.h"
+#include "IcarusConfig.h"
 //
 #include <vtksys/SystemTools.hxx>
 //----------------------------------------------------------------------------
@@ -1281,9 +1282,11 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 void pqDsmViewerPanel::onNotified()
 {
   QByteArray notification = this->Internals->TcpNotificationSocket->readAll();
-  double ts_notif, te_notif;
   char notificationCode = notification[0];
+#ifdef ENABLE_TIMERS
+  double ts_notif, te_notif;
   ts_notif = vtksys::SystemTools::GetTime ();
+#endif
   switch (notificationCode) {
     case 'C':
       std::cout << "New DSM connection established" << std::endl;
@@ -1332,8 +1335,10 @@ void pqDsmViewerPanel::onNotified()
       << "\'" << notificationCode << "\'" << std::endl;
       break;
   }
+#ifdef ENABLE_TIMERS
   te_notif = vtksys::SystemTools::GetTime ();
   std::cout << "Notification processed in " << te_notif - ts_notif << " s" << std::endl;
+#endif
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)

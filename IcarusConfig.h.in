@@ -1,0 +1,6 @@
+#ifndef __IcarusConfig_h
+#define __IcarusConfig_h
+
+#cmakedefine ENABLE_TIMERS ${ENABLE_TIMERS}
+
+#endif // __IcarusConfig_h

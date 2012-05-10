@@ -30,6 +30,7 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 //
 #include "vtkDsmManager.h"
+#include "IcarusConfig.h"
 //
 #include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
@@ -135,6 +136,7 @@ void vtkH5PartDsmReader::CloseFile()
 	  free( f );
     this->H5FileId = NULL;
   }
+#ifdef ENABLE_TIMERS
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->DsmManager->GetController()->GetCommunicator());
   communicator->Barrier();
@@ -142,6 +144,7 @@ void vtkH5PartDsmReader::CloseFile()
   if (this->DsmManager->GetController()->GetLocalProcessId() == 0)
     std::cout << "H5Part Reader read time: " << this->ReadTime << std::endl;
   this->ReadTime = 0;
+#endif
 }
 //----------------------------------------------------------------------------
 void vtkH5PartDsmReader::CloseFileIntermediate()
@@ -233,10 +236,12 @@ H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm()
 //----------------------------------------------------------------------------
 int vtkH5PartDsmReader::OpenFile()
 {
+#ifdef ENABLE_TIMERS
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->DsmManager->GetController()->GetCommunicator());
   communicator->Barrier();
   this->ReadTime = MPI_Wtime();
+#endif
   if (!this->DsmManager) {
     vtkWarningMacro("vtkH5PartDsmReader OpenFile aborted, no DSM manager");
   }

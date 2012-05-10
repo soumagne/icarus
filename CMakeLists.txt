@@ -49,9 +49,17 @@ IF(WIN32 AND MSVC)
 ENDIF(WIN32 AND MSVC)
 
 #--------------------------------------------------
+# Timers
+#--------------------------------------------------
+OPTION(ICARUS_ENABLE_TIMERS "Enable timing of operations." OFF)
+IF(ICARUS_ENABLE_TIMERS)
+  SET(ENABLE_TIMERS 1)
+ENDIF(ICARUS_ENABLE_TIMERS)
+
+#--------------------------------------------------
 # DSM H5Part Reader needs pv-meshless
 #--------------------------------------------------
-OPTION(ICARUS_USE_H5PART "Build H5Part DSM reader" OFF)
+OPTION(ICARUS_USE_H5PART "Build H5Part DSM reader." OFF)
 IF(ICARUS_USE_H5PART)
   IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
     INCLUDE_DIRECTORIES(
@@ -70,6 +78,13 @@ IF(ICARUS_USE_H5PART)
   SET(ICARUS_H5PART_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml)
   SET(ICARUS_H5PART_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx)
 ENDIF(ICARUS_USE_H5PART)
+
+#--------------------------------------------------
+# Config Files for options
+#--------------------------------------------------
+CONFIGURE_FILE(
+  ${CMAKE_CURRENT_SOURCE_DIR}/IcarusConfig.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/IcarusConfig.h)
 
 #--------------------------------------------------
 # Set project include directories 
