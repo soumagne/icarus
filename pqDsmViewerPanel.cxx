@@ -1005,8 +1005,10 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     //
     // Create a new H5PartReader proxy and register it with the system
     //
-    this->Internals->H5PartReader.TakeReference(
-      vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "H5PartDsm")));
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      this->Internals->H5PartReader.TakeReference(
+          vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "H5PartDsm")));
+    }
 
     //
     // Connect our DSM manager to the reader (Xdmf)
@@ -1019,13 +1021,15 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     //
     // Connect our DSM manager to the reader (H5Part)
     //
-    pqSMAdaptor::setProxyProperty(
-      this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
-    );
-    //pqSMAdaptor::setElementProperty(
-    //  this->Internals->H5PartReader->GetProperty("ExportPartitionBoxes"), 1); 
-    this->Internals->H5PartReader->UpdateProperty("DsmManager");
-    //this->Internals->H5PartReader->UpdateProperty("ExportPartitionBoxes");
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      pqSMAdaptor::setProxyProperty(
+          this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+      );
+      pqSMAdaptor::setElementProperty(
+        this->Internals->H5PartReader->GetProperty("ExportPartitionBoxes"), 1);
+      this->Internals->H5PartReader->UpdateProperty("DsmManager");
+      this->Internals->H5PartReader->UpdateProperty("ExportPartitionBoxes");
+    }
   }
 
   //
@@ -1198,9 +1202,10 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       (*w)->UpdateAll();
     }
 
-    this->Internals->H5PartReader->InvokeCommand("FileModified");
-    this->Internals->H5PartReader->UpdatePipeline();
-    
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      this->Internals->H5PartReader->InvokeCommand("FileModified");
+      this->Internals->H5PartReader->UpdatePipeline();
+    }
   }
   //
   this->Internals->CreateObjects = false;
