@@ -48,136 +48,60 @@
 #include "vtkPVOptions.h"
 #include "vtkClientSocket.h"
 
-#ifdef _WIN32
-  #include <windows.h>
-#else
-  #include <pthread.h>
-#endif
+#include "vtkMultiThreader.h"
+#include "vtkConditionVariable.h"
 
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
 vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
+
+//----------------------------------------------------------------------------
+void *vtkDsmManagerNotificationThread(void *arg)
+{
+  vtkDsmManager *dsmManager = static_cast<vtkDsmManager*>(
+      static_cast<vtkMultiThreader::ThreadInfo*>(arg)->UserData);
+  dsmManager->NotificationThread();
+  return(0);
+}
+
 //----------------------------------------------------------------------------
 struct vtkDsmManager::vtkDsmManagerInternals
 {
   vtkDsmManagerInternals() {
-    this->NotificationThreadPtr = 0;
-#ifdef _WIN32
-    this->NotificationThreadHandle = NULL;
-#endif
+    this->NotificationThread = vtkSmartPointer<vtkMultiThreader>::New();
 
     // Updated event
     this->IsUpdated = false;
-#ifdef _WIN32
-  #if (WINVER < _WIN32_WINNT_LONGHORN)
-    this->UpdatedEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("UpdatedEvent"));
-  #else
-    InitializeCriticalSection  (&this->UpdatedCritSection);
-    InitializeConditionVariable(&this->UpdatedCond);
-  #endif
-#else
-    pthread_mutex_init(&this->UpdatedMutex, NULL);
-    pthread_cond_init (&this->UpdatedCond, NULL);
-#endif
+    this->UpdatedCond = vtkSmartPointer<vtkConditionVariable>::New();
+    this->UpdatedMutex = vtkSmartPointer<vtkMutexLock>::New();
 
     // NotifThreadCreated event
     this->IsNotifThreadCreated = false;
-#ifdef _WIN32
-  #if (WINVER < _WIN32_WINNT_LONGHORN)
-    this->NotifThreadCreatedEvent = CreateEvent(NULL, TRUE, FALSE, TEXT("NotifThreadCreatedEvent"));
-  #else
-    InitializeCriticalSection  (&this->NotifThreadCreatedCritSection);
-    InitializeConditionVariable(&this->NotifThreadCreatedCond);
-  #endif
-#else
-    pthread_mutex_init(&this->NotifThreadCreatedMutex, NULL);
-    pthread_cond_init (&this->NotifThreadCreatedCond, NULL);
-#endif
+    this->NotifThreadCreatedCond = vtkSmartPointer<vtkConditionVariable>::New();
+    this->NotifThreadCreatedMutex = vtkSmartPointer<vtkMutexLock>::New();
   }
 
   ~vtkDsmManagerInternals() {
-    // Updated event
-#ifdef _WIN32
-  #if (WINVER < _WIN32_WINNT_LONGHORN)
-    CloseHandle(this->UpdatedEvent);
-  #else
-    DeleteCriticalSection(&this->UpdatedCritSection);
-  #endif
-#else
-    pthread_mutex_destroy(&this->UpdatedMutex);
-    pthread_cond_destroy (&this->UpdatedCond);
-#endif
-
-    // NotifThreadCreated event
-#ifdef _WIN32
-  #if (WINVER < _WIN32_WINNT_LONGHORN)
-    CloseHandle(this->NotifThreadCreatedEvent);
-  #else
-    DeleteCriticalSection(&this->NotifThreadCreatedCritSection);
-  #endif
-#else
-    pthread_mutex_destroy(&this->NotifThreadCreatedMutex);
-    pthread_cond_destroy (&this->NotifThreadCreatedCond);
-#endif
+//    if (this->NotificationThread->IsThreadActive(this->NotificationThreadID)) {
+//      this->NotificationThread->TerminateThread(this->NotificationThreadID);
+//    }
   }
 
-  vtkSmartPointer<vtkClientSocket> NotificationSocket;
-
-#ifdef _WIN32
-  DWORD  NotificationThreadPtr;
-  HANDLE NotificationThreadHandle;
-#else
-  pthread_t NotificationThreadPtr;
-#endif
+  vtkSmartPointer<vtkClientSocket>  NotificationSocket;
+  vtkSmartPointer<vtkMultiThreader> NotificationThread;
+  int NotificationThreadID;
 
   // Updated event
-  bool                    IsUpdated;
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-  HANDLE                  UpdatedEvent;
-#else
-  CRITICAL_SECTION        UpdatedCritSection;
-  CONDITION_VARIABLE      UpdatedCond;
-#endif
-#else
-  pthread_mutex_t         UpdatedMutex;
-  pthread_cond_t          UpdatedCond;
-#endif
+  bool                                  IsUpdated;
+  vtkSmartPointer<vtkMutexLock>         UpdatedMutex;
+  vtkSmartPointer<vtkConditionVariable> UpdatedCond;
 
   // NotifThreadCreated event
-  bool                    IsNotifThreadCreated;
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-  HANDLE                  NotifThreadCreatedEvent;
-#else
-  CRITICAL_SECTION        NotifThreadCreatedCritSection;
-  CONDITION_VARIABLE      NotifThreadCreatedCond;
-#endif
-#else
-  pthread_mutex_t         NotifThreadCreatedMutex;
-  pthread_cond_t          NotifThreadCreatedCond;
-#endif
+  bool                                  IsNotifThreadCreated;
+  vtkSmartPointer<vtkMutexLock>         NotifThreadCreatedMutex;
+  vtkSmartPointer<vtkConditionVariable> NotifThreadCreatedCond;
 };
-
-//----------------------------------------------------------------------------
-extern "C"{
-#ifdef _WIN32
-  VTK_EXPORT DWORD WINAPI vtkDsmManagerNotificationThread(void *dsmManagerPtr)
-  {
-    vtkDsmManager *dsmManager = (vtkDsmManager *)dsmManagerPtr;
-    dsmManager->NotificationThread();
-    return(0);
-  }
-#else
-  VTK_EXPORT void *
-  vtkDsmManagerNotificationThread(void *dsmManagerPtr)
-  {
-    vtkDsmManager *dsmManager = (vtkDsmManager *)dsmManagerPtr;
-    return(dsmManager->NotificationThread());
-  }
-#endif
-}
 
 //----------------------------------------------------------------------------
 vtkDsmManager::vtkDsmManager()
@@ -261,33 +185,20 @@ void* vtkDsmManager::NotificationThread()
     }
   }
   // TODO
-  // good cleanup
+  // good cleanup ??
   return((void *)this);
 }
 
 //----------------------------------------------------------------------------
 void vtkDsmManager::SignalUpdated()
 {
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  EnterCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
-#endif
-#else
-  pthread_mutex_lock(&this->DsmManagerInternals->UpdatedMutex);
-#endif
+  this->DsmManagerInternals->UpdatedMutex->Lock();
+
   this->DsmManagerInternals->IsUpdated = true;
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-  SetEvent(this->DsmManagerInternals->UpdatedEvent);
-#else
-  WakeConditionVariable(&this->DsmManagerInternals->UpdatedCond);
-  LeaveCriticalSection (&this->DsmManagerInternals->UpdatedCritSection);
-#endif
-#else
-  pthread_cond_signal(&this->DsmManagerInternals->UpdatedCond);
+  this->DsmManagerInternals->UpdatedCond->Signal();
   vtkDebugMacro("Sent updated condition signal");
-  pthread_mutex_unlock(&this->DsmManagerInternals->UpdatedMutex);
-#endif
+
+  this->DsmManagerInternals->UpdatedMutex->Unlock();
 
   this->DsmManager->ClearNotification();
   this->DsmManager->NotificationFinalize();
@@ -296,99 +207,44 @@ void vtkDsmManager::SignalUpdated()
 //----------------------------------------------------------------------------
 void vtkDsmManager::WaitForUpdated()
 {
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  EnterCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
-#endif
-#else
-  pthread_mutex_lock(&this->DsmManagerInternals->UpdatedMutex);
-#endif
+  this->DsmManagerInternals->UpdatedMutex->Lock();
+
   while (!this->DsmManagerInternals->IsUpdated) {
     vtkDebugMacro("Thread going into wait for pipeline updated...");
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-    WaitForSingleObject(this->DsmManagerInternals->UpdatedEvent, INFINITE);
-    ResetEvent(this->DsmManagerInternals->UpdatedEvent);
-#else
-    SleepConditionVariableCS(&this->DsmManagerInternals->UpdatedCond,
-        &this->DsmManagerInternals->UpdatedCritSection, INFINITE);
-#endif
-#else
-    pthread_cond_wait(&this->DsmManagerInternals->UpdatedCond,
-        &this->DsmManagerInternals->UpdatedMutex);
-#endif
+    this->DsmManagerInternals->UpdatedCond->Wait(this->DsmManagerInternals->UpdatedMutex);
     vtkDebugMacro("Thread received updated signal");
   }
   if (this->DsmManagerInternals->IsUpdated) {
     this->DsmManagerInternals->IsUpdated = false;
   }
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  LeaveCriticalSection(&this->DsmManagerInternals->UpdatedCritSection);
-#endif
-#else
-  pthread_mutex_unlock(&this->DsmManagerInternals->UpdatedMutex);
-#endif
+
+  this->DsmManagerInternals->UpdatedMutex->Unlock();
 }
 
 //----------------------------------------------------------------------------
 void vtkDsmManager::SignalNotifThreadCreated()
 {
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  EnterCriticalSection(&this->DsmManagerInternals->NotifThreadCreatedCritSection);
-#endif
-#else
-  pthread_mutex_lock(&this->DsmManagerInternals->NotifThreadCreatedMutex);
-#endif
+  this->DsmManagerInternals->NotifThreadCreatedMutex->Lock();
+
   this->DsmManagerInternals->IsNotifThreadCreated = true;
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-  SetEvent(this->DsmManagerInternals->NotifThreadCreatedEvent);
-#else
-  WakeConditionVariable(&this->DsmManagerInternals->NotifThreadCreatedCond);
-  LeaveCriticalSection (&this->DsmManagerInternals->NotifThreadCreatedCritSection);
-#endif
-#else
-  pthread_cond_signal(&this->DsmManagerInternals->NotifThreadCreatedCond);
+  this->DsmManagerInternals->NotifThreadCreatedCond->Signal();
   vtkDebugMacro("Sent NotifThreadCreated condition signal");
-  pthread_mutex_unlock(&this->DsmManagerInternals->NotifThreadCreatedMutex);
-#endif
+
+  this->DsmManagerInternals->NotifThreadCreatedMutex->Unlock();
 }
 
 //----------------------------------------------------------------------------
 void vtkDsmManager::WaitForNotifThreadCreated()
 {
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  EnterCriticalSection(&this->DsmManagerInternals->NotifThreadCreatedCritSection);
-#endif
-#else
-  pthread_mutex_lock(&this->DsmManagerInternals->NotifThreadCreatedMutex);
-#endif
+  this->DsmManagerInternals->NotifThreadCreatedMutex->Lock();
+
   while (!this->DsmManagerInternals->IsNotifThreadCreated) {
     vtkDebugMacro("Thread going into wait for notification thread created...");
-#ifdef _WIN32
-#if (WINVER < _WIN32_WINNT_LONGHORN)
-    WaitForSingleObject(this->DsmManagerInternals->NotifThreadCreatedEvent, INFINITE);
-    ResetEvent(this->DsmManagerInternals->NotifThreadCreatedEvent);
-#else
-    SleepConditionVariableCS(&this->DsmManagerInternals->NotifThreadCreatedCond,
-        &this->DsmManagerInternals->NotifThreadCreatedCritSection, INFINITE);
-#endif
-#else
-    pthread_cond_wait(&this->DsmManagerInternals->NotifThreadCreatedCond,
-        &this->DsmManagerInternals->NotifThreadCreatedMutex);
-#endif
+    this->DsmManagerInternals->NotifThreadCreatedCond->Wait(this->DsmManagerInternals->NotifThreadCreatedMutex);
     vtkDebugMacro("Thread received NotifThreadCreated signal");
   }
-#ifdef _WIN32
-#if (WINVER >= _WIN32_WINNT_LONGHORN)
-  LeaveCriticalSection(&this->DsmManagerInternals->NotifThreadCreatedCritSection);
-#endif
-#else
-  pthread_mutex_unlock(&this->DsmManagerInternals->NotifThreadCreatedMutex);
-#endif
+
+  this->DsmManagerInternals->NotifThreadCreatedMutex->Unlock();
 }
 
 //----------------------------------------------------------------------------
@@ -455,15 +311,9 @@ int vtkDsmManager::Destroy()
 int vtkDsmManager::Publish()
 {
   if (this->UpdatePiece == 0) {
-#ifdef _WIN32
-    this->DsmManagerInternals->NotificationThreadHandle = CreateThread(NULL, 0,
-        vtkDsmManagerNotificationThread, (void *) this, 0,
-        &this->DsmManagerInternals->NotificationThreadPtr);
-#else
-    // Start another thread to handle DSM requests from other nodes
-    pthread_create(&this->DsmManagerInternals->NotificationThreadPtr, NULL,
+    this->DsmManagerInternals->NotificationThreadID =
+        this->DsmManagerInternals->NotificationThread->SpawnThread(
         &vtkDsmManagerNotificationThread, (void *) this);
-#endif
     this->WaitForNotifThreadCreated();
   }
   this->DsmManager->Publish();
