@@ -57,12 +57,12 @@ vtkStandardNewMacro(vtkDsmManager);
 vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
-void *vtkDsmManagerNotificationThread(void *arg)
+VTK_EXPORT VTK_THREAD_RETURN_TYPE vtkDsmManagerNotificationThread(void *arg)
 {
   vtkDsmManager *dsmManager = static_cast<vtkDsmManager*>(
       static_cast<vtkMultiThreader::ThreadInfo*>(arg)->UserData);
   dsmManager->NotificationThread();
-  return(0);
+  return(VTK_THREAD_RETURN_VALUE);
 }
 
 //----------------------------------------------------------------------------
@@ -86,6 +86,21 @@ struct vtkDsmManager::vtkDsmManagerInternals
 //    if (this->NotificationThread->IsThreadActive(this->NotificationThreadID)) {
 //      this->NotificationThread->TerminateThread(this->NotificationThreadID);
 //    }
+  }
+
+  void SignalNotifThreadCreated() {
+    this->NotifThreadCreatedMutex->Lock();
+    this->IsNotifThreadCreated = true;
+    this->NotifThreadCreatedCond->Signal();
+    this->NotifThreadCreatedMutex->Unlock();
+  }
+
+  void WaitForNotifThreadCreated() {
+    this->NotifThreadCreatedMutex->Lock();
+    while (!this->IsNotifThreadCreated) {
+      this->NotifThreadCreatedCond->Wait(this->NotifThreadCreatedMutex);
+    }
+    this->NotifThreadCreatedMutex->Unlock();
   }
 
   vtkSmartPointer<vtkClientSocket>  NotificationSocket;
@@ -174,7 +189,7 @@ void vtkDsmManager::CheckMPIController()
 //----------------------------------------------------------------------------
 void* vtkDsmManager::NotificationThread()
 {
-  this->SignalNotifThreadCreated();
+  this->DsmManagerInternals->SignalNotifThreadCreated();
   this->WaitForConnection();
   this->DsmManagerInternals->NotificationSocket->Send("C", 1);
 
@@ -219,32 +234,6 @@ void vtkDsmManager::WaitForUpdated()
   }
 
   this->DsmManagerInternals->UpdatedMutex->Unlock();
-}
-
-//----------------------------------------------------------------------------
-void vtkDsmManager::SignalNotifThreadCreated()
-{
-  this->DsmManagerInternals->NotifThreadCreatedMutex->Lock();
-
-  this->DsmManagerInternals->IsNotifThreadCreated = true;
-  this->DsmManagerInternals->NotifThreadCreatedCond->Signal();
-  vtkDebugMacro("Sent NotifThreadCreated condition signal");
-
-  this->DsmManagerInternals->NotifThreadCreatedMutex->Unlock();
-}
-
-//----------------------------------------------------------------------------
-void vtkDsmManager::WaitForNotifThreadCreated()
-{
-  this->DsmManagerInternals->NotifThreadCreatedMutex->Lock();
-
-  while (!this->DsmManagerInternals->IsNotifThreadCreated) {
-    vtkDebugMacro("Thread going into wait for notification thread created...");
-    this->DsmManagerInternals->NotifThreadCreatedCond->Wait(this->DsmManagerInternals->NotifThreadCreatedMutex);
-    vtkDebugMacro("Thread received NotifThreadCreated signal");
-  }
-
-  this->DsmManagerInternals->NotifThreadCreatedMutex->Unlock();
 }
 
 //----------------------------------------------------------------------------
@@ -313,8 +302,8 @@ int vtkDsmManager::Publish()
   if (this->UpdatePiece == 0) {
     this->DsmManagerInternals->NotificationThreadID =
         this->DsmManagerInternals->NotificationThread->SpawnThread(
-        &vtkDsmManagerNotificationThread, (void *) this);
-    this->WaitForNotifThreadCreated();
+        vtkDsmManagerNotificationThread, (void *) this);
+    this->DsmManagerInternals->WaitForNotifThreadCreated();
   }
   this->DsmManager->Publish();
   return(1);

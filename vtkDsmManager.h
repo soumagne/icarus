@@ -111,11 +111,6 @@ public:
   void WaitForUpdated();
 
   // Description:
-  // Signal/Wait for the notification thread to be created
-  void SignalNotifThreadCreated();
-  void WaitForNotifThreadCreated();
-
-  // Description:
   // Get the notification flag - Only valid if GetDsmIsNotified is true.
   int  GetNotification() { return(DsmManager->GetNotification()); }
   void ClearNotification() { DsmManager->ClearNotification(); }
