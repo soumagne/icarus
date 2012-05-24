@@ -271,13 +271,18 @@ int vtkH5PartDsmReader::ProcessRequest(vtkInformation *request,
     vtkInformationVector **inputVector,
     vtkInformationVector *outputVector)
 {
+  int result = 0;
   if (this->DsmManager) { 
     if (!this->DsmManager->GetDsmManager()->IsOpenDSM()) {
-      std::cout << "inside ProcessRequest without an open DSM file" << std::endl;
-      return 1;
+    this->DsmManager->GetDsmManager()->OpenDSM(H5F_ACC_RDONLY);
+    result = this->Superclass::ProcessRequest(request, inputVector, outputVector);
+    this->DsmManager->GetDsmManager()->CloseDSM();
+    } else {
+      result = this->Superclass::ProcessRequest(request, inputVector, outputVector);
     }
+  } else {
+    std::cout << "No DsmManager in H5PartDsmReader" << std::endl;
   }
-  int result = this->Superclass::ProcessRequest(request, inputVector, outputVector);
 
   return result;
 }
