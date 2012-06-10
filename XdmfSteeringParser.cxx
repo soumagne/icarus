@@ -69,7 +69,9 @@ std::string GetXMLString(XdmfConstString str)
 XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
+  this->HasNetXdmf = false;
   this->HasH5Part  = false;
+  this->HasNetCDF  = false;
 }
 //----------------------------------------------------------------------------
 XdmfSteeringParser::~XdmfSteeringParser()
@@ -110,7 +112,7 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   XdmfXmlNode domainNode;
   int numberOfGrids;
 
-  XdmfXmlNode interactionNode, h5PartNode;
+  XdmfXmlNode interactionNode;
 
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = new XdmfDOM();
@@ -125,8 +127,13 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   }
 
   //////////////////////////////////////////////////////////////////////
+  // NetCDF
+  XdmfXmlNode netCDFNode = this->ConfigDOM->FindElement("NetCDF");
+  this->HasNetCDF = (netCDFNode!=NULL);
+
+  //////////////////////////////////////////////////////////////////////
   // H5Part
-  h5PartNode = this->ConfigDOM->FindElement("H5Part");
+  XdmfXmlNode h5PartNode = this->ConfigDOM->FindElement("H5Part");
   this->HasH5Part = (h5PartNode!=NULL);
   if (this->HasH5Part) {
     XdmfXmlNode stepNode = this->ConfigDOM->FindElement("Step", 0, h5PartNode);

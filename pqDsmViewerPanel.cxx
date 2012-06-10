@@ -97,7 +97,8 @@ public:
     this->CurrentTimeStep     = 0;
     this->DsmInterCommType    = 0;
     this->DsmDistributionType = 0;
-    this->CreateObjects       = true;
+    this->CreatePipelines     = true;
+    this->PipelineTime        = 0.0;
   };
 
   //
@@ -106,6 +107,7 @@ public:
     this->SteeringWriter     = NULL;
     this->XdmfReader         = NULL;
     this->H5PartReader       = NULL;
+    this->NetCDFReader       = NULL;
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
@@ -185,7 +187,9 @@ public:
   vtkSmartPointer<vtkCustomPipelineHelper>  XdmfViewer;
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMSourceProxy>         H5PartReader;
-  bool                                      CreateObjects;
+  vtkSmartPointer<vtkSMSourceProxy>         NetCDFReader;
+  bool                                      CreatePipelines;
+  double                                    PipelineTime;
   // ---------------------------------------------------------------
   // Display of controls via object inspector panel
   // ---------------------------------------------------------------
@@ -369,7 +373,7 @@ void pqDsmViewerPanel::LoadSettings()
   // Force XDMF Generation
   this->Internals->forceXdmfGeneration->setChecked(settings->value("ForceXDMFGeneration", 0).toBool());
   // Time Information
-  this->Internals->hasTimeInfo->setChecked(settings->value("TimeInformation", 0).toBool());
+  this->Internals->useTimeInfo->setChecked(settings->value("TimeInformation", 0).toBool());
   // Image Save
   this->Internals->autoSaveImage->setChecked(settings->value("AutoSaveImage", 0).toBool());
   QString imageFilePath = settings->value("ImageFilePath").toString();
@@ -415,7 +419,7 @@ void pqDsmViewerPanel::SaveSettings()
   // Force XDMF Generation
   settings->setValue("ForceXDMFGeneration", this->Internals->forceXdmfGeneration->isChecked());
   // Time Information
-  settings->setValue("TimeInformation", this->Internals->hasTimeInfo->isChecked());
+  settings->setValue("TimeInformation", this->Internals->useTimeInfo->isChecked());
   // Image Save
   settings->setValue("AutoSaveImage", this->Internals->autoSaveImage->isChecked());
   settings->setValue("ImageFilePath", this->Internals->imageFilePath->text());
@@ -930,102 +934,67 @@ void pqDsmViewerPanel::UpdateDsmInformation()
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateDsmPipeline()
+void pqDsmViewerPanel::CreateXdmfPipeline()
 {
-//  H5FD_dsm_dump();
-  this->Internals->DsmProxy->InvokeCommand("OpenCollective");
-
-  static int current_time = 0;
-  bool forceXdmfGeneration = false;
-  static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
-  //
+  this->Internals->XdmfViewer = vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock");
+  // Connect our DSM manager to the reader (Xdmf)
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->XdmfViewer->Pipeline->GetProperty("DsmManager"), this->Internals->DsmProxy
+  );
+  this->Internals->XdmfViewer->Pipeline->UpdateProperty("DsmManager");
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::CreateH5PartPipeline()
+{
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-  if (!this->Internals->XdmfViewer || this->Internals->storeDsmContents->isChecked()) {
-    // set create objects flag
-    this->Internals->CreateObjects = true;
-    vtkCustomPipelineHelper::RegisterCustomFilters();
-
-    //
-    // Create a new Reader+ExtractBlock proxy and register it with the system
-    //
-    this->Internals->XdmfViewer = vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock");
-
-    //
-    // Create a new H5PartReader proxy and register it with the system
-    //
-    if (this->Internals->SteeringParser->GetHasH5Part()) {
-      this->Internals->H5PartReader.TakeReference(
-          vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "H5PartDsm")));
-    }
-
-    //
-    // Connect our DSM manager to the reader (Xdmf)
-    //
-    pqSMAdaptor::setProxyProperty(
-      this->Internals->XdmfViewer->Pipeline->GetProperty("DsmManager"), this->Internals->DsmProxy
-    );
-    this->Internals->XdmfViewer->Pipeline->UpdateProperty("DsmManager");
-
-    //
-    // Connect our DSM manager to the reader (H5Part)
-    //
-    if (this->Internals->SteeringParser->GetHasH5Part()) {
-      pqSMAdaptor::setProxyProperty(
-          this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
-      );
-      this->Internals->H5PartReader->UpdateProperty("DsmManager");
-    }
-  }
+  this->Internals->H5PartReader.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "H5PartDsm")));
+  // Connect our DSM manager to the reader (Xdmf)
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->H5PartReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+  );
+  this->Internals->H5PartReader->UpdateProperty("DsmManager");
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::CreateNetCDFPipeline()
+{
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+  this->Internals->NetCDFReader.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "NetCDFDsm")));
+  // Connect our DSM manager to the reader (Xdmf)
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->NetCDFReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+  );
+  this->Internals->NetCDFReader->UpdateProperty("DsmManager");
+  // base netCDF reader classes need a non NULL filename
+  pqSMAdaptor::setElementProperty(
+    this->Internals->NetCDFReader->GetProperty("FileName"), "dsm");
+  this->Internals->NetCDFReader->UpdateProperty("FileName");
 
   //
-  // If we are using an Xdmf XML file supplied manually or generated, get it
   //
-  if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
-    if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
-      // Read file from GUI and send the string to the server for convenience
-      QFile file(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
-      if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-        vtkGenericWarningMacro(<< "Could not open description file");
-
-      QTextStream xdmfDescription(&file);
-      pqSMAdaptor::setElementProperty(
-          this->Internals->DsmProxy->GetProperty("XdmfDescription"),
-          xdmfDescription.readAll().toLatin1().constData());
-      this->Internals->DsmProxy->UpdateVTKObjects();
-      file.close();
-    }
-    if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_TEMPLATE) {
-      forceXdmfGeneration = this->Internals->forceXdmfGeneration->isChecked();
-      // Only re-generate if the description file path has changed or if force is set to true
-      if ((descriptionFilePath != this->Internals->xdmfFilePathLineEdit->text().toLatin1().data())
-        || this->Internals->CreateObjects || forceXdmfGeneration)
-      {
-        descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
-        // Generate xdmf file for reading
-        // Send the whole string representing the DOM and not just the file path so that the 
-        // template file does not need to be present on the server anymore
-        pqSMAdaptor::setElementProperty(
-            this->Internals->DsmProxy->GetProperty("XdmfTemplateDescription"),
-            this->Internals->SteeringParser->GetConfigDOM()->Serialize());
-
-        this->Internals->DsmProxy->UpdateVTKObjects();
-        this->Internals->DsmProxy->InvokeCommand("GenerateXdmfDescription");
-      }
+  //
+  double range[3] = { 0.0, 25.0};
+  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+  foreach (pqAnimationScene *scene, scenes) {
+    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+    vtkSMProxy *tkp = timekeeper->getProxy();
+    if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
+      vtkSMPropertyHelper tr2(timekeeper->getProxy(), "TimeRange");
+      tr2.Set(range,2);
     }
   }
-  else {
-    // The base class requires a non NULL filename, (we use stdin for DSM)
-    pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), "stdin"); 
-    this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
-  }
 
-  //
-  // We need to know if the XdmfReader output is multiblock or not
-  // first update the reader
-  //
-  if (this->Internals->CreateObjects) {
-      bool multiblock = false;
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateXdmfPipeline()
+{
+  if (this->Internals->CreatePipelines) {
+    //
+    // We need to know if the XdmfReader output is multiblock or not
+    // first update the reader
+    //
+    bool multiblock = false;
     vtkSMCompoundSourceProxy *pipeline1 = vtkSMCompoundSourceProxy::SafeDownCast(
       this->Internals->XdmfViewer->Pipeline);
     this->Internals->XdmfReader = vtkSMSourceProxy::SafeDownCast(pipeline1->GetProxy("XdmfReader1"));
@@ -1061,101 +1030,241 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     else {
       this->Internals->XdmfViewer->PipelineEnd = this->Internals->XdmfReader;
     }
-
-    //
-    // Trigger complete update of reader/ExtractBlock/etc pipeline
-    //
-    this->Internals->XdmfViewer->UpdateAll();
-
-    //
-    // If H5Part present, update that too
-    //
-    if (this->Internals->SteeringParser->GetHasH5Part()) {
-      std::vector<std::string> H5PartStrings = this->Internals->SteeringParser->GetH5PartStrings();
-
-      pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("Xarray"), H5PartStrings[1].c_str()); 
-      pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("Yarray"), H5PartStrings[2].c_str()); 
-      pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("Zarray"), H5PartStrings[3].c_str()); 
-      pqSMAdaptor::setElementProperty(
-        this->Internals->XdmfViewer->Pipeline->GetProperty("GenerateVertexCells"), 1); 
-      
-      this->Internals->H5PartReader->UpdatePipeline();
-
-      //
-      // Registering the proxy as a source will create a pipeline source in the browser
-      // temporarily disable error messages to squash one warning about Input being
-      // declared but not registered with the pipeline browser.
-      //
-      char proxyName[256];
-      sprintf(proxyName, "DSM-h5part-%d", current_time);
-      pqApplicationCore::instance()->disableOutputWindow();
-      pm->RegisterProxy("sources", proxyName, this->Internals->H5PartReader);
-      pqApplicationCore::instance()->enableOutputWindow();
-
-      //
-      // Set status of registered pipeline source to unmodified 
-      //
-      pqPipelineSource* source = pqApplicationCore::instance()->
-        getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->H5PartReader);
-      source->setModifiedState(pqProxy::UNMODIFIED);
-
-      //
-      // (on First creation), make the output of the pipeline source visible.
-      //
-      pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
-      pqOutputPort *port = source->getOutputPort(0);
-      display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
-    }
-    
-    //
-    // Registering the proxy as a source will create a pipeline source in the browser
-    // temporarily disable error messages to squash one warning about Input being
-    // declared but not registered with the pipeline browser.
-    //
-    char proxyName[256];
-    sprintf(proxyName, "DSM-Data-%d", current_time);
-    pqApplicationCore::instance()->disableOutputWindow();
-    pm->RegisterProxy("sources", proxyName, this->Internals->XdmfViewer->PipelineEnd);
-    pqApplicationCore::instance()->enableOutputWindow();
-
-    //
-    // Set status of registered pipeline source to unmodified 
-    //
-    pqPipelineSource* source = pqApplicationCore::instance()->
-      getServerManagerModel()->findItem<pqPipelineSource*>(this->Internals->XdmfViewer->PipelineEnd);
-    source->setModifiedState(pqProxy::UNMODIFIED);
-
-    //
-    // (on First creation), make the output of the pipeline source visible.
-    //
-    pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
-    pqOutputPort *port = source->getOutputPort(0);
-    display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
-    //
-    vtkCustomPipelineHelper::UnRegisterCustomFilters();
   }
   else {
     this->Internals->XdmfReader->InvokeCommand("Modified");
     this->Internals->XdmfViewer->UpdateAll();
+/*
     // Update all widget pipelines
     for (PipelineList::iterator w=this->Internals->WidgetPipelines.begin(); 
       w!=this->Internals->WidgetPipelines.end(); ++w)
     {
       (*w)->UpdateAll();
     }
+*/
+  }
 
-    if (this->Internals->SteeringParser->GetHasH5Part()) {
-      this->Internals->H5PartReader->InvokeCommand("FileModified");
-      this->Internals->H5PartReader->UpdatePipeline();
+  //
+  // Trigger complete update of reader/ExtractBlock/etc pipeline
+  //
+  this->Internals->XdmfViewer->UpdateAll();
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateH5PartPipeline()
+{
+  if (this->Internals->CreatePipelines) {
+    std::vector<std::string> H5PartStrings = this->Internals->SteeringParser->GetH5PartStrings();
+    //
+    pqSMAdaptor::setElementProperty(
+      this->Internals->H5PartReader->GetProperty("Xarray"), H5PartStrings[1].c_str()); 
+    pqSMAdaptor::setElementProperty(
+      this->Internals->H5PartReader->GetProperty("Yarray"), H5PartStrings[2].c_str()); 
+    pqSMAdaptor::setElementProperty(
+      this->Internals->H5PartReader->GetProperty("Zarray"), H5PartStrings[3].c_str()); 
+    pqSMAdaptor::setElementProperty(
+      this->Internals->H5PartReader->GetProperty("GenerateVertexCells"), 1); 
+    //    
+    this->Internals->H5PartReader->UpdatePipeline();
+  }
+  else {
+    this->Internals->H5PartReader->InvokeCommand("FileModified");
+    this->Internals->H5PartReader->UpdatePipeline();
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateNetCDFInformation()
+{
+  this->Internals->NetCDFReader->InvokeCommand("FileModified");
+  this->Internals->NetCDFReader->UpdatePipelineInformation();
+  //
+  double tval[1] = { -1.0 };
+  vtkSMPropertyHelper time(this->Internals->NetCDFReader, "TimestepValues");
+  time.UpdateValueFromServer();
+  time.Get(tval,1);
+  if (tval[0]!=-1.0) {
+    this->Internals->PipelineTime = tval[0];
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateNetCDFPipeline()
+{
+  this->Internals->NetCDFReader->UpdatePipeline(this->Internals->PipelineTime);
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateXdmfTemplate()
+{
+  if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
+    if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
+      // Read file from GUI and send the string to the server for convenience
+      QFile file(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
+      if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        vtkGenericWarningMacro(<< "Could not open description file");
+
+      QTextStream xdmfDescription(&file);
+      pqSMAdaptor::setElementProperty(
+          this->Internals->DsmProxy->GetProperty("XdmfDescription"),
+          xdmfDescription.readAll().toLatin1().constData());
+      this->Internals->DsmProxy->UpdateVTKObjects();
+      file.close();
+    }
+    //
+    bool forceXdmfGeneration = false;
+    static std::string descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
+    //
+    if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_TEMPLATE) {
+      forceXdmfGeneration = this->Internals->forceXdmfGeneration->isChecked();
+      // Only re-generate if the description file path has changed or if force is set to true
+      if (this->Internals->CreatePipelines || forceXdmfGeneration)
+      {
+        descriptionFilePath = this->Internals->xdmfFilePathLineEdit->text().toLatin1().data();
+        // Generate xdmf file for reading
+        // Send the whole string representing the DOM and not just the file path so that the 
+        // template file does not need to be present on the server anymore
+        pqSMAdaptor::setElementProperty(
+            this->Internals->DsmProxy->GetProperty("XdmfTemplateDescription"),
+            this->Internals->SteeringParser->GetConfigDOM()->Serialize());
+
+        this->Internals->DsmProxy->UpdateVTKObjects();
+        this->Internals->DsmProxy->InvokeCommand("GenerateXdmfDescription");
+      }
     }
   }
+  else {
+    // The base class requires a non NULL filename, (we use stdin for DSM)
+    pqSMAdaptor::setElementProperty(
+        this->Internals->XdmfViewer->Pipeline->GetProperty("FileName"), "stdin"); 
+    this->Internals->XdmfViewer->Pipeline->UpdateProperty("FileName");
+  }
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id)
+{
+  // Registering the proxy as a source will create a pipeline source in the browser
+  // temporarily disable error messages to squash one warning about Input being
+  // declared but not registered with the pipeline browser.
   //
-  this->Internals->CreateObjects = false;
-  
-  if (this->Internals->hasTimeInfo->isChecked()) {
+  char proxyName[256];
+  sprintf(proxyName, "%s-%d", name, Id);
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+  pqApplicationCore::instance()->disableOutputWindow();
+  pm->RegisterProxy("sources", proxyName, source);
+  pqApplicationCore::instance()->enableOutputWindow();
+
+  //
+  // Set status of registered pipeline source to unmodified 
+  //
+  pqPipelineSource* pqsource = pqApplicationCore::instance()->
+    getServerManagerModel()->findItem<pqPipelineSource*>(source);
+  pqsource->setModifiedState(pqProxy::UNMODIFIED);
+
+  //
+  // (on First creation), make the output of the pipeline source visible.
+  //
+  pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
+  pqOutputPort *port = pqsource->getOutputPort(0);
+  display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateDsmPipeline()
+{
+//  H5FD_dsm_dump();
+  this->Internals->DsmProxy->InvokeCommand("OpenCollective");
+  //
+  static int current_time = 0;
+  //
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+  if (this->Internals->CreatePipelines) { 
+    //
+    vtkCustomPipelineHelper::RegisterCustomFilters();
+    //
+    // Create a new XdmfReader(+ExtractBlock) proxy and register it with the system
+    //
+    if (this->Internals->SteeringParser->GetHasXdmf()) {
+      this->CreateXdmfPipeline();
+    }
+    //
+    // Create a new H5PartReader proxy and register it with the system
+    //
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      this->CreateH5PartPipeline();
+    }
+    //
+    // Create a new NetCDFReader proxy and register it with the system
+    //
+    if (this->Internals->SteeringParser->GetHasNetCDF()) {
+      this->CreateNetCDFPipeline();
+    }
+    //
+    vtkCustomPipelineHelper::UnRegisterCustomFilters();
+  }
+
+  //
+  // If we are using an Xdmf XML file supplied manually or generated, get it
+  //
+  if (this->Internals->SteeringParser->GetHasXdmf()) {
+    //
+    this->UpdateXdmfTemplate();
+    //
+    this->UpdateXdmfPipeline();
+  }
+
+  //
+  // If H5Part present, update 
+  //
+  if (this->Internals->SteeringParser->GetHasH5Part()) {
+    //
+    this->UpdateH5PartPipeline();
+  }
+
+  //
+  // If netCDF present, update 
+  //
+  if (this->Internals->SteeringParser->GetHasNetCDF()) {
+    //
+    this->UpdateNetCDFInformation();
+    //
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      scene->setAnimationTime(this->Internals->PipelineTime);
+      this->Internals->CurrentTimeStep = current_time;
+    }
+    //
+    this->UpdateNetCDFPipeline();
+  }
+
+  //
+  // Display pipelines
+  //
+  if (this->Internals->CreatePipelines) {
+    if (this->Internals->SteeringParser->GetHasXdmf()) {
+      this->ShowPipelineInGUI(this->Internals->XdmfViewer->PipelineEnd, "Xdmf-Dsm", 0);
+    }
+    if (this->Internals->SteeringParser->GetHasH5Part()) {
+      this->ShowPipelineInGUI(this->Internals->H5PartReader, "H5Part-Dsm", 0);
+    }
+    if (this->Internals->SteeringParser->GetHasNetCDF()) {
+      this->ShowPipelineInGUI(this->Internals->NetCDFReader, "NetCDF-Dsm", 0);
+    }
+  }
+
+  //
+  // We only create new pipelines on the first iteration, or if saving all
+  //
+  if (this->Internals->storeDsmContents->isChecked()) {
+    // set create objects flag so they are regenerated again
+    this->Internals->CreatePipelines = true;
+  }
+  else {
+    // only create pipelines once
+    this->Internals->CreatePipelines = false;
+  }
+
+  //
+  // Update time
+  // 
+  ++current_time;
+/*
+  if (this->Internals->useTimeInfo->isChecked()) {
     double tval[1] = { -1.0 };
     vtkSMPropertyHelper time(this->Internals->DsmProxyHelper, "TimeInfo");
     time.UpdateValueFromServer();
@@ -1167,7 +1276,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
       QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
       foreach (pqAnimationScene *scene, scenes) {
-        ++current_time;
         this->Internals->CurrentTimeStep = current_time;
         pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
         timekeeper->setTime(tval[0]);
@@ -1180,11 +1288,11 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   } else {
     QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
     foreach (pqAnimationScene *scene, scenes) {
-      scene->setAnimationTime(++current_time);
+      scene->setAnimationTime(current_time);
       this->Internals->CurrentTimeStep = current_time;
     }
   }
-
+*/
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
   //
   // Trigger a render : if changed, everything should update as usual

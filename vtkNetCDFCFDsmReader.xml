@@ -1,0 +1,48 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- Sources                                                          -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="sources">
+
+    <!-- ============================================================= -->
+    <!-- NetCDF                                                        -->
+    <!-- ============================================================= -->
+    <SourceProxy
+      name="NetCDFDsm"
+      class="vtkNetCDFCFDsmReader"
+      base_proxygroup="internal_sources"
+      base_proxyname="netCDFReaderCore">
+
+      <ProxyProperty name="DsmManager"
+                     command="SetDsmManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers"
+                 name="DsmManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+      <CommandProperty
+        name="FileModified"
+        label="touch file"
+        command="SetFileModified"
+        si_class="vtkSIProperty">
+      </CommandProperty>
+
+      <Hints>
+        <Property name="DsmManager" show="0"/>
+        <Property name="FileModified" show="0"/>
+      </Hints>
+
+
+    </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>

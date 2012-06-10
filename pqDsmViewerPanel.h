@@ -31,6 +31,7 @@ class QTreeWidgetItem;
 // Servermanager and views
 class pqServer;
 class pqView;
+class vtkSMSourceProxy;
 
 struct SteeringGUIWidgetInfo;
 
@@ -102,6 +103,20 @@ protected:
   /// Load/Save settings from paraview ini/config file
   void LoadSettings();
   void SaveSettings();
+
+  void CreateXdmfPipeline();
+  void CreateH5PartPipeline();
+  void CreateNetCDFPipeline();
+  //
+  void UpdateXdmfPipeline();
+  //
+  void UpdateH5PartPipeline();
+  //
+  void UpdateNetCDFPipeline();
+  void UpdateNetCDFInformation();
+  //
+  void UpdateXdmfTemplate();
+  void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
 
   /// Generate objects for steering
   void ParseXMLTemplate(const char *filepath);

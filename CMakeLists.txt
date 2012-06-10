@@ -60,6 +60,23 @@ ENDIF(ICARUS_ENABLE_TIMERS)
 # DSM H5Part Reader needs pv-meshless
 #--------------------------------------------------
 OPTION(ICARUS_USE_H5PART "Build H5Part DSM reader." OFF)
+OPTION(ICARUS_USE_NETCDF "Build NetCDF DSM reader." OFF)
+
+IF(ICARUS_USE_NETCDF)
+  LINK_DIRECTORIES(C:/cmakebuild/netcdf/bin)
+  INCLUDE_DIRECTORIES(
+    "C:/code/netcdf-4.1.3/include"
+    "C:/code/netcdf-4.1.3/cxx"
+    "C:/code/netcdf-4.1.3/libsrc"
+    "C:/code/netcdf-4.1.3/libsrc4"
+    )
+  SET(ICARUS_NETCDF_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkNetCDFCFDsmReader.xml)
+  SET(ICARUS_NETCDF_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/vtkNetCDFCFDsmReader.cxx)
+  SET(ICARUS_NETCDF_LIBS 
+     netCDF 
+  )
+ENDIF(ICARUS_USE_NETCDF)
+
 IF(ICARUS_USE_H5PART)
   IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
     INCLUDE_DIRECTORIES(
@@ -77,6 +94,7 @@ IF(ICARUS_USE_H5PART)
 
   SET(ICARUS_H5PART_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml)
   SET(ICARUS_H5PART_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx)
+
 ENDIF(ICARUS_USE_H5PART)
 
 #--------------------------------------------------
@@ -138,6 +156,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
     ${ICARUS_H5PART_XML}
+    ${ICARUS_NETCDF_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
     #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
@@ -145,6 +164,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
     ${ICARUS_H5PART_SOURCES}
+    ${ICARUS_NETCDF_SOURCES}
   SERVER_SOURCES
     ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
@@ -168,7 +188,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
 )
 
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} XdmfGenerator)
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} XdmfGenerator ${ICARUS_NETCDF_LIBS})
 
 IF(WIN32 AND MSVC)
   TARGET_LINK_LIBRARIES(${PLUGIN_NAME} H5FDdsm hdf5)

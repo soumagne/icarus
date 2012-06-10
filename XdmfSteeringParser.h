@@ -104,10 +104,14 @@ public:
     return this->HelperProxyString;
   }
   //
+  bool GetHasXdmf() { return this->HasNetXdmf; }  
+  //
   bool GetHasH5Part() { return this->HasH5Part; }
   std::vector<std::string> GetH5PartStrings() {
     return this->H5PartStrings;
   }
+  //
+  bool GetHasNetCDF() { return this->HasNetCDF; }  
   //
 protected:
   XdmfDOM             *ConfigDOM;
@@ -116,7 +120,10 @@ protected:
   std::string          HelperProxyString;
   std::map<int, int>   GridTypeMap;
   //
+  bool                     HasNetXdmf;
   bool                     HasH5Part;
+  bool                     HasNetCDF;
+  //
   std::vector<std::string> H5PartStrings;
 };
 
