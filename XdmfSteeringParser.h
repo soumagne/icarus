@@ -85,7 +85,9 @@ public:
    XdmfSteeringParser();
   ~XdmfSteeringParser();
 
-  XdmfGetValueMacro(ConfigDOM, XdmfDOM*);
+  std::string GetXdmfXmlDoc() {
+    return this->XdmfXmlDoc;
+  }
 
   int Parse(const char *filepath);
   int CreateParaViewProxyXML(XdmfXmlNode interactionNode);
@@ -104,7 +106,7 @@ public:
     return this->HelperProxyString;
   }
   //
-  bool GetHasXdmf() { return this->HasNetXdmf; }  
+  bool GetHasXdmf() { return this->HasXdmf; }  
   //
   bool GetHasH5Part() { return this->HasH5Part; }
   std::vector<std::string> GetH5PartStrings() {
@@ -115,12 +117,13 @@ public:
   //
 protected:
   XdmfDOM             *ConfigDOM;
+  std::string          XdmfXmlDoc;
   GridMap              SteeringConfig;
   SteeringGUIWidgetMap SteeringWidgetMap;
   std::string          HelperProxyString;
   std::map<int, int>   GridTypeMap;
   //
-  bool                     HasNetXdmf;
+  bool                     HasXdmf;
   bool                     HasH5Part;
   bool                     HasNetCDF;
   //

@@ -103,20 +103,23 @@ protected:
   /// Load/Save settings from paraview ini/config file
   void LoadSettings();
   void SaveSettings();
-
+  //
   void CreateXdmfPipeline();
-  void CreateH5PartPipeline();
-  void CreateNetCDFPipeline();
-  //
+  void UpdateXdmfInformation();
   void UpdateXdmfPipeline();
+  void UpdateXdmfTemplate();
   //
+  void CreateH5PartPipeline();
+  void UpdateH5PartInformation();
   void UpdateH5PartPipeline();
   //
+  void CreateNetCDFPipeline();
   void UpdateNetCDFPipeline();
   void UpdateNetCDFInformation();
   //
-  void UpdateXdmfTemplate();
   void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
+  void GetPipelineTimeInformation(vtkSMSourceProxy *source);
+  void SetTimeRange(double t1, double t2);
 
   /// Generate objects for steering
   void ParseXMLTemplate(const char *filepath);

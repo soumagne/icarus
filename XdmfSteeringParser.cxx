@@ -69,7 +69,7 @@ std::string GetXMLString(XdmfConstString str)
 XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
-  this->HasNetXdmf = false;
+  this->HasXdmf    = false;
   this->HasH5Part  = false;
   this->HasNetCDF  = false;
 }
@@ -109,18 +109,25 @@ int XdmfTopologyToVTKDataSetType(XdmfTopology &topology)
 //----------------------------------------------------------------------------
 int XdmfSteeringParser::Parse(const char *configFilePath)
 {
-  XdmfXmlNode domainNode;
-  int numberOfGrids;
-
-  XdmfXmlNode interactionNode;
-
+  bool fail = false;
   if (this->ConfigDOM) delete this->ConfigDOM;
   this->ConfigDOM = new XdmfDOM();
 
   // Fill configDOM
   XdmfDebug("Parsing file: " << configFilePath);
   if (this->ConfigDOM->Parse(configFilePath) != XDMF_SUCCESS) {
-    XdmfErrorMessage("Unable to parse xml steering config file");
+    XdmfErrorMessage("Unable to parse xml configuration");
+    fail = true;
+  }
+
+  // Visualization
+  XdmfXmlNode vizNode = this->ConfigDOM->FindElement("Visualization");
+  if (!vizNode) {
+    XdmfErrorMessage("No Visualization node in xml configuration");
+    fail = true;
+  }
+
+  if (fail) {
     delete this->ConfigDOM;
     this->ConfigDOM = NULL;
     return(XDMF_FAIL);
@@ -128,12 +135,14 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
 
   //////////////////////////////////////////////////////////////////////
   // NetCDF
-  XdmfXmlNode netCDFNode = this->ConfigDOM->FindElement("NetCDF");
+  //////////////////////////////////////////////////////////////////////
+  XdmfXmlNode netCDFNode = this->ConfigDOM->FindElement("NetCDF", 0, vizNode);
   this->HasNetCDF = (netCDFNode!=NULL);
 
   //////////////////////////////////////////////////////////////////////
   // H5Part
-  XdmfXmlNode h5PartNode = this->ConfigDOM->FindElement("H5Part");
+  //////////////////////////////////////////////////////////////////////
+  XdmfXmlNode h5PartNode = this->ConfigDOM->FindElement("H5Part", 0, vizNode);
   this->HasH5Part = (h5PartNode!=NULL);
   if (this->HasH5Part) {
     XdmfXmlNode stepNode = this->ConfigDOM->FindElement("Step", 0, h5PartNode);
@@ -151,64 +160,73 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   }
 
   //////////////////////////////////////////////////////////////////////
-  // Interaction
-  interactionNode = this->ConfigDOM->FindElement("Interaction");
-
-  // Create XML that ParaView can use to create proxy objects and GUI controls
-  this->CreateParaViewProxyXML(interactionNode);
-
+  // Xdmf
   //////////////////////////////////////////////////////////////////////
-  // Domain
-  domainNode = this->ConfigDOM->FindElement("Domain");
-  numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", domainNode);
+  XdmfXmlNode xdmfNode = this->ConfigDOM->FindElement("Xdmf", 0, vizNode);
+  this->HasXdmf = (xdmfNode!=NULL);
 
-  for (int currentGridIndex=0; currentGridIndex < numberOfGrids; currentGridIndex++) {
-    XdmfXmlNode gridNode = this->ConfigDOM->FindElement("Grid", currentGridIndex, domainNode);
-    XdmfString  gridName = (XdmfString) this->ConfigDOM->GetAttribute(gridNode, "Name");
-    std::string gname = gridName;
-    if (gridName) {
-      free(gridName);
-    } 
-    xmfSteeringConfigGrid &grid = this->SteeringConfig[gname];
-    //
-    // Store the TopologyType as a VTK dataset Type because the Widget controls make use of it
-    // when there are NULL blocks
-    //
-    XdmfTopology  topology;
-    XdmfXmlNode   topologyNode    = this->ConfigDOM->FindElement("Topology", 0, gridNode);
-    XdmfString    topologyTypeStr = (XdmfString) this->ConfigDOM->GetAttribute(topologyNode, "TopologyType");
-    topology.SetTopologyTypeFromString(topologyTypeStr);
-    this->GridTypeMap[currentGridIndex] = XdmfTopologyToVTKDataSetType(topology);
-    //
-    int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
-    for (int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
-      XdmfXmlNode attributeNode = this->ConfigDOM->FindElement("Attribute", currentAttributeIndex, gridNode);
-      XdmfString  attributeName = (XdmfString) this->ConfigDOM->GetAttribute(attributeNode, "Name");
-      XdmfXmlNode attributeDINode;
-      std::string attributeMapName;
-      if (attributeName) {
-        attributeMapName = attributeName;
-        free(attributeName);
-      } else {
-        XdmfConstString attributePath = this->ConfigDOM->GetCData(this->ConfigDOM->FindElement("DataItem", 0, attributeNode));
-        vtksys::RegularExpression reName("/([^/]*)$");
-        reName.find(attributePath);
-        attributeMapName = reName.match(1);
-      }
-      attributeDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeNode);
-      if (attributeDINode) {
-        XdmfXmlNode multiDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeDINode);
-        if (!multiDINode) {
-          XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
-          grid.attributeConfig[attributeMapName].hdfPath = attributePath;
+  if (this->HasXdmf) {
+    int numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", xdmfNode);
+
+    for (int currentGridIndex=0; currentGridIndex < numberOfGrids; currentGridIndex++) {
+      XdmfXmlNode gridNode = this->ConfigDOM->FindElement("Grid", currentGridIndex, xdmfNode);
+      XdmfString  gridName = (XdmfString) this->ConfigDOM->GetAttribute(gridNode, "Name");
+      std::string gname = gridName;
+      if (gridName) {
+        free(gridName);
+      } 
+      xmfSteeringConfigGrid &grid = this->SteeringConfig[gname];
+      //
+      // Store the TopologyType as a VTK dataset Type because the Widget controls make use of it
+      // when there are NULL blocks
+      //
+      XdmfTopology  topology;
+      XdmfXmlNode   topologyNode    = this->ConfigDOM->FindElement("Topology", 0, gridNode);
+      XdmfString    topologyTypeStr = (XdmfString) this->ConfigDOM->GetAttribute(topologyNode, "TopologyType");
+      topology.SetTopologyTypeFromString(topologyTypeStr);
+      this->GridTypeMap[currentGridIndex] = XdmfTopologyToVTKDataSetType(topology);
+      //
+      int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
+      for (int currentAttributeIndex=0; currentAttributeIndex < numberOfAttributes; currentAttributeIndex++) {
+        XdmfXmlNode attributeNode = this->ConfigDOM->FindElement("Attribute", currentAttributeIndex, gridNode);
+        XdmfString  attributeName = (XdmfString) this->ConfigDOM->GetAttribute(attributeNode, "Name");
+        XdmfXmlNode attributeDINode;
+        std::string attributeMapName;
+        if (attributeName) {
+          attributeMapName = attributeName;
+          free(attributeName);
         } else {
-          // If the data item node is composed is composed of multiple sub-items, use the attribute name for
-          // matching disabled/enabled arrays in the steerer
-          grid.attributeConfig[attributeMapName].hdfPath = attributeMapName;
+          XdmfConstString attributePath = this->ConfigDOM->GetCData(this->ConfigDOM->FindElement("DataItem", 0, attributeNode));
+          vtksys::RegularExpression reName("/([^/]*)$");
+          reName.find(attributePath);
+          attributeMapName = reName.match(1);
+        }
+        attributeDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeNode);
+        if (attributeDINode) {
+          XdmfXmlNode multiDINode = this->ConfigDOM->FindElement("DataItem", 0, attributeDINode);
+          if (!multiDINode) {
+            XdmfConstString attributePath = this->ConfigDOM->GetCData(attributeDINode);
+            grid.attributeConfig[attributeMapName].hdfPath = attributePath;
+          } else {
+            // If the data item node is composed is composed of multiple sub-items, use the attribute name for
+            // matching disabled/enabled arrays in the steerer
+            grid.attributeConfig[attributeMapName].hdfPath = attributeMapName;
+          }
         }
       }
     }
+
+    this->XdmfXmlDoc = this->ConfigDOM->Serialize(xdmfNode);
+
   }
+
+
+  //////////////////////////////////////////////////////////////////////
+  // Interaction
+  XdmfXmlNode interactionNode = this->ConfigDOM->FindElement("Interaction");
+
+  // Create XML that ParaView can use to create proxy objects and GUI controls
+  this->CreateParaViewProxyXML(interactionNode);
 
   return(XDMF_SUCCESS);
 }
