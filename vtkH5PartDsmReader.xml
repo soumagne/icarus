@@ -17,11 +17,10 @@
     <SourceProxy
      name="H5PartDsm"
      class="vtkH5PartDsmReader">
-      <!--
+<!--      
       base_proxygroup="sources"
-      base_proxyname="H5Part"
-      -->
-
+      base_proxyname="H5Part">
+-->
       <ProxyProperty name="DsmManager"
                      command="SetDsmManager">
         <ProxyGroupDomain name="groups">
@@ -150,6 +149,12 @@
         command="SetFileModified"
         si_class="vtkSIProperty">
       </CommandProperty>
+
+      <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
 
       <Hints>
         <Property name="DsmManager" show="0"/>

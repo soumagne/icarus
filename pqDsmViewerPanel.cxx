@@ -975,11 +975,18 @@ void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
     time.Get(tval,1);
     if (tval[0]!=-1.0) {
       this->Internals->PipelineTime = tval[0];
+      // update GUI time
+      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+      foreach (pqAnimationScene *scene, scenes) {
+        scene->setAnimationTime(this->Internals->PipelineTime);
+      }
     }
-    // update GUI time
-    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-    foreach (pqAnimationScene *scene, scenes) {
-      scene->setAnimationTime(this->Internals->PipelineTime);
+    else {
+      // update GUI time
+      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+      foreach (pqAnimationScene *scene, scenes) {
+        scene->setAnimationTime(this->Internals->CurrentTimeStep);
+      }
     }
   }
 }
@@ -1175,8 +1182,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
 {
 //  H5FD_dsm_dump();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
-  //
-  static int current_time = 0;
   //
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 
