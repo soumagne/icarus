@@ -1392,23 +1392,22 @@ void pqDsmViewerPanel::onNotified()
         ig.UpdateValueFromServer();
         std::cout << "Received notification ";
         switch (ig.GetAsInt()) {
-          case H5FD_DSM_NEW_DATA:
+          case H5FD_DSM_NOTIFY_DATA:
             {
               std::cout << "\"New Data\"...";
-              vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
-              dm.UpdateValueFromServer();
-              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
+//              vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
+//              dm.UpdateValueFromServer();
+//              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
                 this->UpdateDsmPipeline();
-                this->Internals->DsmProxy->InvokeCommand("ClearIsDataModified");
-              }
+//              }
               this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
             }
             break;
-          case H5FD_DSM_NEW_INFORMATION:
+          case H5FD_DSM_NOTIFY_INFORMATION:
             std::cout << "\"New Information\"...";
             this->UpdateDsmInformation();
             break;
-          case H5FD_DSM_WAIT:
+          case H5FD_DSM_NOTIFY_WAIT:
             std::cout << "\"Wait\"...";
             this->onPause();
             this->Internals->infoCurrentSteeringCommand->clear();

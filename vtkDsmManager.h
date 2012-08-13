@@ -97,11 +97,8 @@ public:
 
   // Description:
   // Wait for a notification - notifications are used to trigger user
-  // defined tasks and are usually sent once the file has been closed
-  // but can also be sent on demand.
-  int  GetIsNotified() { return(DsmManager->GetIsNotified()); }
-  void ClearIsNotified() { DsmManager->ClearIsNotified(); }
-  int  WaitForNotification() { return(DsmManager->WaitForNotification()); }
+  // defined tasks and are sent when the file has been unlocked
+  int  WaitForUnlock() { return(DsmManager->WaitForUnlock()); }
   void *NotificationThread();
 
   // Description:
@@ -112,15 +109,8 @@ public:
 
   // Description:
   // Get the notification flag - Only valid if GetDsmIsNotified is true.
-  int  GetNotification() { return(DsmManager->GetNotification()); }
-  void ClearNotification() { DsmManager->ClearNotification(); }
+  int  GetNotification() { return(DsmManager->GetUnlockStatus()); }
 
-  // Description:
-  // Get/Set the display update flag which triggers the update the view
-  int  GetIsDataModified() { return(DsmManager->GetIsDataModified()); }
-  void ClearIsDataModified() { DsmManager->ClearIsDataModified(); }
-
-  // Description:
   // Create a new DSM buffer of type DsmType using a local length of
   // LocalBufferSizeMBytes and the given MpiComm.
   int Create();
@@ -182,18 +172,6 @@ public:
   // Set the Xdmf description file.
   vtkGetStringMacro(XdmfDescription);
   vtkSetStringMacro(XdmfDescription);
-
-  // Description:
-  // (Debug) Send an XML string.
-//  void SendDSMXML() { DsmManager->SendDSMXML(); }
-
-  // Description:
-  // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
-  // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
-  // object to see if a string is present
-//  void SetXMLStringSend(const char *XMLStringSend) { DsmManager->SetXMLStringSend(XMLStringSend); }
-//  const char *GetXMLStringReceive() { return(DsmManager->GetXMLStringReceive()); }
-//  void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
 
   // Description:
   // If the .dsm_client_config file exists in the standard location

@@ -195,7 +195,7 @@ void* vtkDsmManager::NotificationThread()
   this->DsmManagerInternals->NotificationSocket->Send("C", 1);
 
   while (this->DsmManager->GetIsConnected()) {
-    if (this->WaitForNotification() > 0) {
+    if (this->WaitForUnlock() != H5FD_DSM_FAIL) {
       this->DsmManagerInternals->NotificationSocket->Send("N", 1);
       this->WaitForUpdated();
     }
@@ -216,8 +216,6 @@ void vtkDsmManager::SignalUpdated()
 
   this->DsmManagerInternals->UpdatedMutex->Unlock();
 
-  this->DsmManager->ClearNotification();
-  this->DsmManager->NotificationFinalize();
 }
 
 //----------------------------------------------------------------------------

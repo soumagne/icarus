@@ -166,7 +166,7 @@
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-      <IntVectorProperty
+<IntVectorProperty
         name="Notification"
         command="GetNotification"
         default_values="0"
@@ -175,7 +175,7 @@
         <SimpleIntInformationHelper/>
       </IntVectorProperty>
 
-      <IntVectorProperty
+      <!--      <IntVectorProperty
         name="IsDataModified"
         command="GetIsDataModified"
         default_values="0"
@@ -186,7 +186,7 @@
 
       <Property name="ClearIsDataModified"
                 command="ClearIsDataModified">
-      </Property>
+      </Property>-->
 
       <Property name="SignalUpdated"
                 command="SignalUpdated">

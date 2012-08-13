@@ -294,9 +294,9 @@ int vtkH5PartDsmReader::RequestInformation(
 {
   int result = vtkH5PartReader::RequestInformation(request, inputVector, outputVector);
   //
-//  vtkInformation* outInfo = outputVector->GetInformationObject(0);
-//  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-//  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   return result;
 }
 //----------------------------------------------------------------------------
