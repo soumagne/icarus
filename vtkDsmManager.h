@@ -180,22 +180,20 @@ public:
 
   // Description:
   // Set the Xdmf description file.
-  virtual void SetXdmfDescription(const char *description) {
-    if (DsmManager->GetDsmBuffer()) DsmManager->GetDsmBuffer()->SetXMLDescription(description);
-    this->Modified();
-  }
+  vtkGetStringMacro(XdmfDescription);
+  vtkSetStringMacro(XdmfDescription);
 
   // Description:
   // (Debug) Send an XML string.
-  void SendDSMXML() { DsmManager->SendDSMXML(); }
+//  void SendDSMXML() { DsmManager->SendDSMXML(); }
 
   // Description:
   // When sending, the writer can SetXMLDescriptionSend and it will be transmitted
   // to the receiver. When receiving, GetXMLDescriptionReceive queries the internal DSMBuffer
   // object to see if a string is present
-  void SetXMLStringSend(const char *XMLStringSend) { DsmManager->SetXMLStringSend(XMLStringSend); }
-  const char *GetXMLStringReceive() { return(DsmManager->GetXMLStringReceive()); }
-  void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
+//  void SetXMLStringSend(const char *XMLStringSend) { DsmManager->SetXMLStringSend(XMLStringSend); }
+//  const char *GetXMLStringReceive() { return(DsmManager->GetXMLStringReceive()); }
+//  void        ClearXMLStringReceive() { DsmManager->ClearXMLStringReceive(); }
 
   // Description:
   // If the .dsm_client_config file exists in the standard location
@@ -307,6 +305,7 @@ protected:
 
     //
     char           *XdmfTemplateDescription;
+    char           *XdmfDescription;
     char           *HelperProxyXMLString;
     //BTX
     H5FDdsmManager *DsmManager;

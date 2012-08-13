@@ -67,10 +67,6 @@
                 command="GenerateXdmfDescription">
       </Property>
 
-      <Property name="SendDSMXML"
-                command="SendDSMXML">
-      </Property>
-
       <IntVectorProperty
         name="IsServer"
         command="SetIsServer"

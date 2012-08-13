@@ -57,9 +57,9 @@ void vtkXdmfReader4::SetVtkDsmManager(vtkDsmManager* dsmmanager)
 //----------------------------------------------------------------------------
 bool vtkXdmfReader4::PrepareDsmManagerDocument()
 {
-  if (this->VtkDsmManager && this->VtkDsmManager->GetXMLStringReceive()) {
+  if (this->VtkDsmManager && this->VtkDsmManager->GetXdmfDescription()) {
     this->SetReadFromInputString(1);
-    this->SetInputString(this->VtkDsmManager->GetXMLStringReceive());
+    this->SetInputString(this->VtkDsmManager->GetXdmfDescription());
   }
   return true;
 }

@@ -129,6 +129,7 @@ vtkDsmManager::vtkDsmManager()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   this->XdmfTemplateDescription = NULL;
+  this->XdmfDescription         = NULL;
   this->HelperProxyXMLString    = NULL;
   this->DsmManager              = new H5FDdsmManager();
   this->DsmManagerInternals     = new vtkDsmManagerInternals;
