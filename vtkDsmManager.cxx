@@ -286,7 +286,12 @@ int vtkDsmManager::Create()
       return(-1);
     }
   }
-  return(this->DsmManager->Create());
+  if (this->DsmManager->Create()==H5FD_DSM_SUCCESS) {
+    // Set mode to Asynchronous so that we can open/close whenever we like
+    this->DsmManager->GetDsmBuffer()->SetSychronizationCount(0);
+    return H5FD_DSM_SUCCESS;
+  }
+  return H5FD_DSM_FAIL;
 }
 
 //----------------------------------------------------------------------------

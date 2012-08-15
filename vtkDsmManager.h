@@ -147,9 +147,20 @@ public:
   int OpenCollective() { return (DsmManager->OpenDSM(H5F_ACC_RDONLY)); }
 
   // Description:
+  // Open the DSM from all nodes of the parallel application for Read/Write, 
+  // returns 1 on success, 0 on fail
+  int OpenCollectiveRW() { return (DsmManager->OpenDSM(H5F_ACC_RDWR)); }
+
+  // Description:
   // Close the DSM from all nodes of the parallel application, 
   // returns 1 on success, 0 on fail
   int CloseCollective() { return (DsmManager->CloseDSM()); }
+
+  // Description:
+  // Certain ParaView operations open the file on just rank 0
+  // to support this we must allow a serial mode so that collectives are 
+  // skipped. Use with extreme care.
+  void SetSerialMode(int serial) { DsmManager->SetIsDriverSerial(serial); }
 
   // Description:
   // Dump out the content of the DSM buffer (complete output).

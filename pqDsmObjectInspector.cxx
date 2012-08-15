@@ -69,7 +69,7 @@ pqDsmObjectInspector::~pqDsmObjectInspector()
 //----------------------------------------------------------------------------
 void pqDsmObjectInspector::accept()
 {
-//  emit this->preaccept();
+  emit this->preaccept();
   this->pqObjectInspectorWidget::accept();
   emit this->postaccept();
 }

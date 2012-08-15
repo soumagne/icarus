@@ -43,6 +43,10 @@
                 command="OpenCollective">
       </Property>
 
+      <Property name="OpenCollectiveRW"
+                command="OpenCollectiveRW">
+      </Property>
+
       <Property name="CloseCollective"
                 command="CloseCollective">
       </Property>
@@ -66,6 +70,13 @@
       <Property name="GenerateXdmfDescription"
                 command="GenerateXdmfDescription">
       </Property>
+
+      <IntVectorProperty
+        name="SerialMode"
+        command="SetSerialMode"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
 
       <IntVectorProperty
         name="IsServer"

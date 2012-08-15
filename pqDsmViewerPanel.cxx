@@ -226,7 +226,7 @@ QDockWidget("DSM Manager", p)
   this->Internals = new pqInternals(this);
   this->Internals->setupUi(this);
 
- // Create a new notification socket
+  // Create a new notification socket
   this->Internals->TcpNotificationServer = new QTcpServer(this);
   this->connect(this->Internals->TcpNotificationServer, 
     SIGNAL(newConnection()), SLOT(onNewNotificationSocket()));
@@ -532,10 +532,22 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
 
     // before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(preaccept()), this, SLOT(onPreAccept()));
-    // after changes are accepted
+                  SIGNAL(preaccept()),
+                  this,
+                  SLOT(onPreAccept()));
+
     this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(postaccept()), this, SLOT(onPostAccept()));
+                  SIGNAL(postaccept()),
+                  this,
+                  SLOT(onPostAccept()));
+
+
+    //// before changes are accepted
+    //this->connect(this->Internals->pqObjectInspector,
+    //  SIGNAL(preaccept()), this, SLOT(onPreAccept()));
+    //// after changes are accepted
+    //this->connect(this->Internals->pqObjectInspector,
+    //  SIGNAL(postaccept()), this, SLOT(onPostAccept()));
 
     //
     // Get info about pqWidgets and SMProxy object that are bound to steering controls
@@ -579,7 +591,7 @@ void pqDsmViewerPanel::onServerAdded(pqServer *server)
     this->Internals->CreateDsmProxy();
     // Force the DSM to be recreated 
     if (this->DsmReady()) {
-      // don't do anything here as weneed to let notification socket
+      // don't do anything here as we need to let notification socket
       // tell the gui that a connection has been made
     }
     else {
@@ -1400,7 +1412,7 @@ void pqDsmViewerPanel::onNotified()
 //              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
                 this->UpdateDsmPipeline();
 //              }
-              this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
+//              this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
             }
             break;
           case H5FD_DSM_NOTIFY_INFORMATION:
@@ -1514,12 +1526,27 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onPreAccept()
 {
+  // We must always open the DSM in parallel before doing reads or writes
+  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
+  // But writing steering commands is only done on one process
+  // so switch to serial mode before 'accept' updates values
+  std::cout << " Setting Serial mode " << std::endl;
+  pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 1);
   //
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onPostAccept()
 {
+  // Steering data has been written, switch back to parallel mode
+  // for safety and before steering array exports are done in parallel
+  std::cout << " Clearing Serial mode " << std::endl;
+  pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 0);
+  //
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+  //
+  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
   this->ExportData(false);
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
   // 
   if (this->Internals->acceptIsPlay->isChecked()) {
     this->onPlay();
