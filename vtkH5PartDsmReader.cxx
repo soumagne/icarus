@@ -80,9 +80,7 @@ vtkStandardNewMacro(vtkH5PartDsmReader);
 //----------------------------------------------------------------------------
 vtkH5PartDsmReader::vtkH5PartDsmReader()
 {
-  this->DsmManager        = NULL;
-  this->UsingCachedHandle = 0;
-  this->ReadTime = 0;
+  this->DsmManager = NULL;
 }
 //----------------------------------------------------------------------------
 vtkH5PartDsmReader::~vtkH5PartDsmReader()
@@ -121,14 +119,11 @@ void vtkH5PartDsmReader::CloseFile()
     if( f->create_prop != H5P_DEFAULT ) {
 	    H5Pclose( f->create_prop );
     }
-    if (!this->UsingCachedHandle) {
-	    if( f->access_prop != H5P_DEFAULT ) {
-		    H5Pclose( f->access_prop );
-	    }  
-	    if ( f->file ) {
-		    H5Fclose( f->file );
-	    }
-    }
+
+    this->DsmManager->GetDsmManager()->CloseDSM();
+    f->access_prop = H5I_BADID;
+    f->file = H5I_BADID;
+
 	  /* free memory from H5PartFile struct */
 	  if( f->pnparticles ) {
 		  free( f->pnparticles );
@@ -189,28 +184,11 @@ H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm()
   // If the DSM has been opened by some other object using the dsm manager
   // then we can make use of cached handles and save multiple open/closes
   f->xfer_prop = f->create_prop = H5P_DEFAULT;
-  if (this->DsmManager->GetDsmManager()->IsOpenDSM()) {
-	  f->access_prop = this->DsmManager->GetDsmManager()->GetCachedFileAccessHandle();
-    f->file = this->DsmManager->GetDsmManager()->GetCachedFileHandle();
-    this->UsingCachedHandle = true;
-  }
-  else {
-    this->UsingCachedHandle = false;
-	  f->access_prop = H5Pcreate (H5P_FILE_ACCESS);
-	  if (f->access_prop < 0) {
-		  goto error_cleanup;
-	  }
-    // select the H5FDdsm VFD
-	  if (H5Pset_fapl_dsm ( f->access_prop, f->comm, NULL, 0 ) < 0) {
-		  goto error_cleanup;
-	  }
-    f->file = H5Fopen("dsm", H5F_ACC_RDONLY, f->access_prop);
-	
-	  if (f->file < 0) {
-		  goto error_cleanup;
-	  }
-  }
-	f->nparticles  = 0;
+  this->DsmManager->GetDsmManager()->OpenDSM(H5F_ACC_RDONLY);
+	f->access_prop = this->DsmManager->GetDsmManager()->GetCachedFileAccessHandle();
+  f->file = this->DsmManager->GetDsmManager()->GetCachedFileHandle();
+
+  f->nparticles  = 0;
 	f->timegroup   = -1;
 	f->shape       = H5S_ALL;
 	f->diskshape   = H5S_ALL;
@@ -246,11 +224,8 @@ int vtkH5PartDsmReader::OpenFile()
     vtkWarningMacro("vtkH5PartDsmReader OpenFile aborted, no DSM manager");
   }
 
-  if (!this->H5FileId)
-    {
-    this->H5FileId = H5Part_open_file_dsm();
-    this->FileOpenedTime.Modified();
-    }
+  this->H5FileId = H5Part_open_file_dsm();
+  this->FileOpenedTime.Modified();
 
   if (!this->H5FileId)
     {

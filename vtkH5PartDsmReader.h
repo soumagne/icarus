@@ -65,8 +65,9 @@ protected:
     vtkInformationVector *outputVector);
   //
   vtkDsmManager *DsmManager;
-  bool           UsingCachedHandle;
+#ifdef ENABLE_TIMERS
   double         ReadTime;
+#endif
 
   //BTX
   H5PartFile *H5Part_open_file_dsm();
