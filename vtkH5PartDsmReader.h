@@ -70,7 +70,7 @@ protected:
 #endif
 
   //BTX
-  H5PartFile *H5Part_open_file_dsm();
+  H5PartFile *H5Part_open_file_dsm(const char *stepname);
   //ETX
 
 private:

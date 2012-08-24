@@ -49,8 +49,6 @@
 #include "H5FDdsm.h"
 
 //----------------------------------------------------------------------------
-// we must be using parallel IO to be here
-#define H5PART_GROUPNAME_STEP	"Step"
 //----------------------------------------------------------------------------
 vtkCxxSetObjectMacro(vtkH5PartDsmReader, DsmManager, vtkDsmManager);
 //----------------------------------------------------------------------------
@@ -150,7 +148,7 @@ void vtkH5PartDsmReader::CloseFileIntermediate()
 // This is a piece of code taken out of H5Part, but with lots of if()
 // clauses removed since we know we are using parallel/dsm etc etc
 //----------------------------------------------------------------------------
-H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm() 
+H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm(const char *stepname) 
 {
 	H5PartFile *f = NULL;
 
@@ -165,7 +163,7 @@ H5PartFile *vtkH5PartDsmReader::H5Part_open_file_dsm()
 	f->flags = H5PART_READ;
 
 	// set default step name 
-	strncpy ( f->groupname_step, H5PART_GROUPNAME_STEP, H5PART_STEPNAME_LEN );
+	strncpy ( f->groupname_step, stepname, H5PART_STEPNAME_LEN );
 	f->stepno_width = 0;
 
 	f->comm = this->DsmManager->GetDsmManager()->GetMpiComm();
@@ -224,7 +222,7 @@ int vtkH5PartDsmReader::OpenFile()
     vtkWarningMacro("vtkH5PartDsmReader OpenFile aborted, no DSM manager");
   }
 
-  this->H5FileId = H5Part_open_file_dsm();
+  this->H5FileId = H5Part_open_file_dsm(this->StepName ? this->StepName : "Step");
   this->FileOpenedTime.Modified();
 
   if (!this->H5FileId)
@@ -270,8 +268,8 @@ int vtkH5PartDsmReader::RequestInformation(
   int result = vtkH5PartReader::RequestInformation(request, inputVector, outputVector);
   //
   vtkInformation* outInfo = outputVector->GetInformationObject(0);
-  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
-  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
+//  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
+//  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   return result;
 }
 //----------------------------------------------------------------------------

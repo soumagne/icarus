@@ -41,6 +41,12 @@
       </IntVectorProperty>
 
       <StringVectorProperty
+         name="StepName"
+         command="SetStepName"
+         number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
          name="Xarray"
          command="SetXarray"
          default_values="X"
