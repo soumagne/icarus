@@ -97,6 +97,8 @@ public:
     this->DsmInterCommType    = 0;
     this->DsmDistributionType = 0;
     this->CreatePipelines     = true;
+    this->PipelineTimeRange[0]= 0.0;
+    this->PipelineTimeRange[1]= 1.0;
     this->PipelineTime        = 0.0;
     this->CurrentTimeStep     = 0;
   };
@@ -189,8 +191,10 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>         H5PartReader;
   vtkSmartPointer<vtkSMSourceProxy>         NetCDFReader;
   bool                                      CreatePipelines;
-  double                                    PipelineTime;
-  int                                       CurrentTimeStep;
+  int                                       CurrentTimeStep; // 0,1,2,3...
+  double                                    PipelineTimeRange[2]; // declared at startup usually
+  double                                    PipelineTime;         // should be between Timerange[0,1]
+
   // ---------------------------------------------------------------
   // Display of controls via object inspector panel
   // ---------------------------------------------------------------
@@ -942,6 +946,16 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   pqsource->setModifiedState(pqProxy::UNMODIFIED);
 
   //
+  // To prevent ParaView from changing the time ranges every time the pipelines update,
+  // we deregister the sources from the timekeeper and will manage time ourselves.
+  //
+  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+  foreach (pqAnimationScene *scene, scenes) {
+    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+    timekeeper->removeSource(pqsource);
+  }
+
+  //
   // (on First creation), make the output of the pipeline source visible.
   //
   pqDisplayPolicy* display_policy = pqApplicationCore::instance()->getDisplayPolicy();
@@ -949,16 +963,23 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::SetTimeRange(double t1, double t2)
+void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow)
 {
-  double range[3] = { t1, t2};
+  this->Internals->PipelineTimeRange[0] = range[0];
+  this->Internals->PipelineTimeRange[1] = range[1];
+  this->Internals->PipelineTime         = timenow;
   QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
   foreach (pqAnimationScene *scene, scenes) {
     pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
     vtkSMProxy *tkp = timekeeper->getProxy();
     if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
       vtkSMPropertyHelper tr2(timekeeper->getProxy(), "TimeRange");
-      tr2.Set(range,2);
+      tr2.Set(this->Internals->PipelineTimeRange,2);
+    }
+    if (this->Internals->PipelineTime>=this->Internals->PipelineTimeRange[0] &&
+      this->Internals->PipelineTime<=this->Internals->PipelineTimeRange[1]) {
+      timekeeper->setTime(this->Internals->PipelineTime);
+      scene->setAnimationTime(this->Internals->PipelineTime);
     }
   }
 }
@@ -971,7 +992,8 @@ void pqDsmViewerPanel::UpdateDsmInformation()
   timerange.UpdateValueFromServer();
   timerange.Get(range,2);
   if (range[0]!=-1.0 && range[1]!=-1.0) {
-    this->SetTimeRange(range[0], range[1]);
+    this->SetTimeAndRange(range, this->Internals->PipelineTime);
+    std::cout << "Time Range updated to {" << range[0] << "," << range[1] << "}" << std::endl;
   }
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 }
@@ -986,19 +1008,15 @@ void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
     time.UpdateValueFromServer();
     time.Get(tval,1);
     if (tval[0]!=-1.0) {
-      this->Internals->PipelineTime = tval[0];
-      // update GUI time
-      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-      foreach (pqAnimationScene *scene, scenes) {
-        scene->setAnimationTime(this->Internals->PipelineTime);
-      }
+      this->SetTimeAndRange(this->Internals->PipelineTimeRange, tval[0]);
     }
     else {
+//      std::cout << "Time not present, using step number instead" << std::endl;
       // update GUI time
-      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-      foreach (pqAnimationScene *scene, scenes) {
-        scene->setAnimationTime(this->Internals->CurrentTimeStep);
-      }
+      //QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+      //foreach (pqAnimationScene *scene, scenes) {
+      //  scene->setAnimationTime(this->Internals->CurrentTimeStep);
+      //}
     }
   }
 }
@@ -1090,6 +1108,8 @@ void pqDsmViewerPanel::CreateH5PartPipeline()
   std::vector<std::string> H5PartStrings = this->Internals->SteeringParser->GetH5PartStrings();
   //
   pqSMAdaptor::setElementProperty(
+    this->Internals->H5PartReader->GetProperty("StepName"), H5PartStrings[0].c_str()); 
+  pqSMAdaptor::setElementProperty(
     this->Internals->H5PartReader->GetProperty("Xarray"), H5PartStrings[1].c_str()); 
   pqSMAdaptor::setElementProperty(
     this->Internals->H5PartReader->GetProperty("Yarray"), H5PartStrings[2].c_str()); 
@@ -1097,7 +1117,7 @@ void pqDsmViewerPanel::CreateH5PartPipeline()
     this->Internals->H5PartReader->GetProperty("Zarray"), H5PartStrings[3].c_str()); 
   pqSMAdaptor::setElementProperty(
     this->Internals->H5PartReader->GetProperty("GenerateVertexCells"), 1); 
-
+  this->Internals->H5PartReader->UpdateVTKObjects();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateH5PartInformation()
@@ -1130,7 +1150,8 @@ void pqDsmViewerPanel::CreateNetCDFPipeline()
   //
   // Temporary fix for netCDF which has not yet declared time ranges
   //
-  this->SetTimeRange(0.0, 25.0);
+  double range[2] = {0.0, 25.0};
+  this->SetTimeAndRange(range, range[0]);
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateNetCDFInformation()
@@ -1296,6 +1317,14 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
 */
 
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+
+  //
+  // ParaView automatically updates its time controls based on the declared TIME_RANGE 
+  // or TIME_STEPS from filters. When 'live' they don't know about the real TIME_RANGE
+  // so we reset it on every update.
+  //
+//  this->SetTimeAndRange(this->Internals->PipelineTimeRange, this->Internals->PipelineTime);
+
   //
   // Trigger a render : if changed, everything should update as usual
   if (pqActiveObjects::instance().activeView())
@@ -1406,7 +1435,7 @@ void pqDsmViewerPanel::onNotified()
         switch (ig.GetAsInt()) {
           case H5FD_DSM_NOTIFY_DATA:
             {
-              std::cout << "\"New Data\"...";
+              std::cout << "\"New Data\"..." << std::endl;
 //              vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
 //              dm.UpdateValueFromServer();
 //              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
@@ -1416,11 +1445,11 @@ void pqDsmViewerPanel::onNotified()
             }
             break;
           case H5FD_DSM_NOTIFY_INFORMATION:
-            std::cout << "\"New Information\"...";
+            std::cout << "\"New Information\"..." << std::endl;
             this->UpdateDsmInformation();
             break;
           case H5FD_DSM_NOTIFY_WAIT:
-            std::cout << "\"Wait\"...";
+            std::cout << "\"Wait\"..." << std::endl;
             this->onPause();
             this->Internals->infoCurrentSteeringCommand->clear();
             this->Internals->infoCurrentSteeringCommand->insert("paused");

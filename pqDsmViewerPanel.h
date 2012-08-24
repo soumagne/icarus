@@ -119,7 +119,7 @@ protected:
   //
   void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
   void GetPipelineTimeInformation(vtkSMSourceProxy *source);
-  void SetTimeRange(double t1, double t2);
+  void SetTimeAndRange(double range[2], double timenow);
 
   /// Generate objects for steering
   void ParseXMLTemplate(const char *filepath);

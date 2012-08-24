@@ -34,10 +34,16 @@
       </ProxyProperty>
 
       <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
+
+      <!--<DoubleVectorProperty
             name="TimeRange"
             information_only="1" >
         <TimeRangeInformationHelper/>
-      </DoubleVectorProperty>
+      </DoubleVectorProperty>-->
 
       <Hints>
         <Property name="FileName" show="0"/>
