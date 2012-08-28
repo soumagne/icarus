@@ -159,6 +159,12 @@
         <TimeStepsInformationHelper/>
       </DoubleVectorProperty>
 
+      <DoubleVectorProperty
+            name="TimeRange"
+            information_only="1" >
+        <TimeRangeInformationHelper/>
+      </DoubleVectorProperty>
+
       <Hints>
         <Property name="DsmManager" show="0"/>
         <Property name="FileModified" show="0"/>

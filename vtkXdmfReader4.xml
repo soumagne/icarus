@@ -39,11 +39,11 @@
         <TimeStepsInformationHelper/>
       </DoubleVectorProperty>
 
-      <!--<DoubleVectorProperty
+      <DoubleVectorProperty
             name="TimeRange"
             information_only="1" >
         <TimeRangeInformationHelper/>
-      </DoubleVectorProperty>-->
+      </DoubleVectorProperty>
 
       <Hints>
         <Property name="FileName" show="0"/>

@@ -72,6 +72,8 @@
 #include "IcarusConfig.h"
 //
 #include <vtksys/SystemTools.hxx>
+
+#include "H5FDdsmTools.h" // h5fd_DSM_DUMP()
 //----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
@@ -952,7 +954,7 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
   foreach (pqAnimationScene *scene, scenes) {
     pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-    timekeeper->removeSource(pqsource);
+//    timekeeper->removeSource(pqsource);
   }
 
   //
@@ -973,13 +975,29 @@ void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow)
     pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
     vtkSMProxy *tkp = timekeeper->getProxy();
     if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
-      vtkSMPropertyHelper tr2(timekeeper->getProxy(), "TimeRange");
-      tr2.Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(timekeeper->getProxy(), "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(timekeeper->getProxy(), "Time").Set(this->Internals->PipelineTime);
     }
-    if (this->Internals->PipelineTime>=this->Internals->PipelineTimeRange[0] &&
-      this->Internals->PipelineTime<=this->Internals->PipelineTimeRange[1]) {
-      timekeeper->setTime(this->Internals->PipelineTime);
-      scene->setAnimationTime(this->Internals->PipelineTime);
+    // Force the information about time to lie in our desired ranges - this prevents the animation view
+    // from resetting back to some {0,1} interval etc.
+    if (this->Internals->SteeringParser->GetHasXdmf() && this->Internals->XdmfReader) {
+      vtkSMPropertyHelper(this->Internals->XdmfReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(this->Internals->XdmfReader, "TimestepValues").Set(this->Internals->PipelineTime);
+    }
+    if (this->Internals->SteeringParser->GetHasH5Part() && this->Internals->H5PartReader) {
+      vtkSMPropertyHelper(this->Internals->H5PartReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(this->Internals->H5PartReader, "TimestepValues").Set(this->Internals->PipelineTime);
+    }
+    if (this->Internals->SteeringParser->GetHasNetCDF() && this->Internals->NetCDFReader) {
+      vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimestepValues").Set(this->Internals->PipelineTime);
+    }
+
+    vtkSMProxy *sp = scene->getProxy();
+    if (sp && sp->IsA("vtkSMAnimationSceneProxy")) {
+      vtkSMPropertyHelper(scene->getProxy(), "StartTime").Set(this->Internals->PipelineTimeRange[0]);
+      vtkSMPropertyHelper(scene->getProxy(), "EndTime").Set(this->Internals->PipelineTimeRange[1]);
+      vtkSMPropertyHelper(scene->getProxy(), "AnimationTime").Set(this->Internals->PipelineTime);
     }
   }
 }
@@ -1213,8 +1231,9 @@ void pqDsmViewerPanel::UpdateXdmfTemplate()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
-//  H5FD_dsm_dump();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
+  //
+  // H5FD_dsm_dump();
   //
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 
@@ -1447,6 +1466,9 @@ void pqDsmViewerPanel::onNotified()
           case H5FD_DSM_NOTIFY_INFORMATION:
             std::cout << "\"New Information\"..." << std::endl;
             this->UpdateDsmInformation();
+            break;
+          case H5FD_DSM_NOTIFY_NONE:
+            std::cout << "\"NONE : ignoring unlock \"..." << std::endl;
             break;
           case H5FD_DSM_NOTIFY_WAIT:
             std::cout << "\"Wait\"..." << std::endl;

@@ -310,6 +310,7 @@ int vtkDsmManager::Publish()
     this->DsmManagerInternals->WaitForNotifThreadCreated();
   }
   this->DsmManager->Publish();
+  this->DsmManager->SetIsAsynchronous(1);
   return(1);
 }
 
