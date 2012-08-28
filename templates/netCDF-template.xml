@@ -1,0 +1,28 @@
+<?xml version="1.0" ?>
+
+<Icarus>
+
+  <!--  ######################################################
+        Visualization : Objects to be visualized by ParaView
+        ###################################################### -->
+  <Visualization>
+    
+    <!--  ####################################################
+          Specify netCDF reader. No options yet.
+          #################################################### -->
+
+    <NetCDF 
+      Name="Grid">
+    </NetCDF>
+
+  </Visualization>
+
+  <!--  ######################################################
+        Interaction : Objects to be controlled/modified
+        ###################################################### -->
+  <Interaction>
+  </Interaction>
+
+</Icarus>
+
+
