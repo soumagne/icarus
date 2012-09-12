@@ -32,7 +32,7 @@
 #include "vtkObject.h"       // Base class
 
 #include "H5FDdsmManager.h"
-//#include "H5FDdsmTools.h"
+#include "H5Fpublic.h" // for H5F_ACC_RDONLY etc
 
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
