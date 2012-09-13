@@ -86,7 +86,7 @@ int vtkXdmfReader4::RequestInformation(
 {
   int result = vtkXdmfReader::RequestInformation(request, inputVector, outputVector);
   //
-  vtkInformation* outInfo = outputVector->GetInformationObject(0);
+//  vtkInformation* outInfo = outputVector->GetInformationObject(0);
 //  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_STEPS());
 //  outInfo->Remove(vtkStreamingDemandDrivenPipeline::TIME_RANGE());
   return result;

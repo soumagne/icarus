@@ -345,7 +345,7 @@ bool vtkSteeringWriter::GatherDataArrayInfo(vtkDataArray *data, int &datatype, i
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata, 
-  bool store_offsets, std::vector<int> &parallelOffsets)
+  bool store_offsets, std::vector<vtkIdType> &parallelOffsets)
 {
   vtkMPICommunicator* com = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator()); 
   if (com == 0) {
@@ -377,18 +377,18 @@ void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata,
   else data = indata;
 
   //
-  int Nt = data->GetNumberOfTuples();
+  vtkIdType Nt = data->GetNumberOfTuples();
   int Nc = data->GetNumberOfComponents();
-  int totaltuples = Nt;
-  int rank = (Nc>1) ? 2 : 1 ;
+  vtkIdType totaltuples = Nt;
+  int rank = (Nc > 1) ? 2 : 1 ;
 
   //
   // if parallel, we must find the total amount (on disk) to be written for this array
   //
-  std::vector<int> ArrayOffsets(this->UpdateNumPieces+1);
+  std::vector<vtkIdType> ArrayOffsets(this->UpdateNumPieces+1);
   ArrayOffsets[0] = 0;
   if (this->UpdateNumPieces>1) {
-    std::vector<int> TuplesPerProcess(this->UpdateNumPieces);
+    std::vector<vtkIdType> TuplesPerProcess(this->UpdateNumPieces);
     com->AllGather(&Nt, &TuplesPerProcess[0], 1);
     totaltuples = std::accumulate(TuplesPerProcess.begin(), TuplesPerProcess.end(), 0);
     std::partial_sum(TuplesPerProcess.begin(), TuplesPerProcess.end(), ArrayOffsets.begin()+1);
@@ -397,10 +397,10 @@ void vtkSteeringWriter::WriteDataArray(const char *name, vtkDataArray *indata,
     }
   }
   //
-  hsize_t  mem_size[2]    = { Nt, Nc };
-  hsize_t  disk_size[2]   = { totaltuples, Nc };
-  hsize_t  disk_slab[2]   = { Nt, Nc };
-  hsize_t  disk_offset[2] = { ArrayOffsets[this->UpdatePiece], 0 };
+  hsize_t  mem_size[2]    = { static_cast<hsize_t> (Nt), static_cast<hsize_t> (Nc) };
+  hsize_t  disk_size[2]   = { static_cast<hsize_t> (totaltuples), static_cast<hsize_t> (Nc) };
+  hsize_t  disk_slab[2]   = { static_cast<hsize_t> (Nt), static_cast<hsize_t> (Nc) };
+  hsize_t  disk_offset[2] = { static_cast<hsize_t> (ArrayOffsets[this->UpdatePiece]), 0 };
   hid_t    mem_space      = H5Screate_simple(rank, mem_size, NULL); 
   hid_t    disk_space     = H5Screate_simple(rank, disk_size, NULL); 
   if (Nt!=totaltuples) {
@@ -570,7 +570,7 @@ void vtkSteeringWriter::WriteData()
     return;
   }
 
-  std::vector<int> ParallelOffsets(this->UpdateNumPieces+1);
+  std::vector<vtkIdType> ParallelOffsets(this->UpdateNumPieces+1);
 
   for (unsigned int i=0; i<ArrayTypes.size(); i++) {
     this->GroupPathInternal = GroupPaths[i];
@@ -635,7 +635,7 @@ void vtkSteeringWriter::WriteData()
 }
 //----------------------------------------------------------------------------
 void vtkSteeringWriter::WriteConnectivityTriangles(vtkCellArray *cells,
-  std::vector<int> &parallelOffsets) 
+  std::vector<vtkIdType> &parallelOffsets)
 {
   vtkSmartPointer<vtkIntArray> intarray = vtkSmartPointer<vtkIntArray>::New();
   intarray->SetNumberOfComponents(3);

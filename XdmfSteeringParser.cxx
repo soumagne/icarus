@@ -184,6 +184,7 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
       XdmfXmlNode   topologyNode    = this->ConfigDOM->FindElement("Topology", 0, gridNode);
       XdmfString    topologyTypeStr = (XdmfString) this->ConfigDOM->GetAttribute(topologyNode, "TopologyType");
       topology.SetTopologyTypeFromString(topologyTypeStr);
+      free(topologyTypeStr);
       this->GridTypeMap[currentGridIndex] = XdmfTopologyToVTKDataSetType(topology);
       //
       int numberOfAttributes = this->ConfigDOM->FindNumberOfElements("Attribute", gridNode);
@@ -299,7 +300,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   for (int index=0; index < numberOfStringProperties; index++) {
     XdmfXmlNode    xnode = this->ConfigDOM->FindElement("StringVectorProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringString", std::string("SetSteeringString" + name).c_str());
     xmlstring << xml << std::endl;
   }
@@ -308,7 +309,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   for (int index=0; index < numberOfIntVectorProperties; index++) {
     XdmfXmlNode    xnode = this->ConfigDOM->FindElement("IntVectorProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueInt", std::string("SetSteeringValueInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueInt", std::string("GetSteeringValueInt" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringScalarInt", std::string("GetSteeringScalarInt" + name).c_str());
@@ -321,7 +322,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   for (int index=0; index < numberOfDoubleVectorProperties; index++) {
     XdmfXmlNode    xnode = this->ConfigDOM->FindElement("DoubleVectorProperty", index, interactionNode);
     std::string      xml = this->ConfigDOM->Serialize(xnode);
-    std::string     name = this->ConfigDOM->GetAttribute(xnode, "name");
+    std::string     name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
     vtksys::SystemTools::ReplaceString(xml, "SetSteeringValueDouble", std::string("SetSteeringValueDouble" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringValueDouble", std::string("GetSteeringValueDouble" + name).c_str());
     vtksys::SystemTools::ReplaceString(xml, "GetSteeringScalarDouble", std::string("GetSteeringScalarDouble" + name).c_str());
@@ -355,16 +356,16 @@ std::string XdmfSteeringParser::BuildWidgetHints(XdmfConstString name, XdmfXmlNo
   if (hintsNode && (widgetNode = this->ConfigDOM->FindElement("WidgetControl", 0, hintsNode))!=NULL) {
     SteeringGUIWidgetInfo &info = this->SteeringWidgetMap[name];
     //
-    XdmfConstString wname = this->ConfigDOM->GetAttribute(widgetNode, "name");
+    XdmfString wname = (XdmfString) this->ConfigDOM->GetAttribute(widgetNode, "name");
     info.WidgetType = wname;
     //
     if ((gridNode=this->ConfigDOM->FindElement("AssociatedGrid", 0, hintsNode))!=NULL) {
-      info.AssociatedGrid = this->ConfigDOM->GetAttribute(gridNode, "name");
+      info.AssociatedGrid = GetXMLString(this->ConfigDOM->GetAttribute(gridNode, "name"));
     }
     if ((initNode=this->ConfigDOM->FindElement("Initialization", 0, hintsNode))!=NULL) {
-      info.Initialization = this->ConfigDOM->GetAttribute(initNode, "name");
+      info.Initialization = GetXMLString(this->ConfigDOM->GetAttribute(initNode, "name"));
     }
-    XdmfConstString label = this->ConfigDOM->GetAttribute(propertyNode, "label");
+    std::string label = GetXMLString(this->ConfigDOM->GetAttribute(propertyNode, "label"));
     hintstring << "<PropertyGroup type=\"" << wname << "\" label=\"" << label << "\">" << std::endl;
     if (!strcmp(wname,"Handle") || !strcmp(wname,"Point")) {
       hintstring << "<Property function=\"WorldPosition\" ";
@@ -374,6 +375,8 @@ std::string XdmfSteeringParser::BuildWidgetHints(XdmfConstString name, XdmfXmlNo
     }
     hintstring << "name=\"" << name << "\" />" << std::endl;
     hintstring << "</PropertyGroup>" << std::endl;
+    if (wname) free(wname);
+
   }
   return hintstring.str();
 }

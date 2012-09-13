@@ -51,6 +51,8 @@
 #include "vtkMultiThreader.h"
 #include "vtkConditionVariable.h"
 
+#include "H5FDdsm.h"
+
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
@@ -190,15 +192,16 @@ void vtkDsmManager::CheckMPIController()
 //----------------------------------------------------------------------------
 void* vtkDsmManager::NotificationThread()
 {
+  unsigned int notification;
+
   this->DsmManagerInternals->SignalNotifThreadCreated();
   this->WaitForConnection();
-  this->DsmManagerInternals->NotificationSocket->Send("C", 1);
+  notification = H5FD_DSM_NOTIFY_CONNECTED;
+  this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
 
-  while (this->DsmManager->GetIsConnected()) {
-    if (this->WaitForUnlock() != H5FD_DSM_FAIL) {
-      this->DsmManagerInternals->NotificationSocket->Send("N", 1);
-      this->WaitForUpdated();
-    }
+  while (this->WaitForUnlock(&notification) != H5FD_DSM_FAIL) {
+    this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
+    this->WaitForUpdated();
   }
   // TODO
   // good cleanup ??
@@ -223,7 +226,7 @@ void vtkDsmManager::WaitForUpdated()
 {
   this->DsmManagerInternals->UpdatedMutex->Lock();
 
-  while (!this->DsmManagerInternals->IsUpdated) {
+  if (!this->DsmManagerInternals->IsUpdated) {
     vtkDebugMacro("Thread going into wait for pipeline updated...");
     this->DsmManagerInternals->UpdatedCond->Wait(this->DsmManagerInternals->UpdatedMutex);
     vtkDebugMacro("Thread received updated signal");
@@ -310,7 +313,6 @@ int vtkDsmManager::Publish()
     this->DsmManagerInternals->WaitForNotifThreadCreated();
   }
   this->DsmManager->Publish();
-  this->DsmManager->SetIsAsynchronous(1);
   return(1);
 }
 

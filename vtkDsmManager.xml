@@ -19,10 +19,6 @@
                 command="Destroy">
       </Property>
 
-      <Property name="ClearStorage"
-                command="ClearStorage">
-      </Property>
-
       <Property name="Connect"
                 command="Connect">
       </Property>
@@ -53,18 +49,6 @@
 
       <Property name="ReadConfigFile"
                 command="ReadConfigFile">
-      </Property>
-
-      <Property name="H5Dump"
-                command="H5Dump">
-      </Property>
-
-      <Property name="H5DumpLight"
-                command="H5DumpLight">
-      </Property>
-
-      <Property name="H5DumpXML"
-                command="H5DumpXML">
       </Property>
 
       <Property name="GenerateXdmfDescription"
@@ -121,23 +105,6 @@
       </IntVectorProperty>
 
       <StringVectorProperty
-        name="PublishedServerHostName"
-        command="GetServerHostName"
-        information_only="1"
-        number_of_elements="1">
-        <SimpleStringInformationHelper/>
-      </StringVectorProperty>
-
-      <IntVectorProperty
-        name="PublishedServerPort"
-        command="GetServerPort"
-        information_only="1"
-        number_of_elements="1"
-        default_values="0">
-        <SimpleIntInformationHelper/>
-      </IntVectorProperty>
-
-      <StringVectorProperty
         name="ServerHostName"
         command="SetServerHostName"
         number_of_elements="1">
@@ -168,49 +135,9 @@
         number_of_elements="1">
       </StringVectorProperty>      
 
-      <IntVectorProperty
-        name="IsConnected"
-        command="GetIsConnected"
-        information_only="1"
-        number_of_elements="1"
-        default_values="0">
-        <SimpleIntInformationHelper/>
-      </IntVectorProperty>
-
-<IntVectorProperty
-        name="Notification"
-        command="GetNotification"
-        default_values="0"
-        information_only="1"
-        number_of_elements="1">
-        <SimpleIntInformationHelper/>
-      </IntVectorProperty>
-
-      <!--      <IntVectorProperty
-        name="IsDataModified"
-        command="GetIsDataModified"
-        default_values="0"
-        information_only="1"
-        number_of_elements="1">
-        <SimpleIntInformationHelper/>
-      </IntVectorProperty>
-
-      <Property name="ClearIsDataModified"
-                command="ClearIsDataModified">
-      </Property>-->
-
       <Property name="SignalUpdated"
                 command="SignalUpdated">
       </Property>
-
-      <IntVectorProperty
-        name="InteractionsGroupPresent"
-        command="GetInteractionsGroupPresent"
-        default_values="0"
-        information_only="1"
-        number_of_elements="1">
-        <SimpleIntInformationHelper/>
-      </IntVectorProperty>
 
       <StringVectorProperty
         name="SteeringCommand"

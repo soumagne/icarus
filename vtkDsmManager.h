@@ -92,13 +92,12 @@ public:
 
   // Description:
   // Wait for a connection - Only valid after a Publish call has been made.
-  int GetIsConnected() { return(DsmManager->GetIsConnected()); }
   int WaitForConnection() { return(DsmManager->WaitForConnection()); }
 
   // Description:
   // Wait for a notification - notifications are used to trigger user
   // defined tasks and are sent when the file has been unlocked
-  int  WaitForUnlock() { return(DsmManager->WaitForUnlock()); }
+  int  WaitForUnlock(unsigned int *flag) { return(DsmManager->WaitForUnlock(flag)); }
   void *NotificationThread();
 
   // Description:
@@ -107,10 +106,6 @@ public:
   void SignalUpdated();
   void WaitForUpdated();
 
-  // Description:
-  // Get the notification flag - Only valid if GetDsmIsNotified is true.
-  int  GetNotification() { return(DsmManager->GetUnlockStatus()); }
-
   // Create a new DSM buffer of type DsmType using a local length of
   // LocalBufferSizeMBytes and the given MpiComm.
   int Create();
@@ -118,10 +113,6 @@ public:
   // Description:
   // Destroy the current DSM buffer.
   int Destroy();
-
-  // Description:
-  // Clear the DSM storage.
-  int ClearStorage() { return(DsmManager->ClearStorage()); }
 
   // Description:
   // Connect to a remote DSM manager (called by client).
@@ -161,18 +152,6 @@ public:
   // to support this we must allow a serial mode so that collectives are 
   // skipped. Use with extreme care.
   void SetSerialMode(int serial) { DsmManager->SetIsDriverSerial(serial); }
-
-  // Description:
-  // Dump out the content of the DSM buffer (complete output).
-//  void H5Dump() { H5FD_dsm_dump(); }
-
-  // Description:
-  // Dump out the content of the DSM buffer (hierarchical output).
-//  void H5DumpLight() { H5FD_dsm_dumpLight(); }
-
-  // Description:
-  // Dump out the content of the DSM buffer (XML output).
-//  void H5DumpXML() { H5FD_dsm_dumpXML(); }
 
   // Description:
   // Generate an Xdmf description file. The generated file is automatically set
@@ -227,13 +206,6 @@ public:
   int GetSteeringValues(const char *name, int numberOfElements, double *values)
   {
     return(DsmManager->GetSteeringValues(name, numberOfElements, values));
-  }
-
-  // Description:
-  // Return 1 if the Interactions group exists, 0 otherwise
-  int GetInteractionsGroupPresent()
-  {
-    return(DsmManager->GetInteractionsGroupPresent());
   }
 
   // Description:

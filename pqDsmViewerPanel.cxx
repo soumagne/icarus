@@ -951,11 +951,11 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   // To prevent ParaView from changing the time ranges every time the pipelines update,
   // we deregister the sources from the timekeeper and will manage time ourselves.
   //
-  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-  foreach (pqAnimationScene *scene, scenes) {
-    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+//  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+//  foreach (pqAnimationScene *scene, scenes) {
+//    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
 //    timekeeper->removeSource(pqsource);
-  }
+//  }
 
   //
   // (on First creation), make the output of the pipeline source visible.
@@ -1235,7 +1235,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   // H5FD_dsm_dump();
   //
-  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+//  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 
   //
   // If Xdmf present, update the pipeline 
@@ -1436,61 +1436,55 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onNotified()
 {
+  int error = 0;
   QByteArray notification = this->Internals->TcpNotificationSocket->readAll();
-  char notificationCode = notification[0];
+  unsigned int notificationCode;
+  if (notification.size() == sizeof(notificationCode)) {
+    memcpy(&notificationCode, notification.constData(), notification.size());
+  } else {
+    error = 1;
+    std::cerr << "Error when reading from notification socket" << std::endl;
+    return;
+  }
 #ifdef ENABLE_TIMERS
   double ts_notif, te_notif;
   ts_notif = vtksys::SystemTools::GetTime ();
 #endif
-  switch (notificationCode) {
-    case 'C':
-      std::cout << "New DSM connection established" << std::endl;
-      break;
-    case 'N':
-      if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
-        vtkSMPropertyHelper ig(this->Internals->DsmProxy, "Notification");
-        ig.UpdateValueFromServer();
-        std::cout << "Received notification ";
-        switch (ig.GetAsInt()) {
-          case H5FD_DSM_NOTIFY_DATA:
-            {
-              std::cout << "\"New Data\"..." << std::endl;
-//              vtkSMPropertyHelper dm(this->Internals->DsmProxy, "IsDataModified");
-//              dm.UpdateValueFromServer();
-//              if (this->Internals->autoDisplayDSM->isChecked() && dm.GetAsInt()) {
-                this->UpdateDsmPipeline();
-//              }
-//              this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
-            }
-            break;
-          case H5FD_DSM_NOTIFY_INFORMATION:
-            std::cout << "\"New Information\"..." << std::endl;
-            this->UpdateDsmInformation();
-            break;
-          case H5FD_DSM_NOTIFY_NONE:
-            std::cout << "\"NONE : ignoring unlock \"..." << std::endl;
-            break;
-          case H5FD_DSM_NOTIFY_WAIT:
-            std::cout << "\"Wait\"..." << std::endl;
-            this->onPause();
-            this->Internals->infoCurrentSteeringCommand->clear();
-            this->Internals->infoCurrentSteeringCommand->insert("paused");
-            this->Internals->PauseRequested = false;
-            break;
-          default:
-            std::cout << "Notification " << ig.GetAsInt() <<
-                " not yet supported, please check simulation code " << std::endl;
-            break;
-        }
-
-        std::cout << "Updated" << std::endl;
-        this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
+  if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
+    std::cout << "New DSM connection established" << std::endl;
+  } else {
+    if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
+      std::cout << "Received notification ";
+      switch (notificationCode) {
+        case H5FD_DSM_NOTIFY_DATA:
+          std::cout << "\"New Data\"...";
+          this->UpdateDsmPipeline();
+          break;
+        case H5FD_DSM_NOTIFY_INFORMATION:
+          std::cout << "\"New Information\"...";
+          this->UpdateDsmInformation();
+          break;
+        case H5FD_DSM_NOTIFY_NONE:
+          std::cout << "\"NONE : ignoring unlock \"...";
+          break;
+        case H5FD_DSM_NOTIFY_WAIT:
+          std::cout << "\"Wait\"...";
+          this->onPause();
+          this->Internals->infoCurrentSteeringCommand->clear();
+          this->Internals->infoCurrentSteeringCommand->insert("paused");
+          this->Internals->PauseRequested = false;
+          break;
+        default:
+          error = 1;
+          std::cout << "Notification " << notificationCode <<
+              " not yet supported, please check simulation code " << std::endl;
+          break;
       }
-      break;
-    default:
-      std::cerr << "Received wrong notification code, expected \'C\' or \'N\' and received "
-      << "\'" << notificationCode << "\'" << std::endl;
-      break;
+      if (!error) std::cout << "Updated" << std::endl;
+      // TODO steered objects are not updated for now
+      // this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
+      this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
+    }
   }
 #ifdef ENABLE_TIMERS
   te_notif = vtksys::SystemTools::GetTime ();
