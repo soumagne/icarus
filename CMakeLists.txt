@@ -78,23 +78,22 @@ IF(ICARUS_USE_NETCDF)
 ENDIF(ICARUS_USE_NETCDF)
 
 IF(ICARUS_USE_H5PART)
-  IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
-    INCLUDE_DIRECTORIES(
-      ${CSCS_Plugins_SOURCE_DIR}/pv-meshless
-      ${CSCS_Plugins_SOURCE_DIR}/pv-meshless/h5part
-    )
-  ENDIF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+  IF(NOT pv-meshless_SOURCE_DIR)
+    IF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+      SET(pv-meshless_SOURCE_DIR ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+    ELSE(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+      IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+        SET(pv-meshless_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+      ELSE(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+        FIND_PATH(pv-meshless_SOURCE_DIR vtkH5PartReader.h)
+      ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+    ENDIF(EXISTS ${CSCS_Plugins_SOURCE_DIR}/pv-meshless)
+  ENDIF(NOT pv-meshless_SOURCE_DIR)
 
-  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
-    INCLUDE_DIRECTORIES(
-      ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless
-      ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless/h5part
-    )
-  ENDIF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../pv-meshless)
+  INCLUDE_DIRECTORIES(${pv-meshless_SOURCE_DIR} ${pv-meshless_SOURCE_DIR}/h5part)
 
   SET(ICARUS_H5PART_XML ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.xml)
   SET(ICARUS_H5PART_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/vtkH5PartDsmReader.cxx)
-
 ENDIF(ICARUS_USE_H5PART)
 
 #--------------------------------------------------
