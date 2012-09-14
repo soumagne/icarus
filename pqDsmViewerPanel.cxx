@@ -1437,53 +1437,55 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 void pqDsmViewerPanel::onNotified()
 {
   int error = 0;
-  QByteArray notification = this->Internals->TcpNotificationSocket->readAll();
   unsigned int notificationCode;
-  if (notification.size() == sizeof(notificationCode)) {
-    memcpy(&notificationCode, notification.constData(), notification.size());
-  } else {
-    error = 1;
-    std::cerr << "Error when reading from notification socket" << std::endl;
-    return;
-  }
-#ifdef ENABLE_TIMERS
-  double ts_notif, te_notif;
-  ts_notif = vtksys::SystemTools::GetTime ();
-#endif
-  if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
-    std::cout << "New DSM connection established" << std::endl;
-  } else {
-    if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
-      std::cout << "Received notification ";
-      switch (notificationCode) {
-        case H5FD_DSM_NOTIFY_DATA:
-          std::cout << "\"New Data\"...";
-          this->UpdateDsmPipeline();
-          break;
-        case H5FD_DSM_NOTIFY_INFORMATION:
-          std::cout << "\"New Information\"...";
-          this->UpdateDsmInformation();
-          break;
-        case H5FD_DSM_NOTIFY_NONE:
-          std::cout << "\"NONE : ignoring unlock \"...";
-          break;
-        case H5FD_DSM_NOTIFY_WAIT:
-          std::cout << "\"Wait\"...";
-          this->onPause();
-          this->Internals->infoCurrentSteeringCommand->clear();
-          this->Internals->infoCurrentSteeringCommand->insert("paused");
-          this->Internals->PauseRequested = false;
-          break;
-        default:
-          error = 1;
-          std::cout << "Notification " << notificationCode <<
-              " not yet supported, please check simulation code " << std::endl;
-          break;
+  int bytes = -1;
+  //
+  while (this->Internals->TcpNotificationSocket->size()>0) {
+    bytes = this->Internals->TcpNotificationSocket->read((char*)&notificationCode,sizeof(notificationCode));
+    if (bytes != sizeof(notificationCode)) {
+      error = 1;
+      std::cerr << "Error when reading from notification socket" << std::endl;
+      return;
+    }
+  #ifdef ENABLE_TIMERS
+    double ts_notif, te_notif;
+    ts_notif = vtksys::SystemTools::GetTime ();
+  #endif
+    if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
+      std::cout << "New DSM connection established" << std::endl;
+    } else {
+      if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
+        std::cout << "Received notification ";
+        switch (notificationCode) {
+          case H5FD_DSM_NOTIFY_DATA:
+            std::cout << "\"New Data\"...";
+            this->UpdateDsmPipeline();
+            break;
+          case H5FD_DSM_NOTIFY_INFORMATION:
+            std::cout << "\"New Information\"...";
+            this->UpdateDsmInformation();
+            break;
+          case H5FD_DSM_NOTIFY_NONE:
+            std::cout << "\"NONE : ignoring unlock \"...";
+            break;
+          case H5FD_DSM_NOTIFY_WAIT:
+            std::cout << "\"Wait\"...";
+            this->onPause();
+            this->Internals->infoCurrentSteeringCommand->clear();
+            this->Internals->infoCurrentSteeringCommand->insert("paused");
+            this->Internals->PauseRequested = false;
+            break;
+          default:
+            error = 1;
+            std::cout << "Notification " << notificationCode <<
+                " not yet supported, please check simulation code " << std::endl;
+            break;
+        }
+        if (!error) std::cout << "Updated" << std::endl;
+        // TODO steered objects are not updated for now
+        // this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
+        this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
       }
-      if (!error) std::cout << "Updated" << std::endl;
-      // TODO steered objects are not updated for now
-      // this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
-      this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
     }
   }
 #ifdef ENABLE_TIMERS
