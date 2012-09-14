@@ -1440,17 +1440,18 @@ void pqDsmViewerPanel::onNotified()
   unsigned int notificationCode;
   int bytes = -1;
   //
-  while (this->Internals->TcpNotificationSocket->size()>0) {
-    bytes = this->Internals->TcpNotificationSocket->read((char*)&notificationCode,sizeof(notificationCode));
+  while (this->Internals->TcpNotificationSocket->size() > 0) {
+    bytes = this->Internals->TcpNotificationSocket->read(
+        reinterpret_cast<char*>(&notificationCode), sizeof(notificationCode));
     if (bytes != sizeof(notificationCode)) {
       error = 1;
       std::cerr << "Error when reading from notification socket" << std::endl;
       return;
     }
-  #ifdef ENABLE_TIMERS
+#ifdef ENABLE_TIMERS
     double ts_notif, te_notif;
     ts_notif = vtksys::SystemTools::GetTime ();
-  #endif
+#endif
     if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
       std::cout << "New DSM connection established" << std::endl;
     } else {
