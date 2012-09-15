@@ -29,6 +29,7 @@
 #define __vtkH5PartDsmReader_h
 
 #include "vtkH5PartReader.h"
+#include "IcarusConfig.h"
 
 class vtkDsmManager;
 

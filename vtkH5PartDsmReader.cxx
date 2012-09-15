@@ -30,7 +30,6 @@
 #include "vtkStreamingDemandDrivenPipeline.h"
 //
 #include "vtkDsmManager.h"
-#include "IcarusConfig.h"
 //
 #include "vtkToolkits.h" // For VTK_USE_MPI
 #ifdef VTK_USE_MPI
