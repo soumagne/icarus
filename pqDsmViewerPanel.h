@@ -26,6 +26,7 @@
 #define _pqDsmViewerPanel_h
 
 #include <QDockWidget>
+#include <QMutex>
 // Core Qt 
 class QTreeWidgetItem;
 // Servermanager and views
@@ -134,6 +135,7 @@ protected:
 
   class pqInternals;
   pqInternals *Internals;
+  QMutex InNotified;
 
 protected slots:
 

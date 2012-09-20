@@ -540,14 +540,10 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
 
     // before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
-                  SIGNAL(preaccept()),
-                  this,
-                  SLOT(onPreAccept()));
+      SIGNAL(preaccept()), this, SLOT(onPreAccept()), Qt::QueuedConnection);
 
     this->connect(this->Internals->pqObjectInspector,
-                  SIGNAL(postaccept()),
-                  this,
-                  SLOT(onPostAccept()));
+      SIGNAL(postaccept()), this, SLOT(onPostAccept()), Qt::QueuedConnection);
 
 
     //// before changes are accepted
@@ -1467,6 +1463,7 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onNotified()
 {
+  this->InNotified.lock();
   int error = 0;
   unsigned int notificationCode;
   int bytes = -1;
@@ -1524,6 +1521,7 @@ void pqDsmViewerPanel::onNotified()
   te_notif = vtksys::SystemTools::GetTime ();
   std::cout << "Notification processed in " << te_notif - ts_notif << " s" << std::endl;
 #endif
+  this->InNotified.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
@@ -1605,6 +1603,8 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onPreAccept()
 {
+  this->InNotified.lock();
+
   // We must always open the DSM in parallel before doing reads or writes
   this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
   // But writing steering commands is only done on one process
@@ -1630,6 +1630,7 @@ void pqDsmViewerPanel::onPostAccept()
   if (this->Internals->acceptIsPlay->isChecked()) {
     this->onPlay();
   }
+  this->InNotified.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::ExportData(bool force)
