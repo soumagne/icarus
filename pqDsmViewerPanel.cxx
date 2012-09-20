@@ -1170,7 +1170,7 @@ void pqDsmViewerPanel::CreateTablePipeline()
   
   // Populate a string list with each name we have read from the template
   vtkSmartPointer<vtkSMProxy> StringList = pm->NewProxy("stringlists", "StringList");
-  std::vector<std::string> &list = this->Internals->SteeringParser->GetTableStrings();
+  const std::vector<std::string> &list = this->Internals->SteeringParser->GetTableStrings();
   for (size_t i=0; i<list.size(); i++) {
     pqSMAdaptor::setElementProperty(
       StringList->GetProperty("AddString"), list[i].c_str());
