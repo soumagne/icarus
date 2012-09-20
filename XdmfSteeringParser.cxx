@@ -72,6 +72,7 @@ XdmfSteeringParser::XdmfSteeringParser()
   this->HasXdmf    = false;
   this->HasH5Part  = false;
   this->HasNetCDF  = false;
+  this->HasTable  = false;
 }
 //----------------------------------------------------------------------------
 XdmfSteeringParser::~XdmfSteeringParser()
@@ -140,6 +141,20 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   this->HasNetCDF = (netCDFNode!=NULL);
 
   //////////////////////////////////////////////////////////////////////
+  // Table
+  //////////////////////////////////////////////////////////////////////
+  XdmfXmlNode graphNode = this->ConfigDOM->FindElement("Table", 0, vizNode);
+  this->HasTable = (graphNode!=NULL);
+  if (this->HasTable) {
+    this->TableName = GetXMLString(this->ConfigDOM->GetAttribute(graphNode, "Name"));
+    int numA = this->ConfigDOM->GetNumberOfChildren(graphNode);
+    for (int i=0; i<numA; i++) {
+      XdmfXmlNode subNode = this->ConfigDOM->GetChild(i,graphNode);
+      TableStrings.push_back(GetXMLString(this->ConfigDOM->GetAttribute(subNode,"Name")));
+    }
+  }
+  
+  //////////////////////////////////////////////////////////////////////
   // H5Part
   //////////////////////////////////////////////////////////////////////
   XdmfXmlNode h5PartNode = this->ConfigDOM->FindElement("H5Part", 0, vizNode);
@@ -164,6 +179,14 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
   //////////////////////////////////////////////////////////////////////
   XdmfXmlNode xdmfNode = this->ConfigDOM->FindElement("Xdmf", 0, vizNode);
   this->HasXdmf = (xdmfNode!=NULL);
+/*
+        <Topology TopologyType="Polyvertex">
+          <DataItem Format="XML" Dimensions="1 1" NumberType="Float">0</DataItem>
+        </Topology>
+        <Geometry GeometryType="XYZ">
+          <DataItem Format="XML" Dimensions="3" NumberType="Float" Precision="4">0.0 0.0 0.0</DataItem>
+        </Geometry>
+*/
 
   if (this->HasXdmf) {
     int numberOfGrids = this->ConfigDOM->FindNumberOfElements("Grid", xdmfNode);

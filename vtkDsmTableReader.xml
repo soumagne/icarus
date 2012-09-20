@@ -1,0 +1,80 @@
+<ServerManagerConfiguration>
+
+  <ProxyGroup name="stringlists">
+    <Proxy name="StringList" class="vtkStringList">
+      <StringVectorProperty name="AddString"
+       command="AddString"
+       number_of_elements="1">
+      </StringVectorProperty>
+    </Proxy>
+  </ProxyGroup>
+
+  
+  <ProxyGroup name="sources">
+
+    <!-- ============================================================= -->
+    <!-- vtkDsmTableReader                                                        -->
+    <!-- ============================================================= -->
+    <SourceProxy
+     name="TableDsm"
+     class="vtkDsmTableReader">
+      <!--      
+      base_proxygroup="sources"
+      base_proxyname="H5Part">
+-->
+
+      <Documentation>
+        Reader for DSM enabled H5Part (HDF5) particle files.
+      </Documentation>
+
+      <ProxyProperty
+         name="DsmManager"
+         command="SetDsmManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers"
+                 name="DsmManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+      <ProxyProperty
+         name="NameStrings"
+         command="SetNameStrings">
+      </ProxyProperty>
+
+      <CommandProperty
+        name="FileModified"
+        label="touch file"
+        command="SetFileModified"
+        si_class="vtkSIProperty">
+      </CommandProperty>
+
+      <DoubleVectorProperty
+        name="TimestepValues"
+        information_only="1">
+        <TimeStepsInformationHelper/>
+      </DoubleVectorProperty>
+
+      <DoubleVectorProperty
+            name="TimeRange"
+            information_only="1" >
+        <TimeRangeInformationHelper/>
+      </DoubleVectorProperty>
+
+      <Hints>
+        <Property name="DsmManager" show="0"/>
+        <Property name="FileModified" show="0"/>
+        <!-- View can be used to specify the preferred view for the proxy -->
+        <View type="XYChartView" />
+        <Plotable />
+      </Hints>
+
+    </SourceProxy>
+
+  </ProxyGroup>
+</ServerManagerConfiguration>

@@ -112,6 +112,7 @@ public:
     this->XdmfReader         = NULL;
     this->H5PartReader       = NULL;
     this->NetCDFReader       = NULL;
+    this->TableReader    = NULL;
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
@@ -192,6 +193,7 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>         XdmfReader;
   vtkSmartPointer<vtkSMSourceProxy>         H5PartReader;
   vtkSmartPointer<vtkSMSourceProxy>         NetCDFReader;
+  vtkSmartPointer<vtkSMSourceProxy>         TableReader;
   bool                                      CreatePipelines;
   int                                       CurrentTimeStep; // 0,1,2,3...
   double                                    PipelineTimeRange[2]; // declared at startup usually
@@ -992,6 +994,10 @@ void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow)
       vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
       vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimestepValues").Set(this->Internals->PipelineTime);
     }
+    if (this->Internals->SteeringParser->GetHasTable() && this->Internals->TableReader) {
+      vtkSMPropertyHelper(this->Internals->TableReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+      vtkSMPropertyHelper(this->Internals->TableReader, "TimestepValues").Set(this->Internals->PipelineTime);
+    }
 
     vtkSMProxy *sp = scene->getProxy();
     if (sp && sp->IsA("vtkSMAnimationSceneProxy")) {
@@ -1149,6 +1155,44 @@ void pqDsmViewerPanel::UpdateH5PartPipeline()
   this->Internals->H5PartReader->UpdatePipeline(this->Internals->PipelineTime);
 }
 //-----------------------------------------------------------------------------
+// Table
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::CreateTablePipeline()
+{
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+  this->Internals->TableReader.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "TableDsm")));
+  // Connect our DSM manager to the reader (Xdmf)
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->TableReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+  );
+  this->Internals->TableReader->UpdateProperty("DsmManager");
+  
+  // Populate a string list with each name we have read from the template
+  vtkSmartPointer<vtkSMProxy> StringList = pm->NewProxy("stringlists", "StringList");
+  std::vector<std::string> &list = this->Internals->SteeringParser->GetTableStrings();
+  for (size_t i=0; i<list.size(); i++) {
+    pqSMAdaptor::setElementProperty(
+      StringList->GetProperty("AddString"), list[i].c_str());
+    StringList->UpdateProperty("AddString");
+  }
+  // Pass the list into the reader
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->TableReader->GetProperty("NameStrings"), StringList);
+  this->Internals->TableReader->UpdateProperty("NameStrings");
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateTableInformation()
+{
+  this->Internals->TableReader->InvokeCommand("FileModified");
+  this->GetPipelineTimeInformation(this->Internals->TableReader);
+}
+//-----------------------------------------------------------------------------
+void pqDsmViewerPanel::UpdateTablePipeline()
+{
+  this->Internals->TableReader->UpdatePipeline(this->Internals->PipelineTime);
+}
+//-----------------------------------------------------------------------------
 // netCDF
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::CreateNetCDFPipeline()
@@ -1238,6 +1282,23 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
 //  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 
   //
+  // If Table present, update the pipeline
+  //
+  if (this->Internals->SteeringParser->GetHasTable()) {
+    // create pipeline if needed
+    if (this->Internals->CreatePipelines) { 
+      this->CreateTablePipeline();
+    }
+    // update information
+    this->UpdateTableInformation();
+    // update data
+    this->UpdateTablePipeline();
+    if (this->Internals->CreatePipelines) { 
+      this->ShowPipelineInGUI(this->Internals->TableReader, this->Internals->SteeringParser->GetTableName().c_str(), 0);
+    }
+  }
+
+  //
   // If Xdmf present, update the pipeline 
   //
   if (this->Internals->SteeringParser->GetHasXdmf()) {
@@ -1304,36 +1365,6 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   // 
   ++this->Internals->CurrentTimeStep;
 
-/*
-  if (this->Internals->useTimeInfo->isChecked()) {
-    double tval[1] = { -1.0 };
-    vtkSMPropertyHelper time(this->Internals->DsmProxyHelper, "TimeInfo");
-    time.UpdateValueFromServer();
-    time.Get(tval,1);
-    if (tval[0]!=-1.0) {
-      // Increment the time as new steps appear.
-      // @TODO : To be replaced with GetTimeStep from reader
-      // @Warning : We must set any new time on the main paraview animation timekeeper before triggering
-      // updates, otherwise we get mistmatched 'UpdateTime' messages which can in turn trigger erroneous updates later
-      QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-      foreach (pqAnimationScene *scene, scenes) {
-        this->Internals->CurrentTimeStep = current_time;
-        pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-        timekeeper->setTime(tval[0]);
-        scene->setAnimationTime(tval[0]);
-        //      QPair<double, double> trange = timekeeper->getTimeRange();
-        //      pqSMAdaptor::setElementProperty(scene->getProxy()->GetProperty("AnimationTime"), current_time);
-        //      scene->getProxy()->UpdateProperty("AnimationTime");
-      }
-    }
-  } else {
-    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-    foreach (pqAnimationScene *scene, scenes) {
-      scene->setAnimationTime(current_time);
-      this->Internals->CurrentTimeStep = current_time;
-    }
-  }
-*/
 
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
 

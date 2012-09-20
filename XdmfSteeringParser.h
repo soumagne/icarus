@@ -115,6 +115,14 @@ public:
   //
   bool GetHasNetCDF() { return this->HasNetCDF; }  
   //
+  //
+  bool GetHasTable() { return this->HasTable; }  
+  std::vector<std::string> GetTableStrings() {
+    return this->TableStrings;
+  }
+  std::string GetTableName() { return this->TableName; }
+  //
+  //
 protected:
   XdmfDOM             *ConfigDOM;
   std::string          XdmfXmlDoc;
@@ -126,8 +134,11 @@ protected:
   bool                     HasXdmf;
   bool                     HasH5Part;
   bool                     HasNetCDF;
+  bool                     HasTable;
+  std::string              TableName;
   //
   std::vector<std::string> H5PartStrings;
+  std::vector<std::string> TableStrings;
 };
 
 #endif /* __XdmfSteeringParser_h */

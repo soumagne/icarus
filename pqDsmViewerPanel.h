@@ -117,6 +117,10 @@ protected:
   void UpdateNetCDFPipeline();
   void UpdateNetCDFInformation();
   //
+  void CreateTablePipeline();
+  void UpdateTableInformation();
+  void UpdateTablePipeline();
+  //
   void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
   void GetPipelineTimeInformation(vtkSMSourceProxy *source);
   void SetTimeAndRange(double range[2], double timenow);
