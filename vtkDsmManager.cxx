@@ -197,7 +197,6 @@ void* vtkDsmManager::NotificationThread()
   this->DsmManagerInternals->SignalNotifThreadCreated();
   this->WaitForConnection();
   notification = H5FD_DSM_NOTIFY_CONNECTED;
-  std::cout <<"Not sizes " << sizeof(notification) << std::endl;
   this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
 
   while (this->WaitForUnlock(&notification) != H5FD_DSM_FAIL) {
