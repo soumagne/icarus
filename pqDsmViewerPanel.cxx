@@ -963,49 +963,53 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow)
+void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow, bool GUIupdate)
 {
   this->Internals->PipelineTimeRange[0] = range[0];
   this->Internals->PipelineTimeRange[1] = range[1];
   this->Internals->PipelineTime         = timenow;
-  QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
-  foreach (pqAnimationScene *scene, scenes) {
-    pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
-    vtkSMProxy *tkp = timekeeper->getProxy();
-    if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
-      vtkSMPropertyHelper(timekeeper->getProxy(), "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-      vtkSMPropertyHelper(timekeeper->getProxy(), "Time").Set(this->Internals->PipelineTime);
-    }
-    // Force the information about time to lie in our desired ranges - this prevents the animation view
-    // from resetting back to some {0,1} interval etc.
-    if (this->Internals->SteeringParser->GetHasXdmf() && this->Internals->XdmfReader) {
-      vtkSMPropertyHelper(this->Internals->XdmfReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-      vtkSMPropertyHelper(this->Internals->XdmfReader, "TimestepValues").Set(this->Internals->PipelineTime);
-    }
-    if (this->Internals->SteeringParser->GetHasH5Part() && this->Internals->H5PartReader) {
-      vtkSMPropertyHelper(this->Internals->H5PartReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-      vtkSMPropertyHelper(this->Internals->H5PartReader, "TimestepValues").Set(this->Internals->PipelineTime);
-    }
-    if (this->Internals->SteeringParser->GetHasNetCDF() && this->Internals->NetCDFReader) {
-      vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-      vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimestepValues").Set(this->Internals->PipelineTime);
-    }
-    if (this->Internals->SteeringParser->GetHasTable() && this->Internals->TableReader) {
-      vtkSMPropertyHelper(this->Internals->TableReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-      vtkSMPropertyHelper(this->Internals->TableReader, "TimestepValues").Set(this->Internals->PipelineTime);
-    }
+  if (GUIupdate) {
+    QList<pqAnimationScene*> scenes = pqApplicationCore::instance()->getServerManagerModel()->findItems<pqAnimationScene *>();
+    foreach (pqAnimationScene *scene, scenes) {
+      pqTimeKeeper* timekeeper = scene->getServer()->getTimeKeeper();
+      timekeeper->blockSignals(true);
+      vtkSMProxy *tkp = timekeeper->getProxy();
+      if (tkp && tkp->IsA("vtkSMTimeKeeperProxy")) {
+        vtkSMPropertyHelper(timekeeper->getProxy(), "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(timekeeper->getProxy(), "Time").Set(this->Internals->PipelineTime);
+      }
+      // Force the information about time to lie in our desired ranges - this prevents the animation view
+      // from resetting back to some {0,1} interval etc.
+      if (this->Internals->SteeringParser->GetHasXdmf() && this->Internals->XdmfReader) {
+        vtkSMPropertyHelper(this->Internals->XdmfReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(this->Internals->XdmfReader, "TimestepValues").Set(this->Internals->PipelineTime);
+      }
+      if (this->Internals->SteeringParser->GetHasH5Part() && this->Internals->H5PartReader) {
+        vtkSMPropertyHelper(this->Internals->H5PartReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(this->Internals->H5PartReader, "TimestepValues").Set(this->Internals->PipelineTime);
+      }
+      if (this->Internals->SteeringParser->GetHasNetCDF() && this->Internals->NetCDFReader) {
+        vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(this->Internals->NetCDFReader, "TimestepValues").Set(this->Internals->PipelineTime);
+      }
+      if (this->Internals->SteeringParser->GetHasTable() && this->Internals->TableReader) {
+        vtkSMPropertyHelper(this->Internals->TableReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(this->Internals->TableReader, "TimestepValues").Set(this->Internals->PipelineTime);
+      }
 
-    vtkSMProxy *sp = scene->getProxy();
-    if (sp && sp->IsA("vtkSMAnimationSceneProxy")) {
-      vtkSMPropertyHelper(scene->getProxy(), "StartTime").Set(this->Internals->PipelineTimeRange[0]);
-      vtkSMPropertyHelper(scene->getProxy(), "EndTime").Set(this->Internals->PipelineTimeRange[1]);
-      vtkSMPropertyHelper(scene->getProxy(), "AnimationTime").Set(this->Internals->PipelineTime);
+      vtkSMProxy *sp = scene->getProxy();
+      if (sp && sp->IsA("vtkSMAnimationSceneProxy")) {
+        vtkSMPropertyHelper(scene->getProxy(), "StartTime").Set(this->Internals->PipelineTimeRange[0]);
+        vtkSMPropertyHelper(scene->getProxy(), "EndTime").Set(this->Internals->PipelineTimeRange[1]);
+        vtkSMPropertyHelper(scene->getProxy(), "AnimationTime").Set(this->Internals->PipelineTime);
+      }
     }
   }
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmInformation()
 {  
+  this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
   double range[2] = { -1.0, -1.0 };
   vtkSMPropertyHelper timerange(this->Internals->DsmProxyHelper, "TimeRangeInfo");
@@ -1016,6 +1020,7 @@ void pqDsmViewerPanel::UpdateDsmInformation()
     std::cout << "Time Range updated to {" << range[0] << "," << range[1] << "}" << std::endl;
   }
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+  this->DSMLocked.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
@@ -1271,11 +1276,9 @@ void pqDsmViewerPanel::UpdateXdmfTemplate()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
+  // lock the DSM 
+  this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
-  //
-  // H5FD_dsm_dump();
-  //
-//  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
 
   //
   // If Table present, update the pipeline
@@ -1357,22 +1360,21 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   this->Internals->CreatePipelines = this->Internals->storeDsmContents->isChecked();
 
   //
-  // Update time
-  // 
-  ++this->Internals->CurrentTimeStep;
-
-
+  // Allow messages on the accept which were blocked during an update.
+  //
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+  this->DSMLocked.unlock();
 
   //
-  // ParaView automatically updates its time controls based on the declared TIME_RANGE 
-  // or TIME_STEPS from filters. When 'live' they don't know about the real TIME_RANGE
-  // so we reset it on every update.
+  // If our pipelines updated and changed time, set the value and set GUI updates = true
+  // to reload the animation views etc.
   //
-//  this->SetTimeAndRange(this->Internals->PipelineTimeRange, this->Internals->PipelineTime);
+  ++this->Internals->CurrentTimeStep;
+  this->SetTimeAndRange(this->Internals->PipelineTimeRange, this->Internals->PipelineTime, true);
 
   //
-  // Trigger a render : if changed, everything should update as usual
+  // Update events which take place after updates
+  //
   if (pqActiveObjects::instance().activeView())
   {
     pqActiveObjects::instance().activeView()->render();
@@ -1463,7 +1465,6 @@ void pqDsmViewerPanel::onNewNotificationSocket()
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onNotified()
 {
-  this->InNotified.lock();
   int error = 0;
   unsigned int notificationCode;
   int bytes = -1;
@@ -1521,7 +1522,6 @@ void pqDsmViewerPanel::onNotified()
   te_notif = vtksys::SystemTools::GetTime ();
   std::cout << "Notification processed in " << te_notif - ts_notif << " s" << std::endl;
 #endif
-  this->InNotified.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
@@ -1603,10 +1603,10 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onPreAccept()
 {
-  this->InNotified.lock();
-
   // We must always open the DSM in parallel before doing reads or writes
+  this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
+
   // But writing steering commands is only done on one process
   // so switch to serial mode before 'accept' updates values
   std::cout << " Setting Serial mode " << std::endl;
@@ -1621,16 +1621,16 @@ void pqDsmViewerPanel::onPostAccept()
   std::cout << " Clearing Serial mode " << std::endl;
   pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 0);
   //
-  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
-  //
-  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
-  this->ExportData(false);
-  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+  // close before reopening if this code is ever used again
+//  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
+//  this->ExportData(false);
+//  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
   // 
   if (this->Internals->acceptIsPlay->isChecked()) {
     this->onPlay();
   }
-  this->InNotified.unlock();
+  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
+  this->DSMLocked.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::ExportData(bool force)
@@ -1707,3 +1707,7 @@ void pqDsmViewerPanel::ExportData(bool force)
   }
   iter->Delete();
 */
+
+  //
+  // H5FD_dsm_dump();
+  //
