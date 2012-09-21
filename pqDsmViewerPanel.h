@@ -27,6 +27,8 @@
 
 #include <QDockWidget>
 #include <QMutex>
+#include <set>
+
 // Core Qt 
 class QTreeWidgetItem;
 // Servermanager and views
@@ -125,6 +127,7 @@ protected:
   void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
   void GetPipelineTimeInformation(vtkSMSourceProxy *source);
   void SetTimeAndRange(double range[2], double timenow, bool GUIupdate=false);
+  void GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pqView*> &viewlist);
 
   /// Generate objects for steering
   void ParseXMLTemplate(const char *filepath);

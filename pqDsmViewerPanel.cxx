@@ -1274,11 +1274,31 @@ void pqDsmViewerPanel::UpdateXdmfTemplate()
   }
 }
 //-----------------------------------------------------------------------------
+void pqDsmViewerPanel::GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pqView*> &viewlist)
+{
+  // find the pipeline associated with this source
+  pqPipelineSource* pqsource = pqApplicationCore::instance()->
+    getServerManagerModel()->findItem<pqPipelineSource*>(source);
+  // and find all views it is present in
+  if (pqsource) {
+    foreach (pqView *view, pqsource->getViews()) {
+      pqDataRepresentation *repr = pqsource->getRepresentation(0, view);
+      if (repr && repr->isVisible()) {
+        // add them to the list
+        viewlist.insert(view);
+      }
+    }
+  }
+}
+//-----------------------------------------------------------------------------
 void pqDsmViewerPanel::UpdateDsmPipeline()
 {
   // lock the DSM 
   this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
+
+  // there may be multiple views to update, so build a list
+  std::set<pqView*> viewlist;
 
   //
   // If Table present, update the pipeline
@@ -1295,6 +1315,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     if (this->Internals->CreatePipelines) { 
       this->ShowPipelineInGUI(this->Internals->TableReader, this->Internals->SteeringParser->GetTableName().c_str(), 0);
     }
+    // we will need to update all views for this object
+    this->GetViewsForPipeline(this->Internals->TableReader, viewlist);
   }
 
   //
@@ -1318,6 +1340,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
       this->ShowPipelineInGUI(this->Internals->XdmfViewer->PipelineEnd, "Xdmf-Dsm", 0);
       vtkCustomPipelineHelper::UnRegisterCustomFilters();
     }
+    // we will need to update all views for this object
+    this->GetViewsForPipeline(this->Internals->XdmfViewer->PipelineEnd, viewlist);
   }
 
   //
@@ -1335,6 +1359,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     if (this->Internals->CreatePipelines) { 
       this->ShowPipelineInGUI(this->Internals->H5PartReader, "H5Part-Dsm", 0);
     }
+    // we will need to update all views for this object
+    this->GetViewsForPipeline(this->Internals->H5PartReader, viewlist);
   }
 
   //
@@ -1352,6 +1378,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
     if (this->Internals->CreatePipelines) { 
       this->ShowPipelineInGUI(this->Internals->NetCDFReader, "NetCDF-Dsm", 0);
     }
+    // we will need to update all views for this object
+    this->GetViewsForPipeline(this->Internals->NetCDFReader, viewlist);
   }
 
   //
@@ -1373,20 +1401,22 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   this->SetTimeAndRange(this->Internals->PipelineTimeRange, this->Internals->PipelineTime, true);
 
   //
+  // Update all views which are associated with out pipelines
+  //
+  for (std::set<pqView*>::iterator it=viewlist.begin(); it!=viewlist.end(); ++it) {
+    (*it)->render();
+  }
+  //
   // Update events which take place after updates
   //
-  if (pqActiveObjects::instance().activeView())
-  {
-    pqActiveObjects::instance().activeView()->render();
-    if (this->Internals->autoSaveImage->isChecked()) {
-      this->SaveSnapshot();
-    }
-    if (this->Internals->autoExport->isChecked()) {
-      this->ExportData(true);
-    }
-    if (this->Internals->runScript->isChecked()) {
-      this->RunScript();
-    }
+  if (this->Internals->autoSaveImage->isChecked()) {
+    this->SaveSnapshot();
+  }
+  if (this->Internals->autoExport->isChecked()) {
+    this->ExportData(true);
+  }
+  if (this->Internals->runScript->isChecked()) {
+    this->RunScript();
   }
 }
 //-----------------------------------------------------------------------------
