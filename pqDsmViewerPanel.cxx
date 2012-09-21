@@ -540,10 +540,10 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
 
     // before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(preaccept()), this, SLOT(onPreAccept()), Qt::QueuedConnection);
+      SIGNAL(preaccept()), this, SLOT(onPreAccept()));
 
     this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(postaccept()), this, SLOT(onPostAccept()), Qt::QueuedConnection);
+      SIGNAL(postaccept()), this, SLOT(onPostAccept()));
 
 
     //// before changes are accepted
