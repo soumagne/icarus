@@ -56,9 +56,11 @@
 #include "pqDisplayPolicy.h"
 #include "pqAnimationScene.h"
 #include "pqTimeKeeper.h"
+#include "pqAnimationViewWidget.h"
 //
 #include "pqDataExportWidget.h"
 //
+#include "pqCoreUtilities.h"
 #include "pq3DWidget.h"
 //
 #include "ui_pqDsmViewerPanel.h"
@@ -138,6 +140,18 @@ public:
     this->DsmProxyHelper.TakeReference(pm->NewProxy("icarus_helpers", "DsmProxyHelper"));
     this->DsmProxyHelper->UpdatePropertyInformation();
     this->DsmProxyHelper->UpdateVTKObjects();
+    
+    //
+    // wrap the DsmProxyHelper object in a pqProxy so that we can use it in our object inspector
+    if (this->pqDsmProxyHelper) {
+      delete this->pqDsmProxyHelper;
+    }
+    pm->RegisterProxy("layouts", "DsmProxyHelper", this->DsmProxyHelper);
+    // this->DsmProxyHelper->FastDelete();
+    pqServerManagerModel* smmodel =
+      pqApplicationCore::instance()->getServerManagerModel();
+    this->pqDsmProxyHelper = smmodel->findItem<pqProxy*>(this->DsmProxyHelper);
+   
     //
     this->TransformProxy.TakeReference(pm->NewProxy("extended_sources", "Transform3"));
 //    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
@@ -159,15 +173,11 @@ public:
     this->DsmProxyHelper->UpdateVTKObjects();
 
     //
-    // wrap the DsmProxyHelper object in a pqProxy so that we can use it in our object inspector
-    if (this->pqDsmProxyHelper) {
-      delete this->pqDsmProxyHelper;
-    }
-    this->pqDsmProxyHelper = new pqProxy("icarus_helpers", "DsmProxyHelper",
-      this->DsmProxyHelper, pqActiveObjects::instance().activeServer());
-
-    this->DsmProxyHelper->UpdateVTKObjects();
-
+    // Add DSM controls to animation view
+    //
+    QWidget *mainWindow = pqCoreUtilities::mainWidget();
+    pqAnimationViewWidget *pqaw = mainWindow->findChild<pqAnimationViewWidget*>("animationView");
+    pqaw->addCustomProxy("DSM", this->DsmProxyHelper);
   }
   //
   bool DsmProxyCreated() { return this->DsmProxy!=NULL; }

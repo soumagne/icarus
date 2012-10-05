@@ -175,6 +175,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       // }
       // std::cout << ");" << std::endl;
       helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, ival);
+      helper->Modified();
       return 1;
     }
 
@@ -195,6 +196,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       // }
       // std::cout << ");" << std::endl;
       helper->GetDsmManager()->SetSteeringValues(param_name.c_str(), nArgs, dval);
+      helper->Modified();
       return 1;
     }
 
@@ -209,7 +211,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       msg.GetArgument(0, nArgs-1, &text); 
       // std::cout << text << ")" << std::endl;
       helper->GetSteeringWriter()->SetWriteDescription(text);
-      // helper->WriteDataSetArrayData(text);
+      helper->WriteDataSetArrayData(text);
       return 1;
     }
 
