@@ -114,7 +114,8 @@ public:
     this->XdmfReader         = NULL;
     this->H5PartReader       = NULL;
     this->NetCDFReader       = NULL;
-    this->TableReader    = NULL;
+    this->TableReader        = NULL;
+
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
@@ -487,17 +488,19 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
     // Get the XML for our Helper proxy and send it to the DSM manager
     // it will register the XML with the proxt manager on the server
     std::string HelperProxyXML = this->Internals->SteeringParser->GetHelperProxyString();
-    // register proxy on the server
-    pqSMAdaptor::setElementProperty(
-      this->Internals->DsmProxy->GetProperty("HelperProxyXMLString"), HelperProxyXML.c_str());
-    this->Internals->DsmProxy->UpdateProperty("HelperProxyXMLString");
+    if (HelperProxyXML.size()>0) {
+      // register proxy on the server
+      pqSMAdaptor::setElementProperty(
+        this->Internals->DsmProxy->GetProperty("HelperProxyXMLString"), HelperProxyXML.c_str());
+      this->Internals->DsmProxy->UpdateProperty("HelperProxyXMLString");
 
-//    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
+  //    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 
-    // and register on the client too 
-    vtkDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
-    // now create an actual proxy
-    this->Internals->CreateDsmHelperProxy();
+      // and register on the client too 
+      vtkDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
+      // now create an actual proxy
+      this->Internals->CreateDsmHelperProxy();
+    }
   }
 
   //
@@ -1058,7 +1061,7 @@ void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::CreateXdmfPipeline()
 {
-  this->Internals->XdmfViewer = vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock");
+  this->Internals->XdmfViewer.TakeReference(vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock"));
   // Connect our DSM manager to the reader (Xdmf)
   pqSMAdaptor::setProxyProperty(
     this->Internals->XdmfViewer->Pipeline->GetProperty("DsmManager"), this->Internals->DsmProxy
@@ -1313,7 +1316,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   // If Table present, update the pipeline
   //
-  if (this->Internals->SteeringParser->GetHasTable()) {
+  if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasTable()) {
     // create pipeline if needed
     if (this->Internals->CreatePipelines) { 
       this->CreateTablePipeline();
@@ -1332,7 +1335,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   // If Xdmf present, update the pipeline 
   //
-  if (this->Internals->SteeringParser->GetHasXdmf()) {
+  if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasXdmf()) {
     if (this->Internals->CreatePipelines) { 
       // XdmfReader+ExtractBlock filter is a custom XML filter description
       vtkCustomPipelineHelper::RegisterCustomFilters();
@@ -1357,7 +1360,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   // If H5Part present, update the pipeline 
   //
-  if (this->Internals->SteeringParser->GetHasH5Part()) {
+  if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasH5Part()) {
     // create pipeline if needed
     if (this->Internals->CreatePipelines) { 
       this->CreateH5PartPipeline();
@@ -1376,7 +1379,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   //
   // If netCDF present, update the pipeline
   //
-  if (this->Internals->SteeringParser->GetHasNetCDF()) {
+  if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasNetCDF()) {
     // create pipeline if needed
     if (this->Internals->CreatePipelines) { 
       this->CreateNetCDFPipeline();
