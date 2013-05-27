@@ -47,7 +47,7 @@ class VTK_EXPORT vtkSteeringWriter : public vtkAbstractParticleWriter
 {
 public:
   static vtkSteeringWriter *New();
-  vtkTypeRevisionMacro(vtkSteeringWriter,vtkAbstractParticleWriter);
+  vtkTypeMacro(vtkSteeringWriter,vtkAbstractParticleWriter);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
   // Description:

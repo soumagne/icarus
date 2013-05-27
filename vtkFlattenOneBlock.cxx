@@ -32,7 +32,6 @@
 #include "vtkDataObjectTypes.h"
 #include "vtkObjectFactory.h"
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkFlattenOneBlock, "$Revision: 1.2 $");
 vtkStandardNewMacro(vtkFlattenOneBlock);
 //----------------------------------------------------------------------------
 vtkFlattenOneBlock::vtkFlattenOneBlock()
@@ -102,7 +101,7 @@ int vtkFlattenOneBlock::RequestDataObject(
     newOutput = vtkDataSet::SafeDownCast(vtkDataObjectTypes::NewDataObject(this->DefaultNullDataType));
   }
   if (newOutput) {
-    newOutput->SetPipelineInformation(outInfo);
+    outInfo->Set(vtkDataObject::DATA_OBJECT(),newOutput);
     newOutput->Delete();
     this->GetOutputPortInformation(0)->Set(
       vtkDataObject::DATA_EXTENT_TYPE(), newOutput->GetExtentType());

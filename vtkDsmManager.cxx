@@ -34,8 +34,9 @@
 #include "vtkPVSessionServer.h"
 #include "vtkPVSessionCore.h"
 //
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
  #include "vtkMPI.h"
  #include "vtkMPIController.h"
  #include "vtkMPICommunicator.h"
@@ -54,7 +55,6 @@
 #include "H5FDdsm.h"
 
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkDsmManager, "$Revision$");
 vtkStandardNewMacro(vtkDsmManager);
 vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
 
@@ -172,11 +172,11 @@ void vtkDsmManager::CheckMPIController()
       //
       if (rank == 0) {
         if (provided != MPI_THREAD_MULTIPLE) {
-          vtkstd::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
-            << "MPI distribution with threads enabled" << vtkstd::endl;
+          std::cout << "MPI_THREAD_MULTIPLE not set, you may need to recompile your "
+            << "MPI distribution with threads enabled" << std::endl;
         }
         else {
-          vtkstd::cout << "MPI_THREAD_MULTIPLE is OK (DSM override)" << vtkstd::endl;
+          std::cout << "MPI_THREAD_MULTIPLE is OK (DSM override)" << std::endl;
         }
       }
     }
@@ -268,14 +268,14 @@ int vtkDsmManager::Create()
     int r, tryConnect = 0;
     this->DsmManagerInternals->NotificationSocket = vtkSmartPointer<vtkClientSocket>::New();
     do {
-      vtkstd::cout << "Creating notification socket to "
+      std::cout << "Creating notification socket to "
           << pvClientHostName << " on port " << notificationPort << "...";
       r = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName,
           notificationPort);
       if (r == 0) {
-        vtkstd::cout << "Connected" << vtkstd::endl;
+        std::cout << "Connected" << std::endl;
       } else {
-        vtkstd::cout << "Failed to connect" << vtkstd::endl;
+        std::cout << "Failed to connect" << std::endl;
         tryConnect++;
 #ifdef _WIN32
         Sleep(1000);

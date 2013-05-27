@@ -42,7 +42,7 @@ class VTK_EXPORT vtkDsmManager : public vtkObject
 {
 public:
   static vtkDsmManager *New();
-  vtkTypeRevisionMacro(vtkDsmManager,vtkObject);
+  vtkTypeMacro(vtkDsmManager,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   H5FDdsmBuffer *GetDsmBuffer() { return(DsmManager->GetDsmBuffer()); }

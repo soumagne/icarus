@@ -34,8 +34,8 @@
 #endif
 
 #include "vtkStdString.h"
-#include <vtkstd/vector>
-#include <vtkstd/numeric>
+#include <std/vector>
+#include <std/numeric>
 
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkRedistributeBlocksFilter, "$Revision: 1.53 $")
@@ -202,16 +202,16 @@ int vtkRedistributeBlocksFilter::RequestData(
     return 0;
   }
   // 
-  vtkstd::vector<int> BlocksPerProcess(this->UpdateNumPieces);
+  std::vector<int> BlocksPerProcess(this->UpdateNumPieces);
   com->AllGather(&numDataSets, &BlocksPerProcess[0], 1);
-  int totalblocks = vtkstd::accumulate(BlocksPerProcess.begin(), BlocksPerProcess.end(), 0);
-  vtkstd::vector<int> PartialSum(this->UpdateNumPieces+1);
-  vtkstd::partial_sum(BlocksPerProcess.begin(), BlocksPerProcess.end(), PartialSum.begin()+1);
+  int totalblocks = std::accumulate(BlocksPerProcess.begin(), BlocksPerProcess.end(), 0);
+  std::vector<int> PartialSum(this->UpdateNumPieces+1);
+  std::partial_sum(BlocksPerProcess.begin(), BlocksPerProcess.end(), PartialSum.begin()+1);
 
   //
   // Allocate blocks to each process, build a list of who will get what
   //
-  vtkstd::vector<int> Destinations(this->UpdateNumPieces);
+  std::vector<int> Destinations(this->UpdateNumPieces);
   vtkSmartPointer<vtkExtentTranslator> extTran = vtkSmartPointer<vtkExtentTranslator>::New();
     extTran->SetSplitModeToBlock();
     int WholeExtent[6] = { 0, totalblocks, 0, 0, 0, 0 };

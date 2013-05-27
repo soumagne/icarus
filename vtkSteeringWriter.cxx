@@ -33,8 +33,9 @@
 #include "vtkCleanUnstructuredGrid.h"
 #include "vtkTriangleFilter.h"
 //
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPI.h"
   #include "vtkMPIController.h"
   #include "vtkMPICommunicator.h"
@@ -52,7 +53,6 @@
 //
 #include <numeric>
 //----------------------------------------------------------------------------
-vtkCxxRevisionMacro(vtkSteeringWriter, "$Revision$");
 vtkStandardNewMacro(vtkSteeringWriter);
 #ifdef VTK_USE_MPI
 vtkCxxSetObjectMacro(vtkSteeringWriter, DsmManager, vtkDsmManager);
@@ -110,8 +110,8 @@ vtkSmartPointer<vtkDataSet> SW_Copy(vtkDataSet *d) {
   vtkSmartPointer<vtkDataSet> result;
   result.TakeReference(d->NewInstance());
   result->ShallowCopy(d);
-  result->CopyInformation(d);
-  result->SetSource(NULL);
+//  result->CopyInformation(d);
+//  result->SetSource(NULL);
   return result;
 }
 //----------------------------------------------------------------------------
@@ -512,7 +512,7 @@ void vtkSteeringWriter::WriteData()
   if (!grid && input->IsA("vtkPolyData")) {
     vtkSmartPointer<vtkTriangleFilter> triF = vtkSmartPointer<vtkTriangleFilter>::New();
     vtkSmartPointer<vtkCleanUnstructuredGrid> CtoG = vtkSmartPointer<vtkCleanUnstructuredGrid>::New();
-    triF->SetInput(SW_Copy(input));
+    triF->SetInputData(SW_Copy(input));
     CtoG->SetInputConnection(triF->GetOutputPort(0));
     grid = vtkUnstructuredGrid::SafeDownCast(SW_CopyOutput(CtoG, 0));
     input = grid;

@@ -29,8 +29,8 @@ ELSE (ParaView_SOURCE_DIR)
   FIND_PACKAGE(ParaView REQUIRED)
   INCLUDE(${PARAVIEW_USE_FILE})
 ENDIF (ParaView_SOURCE_DIR)
-INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
-INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
+#INCLUDE(${ParaView_BINARY_DIR}/Utilities/Xdmf2/XDMFConfig.cmake)
+#INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
 # Find and Use System libs (only needed on WIN32)
@@ -43,7 +43,7 @@ IF(WIN32 AND MSVC)
   #--------------------------------------------------
   IF (NOT TARGET "H5FDdsm")
     FIND_PACKAGE(H5FDdsm REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/H5FDdsm")
-    INCLUDE_DIRECTORIES(${H5FD_DSM_INCLUDE_DIR})
+    INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
   ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
 ENDIF(WIN32 AND MSVC)
@@ -189,7 +189,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
 )
 
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} XdmfGenerator ${ICARUS_NETCDF_LIBS})
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 XdmfGenerator ${ICARUS_NETCDF_LIBS})
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME} H5FDdsmTools H5FDdsm hdf5)
 
 IF(ICARUS_USE_H5PART)

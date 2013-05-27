@@ -40,7 +40,7 @@ class VTK_EXPORT vtkFlattenOneBlock : public vtkDataSetAlgorithm
 {
 public:
   static vtkFlattenOneBlock *New();
-  vtkTypeRevisionMacro(vtkFlattenOneBlock,vtkDataSetAlgorithm);
+  vtkTypeMacro(vtkFlattenOneBlock,vtkDataSetAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   // Description:

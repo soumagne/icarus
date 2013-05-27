@@ -57,7 +57,7 @@
 //
 #include <stdlib.h>
 #include <sstream>
-#include <vtkstd/algorithm>
+#include <std/algorithm>
 //
 // vtksys : this must go before Xdmf includes
 //
@@ -69,7 +69,9 @@
 //
 // #undef VTK_USE_MPI
 #include "vtkMultiProcessController.h"
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
   #include "vtkMPIController.h"
   #include "vtkMPI.h"
 #endif
@@ -238,7 +240,7 @@ XdmfXmlNode vtkXdmfWriter4::GetStaticGridNode(vtkDataSet *dsinput, bool multiblo
     // first timestep there is no DOM yet
     if (!DOM) return NULL; 
     // if re-using static topology/geometry, then find the first dataset ...
-    vtkstd::stringstream staticXPath;
+    std::stringstream staticXPath;
     const char *XpathPrefix = "/Xdmf/Domain/Grid[@CollectionType=\"Temporal\"]";
     if (multiblock) {
       staticXPath << XpathPrefix << "/Grid[@Name=\"vtkMultiBlock\"][1]" << "/Grid[@Name=\"" << name << "\"]";
@@ -285,8 +287,8 @@ XdmfDOM *vtkXdmfWriter4::CreateXdmfGrid(
   //
   // File/DataGroup name
   //
-  vtkstd::string hdf5name = this->BaseFileName + ".h5";
-  vtkstd::stringstream hdf5group;
+  std::string hdf5name = this->BaseFileName + ".h5";
+  std::stringstream hdf5group;
   hdf5group << "/" << setw(5) << setfill('0') << this->TimeStep;
   if (!UsingPieces) {
     hdf5group << XDMFW_GROUP_SEPARATOR << "Process_" << this->UpdatePiece;
@@ -387,10 +389,10 @@ XdmfDOM *vtkXdmfWriter4::AddGridToCollection(XdmfDOM *cDOM, XdmfDOM *block)
   return cDOM;
 }
 //----------------------------------------------------------------------------
-vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *name, int index)
+std::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *name, int index)
 {
   vtkXDRDebug("MakeGridName");
-  vtkstd::stringstream temp1, temp2;
+  std::stringstream temp1, temp2;
   if (name) {
     temp1 << name;
   }
@@ -403,8 +405,8 @@ vtkstd::string vtkXdmfWriter4::MakeGridName(vtkDataSet *dataset, const char *nam
   if (index>=0) {
 //    temp1 << "_B_" << index;
   }
-  temp1 << vtkstd::ends;
-  vtkstd::string gridname = name ? name : temp1.str().c_str();
+  temp1 << std::ends;
+  std::string gridname = name ? name : temp1.str().c_str();
   return gridname;
 }
 //----------------------------------------------------------------------------
@@ -448,7 +450,7 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 
       // Add the Time key to xml
       if (this->TemporalCollection != 0) {
-        vtkstd::stringstream temp;
+        std::stringstream temp;
         temp << time;
         XdmfXmlNode timeNode = spatialDOM->InsertFromString(spatialGrid, "<Time />");
         spatialDOM->Set(timeNode, "TimeType", "Single");
@@ -467,7 +469,7 @@ void vtkXdmfWriter4::WriteOutputXML(XdmfDOM *outputDOM, XdmfDOM *timestep, doubl
 
       // Add the Time key to xml
       if (this->TemporalCollection != 0) {
-        vtkstd::stringstream temp;
+        std::stringstream temp;
         temp << time;
         XdmfXmlNode timeNode = timestep->InsertFromString(grid, "<Time />");
         timestep->Set(timeNode, "TimeType", "Single");
@@ -556,7 +558,7 @@ int vtkXdmfWriter4::RequestData(
                   
   if (dsinput) {
     bool StaticFlag = false;
-    vtkstd::string name = this->MakeGridName(dsinput, NULL, -1);
+    std::string name = this->MakeGridName(dsinput, NULL, -1);
     staticnode = this->GetStaticGridNode(dsinput, false, outputDOM, name.c_str(), StaticFlag);
     vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
     timeStepDOM = this->CreateXdmfGrid(dsinput, name.c_str(), -1, 0.0, &helper);    
@@ -572,7 +574,7 @@ int vtkXdmfWriter4::RequestData(
       bool StaticFlag = false;
       if (dsinput) {
         const char *bname = mbinput->GetMetaData( iter )->Get( vtkCompositeDataSet::NAME());
-        vtkstd::string name = this->MakeGridName(dsinput, bname, index);
+        std::string name = this->MakeGridName(dsinput, bname, index);
         staticnode = this->GetStaticGridNode(dsinput, true, outputDOM, name.c_str(), StaticFlag);
         vtkXW2NodeHelp helper(outputDOM, staticnode, StaticFlag);
         std::cout << "Adding block by index " << index << std::endl;

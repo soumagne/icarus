@@ -43,21 +43,21 @@
 #include "vtkMPIController.h"
 #endif
 
-#include <vtkstd/vector>
+#include <std/vector>
 
 vtkCxxRevisionMacro(vtkSubdivideBlocksFilter, "$Revision: 1.53 $")
 
 vtkStandardNewMacro(vtkSubdivideBlocksFilter)
 
-#include <vtkstd/set>
-#include <vtkstd/map>
-#include <vtkstd/algorithm>
+#include <std/set>
+#include <std/map>
+#include <std/algorithm>
 
 class vtkSubdivideBlocksFilterSTLCloak
 {
 public:
-  vtkstd::map<int, int> IntMap;
-  vtkstd::multimap<int, int> IntMultiMap;
+  std::map<int, int> IntMap;
+  std::multimap<int, int> IntMultiMap;
 };
 
 //----------------------------------------------------------------------------
@@ -293,7 +293,7 @@ int vtkSubdivideBlocksFilter::SubdivideDataSet(
   //
   // Now extract lists of IDs for each leaf node
   //
-  vtkstd::vector< vtkSmartPointer<vtkIdList> > LeafCellsList;
+  std::vector< vtkSmartPointer<vtkIdList> > LeafCellsList;
   //
 #ifdef BSP
   tree->GetLeafNodeCellInformation(LeafCellsList);
@@ -306,7 +306,7 @@ int vtkSubdivideBlocksFilter::SubdivideDataSet(
   }
 #endif
   //
-  vtkstd::vector< vtkSmartPointer<vtkIdList> >::iterator it=LeafCellsList.begin();
+  std::vector< vtkSmartPointer<vtkIdList> >::iterator it=LeafCellsList.begin();
   for (;it!=LeafCellsList.end(); ++it) {
     vtkSmartPointer<vtkSelectionSource> selection = vtkSmartPointer<vtkSelectionSource>::New();
     vtkSmartPointer<vtkExtractSelection>  extract = vtkSmartPointer<vtkExtractSelection>::New();

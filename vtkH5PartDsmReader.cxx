@@ -31,8 +31,9 @@
 //
 #include "vtkDsmManager.h"
 //
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
  #include "vtkMPI.h"
  #include "vtkMPIController.h"
  #include "vtkMPICommunicator.h"

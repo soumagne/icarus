@@ -37,8 +37,9 @@
 //
 #include "vtkDsmManager.h"
 //
-#include "vtkToolkits.h" // For VTK_USE_MPI
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
  #include "vtkMPI.h"
  #include "vtkMPIController.h"
  #include "vtkMPICommunicator.h"
@@ -156,10 +157,10 @@ int vtkDsmTableReader::RequestData(
   if (this->DsmManager->GetSteeringValues("TimeValue", 1, &currenttime)==H5FD_DSM_SUCCESS) {
     // value set in currenttime
   }
-  else if (outputInfo && outputInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS()))
+  else if (outputInfo && outputInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
   {
     currenttime = outputInfo->Get(
-      vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEPS())[0];
+      vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
   }
 
   std::vector<double> datavalues;

@@ -34,11 +34,13 @@
 #include "vtkSelectionNode.h"
 #include "vtkExtractSelection.h"
 
-#ifdef VTK_USE_MPI
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
 #include "vtkMPIController.h"
 #endif
 
-#include <vtkstd/vector>
+#include <std/vector>
 //----------------------------------------------------------------------------
 vtkCxxRevisionMacro(vtkSplitBlocksFilter, "$Revision: 1.53 $")
 vtkStandardNewMacro(vtkSplitBlocksFilter)
@@ -270,7 +272,7 @@ int vtkSplitBlocksFilter::SubdivideDataSet(
   //
   // Now extract lists of IDs for each leaf node
   //
-  vtkstd::vector< vtkSmartPointer<vtkIdList> > LeafCellsList;
+  std::vector< vtkSmartPointer<vtkIdList> > LeafCellsList;
   //
 #ifdef BSP
   tree->GetLeafNodeCellInformation(LeafCellsList);
@@ -285,7 +287,7 @@ int vtkSplitBlocksFilter::SubdivideDataSet(
 
   int NotModified = data->GetInformation()->Has(vtkDataObject::DATA_GEOMETRY_UNMODIFIED());
   //
-  vtkstd::vector< vtkSmartPointer<vtkIdList> >::iterator it=LeafCellsList.begin();
+  std::vector< vtkSmartPointer<vtkIdList> >::iterator it=LeafCellsList.begin();
   for (; it!=LeafCellsList.end(); ++it) {
     vtkSmartPointer<vtkSelectionSource> selection = vtkSmartPointer<vtkSelectionSource>::New();
     vtkSmartPointer<vtkExtractSelection>  extract = vtkSmartPointer<vtkExtractSelection>::New();

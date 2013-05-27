@@ -53,7 +53,8 @@ vtkCustomPipelineHelper::vtkCustomPipelineHelper(const char *name, const char *g
 //----------------------------------------------------------------------------
 vtkCustomPipelineHelper::~vtkCustomPipelineHelper()
 {
-  this->Pipeline = NULL;
+  this->Pipeline    = NULL;
+  this->PipelineEnd = NULL;
   this->UnRegisterCustomFilters();
 }
 //----------------------------------------------------------------------------
