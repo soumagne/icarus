@@ -1,0 +1,93 @@
+<Icarus>
+
+  <!--  ###########################################################################
+        Visualization : Objects which are to be visualized by ParaView
+        ########################################################################### -->
+  <Visualization>
+
+    <Xdmf>
+      <Grid Name="HeppelGrid" GridType="Uniform">
+        <Topology TopologyType="Triangle" >
+          <DataItem>/topology</DataItem>
+        </Topology>
+        <Geometry GeometryType="XYZ">
+          <DataItem>/Points</DataItem>
+        </Geometry>
+
+        <Attribute Name="PointHeight" AttributeType="Scalar">
+          <DataItem>/Height</DataItem>
+        </Attribute>
+        <Attribute Name="CellHeight" AttributeType="Scalar" Center="Cell">
+          <DataItem>/HeightCell</DataItem>
+        </Attribute>
+      </Grid>
+    </Xdmf>
+
+  </Visualization>
+
+  <!--  ###########################################################################
+        Interaction : Objects which are to be controlled/modified
+        ########################################################################### -->
+  <Interaction>
+
+    <CommandProperty
+      name="Pause"
+      label="Pause the simulation"
+      command="ExecuteSteeringCommand"
+      si_class="vtkSIProperty">
+    </CommandProperty>
+
+    <CommandProperty
+      name="Shutdown"
+      label="Shutdown the simulation"
+      command="ExecuteSteeringCommand"
+      documentation="This is an unrecoverable operation"
+      si_class="vtkSIProperty">
+    </CommandProperty>
+
+    <!--<CommandProperty
+      name="Restart"
+      label="Restart the simulation"
+      command="ExecuteSteeringCommand"
+      si_class="vtkSIProperty">
+    </CommandProperty>-->
+
+    <IntVectorProperty
+      name="StepMode"
+      command="SetSteeringValueInt"
+      label="Iterate step by step"
+      number_of_elements="1"
+      default_values="1" >
+      <BooleanDomain name="bool"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="XResolution"
+      command="SetSteeringValueInt"
+      label="Resolution along X axis"
+      number_of_elements="1"
+      default_values="150" >
+      <IntRangeDomain name="range" min="2" max="1000"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="YResolution"
+      command="SetSteeringValueInt"
+      label="Resolution along Y axis"
+      number_of_elements="1"
+      default_values="150" >
+      <IntRangeDomain name="range" min="2" max="1000"/>
+    </IntVectorProperty>
+
+    <IntVectorProperty
+      name="Delay"
+      command="SetSteeringValueInt"
+      label="Add ms delay between iterations"
+      number_of_elements="1"
+      default_values="250" >
+      <IntRangeDomain name="range" min="0" max="10000"/>
+    </IntVectorProperty>
+
+  </Interaction>
+
+</Icarus>

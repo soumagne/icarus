@@ -213,9 +213,13 @@ ADD_SUBDIRECTORY(XdmfGenerator)
 # ADD_SUBDIRECTORY(Tools)
 
 #--------------------------------------------------
-# Testing
+# Example DSM driver application
 #--------------------------------------------------
-# ADD_SUBDIRECTORY(Testing)
+ADD_SUBDIRECTORY(example)
+  
+IF(BUILD_TESTING)
+#  ADD_SUBDIRECTORY(Testing)
+ENDIF(BUILD_TESTING)
 
 #--------------------------------------------------
 # Install
