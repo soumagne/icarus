@@ -1312,6 +1312,8 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   // lock the DSM 
   this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
+//    H5FD_dsm_lock();
+//    H5FD_dsm_dump();
 
   // there may be multiple views to update, so build a list
   std::set<pqView*> viewlist;

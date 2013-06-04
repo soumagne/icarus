@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
         if (dsmManager->GetSteeringValues("Delay", 1, &delay)) {
           std::cout << "Received a Delay change " << delay << std::endl; 
         };
-        H5FD_dsm_steering_end_query();
+      H5FD_dsm_steering_end_query();
 
       file_id = H5Fcreate("dsm", H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id); 
     }
@@ -346,6 +346,15 @@ int main(int argc, char *argv[])
     if (usedsm) {
       H5Fclose(file_id);
       // std::cout << "DSM unlocked" << std::endl;
+
+      H5FD_dsm_steering_begin_query();
+      // Line plot data
+      {
+        double h = cellscalars[0];
+        H5FD_dsm_steering_scalar_set("TimeValue",  H5T_NATIVE_DOUBLE, &timevalue);
+        H5FD_dsm_steering_scalar_set("ExampleHeight", H5T_NATIVE_DOUBLE, &h);
+      }
+      H5FD_dsm_steering_end_query();
 
       // release our hold on the dsm and notify server we have sent something
       H5FD_dsm_unlock(H5FD_DSM_NOTIFY_DATA);
