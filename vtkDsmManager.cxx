@@ -261,8 +261,10 @@ int vtkDsmManager::Create()
 #endif
 
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
+
+
   vtkPVOptions *pvOptions = pm->GetOptions();
-  const char *pvClientHostName = pvOptions->GetClientHostName();
+  const char *pvClientHostName = pvOptions->GetHostName();
   int notificationPort = VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT;
   if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
     int r, tryConnect = 0;
