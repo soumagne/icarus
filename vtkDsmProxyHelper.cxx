@@ -35,7 +35,7 @@
 #include "vtkSteeringWriter.h"
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
-int vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
+int VTK_EXPORT vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream, void* /*ctx*/);
 int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDsmProxyHelper);
@@ -83,10 +83,9 @@ void vtkDsmProxyHelper::WriteDataSetArrayData(const char *desc)
 }
 
 //----------------------------------------------------------------------------
-vtkObjectBase *vtkDsmProxyHelperClientServerNewCommand()
-{
-  return vtkDsmProxyHelper::New();
-}
+vtkObjectBase *vtkDsmProxyHelperClientServerNewCommand(void* /*ctx*/);
+int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream, void* /*ctx*/);
+
 //----------------------------------------------------------------------------
 void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter* csi)
 {
@@ -94,8 +93,14 @@ void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter* csi)
   csi->AddNewInstanceFunction("vtkDsmProxyHelper", vtkDsmProxyHelperClientServerNewCommand);
   csi->AddCommandFunction("vtkDsmProxyHelper", vtkDsmProxyHelperCommand);
 }
+
 //----------------------------------------------------------------------------
-int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream)
+vtkObjectBase *vtkDsmProxyHelperClientServerNewCommand(void* /*ctx*/)
+{
+  return vtkDsmProxyHelper::New();
+}
+//----------------------------------------------------------------------------
+int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream, void* /*ctx*/)
 {
   vtkDsmProxyHelper *helper = vtkDsmProxyHelper::SafeDownCast(ob);
   if (!helper)
@@ -256,7 +261,7 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
     }
 
   }
-  if (vtkDataObjectAlgorithmCommand(arlu, helper,method,msg,resultStream))
+  if (vtkDataObjectAlgorithmCommand(arlu, helper,method,msg,resultStream, NULL))
     {
     return 1;
     }

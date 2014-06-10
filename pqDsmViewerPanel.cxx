@@ -57,7 +57,8 @@
 #include "pqAnimationScene.h"
 #include "pqTimeKeeper.h"
 #include "pqAnimationViewWidget.h"
-//
+#include "pqSaveScreenshotReaction.h"
+  //
 #include "pqDataExportWidget.h"
 //
 #include "pqCoreUtilities.h"
@@ -929,7 +930,9 @@ void pqDsmViewerPanel::SaveSnapshot() {
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
   sprintf(buffer, pngname.c_str(), this->Internals->CurrentTimeStep);  
-  pqActiveObjects::instance().activeView()->saveImage(0, 0, QString(buffer));
+
+  QSize size = pqActiveObjects::instance().activeView()->getSize();
+  pqSaveScreenshotReaction::saveScreenshot(QString(buffer), size, -1, true);
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onautoSaveImageChecked(int checked) {
