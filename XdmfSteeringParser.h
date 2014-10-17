@@ -33,6 +33,8 @@
 #include <vector>
 #include <map>
 
+using namespace xdmf2;
+
 //
 // Structures to hold information given in the .lxmf file
 //
