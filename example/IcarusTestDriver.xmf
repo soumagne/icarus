@@ -35,20 +35,19 @@
         ########################################################################### -->
   <Interaction>
 
-    <CommandProperty
+    <Property
       name="Pause"
       label="Pause the simulation"
       command="ExecuteSteeringCommand"
-      si_class="vtkSIProperty">
-    </CommandProperty>
+      panel_widget="command_button">
+    </Property>
 
-    <CommandProperty
+    <Property
       name="Shutdown"
       label="Shutdown the simulation"
       command="ExecuteSteeringCommand"
-      documentation="This is an unrecoverable operation"
-      si_class="vtkSIProperty">
-    </CommandProperty>
+      panel_widget="command_button">
+    </Property>
 
     <!--<CommandProperty
       name="Restart"

@@ -47,12 +47,11 @@
          command="SetNameStrings">
       </ProxyProperty>
 
-      <CommandProperty
+      <Property
         name="FileModified"
         label="touch file"
-        command="SetFileModified"
-        si_class="vtkSIProperty">
-      </CommandProperty>
+        command="SetFileModified">
+      </Property>
 
       <DoubleVectorProperty
         name="TimestepValues"

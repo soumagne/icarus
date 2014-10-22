@@ -277,7 +277,7 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
 
   xmlstring << "<Property name=\"BlockTraffic\" command=\"BlockTraffic\"> </Property> " << std::endl;
   xmlstring << "<Property name=\"UnblockTraffic\" command=\"UnblockTraffic\"> </Property> " << std::endl;
-
+  
 /*
   // Add a transform so that widgets can fake/trigger updates
   xmlstring << "<ProxyProperty name=\"Transform\" command=\"SetTransform\">" << std::endl;
@@ -286,10 +286,10 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "</ProxyProperty>" << std::endl;
 */
 
-  int numberOfCommandProperties = this->ConfigDOM->FindNumberOfElements("CommandProperty", interactionNode);
+  int numberOfCommandProperties = this->ConfigDOM->FindNumberOfElements("Property", interactionNode);
   for (int index=0; index < numberOfCommandProperties; index++) {
-    XdmfXmlNode xnode = this->ConfigDOM->FindElement("CommandProperty", index, interactionNode);
-    // make sure the CommandProperty uses vtkSIIntVectorProperty
+    XdmfXmlNode xnode = this->ConfigDOM->FindElement("Property", index, interactionNode);
+    // make sure the Property uses vtkSIProperty
     xmlSetProp(xnode, (xmlChar *)"si_class", (xmlChar *)"vtkSIProperty");
     // Set the Command to be ExecuteSteeringCommand + the name of the command
     std::string    name = GetXMLString(this->ConfigDOM->GetAttribute(xnode, "name"));
@@ -359,6 +359,9 @@ int XdmfSteeringParser::CreateParaViewProxyXML(XdmfXmlNode interactionNode)
   xmlstring << "<Property name=\"Transform\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"Time\" show=\"0\"/>" << std::endl;
   xmlstring << "<Property name=\"TimeRange\" show=\"0\"/>" << std::endl;
+  xmlstring << "<Property name=\"BlockTraffic\" show=\"0\" /> " << std::endl;
+  xmlstring << "<Property name=\"UnblockTraffic\" show=\"0\" /> " << std::endl;
+
   xmlstring << hintstring.c_str() << std::endl;
   xmlstring << "</Hints>" << std::endl;
   xmlstring << "</SourceProxy>" << std::endl;

@@ -146,12 +146,12 @@
         </Documentation>
       </StringVectorProperty>
 
-      <CommandProperty
+      <Property
         name="FileModified"
         label="touch file"
         command="SetFileModified"
         si_class="vtkSIProperty">
-      </CommandProperty>
+      </Property>
 
       <DoubleVectorProperty
         name="TimestepValues"
