@@ -25,16 +25,18 @@
 #ifndef _pqDsmObjectInspectorWidget_h
 #define _pqDsmObjectInspectorWidget_h
 
-#include "pqObjectInspectorWidget.h"
+#include "pqPropertiesPanel.h"
 
-class pqDsmObjectInspector : public pqObjectInspectorWidget
+class pqDsmObjectInspector : public pqPropertiesPanel
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqDsmObjectInspector(QWidget* p = NULL);
+  pqDsmObjectInspector(QWidget *parent);
   virtual ~pqDsmObjectInspector();
+
+  virtual void updatePropertiesPanel(pqPipelineSource* source);
 
 signals:
 
@@ -46,8 +48,10 @@ protected:
 
 protected slots:
 
+/*
   /// override default accept - so we can open the DSM in parallel
   void accept();
+*/
 
 };
 

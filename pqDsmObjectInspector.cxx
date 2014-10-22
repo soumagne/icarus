@@ -29,43 +29,33 @@
 
 #include <QPushButton>
 //----------------------------------------------------------------------------
-pqDsmObjectInspector::pqDsmObjectInspector(QWidget* p) : pqObjectInspectorWidget(p)
+pqDsmObjectInspector::pqDsmObjectInspector(QWidget *parent = 0) : pqPropertiesPanel(parent)
 {
-  this->disconnect(
-    &pqActiveObjects::instance(),
-    SIGNAL(portChanged(pqOutputPort*)),
-    this,
-    SLOT(setOutputPort(pqOutputPort*)));
+  /// Set the panel mode.
+  this->setPanelMode(SOURCE_PROPERTIES);
 
-  // connect the apply button to the apply properties manager
-  pqApplyPropertiesManager *applyPropertiesManager =
-      qobject_cast<pqApplyPropertiesManager *>(
-        pqApplicationCore::instance()->manager("APPLY_PROPERTIES"));
-
-  if(applyPropertiesManager)
-    {
-    this->disconnect(this->AcceptButton,
-                  SIGNAL(clicked()),
-                  applyPropertiesManager,
-                  SLOT(applyProperties()));
-
-    this->disconnect(applyPropertiesManager,
-                  SIGNAL(apply()),
-                  this,
-                  SLOT(accept()));
-    }
-
-    this->connect(this->AcceptButton,
-                  SIGNAL(clicked()),
-                  this,
-                  SLOT(accept()));
-
-    this->canAccept(false);
+  //---------------------------------------------------------------------------
+  // Listen to various signals from the application indicating changes in active
+  // source/view/representation, etc.
+  pqActiveObjects *activeObjects = &pqActiveObjects::instance();
+  this->disconnect(activeObjects, SIGNAL(portChanged(pqOutputPort*)),
+                this, SLOT(setOutputPort(pqOutputPort*)));
+  this->disconnect(activeObjects, SIGNAL(viewChanged(pqView*)),
+                this, SLOT(setView(pqView*)));
+  this->disconnect(activeObjects, SIGNAL(representationChanged(pqDataRepresentation*)),
+                this, SLOT(setRepresentation(pqDataRepresentation*)));
 }
+
 //----------------------------------------------------------------------------
 pqDsmObjectInspector::~pqDsmObjectInspector()
 {
 }
+//----------------------------------------------------------------------------
+void pqDsmObjectInspector::updatePropertiesPanel(pqPipelineSource* source)
+{
+  this->pqPropertiesPanel::updatePropertiesPanel(source);
+}
+/*
 //----------------------------------------------------------------------------
 void pqDsmObjectInspector::accept()
 {
@@ -73,3 +63,4 @@ void pqDsmObjectInspector::accept()
   this->pqObjectInspectorWidget::accept();
   emit this->postaccept();
 }
+*/

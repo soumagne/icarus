@@ -767,6 +767,9 @@
               <layout class="QGridLayout" name="gridLayout_2">
                <item row="0" column="0">
                 <widget class="QToolButton" name="pause">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
                  <property name="text">
                   <string>pause</string>
                  </property>
@@ -793,7 +796,7 @@
                   <bool>false</bool>
                  </property>
                  <property name="text">
-                  <string>DSM/Disk</string>
+                  <string>DSM state</string>
                  </property>
                 </widget>
                </item>
@@ -821,13 +824,10 @@
               <property name="orientation">
                <enum>Qt::Vertical</enum>
               </property>
-              <property name="sizeType">
-               <enum>QSizePolicy::Expanding</enum>
-              </property>
               <property name="sizeHint" stdset="0">
                <size>
                 <width>20</width>
-                <height>0</height>
+                <height>40</height>
                </size>
               </property>
              </spacer>

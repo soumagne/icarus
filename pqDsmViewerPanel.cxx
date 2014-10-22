@@ -58,6 +58,7 @@
 #include "pqTimeKeeper.h"
 #include "pqAnimationViewWidget.h"
 #include "pqSaveScreenshotReaction.h"
+#include "pqPipelineSource.h"
   //
 #include "pqDataExportWidget.h"
 //
@@ -71,7 +72,6 @@
 #include "H5FDdsm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
-#include "vtkSMCommandProperty.h"
 #include "IcarusConfig.h"
 //
 #include <vtksys/SystemTools.hxx>
@@ -97,7 +97,7 @@ public:
     this->ActiveSourcePort    = 0;
     this->ActiveView          = NULL;
     this->pqObjectInspector   = NULL;
-    this->pqDsmProxyHelper    = NULL;
+    this->pqDsmProxyPipeline  = NULL;
     this->SteeringParser      = NULL;
     this->DsmInterCommType    = 0;
     this->DsmDistributionType = 0;
@@ -127,6 +127,12 @@ public:
     this->DsmProxy           = NULL;
   }
   //
+  pqServer *getActiveServer() {
+    pqApplicationCore *app = pqApplicationCore::instance();
+    pqServerManagerModel *smModel = app->getServerManagerModel();
+    pqServer *server = smModel->getItemAtIndex<pqServer*>(0);
+    return server;
+  }
   void CreateDsmProxy() {
     vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
     this->DsmProxy.TakeReference(pm->NewProxy("icarus_helpers", "DsmManager"));
@@ -144,16 +150,11 @@ public:
     this->DsmProxyHelper->UpdateVTKObjects();
     
     //
-    // wrap the DsmProxyHelper object in a pqProxy so that we can use it in our object inspector
-    if (this->pqDsmProxyHelper) {
-      delete this->pqDsmProxyHelper;
-    }
+    // wrap the DsmProxyHelper object in a pqPipelineSource so that we can use it in our object inspector
     pm->RegisterProxy("layouts", "DsmProxyHelper", this->DsmProxyHelper);
     // this->DsmProxyHelper->FastDelete();
-    pqServerManagerModel* smmodel =
-      pqApplicationCore::instance()->getServerManagerModel();
-    this->pqDsmProxyHelper = smmodel->findItem<pqProxy*>(this->DsmProxyHelper);
-   
+    this->pqDsmProxyPipeline = new pqPipelineSource("DSMProxyHelper", this->DsmProxyHelper, this->getActiveServer(), 0);
+
     //
     this->TransformProxy.TakeReference(pm->NewProxy("extended_sources", "Transform3"));
 //    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
@@ -216,7 +217,7 @@ public:
   // ---------------------------------------------------------------
   XdmfSteeringParser                       *SteeringParser;
   pqDsmObjectInspector                     *pqObjectInspector;
-  pqProxy                                  *pqDsmProxyHelper;
+  pqPipelineSource                         *pqDsmProxyPipeline;
   // ---------------------------------------------------------------
   // Pipelines for steerable objects, one per 3D widget
   // ---------------------------------------------------------------
@@ -466,9 +467,9 @@ void pqDsmViewerPanel::DeleteSteeringWidgets()
 
   // clear out auto generated controls
   delete this->Internals->pqObjectInspector;
-  delete this->Internals->pqDsmProxyHelper;
-  this->Internals->pqObjectInspector = NULL;
-  this->Internals->pqDsmProxyHelper  = NULL;
+  delete this->Internals->pqDsmProxyPipeline;
+  this->Internals->pqObjectInspector  = NULL;
+  this->Internals->pqDsmProxyPipeline = NULL;
 }
 //----------------------------------------------------------------------------
 void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
@@ -539,18 +540,11 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
   //
   // create an object inspector to manage the settings
   //
-  if (this->Internals->pqDsmProxyHelper) {
-    this->Internals->steeringSpacer->changeSize(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
+  if (this->Internals->pqDsmProxyPipeline) {
     this->Internals->pqObjectInspector = new pqDsmObjectInspector(this->Internals->steeringTab);
-    this->Internals->pqObjectInspector->setView(this->Internals->ActiveView);
-    this->Internals->pqObjectInspector->setProxy(this->Internals->pqDsmProxyHelper);
-    this->Internals->pqObjectInspector->setDeleteButtonVisibility(false);
-    this->Internals->pqObjectInspector->setHelpButtonVisibility(false);
     this->Internals->pqObjectInspector->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::MinimumExpanding);
+    this->Internals->pqObjectInspector->updatePropertiesPanel(this->Internals->pqDsmProxyPipeline);
     this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector); 
-
-    QSpacerItem *verticalSpacer = new QSpacerItem(20, 0, QSizePolicy::Expanding, QSizePolicy::Preferred);
-    this->Internals->pqObjectInspector->layout()->addItem(verticalSpacer);
 
     // before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
@@ -561,11 +555,11 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
 
 
     //// before changes are accepted
-    //this->connect(this->Internals->pqObjectInspector,
-    //  SIGNAL(preaccept()), this, SLOT(onPreAccept()));
-    //// after changes are accepted
-    //this->connect(this->Internals->pqObjectInspector,
-    //  SIGNAL(postaccept()), this, SLOT(onPostAccept()));
+    this->connect(this->Internals->pqObjectInspector,
+      SIGNAL(preapplied()), this, SLOT(onPreAccept()));
+    // after changes are accepted
+    this->connect(this->Internals->pqObjectInspector,
+      SIGNAL(applied()), this, SLOT(onPostAccept()));
 
     //
     // Get info about pqWidgets and SMProxy object that are bound to steering controls
@@ -594,13 +588,13 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
     //
     // Once everything is setup, allow traffic to and from the DSM
     //
-    this->Internals->pqDsmProxyHelper->setDefaultPropertyValues();
     //  std::cout << "Sending an UnblockTraffic Command " << std::endl;
     this->Internals->DsmProxyHelper->InvokeCommand("UnblockTraffic");
     //
     this->Internals->LastExportTime.Modified();
   }
 }
+
 //----------------------------------------------------------------------------
 void pqDsmViewerPanel::onServerAdded(pqServer *server)
 {
@@ -626,9 +620,9 @@ void pqDsmViewerPanel::onStartRemovingServer(pqServer *server)
     this->Internals->DsmInitialized = 0;
   }
   delete this->Internals->pqObjectInspector;
-  delete this->Internals->pqDsmProxyHelper;
+  delete this->Internals->pqDsmProxyPipeline;
   this->Internals->pqObjectInspector = NULL;
-  this->Internals->pqDsmProxyHelper  = NULL;
+  this->Internals->pqDsmProxyPipeline  = NULL;
 }
 //-----------------------------------------------------------------------------
 void pqDsmViewerPanel::onActiveViewChanged(pqView* view)
@@ -952,7 +946,8 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   pqApplicationCore::instance()->disableOutputWindow();
   pm->RegisterProxy("sources", proxyName, source);
-  pqApplicationCore::instance()->enableOutputWindow();
+  // @TODO fix jb
+//  pqApplicationCore::instance()->enableOutputWindow();
 
   //
   // Set status of registered pipeline source to unmodified 
@@ -1466,8 +1461,6 @@ void pqDsmViewerPanel::TrackSource()
           this->Internals->ActiveSourceProxy,
           this->Internals->ActiveSourcePort
         );
-        // This updates the ArrayListDomain domain 
-        ip->UpdateDependentDomains();
       }
 /*
       // Obsolete : Steering Writer is now driven in pre-post Accept
@@ -1666,7 +1659,7 @@ void pqDsmViewerPanel::onPostAccept()
 {
   // Steering data has been written, switch back to parallel mode
   // for safety and before steering array exports are done in parallel
-  std::cout << " Clearing Serial mode " << std::endl;
+  std::cout << " Clearing Serial mode " << std::endl;         
   pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 0);
   //
   // close before reopening if this code is ever used again
@@ -1696,10 +1689,10 @@ void pqDsmViewerPanel::ExportData(bool force)
   for (int i=0; i<widgets.size(); i++) {
     pqDataExportWidget* widget = widgets[i];
     vtkSMProxy* controlledProxy = widget->getControlledProxy();
-    
+/*    
     // was the associated command 'clicked' (modified)
-    QString command = widget->getCommandProperty();
-    vtkSMCommandProperty *cp = vtkSMCommandProperty::SafeDownCast(this->Internals->DsmProxyHelper->GetProperty(command.toLatin1().data()));
+    QString command = widget->getProperty();
+    vtkSMProperty *cp = vtkSMProperty::SafeDownCast(this->Internals->DsmProxyHelper->GetProperty(command.toLatin1().data()));
     if (force || cp->GetMTime()>this->Internals->LastExportTime) {
       if (force) {
         cp->Modified();
@@ -1717,6 +1710,7 @@ void pqDsmViewerPanel::ExportData(bool force)
         this->Internals->SteeringWriter->UpdatePipeline();
       }
     }
+    */
   }
   //
   this->Internals->LastExportTime.Modified();
