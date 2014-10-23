@@ -35,7 +35,7 @@ ENDIF (ParaView_SOURCE_DIR)
 #--------------------------------------------------
 # Find and Use System libs (only needed on WIN32)
 #--------------------------------------------------
-IF(WIN32 AND MSVC)
+#IF(WIN32 AND MSVC)
   IF (NOT TARGET "hdf5")
     FIND_PACKAGE(HDF5 REQUIRED NO_MODULE PATHS "$ENV{ProgramFiles}/HDF5")
     INCLUDE_DIRECTORIES(${HDF5_INCLUDE_DIR})
@@ -46,7 +46,7 @@ IF(WIN32 AND MSVC)
     INCLUDE_DIRECTORIES(${H5FDdsm_INCLUDE_DIR})
   ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
-ENDIF(WIN32 AND MSVC)
+#ENDIF(WIN32 AND MSVC)
 
 #--------------------------------------------------
 # Timers
