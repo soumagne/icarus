@@ -29,7 +29,7 @@
 
 #include <QPushButton>
 //----------------------------------------------------------------------------
-pqDsmObjectInspector::pqDsmObjectInspector(QWidget *parent = 0) : pqPropertiesPanel(parent)
+pqDsmObjectInspector::pqDsmObjectInspector(QWidget *parent) : pqPropertiesPanel(parent)
 {
   /// Set the panel mode.
   this->setPanelMode(SOURCE_PROPERTIES);
