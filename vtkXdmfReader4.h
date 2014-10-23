@@ -33,7 +33,7 @@
 #include "vtkXdmfReader.h"
 
 class vtkMultiProcessController;
-class vtkDsmManager;
+class vtkHDF5DsmManager;
 
 class VTK_EXPORT vtkXdmfReader4 : public vtkXdmfReader
 {
@@ -54,8 +54,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data reading instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetVtkDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(VtkDsmManager, vtkDsmManager);
+  virtual void SetVtkDsmManager(vtkHDF5DsmManager*);
+  vtkGetObjectMacro(VtkDsmManager, vtkHDF5DsmManager);
 
   // Description:
   // Get the time range for the simulation run
@@ -84,7 +84,7 @@ protected:
   vtkMultiProcessController* Controller;
 
   // Used for DSM write
-  vtkDsmManager *VtkDsmManager;
+  vtkHDF5DsmManager *VtkDsmManager;
   double         TimeRange[2];
 
 private:

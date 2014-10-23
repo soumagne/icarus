@@ -48,14 +48,14 @@
 #include <vtksys/SystemTools.hxx>
 #include <vtksys/RegularExpression.hxx>
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "H5FDdsm.h"
 //
 #include <numeric>
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkSteeringWriter);
 #ifdef VTK_USE_MPI
-vtkCxxSetObjectMacro(vtkSteeringWriter, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkSteeringWriter, DsmManager, vtkHDF5DsmManager);
 vtkCxxSetObjectMacro(vtkSteeringWriter, Controller, vtkMultiProcessController);
 #endif
 //----------------------------------------------------------------------------

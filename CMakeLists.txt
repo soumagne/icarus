@@ -149,7 +149,7 @@ ADD_PARAVIEW_PLUGIN(
   "1.0" 
 
   SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
     #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
@@ -158,7 +158,7 @@ ADD_PARAVIEW_PLUGIN(
     ${ICARUS_H5PART_XML}
     ${ICARUS_NETCDF_XML}
   SERVER_MANAGER_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.cxx
     #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx

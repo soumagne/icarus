@@ -39,7 +39,7 @@
 //
 class vtkMultiProcessController;
 //
-class vtkDsmManager;
+class vtkHDF5DsmManager;
 class vtkPointSet;
 class vtkCellArray;
 
@@ -64,8 +64,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data writing instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkDsmManager);
+  virtual void SetDsmManager(vtkHDF5DsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkHDF5DsmManager);
 
   // Description:
   // Set/Get the controller used for coordinating parallel writing
@@ -162,7 +162,7 @@ protected:
   int     UpdatePiece;
   int     UpdateNumPieces;
 
-  vtkDsmManager *DsmManager;
+  vtkHDF5DsmManager *DsmManager;
   vtkMultiProcessController *Controller;
 
 private:

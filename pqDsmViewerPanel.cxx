@@ -68,7 +68,7 @@
 #include "ui_pqDsmViewerPanel.h"
 //
 #include "pqDsmObjectInspector.h"
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "H5FDdsm.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
@@ -499,7 +499,7 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
   //    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 
       // and register on the client too 
-      vtkDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
+      vtkHDF5DsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
       // now create an actual proxy
       this->Internals->CreateDsmHelperProxy();
     }

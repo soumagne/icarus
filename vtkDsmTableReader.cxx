@@ -35,7 +35,7 @@
 #include "vtkFloatArray.h"
 #include "vtkMath.h"
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 //
 // For PARAVIEW_USE_MPI
 #include "vtkPVConfig.h"
@@ -51,7 +51,7 @@
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkDsmTableReader, DsmManager,  vtkDsmManager);
+vtkCxxSetObjectMacro(vtkDsmTableReader, DsmManager,  vtkHDF5DsmManager);
 vtkCxxSetObjectMacro(vtkDsmTableReader, NameStrings, vtkStringList);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------

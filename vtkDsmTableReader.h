@@ -40,7 +40,7 @@ class vtkCellArray;
 class vtkDoubleArray;
 class vtkPointData;
 
-class vtkDsmManager;
+class vtkHDF5DsmManager;
 
 class VTK_EXPORT vtkDsmTableReader : public vtkTableAlgorithm
 {
@@ -61,8 +61,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data reading instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkDsmManager);
+  virtual void SetDsmManager(vtkHDF5DsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkHDF5DsmManager);
 
   void SetFileModified();
 
@@ -86,7 +86,7 @@ protected:
                           vtkInformationVector** inputVector,
                           vtkInformationVector* outputVector);
   //
-  vtkDsmManager  *DsmManager;
+  vtkHDF5DsmManager  *DsmManager;
   vtkStringList  *NameStrings;
   vtkTimeStamp    FileModifiedTime;
   vtkTimeStamp    FileOpenedTime;

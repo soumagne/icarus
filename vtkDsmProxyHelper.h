@@ -33,7 +33,7 @@
 #include <map>
 
 // BTX
-class vtkDsmManager;
+class vtkHDF5DsmManager;
 class vtkSteeringWriter;
 class vtkClientServerInterpreter;
 extern "C" void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter *csi);
@@ -45,8 +45,8 @@ public:
   static vtkDsmProxyHelper *New();
   vtkTypeMacro(vtkDsmProxyHelper,vtkDataObjectAlgorithm);
 
-  virtual void SetDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkDsmManager)
+  virtual void SetDsmManager(vtkHDF5DsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkHDF5DsmManager)
 
   virtual void SetSteeringWriter(vtkSteeringWriter*);
   vtkGetObjectMacro(SteeringWriter, vtkSteeringWriter)
@@ -61,7 +61,7 @@ protected:
 
   int FillInputPortInformation(int port, vtkInformation* info);
 
-  vtkDsmManager     *DsmManager;
+  vtkHDF5DsmManager     *DsmManager;
   vtkSteeringWriter *SteeringWriter;
 
 private:

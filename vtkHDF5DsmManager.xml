@@ -9,7 +9,7 @@
     <!-- ============================================================== -->
     <!-- DsmManager                                                     -->
     <!-- ============================================================== -->
-    <Proxy name="DsmManager" class="vtkDsmManager">
+    <Proxy name="DsmManager" class="vtkHDF5DsmManager">
 
       <Property name="Create"
                 command="Create">

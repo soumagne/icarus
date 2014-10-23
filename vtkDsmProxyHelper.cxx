@@ -31,7 +31,7 @@
 //
 #include <vtksys/SystemTools.hxx>
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "vtkSteeringWriter.h"
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
@@ -39,7 +39,7 @@ int VTK_EXPORT vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, v
 int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDsmProxyHelper);
-vtkCxxSetObjectMacro(vtkDsmProxyHelper, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkDsmProxyHelper, DsmManager, vtkHDF5DsmManager);
 vtkCxxSetObjectMacro(vtkDsmProxyHelper, SteeringWriter, vtkSteeringWriter);
 //----------------------------------------------------------------------------
 vtkDsmProxyHelper::vtkDsmProxyHelper()
@@ -131,14 +131,14 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   // We need to use these normal ClientServer set/getters
   //
   if (!strcmp("SetDsmManager",method) && msg.GetNumberOfArguments(0) == 3) {
-    vtkDsmManager  *temp0;
-    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkDsmManager")) {
+    vtkHDF5DsmManager  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkHDF5DsmManager")) {
       helper->SetDsmManager(temp0);
       return 1;
     }
   }
   if (!strcmp("GetDsmManager",method) && msg.GetNumberOfArguments(0) == 2) {
-    vtkDsmManager  *temp20;
+    vtkHDF5DsmManager  *temp20;
     temp20 = (helper)->GetDsmManager();
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;

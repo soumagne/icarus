@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDsmManager.cxx
+  Module                  : vtkHDF5DsmManager.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,7 +22,7 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 //
 #include "vtkObjectFactory.h"
 //
@@ -55,22 +55,22 @@
 #include "H5FDdsm.h"
 
 //----------------------------------------------------------------------------
-vtkStandardNewMacro(vtkDsmManager);
-vtkCxxSetObjectMacro(vtkDsmManager, Controller, vtkMultiProcessController);
+vtkStandardNewMacro(vtkHDF5DsmManager);
+vtkCxxSetObjectMacro(vtkHDF5DsmManager, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
-VTK_EXPORT VTK_THREAD_RETURN_TYPE vtkDsmManagerNotificationThread(void *arg)
+VTK_EXPORT VTK_THREAD_RETURN_TYPE vtkHDF5DsmManagerNotificationThread(void *arg)
 {
-  vtkDsmManager *dsmManager = static_cast<vtkDsmManager*>(
+  vtkHDF5DsmManager *dsmManager = static_cast<vtkHDF5DsmManager*>(
       static_cast<vtkMultiThreader::ThreadInfo*>(arg)->UserData);
   dsmManager->NotificationThread();
   return(VTK_THREAD_RETURN_VALUE);
 }
 
 //----------------------------------------------------------------------------
-struct vtkDsmManager::vtkDsmManagerInternals
+struct vtkHDF5DsmManager::vtkHDF5DsmManagerInternals
 {
-  vtkDsmManagerInternals() {
+  vtkHDF5DsmManagerInternals() {
     this->NotificationThread = vtkSmartPointer<vtkMultiThreader>::New();
 
     // Updated event
@@ -84,7 +84,7 @@ struct vtkDsmManager::vtkDsmManagerInternals
     this->NotifThreadCreatedMutex = vtkSmartPointer<vtkMutexLock>::New();
   }
 
-  ~vtkDsmManagerInternals() {
+  ~vtkHDF5DsmManagerInternals() {
 //    if (this->NotificationThread->IsThreadActive(this->NotificationThreadID)) {
 //      this->NotificationThread->TerminateThread(this->NotificationThreadID);
 //    }
@@ -121,7 +121,7 @@ struct vtkDsmManager::vtkDsmManagerInternals
 };
 
 //----------------------------------------------------------------------------
-vtkDsmManager::vtkDsmManager()
+vtkHDF5DsmManager::vtkHDF5DsmManager()
 {
   this->UpdatePiece             = 0;
   this->UpdateNumPieces         = 0;
@@ -134,11 +134,11 @@ vtkDsmManager::vtkDsmManager()
   this->XdmfDescription         = NULL;
   this->HelperProxyXMLString    = NULL;
   this->DsmManager              = new H5FDdsmManager();
-  this->DsmManagerInternals     = new vtkDsmManagerInternals;
+  this->DsmManagerInternals     = new vtkHDF5DsmManagerInternals;
 }
 
 //----------------------------------------------------------------------------
-vtkDsmManager::~vtkDsmManager()
+vtkHDF5DsmManager::~vtkHDF5DsmManager()
 { 
   this->SetXdmfTemplateDescription(NULL);
   this->SetHelperProxyXMLString(NULL);
@@ -152,7 +152,7 @@ vtkDsmManager::~vtkDsmManager()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::CheckMPIController()
+void vtkHDF5DsmManager::CheckMPIController()
 {
   if (this->Controller->IsA("vtkDummyController"))
   {
@@ -190,7 +190,7 @@ void vtkDsmManager::CheckMPIController()
 }
 
 //----------------------------------------------------------------------------
-void* vtkDsmManager::NotificationThread()
+void* vtkHDF5DsmManager::NotificationThread()
 {
   unsigned int notification;
 
@@ -209,7 +209,7 @@ void* vtkDsmManager::NotificationThread()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::SignalUpdated()
+void vtkHDF5DsmManager::SignalUpdated()
 {
   this->DsmManagerInternals->UpdatedMutex->Lock();
 
@@ -222,7 +222,7 @@ void vtkDsmManager::SignalUpdated()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::WaitForUpdated()
+void vtkHDF5DsmManager::WaitForUpdated()
 {
   this->DsmManagerInternals->UpdatedMutex->Lock();
 
@@ -239,7 +239,7 @@ void vtkDsmManager::WaitForUpdated()
 }
 
 //----------------------------------------------------------------------------
-int vtkDsmManager::Create()
+int vtkHDF5DsmManager::Create()
 {
   this->CheckMPIController();
 
@@ -300,18 +300,18 @@ int vtkDsmManager::Create()
 }
 
 //----------------------------------------------------------------------------
-int vtkDsmManager::Destroy()
+int vtkHDF5DsmManager::Destroy()
 {
   return(this->DsmManager->Destroy());
 }
 
 //----------------------------------------------------------------------------
-int vtkDsmManager::Publish()
+int vtkHDF5DsmManager::Publish()
 {
   if (this->UpdatePiece == 0) {
     this->DsmManagerInternals->NotificationThreadID =
         this->DsmManagerInternals->NotificationThread->SpawnThread(
-        vtkDsmManagerNotificationThread, (void *) this);
+        vtkHDF5DsmManagerNotificationThread, (void *) this);
     this->DsmManagerInternals->WaitForNotifThreadCreated();
   }
   this->DsmManager->Publish();
@@ -319,7 +319,7 @@ int vtkDsmManager::Publish()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::GenerateXdmfDescription()
+void vtkHDF5DsmManager::GenerateXdmfDescription()
 {
   XdmfGenerator *xdmfGenerator = new XdmfGenerator();
 
@@ -337,7 +337,7 @@ void vtkDsmManager::GenerateXdmfDescription()
 }
 
 //----------------------------------------------------------------------------
-int vtkDsmManager::ReadConfigFile()
+int vtkHDF5DsmManager::ReadConfigFile()
 {
   this->CheckMPIController();
   //
@@ -361,7 +361,7 @@ int vtkDsmManager::ReadConfigFile()
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::SetHelperProxyXMLString(const char *xmlstring)
+void vtkHDF5DsmManager::SetHelperProxyXMLString(const char *xmlstring)
 {
   if ( this->HelperProxyXMLString == NULL && xmlstring == NULL) { return; }
   if ( this->HelperProxyXMLString && xmlstring && (!strcmp(this->HelperProxyXMLString,xmlstring))) { return; } 
@@ -381,7 +381,7 @@ void vtkDsmManager::SetHelperProxyXMLString(const char *xmlstring)
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
+void vtkHDF5DsmManager::RegisterHelperProxy(const char *xmlstring)
 {
   // Register a constructor function for the DsmProxyHelper
   vtkClientServerInterpreterInitializer *Initializer = vtkClientServerInterpreterInitializer::GetInitializer();
@@ -407,7 +407,7 @@ void vtkDsmManager::RegisterHelperProxy(const char *xmlstring)
 }
 
 //----------------------------------------------------------------------------
-void vtkDsmManager::PrintSelf(ostream& os, vtkIndent indent)
+void vtkHDF5DsmManager::PrintSelf(ostream& os, vtkIndent indent)
 {
   this->Superclass::PrintSelf(os,indent);
 }

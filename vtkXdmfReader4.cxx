@@ -29,7 +29,7 @@
 #include "vtkMultiProcessController.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 //
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkXdmfReader4);
@@ -49,7 +49,7 @@ vtkXdmfReader4::~vtkXdmfReader4()
   this->SetController(NULL);
 }
 //----------------------------------------------------------------------------
-void vtkXdmfReader4::SetVtkDsmManager(vtkDsmManager* dsmmanager)
+void vtkXdmfReader4::SetVtkDsmManager(vtkHDF5DsmManager* dsmmanager)
 {
   this->VtkDsmManager = dsmmanager;
   this->SetDsmManager(dsmmanager->GetDsmManager());

@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : vtkDsmManager.h
+  Module                  : vtkHDF5DsmManager.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,12 +22,12 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-// .NAME vtkDsmManager - Create/Expose an Xdmf DSM to Paraview
+// .NAME vtkHDF5DsmManager - Create/Expose an Xdmf DSM to Paraview
 // .SECTION Description
 // Create/Expose an Xdmf DSM to Paraview
 
-#ifndef __vtkDsmManager_h
-#define __vtkDsmManager_h
+#ifndef __vtkHDF5DsmManager_h
+#define __vtkHDF5DsmManager_h
 
 #include "vtkObject.h"       // Base class
 
@@ -38,11 +38,11 @@
 
 class vtkMultiProcessController;
 
-class VTK_EXPORT vtkDsmManager : public vtkObject
+class VTK_EXPORT vtkHDF5DsmManager : public vtkObject
 {
 public:
-  static vtkDsmManager *New();
-  vtkTypeMacro(vtkDsmManager,vtkObject);
+  static vtkHDF5DsmManager *New();
+  vtkTypeMacro(vtkHDF5DsmManager,vtkObject);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   H5FDdsmBuffer *GetDsmBuffer() { return(DsmManager->GetDsmBuffer()); }
@@ -247,8 +247,8 @@ public:
 //ETX
 
 protected:
-    vtkDsmManager();
-    virtual ~vtkDsmManager();
+    vtkHDF5DsmManager();
+    virtual ~vtkHDF5DsmManager();
 
     //
     // Internal Variables
@@ -273,12 +273,12 @@ protected:
     //ETX
 
     //BTX
-    struct vtkDsmManagerInternals;
-    vtkDsmManagerInternals *DsmManagerInternals;
+    struct vtkHDF5DsmManagerInternals;
+    vtkHDF5DsmManagerInternals *DsmManagerInternals;
     //ETX
 private:
-    vtkDsmManager(const vtkDsmManager&);  // Not implemented.
-    void operator=(const vtkDsmManager&);  // Not implemented.
+    vtkHDF5DsmManager(const vtkHDF5DsmManager&);  // Not implemented.
+    void operator=(const vtkHDF5DsmManager&);  // Not implemented.
 };
 
 #endif
