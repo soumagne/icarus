@@ -3,7 +3,7 @@
 #include <iostream>
 #include <vector>
 #define _USE_MATH_DEFINES
-#include <math.h>
+#include <cmath>
 #include <mpi.h>
 #include "H5FDdsm.h"
 #include "H5FDdsmManager.h"
@@ -13,7 +13,7 @@
 #ifdef _WIN32
  #define NOMINMAX 
  #include <windows.h>
- #define sleep(a) Sleep(a)
+ #define usleep(a) Sleep(a)
 #endif
 
 //----------------------------------------------------------------------------
@@ -366,7 +366,7 @@ int main(int argc, char *argv[])
         pause = 0;
       }
       else {
-        sleep(delay);
+        usleep(delay);
       }
     }
     // writing to file, close it
