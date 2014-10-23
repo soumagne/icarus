@@ -1,9 +1,9 @@
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
 #include <vector>
-#define _USE_MATH_DEFINES
-#include <cmath>
 #include <mpi.h>
 #include "H5FDdsm.h"
 #include "H5FDdsmManager.h"
