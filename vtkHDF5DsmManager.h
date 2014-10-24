@@ -29,7 +29,7 @@
 #ifndef __vtkHDF5DsmManager_h
 #define __vtkHDF5DsmManager_h
 
-#include "vtkObject.h"       // Base class
+#include "vtkAbstractDsmManager.h"       // Base class
 
 #include "H5FDdsmManager.h"
 #include "H5Fpublic.h" // for H5F_ACC_RDONLY etc
@@ -38,11 +38,11 @@
 
 class vtkMultiProcessController;
 
-class VTK_EXPORT vtkHDF5DsmManager : public vtkObject
+class VTK_EXPORT vtkHDF5DsmManager : public vtkAbstractDsmManager
 {
 public:
   static vtkHDF5DsmManager *New();
-  vtkTypeMacro(vtkHDF5DsmManager,vtkObject);
+  vtkTypeMacro(vtkHDF5DsmManager,vtkAbstractDsmManager);
   void PrintSelf(ostream& os, vtkIndent indent);
 
   H5FDdsmBuffer *GetDsmBuffer() { return(DsmManager->GetDsmBuffer()); }

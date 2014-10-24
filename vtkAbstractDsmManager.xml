@@ -1,0 +1,163 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- DSM classes wrapped by server manager                            -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="icarus_helpers">
+
+    <!-- ============================================================== -->
+    <!-- DsmManager                                                     -->
+    <!-- ============================================================== -->
+    <Proxy name="DsmManager" class="vtkAbstractDsmManager">
+
+      <Property name="Create"
+                command="Create">
+      </Property>      
+
+      <Property name="Destroy"
+                command="Destroy">
+      </Property>
+
+      <Property name="Connect"
+                command="Connect">
+      </Property>
+
+      <Property name="Disconnect"
+                command="Disconnect">
+      </Property>
+
+      <Property name="Publish"
+                command="Publish">
+      </Property>
+
+      <Property name="Unpublish"
+                command="Unpublish">
+      </Property>
+
+      <Property name="OpenCollective"
+                command="OpenCollective">
+      </Property>
+
+      <Property name="OpenCollectiveRW"
+                command="OpenCollectiveRW">
+      </Property>
+
+      <Property name="CloseCollective"
+                command="CloseCollective">
+      </Property>
+
+      <Property name="ReadConfigFile"
+                command="ReadConfigFile">
+      </Property>
+
+      <Property name="GenerateXdmfDescription"
+                command="GenerateXdmfDescription">
+      </Property>
+
+      <IntVectorProperty
+        name="SerialMode"
+        command="SetSerialMode"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="IsServer"
+        command="SetIsServer"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="InterCommType"
+        command="SetInterCommType"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="UseStaticInterComm"
+        command="SetUseStaticInterComm"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="DistributionType"
+        command="SetDsmType"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="BlockLength"
+        command="SetBlockLength"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <IntVectorProperty
+        name="LocalBufferSizeMBytes"
+        command="SetLocalBufferSizeMBytes"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <StringVectorProperty
+        name="ServerHostName"
+        command="SetServerHostName"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <IntVectorProperty
+        name="ServerPort"
+        command="SetServerPort"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+
+      <StringVectorProperty
+        name="XdmfDescription"
+        command="SetXdmfDescription"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="XdmfTemplateDescription"
+        command="SetXdmfTemplateDescription"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="HelperProxyXMLString"
+        command="SetHelperProxyXMLString"
+        number_of_elements="1">
+      </StringVectorProperty>      
+
+      <Property name="SignalUpdated"
+                command="SignalUpdated">
+      </Property>
+
+      <StringVectorProperty
+        name="SteeringCommand"
+        command="SetSteeringCommand"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <StringVectorProperty
+        name="DisabledObject"
+        command="SetDisabledObject"
+        number_of_elements="1">
+      </StringVectorProperty>
+
+      <Property name="UpdateSteeredObjects"
+                command="UpdateSteeredObjects">
+      </Property>
+
+    </Proxy>
+
+  </ProxyGroup>
+
+
+</ServerManagerConfiguration>
