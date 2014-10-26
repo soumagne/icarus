@@ -33,6 +33,17 @@ ENDIF (ParaView_SOURCE_DIR)
 #INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
+# Timers
+#--------------------------------------------------
+OPTION(ICARUS_ENABLE_TIMERS "Enable timing of operations." OFF)
+IF(ICARUS_ENABLE_TIMERS)
+  SET(ENABLE_TIMERS 1)
+ENDIF(ICARUS_ENABLE_TIMERS)
+
+option(ICARUS_USE_H5FDDSM "Build H5FDdsm support into plugin" OFF)
+
+add_definitions(-DICARUS_HAVE_H5FDFDM)
+#--------------------------------------------------
 # Find and Use System libs (only needed on WIN32)
 #--------------------------------------------------
 #IF(WIN32 AND MSVC)
@@ -48,13 +59,7 @@ ENDIF (ParaView_SOURCE_DIR)
 #--------------------------------------------------
 #ENDIF(WIN32 AND MSVC)
 
-#--------------------------------------------------
-# Timers
-#--------------------------------------------------
-OPTION(ICARUS_ENABLE_TIMERS "Enable timing of operations." OFF)
-IF(ICARUS_ENABLE_TIMERS)
-  SET(ENABLE_TIMERS 1)
-ENDIF(ICARUS_ENABLE_TIMERS)
+if(ICARUS_USE_H5FDDSM)
 
 #--------------------------------------------------
 # DSM H5Part Reader needs pv-meshless
@@ -97,13 +102,6 @@ IF(ICARUS_USE_H5PART)
 ENDIF(ICARUS_USE_H5PART)
 
 #--------------------------------------------------
-# Config Files for options
-#--------------------------------------------------
-CONFIGURE_FILE(
-  ${CMAKE_CURRENT_SOURCE_DIR}/IcarusConfig.h.in
-  ${CMAKE_CURRENT_BINARY_DIR}/IcarusConfig.h)
-
-#--------------------------------------------------
 # Set project include directories 
 #--------------------------------------------------
 INCLUDE_DIRECTORIES(
@@ -111,13 +109,22 @@ INCLUDE_DIRECTORIES(
   ${CMAKE_CURRENT_BINARY_DIR}/XdmfGenerator
   )
 
+endif()
+
+#--------------------------------------------------
+# Config Files for options
+#--------------------------------------------------
+CONFIGURE_FILE(
+  ${CMAKE_CURRENT_SOURCE_DIR}/IcarusConfig.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/IcarusConfig.h)
+
 #--------------------------------------------------
 # Setup GUI custom Qt panel sources and wrapping
 #--------------------------------------------------
 IF(PARAVIEW_BUILD_QT_GUI)
   QT4_WRAP_CPP(
     DSM_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.h
       ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.h
   )
 
@@ -126,13 +133,13 @@ IF(PARAVIEW_BUILD_QT_GUI)
     DSM_IFACE 
     DSM_IFACE_SRCS 
     CLASS_NAME
-      pqDsmViewerPanel
+      pqDsmOptions
     DOCK_AREA 
       Left Right Top Bottom
   )
   QT4_WRAP_UI(
     DSM_UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.ui
   )
 ENDIF(PARAVIEW_BUILD_QT_GUI)
 
@@ -141,6 +148,36 @@ encode_files_as_strings(ENCODED_FILTERS
   ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
 )
 
+if(ICARUS_USE_H5FDDSM)
+  set(ICARUS_H5FDDSM_SM_XML
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmTableReader.xml
+  )
+  set(ICARUS_H5FDDSM_SM_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.cxx
+    #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmTableReader.cxx
+  )
+endif()
+
+#--------------------------------------------------
+# XdmfGenerator
+#--------------------------------------------------
+# USE_H5FD_DSM must be defined to enable DSM suppport in XdmfGenerator
+if(ICARUS_USE_H5FDDSM)
+  IF(XDMF_BUILD_MPI)
+    SET(USE_MPI 1)
+  ENDIF(XDMF_BUILD_MPI)
+  SET(USE_H5FD_DSM 1)
+  ADD_SUBDIRECTORY(XdmfGenerator)
+endif()
+
 #--------------------------------------------------
 # Define Plugin
 #--------------------------------------------------
@@ -148,36 +185,24 @@ ADD_PARAVIEW_PLUGIN(
   ${PLUGIN_NAME}
   "1.0" 
 
-  SERVER_MANAGER_XML 
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
-    #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmTableReader.xml
+  SERVER_MANAGER_XML
+    ${ICARUS_H5FDDSM_SM_XML} 
     ${ICARUS_H5PART_XML}
     ${ICARUS_NETCDF_XML}
   SERVER_MANAGER_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkAbstractDsmManager.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.cxx
-    #${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfWriter4.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmTableReader.cxx
+    ${ICARUS_H5FDDSM_SM_SRCS} 
     ${ICARUS_H5PART_SOURCES}
     ${ICARUS_NETCDF_SOURCES}
   SERVER_SOURCES
     ${ENCODED_FILTERS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomPipelineHelper.cxx
-    #${CMAKE_CURRENT_SOURCE_DIR}/H5MButil.cxx
-    #${CMAKE_CURRENT_SOURCE_DIR}/XdmfH5MBCallback.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
   GUI_INTERFACES 
     ${DSM_IFACE}
   GUI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.cxx
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
@@ -187,26 +212,19 @@ ADD_PARAVIEW_PLUGIN(
   GUI_RESOURCE_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/Icarus_Readers.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters.xml
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmViewerPanel.ui
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.ui
 )
-
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 XdmfGenerator ${ICARUS_NETCDF_LIBS} pqApplicationComponents)
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} H5FDdsmTools H5FDdsm hdf5)
+if(ICARUS_USE_H5FDDSM)
+  TARGET_LINK_LIBRARIES(${PLUGIN_NAME}  XdmfGenerator ${ICARUS_NETCDF_LIBS})
+  TARGET_LINK_LIBRARIES(${PLUGIN_NAME} H5FDdsmTools H5FDdsm hdf5)
+endif()
 
 IF(ICARUS_USE_H5PART)
   TARGET_LINK_LIBRARIES(${PLUGIN_NAME} pv_meshless )
 ENDIF(ICARUS_USE_H5PART)
 
-
-#--------------------------------------------------
-# XdmfGenerator
-#--------------------------------------------------
-# USE_H5FD_DSM must be defined to enable DSM suppport in XdmfGenerator
-IF(XDMF_BUILD_MPI)
-  SET(USE_MPI 1)
-ENDIF(XDMF_BUILD_MPI)
-SET(USE_H5FD_DSM 1)
-ADD_SUBDIRECTORY(XdmfGenerator)
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 pqApplicationComponents)
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkxdmf2 H5FDdsm hdf5)
 
 #--------------------------------------------------
 # Converter
@@ -216,7 +234,9 @@ ADD_SUBDIRECTORY(XdmfGenerator)
 #--------------------------------------------------
 # Example DSM driver application
 #--------------------------------------------------
-ADD_SUBDIRECTORY(example)
+if(ICARUS_USE_H5FDDSM)
+  ADD_SUBDIRECTORY(example)
+endif()
   
 IF(BUILD_TESTING)
 #  ADD_SUBDIRECTORY(Testing)

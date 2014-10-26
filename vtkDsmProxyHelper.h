@@ -33,7 +33,7 @@
 #include <map>
 
 // BTX
-class vtkHDF5DsmManager;
+class vtkAbstractDsmManager;
 class vtkSteeringWriter;
 class vtkClientServerInterpreter;
 extern "C" void VTK_EXPORT DsmProxyHelperInit(vtkClientServerInterpreter *csi);
@@ -45,12 +45,13 @@ public:
   static vtkDsmProxyHelper *New();
   vtkTypeMacro(vtkDsmProxyHelper,vtkDataObjectAlgorithm);
 
-  virtual void SetDsmManager(vtkHDF5DsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkHDF5DsmManager)
+  virtual void SetDsmManager(vtkAbstractDsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkAbstractDsmManager)
 
+#ifdef ICARUS_HAVE_H5FDDSM
   virtual void SetSteeringWriter(vtkSteeringWriter*);
   vtkGetObjectMacro(SteeringWriter, vtkSteeringWriter)
-
+#endif
   void WriteDataSetArrayData(const char *desc);
 
   int                BlockTraffic;
@@ -61,8 +62,10 @@ protected:
 
   int FillInputPortInformation(int port, vtkInformation* info);
 
-  vtkHDF5DsmManager     *DsmManager;
-  vtkSteeringWriter *SteeringWriter;
+  vtkAbstractDsmManager *DsmManager;
+#ifdef ICARUS_HAVE_H5FDDSM
+  vtkSteeringWriter     *SteeringWriter;
+#endif
 
 private:
     vtkDsmProxyHelper(const vtkDsmProxyHelper&);  // Not implemented.

@@ -31,21 +31,27 @@
 //
 #include <vtksys/SystemTools.hxx>
 //
-#include "vtkHDF5DsmManager.h"
+#include "vtkAbstractDsmManager.h"
+#ifdef ICARUS_HAVE_H5FDDSM
 #include "vtkSteeringWriter.h"
+#endif
 //----------------------------------------------------------------------------
 void vtkObject_Init(vtkClientServerInterpreter* csi);
 int VTK_EXPORT vtkDataObjectAlgorithmCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream, void* /*ctx*/);
 int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObjectBase *ob, const char *method, const vtkClientServerStream& msg, vtkClientServerStream& resultStream);
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkDsmProxyHelper);
-vtkCxxSetObjectMacro(vtkDsmProxyHelper, DsmManager, vtkHDF5DsmManager);
+vtkCxxSetObjectMacro(vtkDsmProxyHelper, DsmManager, vtkAbstractDsmManager);
+#ifdef ICARUS_HAVE_H5FDDSM
 vtkCxxSetObjectMacro(vtkDsmProxyHelper, SteeringWriter, vtkSteeringWriter);
+#endif
 //----------------------------------------------------------------------------
 vtkDsmProxyHelper::vtkDsmProxyHelper()
 {
   this->DsmManager     = NULL;
+#ifdef ICARUS_HAVE_H5FDDSM
   this->SteeringWriter = NULL;
+#endif
   this->SetNumberOfInputPorts(1);
   this->SetNumberOfOutputPorts(1);
   // start in blocked mode to protect DSM file from spurious writes
@@ -55,7 +61,9 @@ vtkDsmProxyHelper::vtkDsmProxyHelper()
 vtkDsmProxyHelper::~vtkDsmProxyHelper()
 { 
   this->SetDsmManager(NULL);
+#ifdef ICARUS_HAVE_H5FDDSM
   this->SetSteeringWriter(NULL);
+#endif
 }
 //----------------------------------------------------------------------------
 int vtkDsmProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInformation* info)
@@ -67,6 +75,7 @@ int vtkDsmProxyHelper::FillInputPortInformation(int vtkNotUsed(port), vtkInforma
 //----------------------------------------------------------------------------
 void vtkDsmProxyHelper::WriteDataSetArrayData(const char *desc)
 {
+#ifdef ICARUS_HAVE_H5FDDSM
   if (this->SteeringWriter && this->SteeringWriter->GetDsmManager()) {
     this->SteeringWriter->SetWriteDescription(desc);
 /*
@@ -80,6 +89,7 @@ void vtkDsmProxyHelper::WriteDataSetArrayData(const char *desc)
   else {
     std::cout << "Steering writer called with invalid DSM setup " << std::endl;
   }
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -131,14 +141,14 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   // We need to use these normal ClientServer set/getters
   //
   if (!strcmp("SetDsmManager",method) && msg.GetNumberOfArguments(0) == 3) {
-    vtkHDF5DsmManager  *temp0;
-    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkHDF5DsmManager")) {
+    vtkAbstractDsmManager  *temp0;
+    if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkAbstractDsmManager")) {
       helper->SetDsmManager(temp0);
       return 1;
     }
   }
   if (!strcmp("GetDsmManager",method) && msg.GetNumberOfArguments(0) == 2) {
-    vtkHDF5DsmManager  *temp20;
+    vtkAbstractDsmManager  *temp20;
     temp20 = (helper)->GetDsmManager();
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
@@ -147,13 +157,17 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
   if (!strcmp("SetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 3) {
     vtkSteeringWriter  *temp0;
     if(vtkClientServerStreamGetArgumentObject(msg, 0, 2, &temp0, "vtkSteeringWriter")) {
+#ifdef ICARUS_HAVE_H5FDDSM
       helper->SetSteeringWriter(temp0);
+#endif
       return 1;
     }
   }
   if (!strcmp("GetSteeringWriter",method) && msg.GetNumberOfArguments(0) == 2) {
     vtkSteeringWriter  *temp20;
+#ifdef ICARUS_HAVE_H5FDDSM
     temp20 = (helper)->GetSteeringWriter();
+#endif
     resultStream.Reset();
     resultStream << vtkClientServerStream::Reply << (vtkObjectBase *)temp20 << vtkClientServerStream::End;
     return 1;
@@ -215,9 +229,11 @@ int VTK_EXPORT vtkDsmProxyHelperCommand(vtkClientServerInterpreter *arlu, vtkObj
       // std::cout << "Calling SetSteeringArray(" << param_name.c_str() << ", {";
       msg.GetArgument(0, nArgs-1, &text); 
       // std::cout << text << ")" << std::endl;
+#ifdef ICARUS_HAVE_H5FDDSM
       helper->GetSteeringWriter()->SetWriteDescription(text);
       helper->WriteDataSetArrayData(text);
-      return 1;
+#endif
+  return 1;
     }
 
     if (!strncmp ("GetSteeringValueDouble",method, 22)) {

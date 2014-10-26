@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqDsmViewerPanel.h
+  Module                  : pqDsmOptions.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,8 +22,8 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#ifndef _pqDsmViewerPanel_h
-#define _pqDsmViewerPanel_h
+#ifndef _pqDsmOptions_h
+#define _pqDsmOptions_h
 
 #include <QDockWidget>
 #include <QMutex>
@@ -38,14 +38,14 @@ class vtkSMSourceProxy;
 
 struct SteeringGUIWidgetInfo;
 
-class pqDsmViewerPanel : public QDockWidget
+class pqDsmOptions : public QDockWidget
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqDsmViewerPanel(QWidget* p = NULL);
-  virtual ~pqDsmViewerPanel();
+  pqDsmOptions(QWidget* p = NULL);
+  virtual ~pqDsmOptions();
 
   bool DsmProxyReady();
   bool DsmReady();

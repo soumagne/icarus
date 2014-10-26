@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqDsmViewerPanel.cxx
+  Module                  : pqDsmOptions.cxx
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,7 +22,7 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#include "pqDsmViewerPanel.h"
+#include "pqDsmOptions.h"
 
 // Qt includes
 #include <QInputDialog>
@@ -65,18 +65,15 @@
 #include "pqCoreUtilities.h"
 #include "pq3DWidget.h"
 //
-#include "ui_pqDsmViewerPanel.h"
+#include "ui_pqDsmOptions.h"
 //
 #include "pqDsmObjectInspector.h"
-#include "vtkHDF5DsmManager.h"
-#include "H5FDdsm.h"
+#include "vtkAbstractDsmManager.h"
 #include "XdmfSteeringParser.h"
 #include "vtkCustomPipelineHelper.h"
-#include "IcarusConfig.h"
 //
 #include <vtksys/SystemTools.hxx>
-
-#include "H5FDdsmTools.h" // h5fd_DSM_DUMP()
+//
 //----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
@@ -86,10 +83,10 @@
 typedef vtkSmartPointer<vtkCustomPipelineHelper> CustomPipeline;
 typedef std::vector< CustomPipeline > PipelineList;
 //----------------------------------------------------------------------------
-class pqDsmViewerPanel::pqInternals : public QObject, public Ui::DsmViewerPanel
+class pqDsmOptions::pqInternals : public QObject, public Ui::DsmOptions
 {
 public:
-  pqInternals(pqDsmViewerPanel* p) : QObject(p)
+  pqInternals(pqDsmOptions* p) : QObject(p)
   {
     this->DsmInitialized      = false;
     this->DsmListening        = false;
@@ -241,7 +238,7 @@ public:
   vtkSmartPointer<vtkSMProxy>              TransformProxy;
 };
 //----------------------------------------------------------------------------
-pqDsmViewerPanel::pqDsmViewerPanel(QWidget* p) :
+pqDsmOptions::pqDsmOptions(QWidget* p) :
 QDockWidget("DSM Manager", p)
 {
   this->Internals = new pqInternals(this);
@@ -269,10 +266,6 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->autoSaveImage,
     SIGNAL(stateChanged(int)), this, SLOT(onautoSaveImageChecked(int)));
   
-  // DSM Commands
-  this->connect(this->Internals->addDsmServer,
-      SIGNAL(clicked()), this, SLOT(onAddDsmServer()));
-
   this->connect(this->Internals->publish,
     SIGNAL(clicked()), this, SLOT(onPublish()));
 
@@ -330,14 +323,10 @@ QDockWidget("DSM Manager", p)
     this, SLOT(onActiveViewChanged(pqView*)));
 
   //
-  // Lock settings so that users cannot break anything
-  this->connect(this->Internals->lockSettings,
-      SIGNAL(stateChanged(int)), this, SLOT(onLockSettings(int)));
-  //
   this->LoadSettings();
 }
 //----------------------------------------------------------------------------
-pqDsmViewerPanel::~pqDsmViewerPanel()
+pqDsmOptions::~pqDsmOptions()
 {
   this->SaveSettings();
 
@@ -350,7 +339,7 @@ pqDsmViewerPanel::~pqDsmViewerPanel()
   this->Internals->TcpNotificationServer = NULL;
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::LoadSettings()
+void pqDsmOptions::LoadSettings()
 {
   pqSettings *settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("DsmManager");
@@ -359,26 +348,9 @@ void pqDsmViewerPanel::LoadSettings()
     for (int i=0; i<size; ++i) {
       settings->setArrayIndex(i);
       QString server = settings->value("server").toString();
-      if (this->Internals->dsmServerName->findText(server) < 0) {
-        this->Internals->dsmServerName->addItem(server);
-      }
     }
   }
   settings->endArray();
-  // Active server
-  this->Internals->dsmServerName->setCurrentIndex(settings->value("Selected", 0).toInt());
-  // Size
-  this->Internals->dsmSize->setValue(settings->value("Size", 0).toInt());
-  // Distribution Type
-  this->Internals->dsmDistributionType->setCurrentIndex(settings->value("DistributionType", 0).toInt());
-  // Block Size
-  this->Internals->dsmBlockLength->setValue(settings->value("BlockLength", 0).toInt());
-  // Method
-  this->Internals->dsmInterCommType->setCurrentIndex(settings->value("Communication", 0).toInt());
-  // Static Communicator
-  this->Internals->staticInterCommBox->setChecked(settings->value("StaticCommunicator", 0).toBool());
-  // Port
-  this->Internals->dsmInterCommPort->setValue(settings->value("Port", 0).toInt());
   // Client/Server/Standalone
   this->Internals->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
   this->Internals->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
@@ -404,31 +376,11 @@ void pqDsmViewerPanel::LoadSettings()
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::SaveSettings()
+void pqDsmOptions::SaveSettings()
 {
   pqSettings *settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("DsmManager");
   // servers
-  settings->beginWriteArray("Servers");
-  for (int i=0; i<this->Internals->dsmServerName->model()->rowCount(); i++) {
-    settings->setArrayIndex(i);
-    settings->setValue("server", this->Internals->dsmServerName->itemText(i));
-  }
-  settings->endArray();
-  // Active server
-  settings->setValue("Selected", this->Internals->dsmServerName->currentIndex());
-  // Size
-  settings->setValue("Size", this->Internals->dsmSize->value());
-  // Distribution Type
-  settings->setValue("DistributionType", this->Internals->dsmDistributionType->currentIndex());
-  // Distribution Type
-  settings->setValue("BlockLength", this->Internals->dsmBlockLength->value());
-  // Method
-  settings->setValue("Communication", this->Internals->dsmInterCommType->currentIndex());
-  // Static Communicator
-  settings->setValue("StaticCommunicator", this->Internals->staticInterCommBox->isChecked());
-  // Port
-  settings->setValue("Port", this->Internals->dsmInterCommPort->value());
   // Client/Server/Standalone
   settings->setValue("dsmServer", this->Internals->dsmIsServer->isChecked());
   settings->setValue("dsmClient", this->Internals->dsmIsClient->isChecked());
@@ -448,7 +400,7 @@ void pqDsmViewerPanel::SaveSettings()
   settings->endGroup();
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::DeleteSteeringWidgets()
+void pqDsmOptions::DeleteSteeringWidgets()
 {
   // Delete old tree
   for(int i = 0; i < this->Internals->dsmArrayTreeWidget->topLevelItemCount(); i++) {
@@ -472,7 +424,7 @@ void pqDsmViewerPanel::DeleteSteeringWidgets()
   this->Internals->pqDsmProxyPipeline = NULL;
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
+void pqDsmOptions::ParseXMLTemplate(const char *filepath)
 {
   //
   // Clean up anything from a previous creation
@@ -499,7 +451,7 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
   //    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 
       // and register on the client too 
-      vtkHDF5DsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
+      vtkAbstractDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
       // now create an actual proxy
       this->Internals->CreateDsmHelperProxy();
     }
@@ -596,23 +548,11 @@ void pqDsmViewerPanel::ParseXMLTemplate(const char *filepath)
 }
 
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::onServerAdded(pqServer *server)
+void pqDsmOptions::onServerAdded(pqServer *server)
 {
-  // for static communicator
-  if (this->Internals->staticInterCommBox->isChecked()) {
-    this->Internals->CreateDsmProxy();
-    // Force the DSM to be recreated 
-    if (this->DsmReady()) {
-      // don't do anything here as we need to let notification socket
-      // tell the gui that a connection has been made
-    }
-    else {
-      vtkGenericWarningMacro(<<"Static communicator error");      
-    }
-  }
 }
 //----------------------------------------------------------------------------
-void pqDsmViewerPanel::onStartRemovingServer(pqServer *server)
+void pqDsmOptions::onStartRemovingServer(pqServer *server)
 {
   if (this->Internals->DsmProxyCreated()) {
     this->Internals->DsmProxy->InvokeCommand("Destroy");
@@ -625,13 +565,13 @@ void pqDsmViewerPanel::onStartRemovingServer(pqServer *server)
   this->Internals->pqDsmProxyPipeline  = NULL;
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onActiveViewChanged(pqView* view)
+void pqDsmOptions::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->Internals->ActiveView = renView;
 }
 //---------------------------------------------------------------------------
-bool pqDsmViewerPanel::DsmProxyReady()
+bool pqDsmOptions::DsmProxyReady()
 {
   if (!this->Internals->DsmProxyCreated()) {
     this->Internals->CreateDsmProxy();
@@ -640,12 +580,13 @@ bool pqDsmViewerPanel::DsmProxyReady()
   return true;
 }
 //---------------------------------------------------------------------------
-bool pqDsmViewerPanel::DsmReady()
+bool pqDsmOptions::DsmReady()
 {
   if (!this->DsmProxyReady()) return 0;
   //
   if (!this->Internals->DsmInitialized) {
     //
+#ifdef ICARUS_HAVE_H5FDDSM
     bool server = (this->Internals->dsmIsServer->isChecked() || this->Internals->dsmIsStandalone->isChecked());
     bool client = (this->Internals->dsmIsClient->isChecked() || this->Internals->dsmIsStandalone->isChecked());
     pqSMAdaptor::setElementProperty(
@@ -703,6 +644,7 @@ bool pqDsmViewerPanel::DsmReady()
       this->Internals->DsmProxy->InvokeCommand("Connect");
       this->Internals->DsmInitialized = 1;
     }
+#endif
     //
     // Create GUI controls from template
     //
@@ -713,10 +655,9 @@ bool pqDsmViewerPanel::DsmReady()
   return this->Internals->DsmInitialized;
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onLockSettings(int state)
+void pqDsmOptions::onLockSettings(int state)
 {
   bool locked = (state == Qt::Checked) ? true : false;
-  this->Internals->dsmSettingBox->setEnabled(!locked);
   this->Internals->descriptionFileSettingBox->setEnabled(!locked);
   this->Internals->autoDisplayDSM->setEnabled(!locked);
   this->Internals->storeDsmContents->setEnabled(!locked);
@@ -724,18 +665,11 @@ void pqDsmViewerPanel::onLockSettings(int state)
   this->Internals->autoExport->setEnabled(!locked);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onAddDsmServer()
+void pqDsmOptions::onAddDsmServer()
 {
-  QString servername = QInputDialog::getText(this, tr("Add DSM Server"),
-            tr("Please enter the host name or IP address of a DSM server you want to add/remove:"), QLineEdit::Normal);
-  if ((this->Internals->dsmServerName->findText(servername) < 0) && !servername.isEmpty()) {
-    this->Internals->dsmServerName->addItem(servername);
-  } else {
-    this->Internals->dsmServerName->removeItem(this->Internals->dsmServerName->findText(servername));
-  }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onBrowseFile()
+void pqDsmOptions::onBrowseFile()
 {
   QList<QUrl> urls;
   urls << QUrl::fromLocalFile(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
@@ -752,7 +686,7 @@ void pqDsmViewerPanel::onBrowseFile()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onBrowseFileImage()
+void pqDsmOptions::onBrowseFileImage()
 {
   QList<QUrl> urls;
   urls << QUrl::fromLocalFile(QDesktopServices::storageLocation(QDesktopServices::HomeLocation));
@@ -770,8 +704,9 @@ void pqDsmViewerPanel::onBrowseFileImage()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onPublish()
+void pqDsmOptions::onPublish()
 {
+#ifdef ICARUS_HAVE_H5FDDSM
   if (this->DsmReady() && !this->Internals->DsmListening) {
     if (this->Internals->DsmInterCommType == H5FD_DSM_COMM_SOCKET) {
       QString hostname = this->Internals->dsmServerName->currentText();
@@ -787,9 +722,10 @@ void pqDsmViewerPanel::onPublish()
     this->Internals->DsmProxy->InvokeCommand("Publish");
     this->Internals->DsmListening = true;
   }
+#endif
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onUnpublish()
+void pqDsmOptions::onUnpublish()
 {
   if (this->DsmReady() && this->Internals->DsmListening) {
     this->Internals->DsmProxy->InvokeCommand("Unpublish");
@@ -797,7 +733,7 @@ void pqDsmViewerPanel::onUnpublish()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
+void pqDsmOptions::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
   this->ChangeItemState(item);
 
@@ -821,7 +757,7 @@ void pqDsmViewerPanel::onArrayItemChanged(QTreeWidgetItem *item, int)
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::ChangeItemState(QTreeWidgetItem *item)
+void pqDsmOptions::ChangeItemState(QTreeWidgetItem *item)
 {
   if (!item) return;
   //
@@ -833,7 +769,7 @@ void pqDsmViewerPanel::ChangeItemState(QTreeWidgetItem *item)
 }
 
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onPause()
+void pqDsmOptions::onPause()
 {
   if (this->DsmReady() && !this->Internals->PauseRequested &&
       (this->Internals->infoCurrentSteeringCommand->text() != QString("paused"))) {
@@ -849,7 +785,7 @@ void pqDsmViewerPanel::onPause()
 }
 
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onPlay()
+void pqDsmOptions::onPlay()
 {
   if (this->DsmReady() &&
       (this->Internals->infoCurrentSteeringCommand->text() == QString("paused"))) {
@@ -867,7 +803,7 @@ void pqDsmViewerPanel::onPlay()
 }
 
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onWriteDataToDisk()
+void pqDsmOptions::onWriteDataToDisk()
 {
   if (this->DsmReady()) {
     const char *steeringCmd = "disk";
@@ -885,7 +821,7 @@ void pqDsmViewerPanel::onWriteDataToDisk()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onWriteDataToDSM()
+void pqDsmOptions::onWriteDataToDSM()
 {
   if (this->DsmReady()) {
     if (!this->Internals->ActiveSourceProxy) {
@@ -914,12 +850,12 @@ void pqDsmViewerPanel::onWriteDataToDSM()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::RunScript()
+void pqDsmOptions::RunScript()
 {
   std::string scriptname = this->Internals->scriptPath->text().toLatin1().data();
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::SaveSnapshot() {
+void pqDsmOptions::SaveSnapshot() {
   std::string pngname = this->Internals->imageFilePath->text().toLatin1().data();
   vtksys::SystemTools::ReplaceString(pngname, "xxxxx", "%05i");
   char buffer[1024];
@@ -929,13 +865,13 @@ void pqDsmViewerPanel::SaveSnapshot() {
   pqSaveScreenshotReaction::saveScreenshot(QString(buffer), size, -1, true);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onautoSaveImageChecked(int checked) {
+void pqDsmOptions::onautoSaveImageChecked(int checked) {
   if (checked) {
     SaveSnapshot();
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id)
+void pqDsmOptions::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id)
 {
   // Registering the proxy as a source will create a pipeline source in the browser
   // temporarily disable error messages to squash one warning about Input being
@@ -974,7 +910,7 @@ void pqDsmViewerPanel::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *n
   display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow, bool GUIupdate)
+void pqDsmOptions::SetTimeAndRange(double range[2], double timenow, bool GUIupdate)
 {
   this->Internals->PipelineTimeRange[0] = range[0];
   this->Internals->PipelineTimeRange[1] = range[1];
@@ -1018,7 +954,7 @@ void pqDsmViewerPanel::SetTimeAndRange(double range[2], double timenow, bool GUI
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateDsmInformation()
+void pqDsmOptions::UpdateDsmInformation()
 {  
   this->DSMLocked.lock();
   this->Internals->DsmProxy->InvokeCommand("OpenCollective");
@@ -1034,7 +970,7 @@ void pqDsmViewerPanel::UpdateDsmInformation()
   this->DSMLocked.unlock();
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
+void pqDsmOptions::GetPipelineTimeInformation(vtkSMSourceProxy *source)
 {
   source->UpdatePipelineInformation();
   //
@@ -1057,7 +993,7 @@ void pqDsmViewerPanel::GetPipelineTimeInformation(vtkSMSourceProxy *source)
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::CreateXdmfPipeline()
+void pqDsmOptions::CreateXdmfPipeline()
 {
   this->Internals->XdmfViewer.TakeReference(vtkCustomPipelineHelper::New("sources", "XdmfReaderBlock"));
   // Connect our DSM manager to the reader (Xdmf)
@@ -1071,12 +1007,12 @@ void pqDsmViewerPanel::CreateXdmfPipeline()
   this->Internals->XdmfReader = vtkSMSourceProxy::SafeDownCast(pipeline1->GetProxy("XdmfReader1"));
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateXdmfInformation()
+void pqDsmOptions::UpdateXdmfInformation()
 {
   this->GetPipelineTimeInformation(this->Internals->XdmfReader);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateXdmfPipeline()
+void pqDsmOptions::UpdateXdmfPipeline()
 {
   // on first update
   if (this->Internals->CreatePipelines) {
@@ -1130,7 +1066,7 @@ void pqDsmViewerPanel::UpdateXdmfPipeline()
 //-----------------------------------------------------------------------------
 // H5Part
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::CreateH5PartPipeline()
+void pqDsmOptions::CreateH5PartPipeline()
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   this->Internals->H5PartReader.TakeReference(
@@ -1156,20 +1092,20 @@ void pqDsmViewerPanel::CreateH5PartPipeline()
   this->Internals->H5PartReader->UpdateVTKObjects();
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateH5PartInformation()
+void pqDsmOptions::UpdateH5PartInformation()
 {
   this->Internals->H5PartReader->InvokeCommand("FileModified");
   this->GetPipelineTimeInformation(this->Internals->H5PartReader);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateH5PartPipeline()
+void pqDsmOptions::UpdateH5PartPipeline()
 {
   this->Internals->H5PartReader->UpdatePipeline(this->Internals->PipelineTime);
 }
 //-----------------------------------------------------------------------------
 // Table
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::CreateTablePipeline()
+void pqDsmOptions::CreateTablePipeline()
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   this->Internals->TableReader.TakeReference(
@@ -1194,20 +1130,20 @@ void pqDsmViewerPanel::CreateTablePipeline()
   this->Internals->TableReader->UpdateProperty("NameStrings");
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateTableInformation()
+void pqDsmOptions::UpdateTableInformation()
 {
   this->Internals->TableReader->InvokeCommand("FileModified");
   this->GetPipelineTimeInformation(this->Internals->TableReader);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateTablePipeline()
+void pqDsmOptions::UpdateTablePipeline()
 {
   this->Internals->TableReader->UpdatePipeline(this->Internals->PipelineTime);
 }
 //-----------------------------------------------------------------------------
 // netCDF
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::CreateNetCDFPipeline()
+void pqDsmOptions::CreateNetCDFPipeline()
 {
   vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
   this->Internals->NetCDFReader.TakeReference(
@@ -1228,18 +1164,18 @@ void pqDsmViewerPanel::CreateNetCDFPipeline()
   this->SetTimeAndRange(range, range[0]);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateNetCDFInformation()
+void pqDsmOptions::UpdateNetCDFInformation()
 {
   this->Internals->NetCDFReader->InvokeCommand("FileModified");
   this->GetPipelineTimeInformation(this->Internals->NetCDFReader);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateNetCDFPipeline()
+void pqDsmOptions::UpdateNetCDFPipeline()
 {
   this->Internals->NetCDFReader->UpdatePipeline(this->Internals->PipelineTime);
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateXdmfTemplate()
+void pqDsmOptions::UpdateXdmfTemplate()
 {
   if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
     if (this->Internals->xdmfFileTypeComboBox->currentIndex() == XML_USE_ORIGINAL) {
@@ -1285,7 +1221,7 @@ void pqDsmViewerPanel::UpdateXdmfTemplate()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pqView*> &viewlist)
+void pqDsmOptions::GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pqView*> &viewlist)
 {
   // find the pipeline associated with this source
   pqPipelineSource* pqsource = pqApplicationCore::instance()->
@@ -1302,7 +1238,7 @@ void pqDsmViewerPanel::GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pq
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::UpdateDsmPipeline()
+void pqDsmOptions::UpdateDsmPipeline()
 {
   // lock the DSM 
   this->DSMLocked.lock();
@@ -1433,7 +1369,7 @@ void pqDsmViewerPanel::UpdateDsmPipeline()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::TrackSource()
+void pqDsmOptions::TrackSource()
 {
   //find the active filter
   pqPipelineSource* item = pqActiveObjects::instance().activeSource();
@@ -1487,7 +1423,7 @@ void pqDsmViewerPanel::TrackSource()
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onNewNotificationSocket()
+void pqDsmOptions::onNewNotificationSocket()
 {
   this->Internals->TcpNotificationSocket =
       this->Internals->TcpNotificationServer->nextPendingConnection();
@@ -1497,14 +1433,10 @@ void pqDsmViewerPanel::onNewNotificationSocket()
       SIGNAL(readyRead()), SLOT(onNotified()), Qt::QueuedConnection);
     this->Internals->TcpNotificationServer->close();
   }
-
-  if (this->Internals->staticInterCommBox->isChecked()) {
-    this->onPublish();
-  }
 }
 
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onNotified()
+void pqDsmOptions::onNotified()
 {
   int error = 0;
   unsigned int notificationCode;
@@ -1522,6 +1454,8 @@ void pqDsmViewerPanel::onNotified()
     double ts_notif, te_notif;
     ts_notif = vtksys::SystemTools::GetTime ();
 #endif
+
+#ifdef ICARUS_HAVE_H5FDDSM
     if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
       std::cout << "New DSM connection established" << std::endl;
     } else {
@@ -1558,6 +1492,7 @@ void pqDsmViewerPanel::onNotified()
         this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
       }
     }
+#endif
   }
 #ifdef ENABLE_TIMERS
   te_notif = vtksys::SystemTools::GetTime ();
@@ -1565,7 +1500,7 @@ void pqDsmViewerPanel::onNotified()
 #endif
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
+void pqDsmOptions::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
 {
   if (this->Internals->ActiveView==NULL && pqActiveView::instance().current()) {
     this->onActiveViewChanged(pqActiveView::instance().current());
@@ -1642,7 +1577,7 @@ void pqDsmViewerPanel::BindWidgetToGrid(const char *propertyname, SteeringGUIWid
   }
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onPreAccept()
+void pqDsmOptions::onPreAccept()
 {
   // We must always open the DSM in parallel before doing reads or writes
   this->DSMLocked.lock();
@@ -1655,7 +1590,7 @@ void pqDsmViewerPanel::onPreAccept()
   //
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::onPostAccept()
+void pqDsmOptions::onPostAccept()
 {
   // Steering data has been written, switch back to parallel mode
   // for safety and before steering array exports are done in parallel
@@ -1674,7 +1609,7 @@ void pqDsmViewerPanel::onPostAccept()
   this->DSMLocked.unlock();
 }
 //-----------------------------------------------------------------------------
-void pqDsmViewerPanel::ExportData(bool force)
+void pqDsmOptions::ExportData(bool force)
 {
   // 
   // @TODO Find a way to 'accept' all 3D widgets so that we can
