@@ -28,7 +28,15 @@
 #include <QWidget>
 #include <QMutex>
 #include <set>
-#include <functional>
+#ifndef ICARUS_NO_LIBCXX
+  #include <functional>
+  #define icarus_std std
+#else
+  #include <boost/function.hpp>
+  #include <boost/bind.hpp>
+  #define icarus_std boost
+  #define nullptr NULL
+#endif
 
 #include "vtkSmartPointer.h"
 // Core Qt 
@@ -62,7 +70,7 @@ public:
   void LoadSettings();
   void SaveSettings();
 
-  void setInitializationFunction(std::function<void()> &f) { 
+  void setInitializationFunction(icarus_std::function<void()> &f) { 
     this->initCallback = f; 
   }
 
@@ -104,7 +112,7 @@ signals:
 
 protected:
 
-  std::function<void()> initCallback;
+  icarus_std::function<void()> initCallback;
   class pqInternals;
   pqInternals *Internals;
   QMutex DSMLocked;

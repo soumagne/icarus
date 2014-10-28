@@ -77,7 +77,6 @@
 #ifdef ICARUS_HAVE_H5FDDSM
  #include "pqH5FDdsmPanel.h"
 #endif
-//
 //----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
@@ -567,7 +566,7 @@ bool pqDsmOptions::DsmReady()
   //
   bool initialized = false;
 #ifdef ICARUS_HAVE_H5FDDSM
-  std::function<void()> func = std::bind(&pqDsmOptions::DsmInitFunction, this);
+  icarus_std::function<void()> func = icarus_std::bind(&pqDsmOptions::DsmInitFunction, this);
   this->Internals->pqH5FDdsmWidget->setInitializationFunction(func);
   initialized = this->Internals->pqH5FDdsmWidget->DsmReady();
 #endif  

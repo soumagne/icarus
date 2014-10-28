@@ -33,6 +33,16 @@ ENDIF (ParaView_SOURCE_DIR)
 #INCLUDE_DIRECTORIES(${XDMF_MPI_INCLUDE_PATH} ${XDMF_LIBXML2_INCLUDE})
 
 #--------------------------------------------------
+# stdlibc++
+#--------------------------------------------------
+OPTION(ICARUS_NO_LIBCXX "Use boost instead of libc++" OFF)
+IF(ICARUS_NO_LIBCXX)
+  add_definitions(-DICARUS_NO_LIBCXX)
+  find_package(Boost REQUIRED)
+  include_directories(${Boost_INCLUDE_DIRS})
+ENDIF()
+
+#--------------------------------------------------
 # Timers
 #--------------------------------------------------
 OPTION(ICARUS_ENABLE_TIMERS "Enable timing of operations." OFF)
