@@ -73,7 +73,7 @@
 
 // Xdmf/DSM features 
 #include "H5FDdsm.h"
-#include "vtkDSMManager.h"
+#include "vtkHDF5DsmManager.h"
 
 // Sys
 #include <sstream>
@@ -521,9 +521,9 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     //
     // If set, setup Xdmf DSM client mode
     //
-    vtkSmartPointer<vtkDSMManager> DSMManager = NULL;
+    vtkSmartPointer<vtkHDF5DsmManager> DSMManager = NULL;
     if (DSMserver || DSMclient || DSMstandalone) {
-      DSMManager = vtkSmartPointer<vtkDSMManager>::New();
+      DSMManager = vtkSmartPointer<vtkHDF5DsmManager>::New();
       if (DSMserver || DSMstandalone) {
         DSMManager->SetDsmIsServer(1);
       }

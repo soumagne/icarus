@@ -53,7 +53,7 @@
 #include "vtkGenericCell.h"
 #include "vtkMath.h"
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 //
 #include <stdlib.h>
 #include <sstream>
@@ -82,7 +82,7 @@
 vtkCxxRevisionMacro(vtkXdmfWriter4, "$Revision$");
 vtkStandardNewMacro(vtkXdmfWriter4);
 vtkCxxSetObjectMacro(vtkXdmfWriter4, Controller, vtkMultiProcessController);
-vtkCxxSetObjectMacro(vtkXdmfWriter4, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkXdmfWriter4, DsmManager, vtkHDF5DsmManager);
 //----------------------------------------------------------------------------
 #define JB_DEBUG__
 #ifdef JB_DEBUG__

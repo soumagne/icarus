@@ -10,7 +10,7 @@
 #define __vtkNetCDFCFDsmReader_h
 
 #include "vtkNetCDFCFReader.h"
-class vtkDsmManager;
+class vtkHDF5DsmManager;
 
 class VTK_EXPORT vtkNetCDFCFDsmReader : public vtkNetCDFCFReader
 {
@@ -22,8 +22,8 @@ public:
   // Set/Get DsmBuffer Manager and enable DSM data reading instead of using
   // disk. The DSM manager is assumed to be created and initialized before
   // being passed into this routine
-  virtual void SetDsmManager(vtkDsmManager*);
-  vtkGetObjectMacro(DsmManager, vtkDsmManager);
+  virtual void SetDsmManager(vtkHDF5DsmManager*);
+  vtkGetObjectMacro(DsmManager, vtkHDF5DsmManager);
 
   virtual int OpenFile(const char *name, int mode, int *id);
   virtual void SetFileModified();
@@ -36,7 +36,7 @@ protected:
    vtkNetCDFCFDsmReader();
   ~vtkNetCDFCFDsmReader();
 
-  vtkDsmManager *DsmManager;
+  vtkHDF5DsmManager *DsmManager;
 
 private:
   vtkNetCDFCFDsmReader(const vtkNetCDFCFDsmReader &); // Not implemented

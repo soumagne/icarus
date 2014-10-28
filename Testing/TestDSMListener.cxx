@@ -68,7 +68,7 @@
 
 // Xdmf/DSM features 
 #include "H5FDdsm.h"
-#include "vtkDSMManager.h"
+#include "vtkHDF5DsmManager.h"
 
 // Sys
 #include <sstream>
@@ -136,7 +136,7 @@ std::string usage = "\n"\
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 void ThreadExecute(void *dsm, vtkTypeInt64 &counter) {
-  vtkDSMManager *DSM = (vtkDSMManager*)dsm;
+  vtkHDF5DsmManager *DSM = (vtkHDF5DsmManager*)dsm;
   if (DSM->GetDsmUpdateReady()) {
     DSM->H5DumpLight();
     DSM->ClearDsmUpdateReady();
@@ -151,7 +151,7 @@ void ThreadExecute(void *dsm, vtkTypeInt64 &counter) {
 #elif HAVE_BOOST_THREADS
 class DSMListenThread {
   public:
-    DSMListenThread(vtkDSMManager *dsm)
+    DSMListenThread(vtkHDF5DsmManager *dsm)
     {
       this->DSMManager = dsm;
       Counter          = 0;
@@ -166,7 +166,7 @@ class DSMListenThread {
       }
     }
     //
-    vtkDSMManager *DSMManager;
+    vtkHDF5DsmManager *DSMManager;
     H5FDdsmInt64   Counter;
     H5FDdsmInt64   UpdatesCounter;
 };
@@ -229,8 +229,8 @@ void MyMain( vtkMultiProcessController *controller, void *arg )
     //
     // If set, setup Xdmf DSM client mode
     //
-    vtkSmartPointer<vtkDSMManager> DSMManager = NULL;
-    DSMManager = vtkSmartPointer<vtkDSMManager>::New();
+    vtkSmartPointer<vtkHDF5DsmManager> DSMManager = NULL;
+    DSMManager = vtkSmartPointer<vtkHDF5DsmManager>::New();
     DSMManager->SetDsmIsServer(1);
     DSMManager->SetController(controller);
     DSMManager->SetDsmCommType(H5FD_DSM_COMM_SOCKET);

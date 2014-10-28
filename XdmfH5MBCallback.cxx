@@ -30,7 +30,7 @@
 #include "XdmfArray.h"
 #include "XdmfHDF.h"
 #include "hdf5_hl.h"
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "H5FDdsm.h"
 
 typedef std::pair<std::string, XdmfArray *> HeavyType;
@@ -59,7 +59,7 @@ H5MBCallback::H5MBCallback(MPI_Comm comm)
   this->AccessPlist = -1;
 }
 //----------------------------------------------------------------------------
-void  H5MBCallback::SetDsmManager(vtkDsmManager *dsmmanager)
+void  H5MBCallback::SetDsmManager(vtkHDF5DsmManager *dsmmanager)
 {
   this->DsmManager = dsmmanager;
 }

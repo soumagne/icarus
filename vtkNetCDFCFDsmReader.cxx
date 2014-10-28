@@ -5,7 +5,7 @@
 #include "vtkInformationVector.h"
 #include "vtkSmartPointer.h"
 #include "netcdf.h"
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "IcarusConfig.h"
 #include <vector>
 
@@ -32,7 +32,7 @@ extern "C" {
 //=============================================================================
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkNetCDFCFDsmReader);
-vtkCxxSetObjectMacro(vtkNetCDFCFDsmReader, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkNetCDFCFDsmReader, DsmManager, vtkHDF5DsmManager);
 //----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 vtkNetCDFCFDsmReader::vtkNetCDFCFDsmReader()

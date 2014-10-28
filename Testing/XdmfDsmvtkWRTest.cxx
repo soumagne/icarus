@@ -35,7 +35,7 @@
 #include "vtkMPIController.h"
 
 #include "vtkMultiProcessController.h"
-#include "vtkDSMManager.h"
+#include "vtkHDF5DsmManager.h"
 #include "vtkXdmfReaderOld.h"
 #include "vtkXdmfWriter2.h"
 #include "vtkXdmfWriter4.h"
@@ -76,7 +76,7 @@ void
 MyMain(vtkMultiProcessController *con, void *arg)
 {
   vtkMPIController *controller = vtkMPIController::SafeDownCast(con);
-  vtkSmartPointer<vtkDSMManager> DSMManager = vtkSmartPointer<vtkDSMManager>::New();
+  vtkSmartPointer<vtkHDF5DsmManager> DSMManager = vtkSmartPointer<vtkHDF5DsmManager>::New();
   DSMManager->SetController(controller);
   DSMManager->SetLocalBufferSizeMBytes(128);
   DSMManager->CreateDSM();

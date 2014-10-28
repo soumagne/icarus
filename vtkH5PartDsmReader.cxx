@@ -29,7 +29,7 @@
 #include "vtkObjectFactory.h"
 #include "vtkStreamingDemandDrivenPipeline.h"
 //
-#include "vtkDsmManager.h"
+#include "vtkHDF5DsmManager.h"
 //
 // For PARAVIEW_USE_MPI
 #include "vtkPVConfig.h"
@@ -50,7 +50,7 @@
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkH5PartDsmReader, DsmManager, vtkDsmManager);
+vtkCxxSetObjectMacro(vtkH5PartDsmReader, DsmManager, vtkHDF5DsmManager);
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 //#define JB_DEBUG__
