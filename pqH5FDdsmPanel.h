@@ -1,7 +1,7 @@
 /*=========================================================================
 
   Project                 : Icarus
-  Module                  : pqDsmOptions.h
+  Module                  : pqH5FDdsmPanel.h
 
   Authors:
      John Biddiscombe     Jerome Soumagne
@@ -22,44 +22,54 @@
   Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
 
 =========================================================================*/
-#ifndef _pqDsmOptions_h
-#define _pqDsmOptions_h
+#ifndef _pqH5FDdsmPanel_h
+#define _pqH5FDdsmPanel_h
 
-#include <QDockWidget>
+#include <QWidget>
 #include <QMutex>
 #include <set>
+#include <functional>
 
+#include "vtkSmartPointer.h"
 // Core Qt 
 class QTreeWidgetItem;
 // Servermanager and views
 class pqServer;
 class pqView;
+class vtkSMProxy;
 class vtkSMSourceProxy;
 
 struct SteeringGUIWidgetInfo;
 
-class pqDsmOptions : public QDockWidget
+class pqH5FDdsmPanel : public QWidget
 {
   Q_OBJECT
 
 public:
   /// constructor
-  pqDsmOptions(QWidget* p = NULL);
-  virtual ~pqDsmOptions();
+  pqH5FDdsmPanel(QWidget* p = NULL);
+  virtual ~pqH5FDdsmPanel();
 
   bool DsmProxyReady();
   bool DsmReady();
   bool DsmListening();
-  void DsmInitFunction();
+  bool DsmInitialized();
 
-signals:
+  vtkSmartPointer<vtkSMProxy> CreateDsmProxy();
+  vtkSmartPointer<vtkSMProxy> CreateDsmHelperProxy();
+
+  /// Load/Save settings from paraview ini/config file
+  void LoadSettings();
+  void SaveSettings();
+
+  void setInitializationFunction(std::function<void()> &f) { 
+    this->initCallback = f; 
+  }
 
 public slots:
   // Server Add/Remove notifications
   void onServerAdded(pqServer *server);
   void onStartRemovingServer(pqServer *server);
-  // Active View changes
-  void onActiveViewChanged(pqView* view);
 
   // Enable / Disable setting blocks
   void onLockSettings(int state);
@@ -71,65 +81,30 @@ public slots:
   // User actions to edit DSM server locations
   void onAddDsmServer();
 
-  // User activated steering actions
-  void onBrowseFile();
-  void onBrowseFileImage();
-  void onautoSaveImageChecked(int);
-  void SaveSnapshot();
-  void RunScript();
-  void ExportData(bool force);
+  // Sending data to DSM
+  void onWriteDataToDSM();
 
+  void onNewNotificationSocket();
 
-  void onArrayItemChanged(QTreeWidgetItem*, int);
-
+  // triggered by updates from simulation
+  void onNotified();
+  void onPreAccept();
+  void onPostAccept();
   void onPause();
   void onPlay();
 
-  // triggered by updates from simulation
-  void UpdateDsmInformation();
-  void UpdateDsmPipeline();
-  void UpdateDsmStatus(QString status);
-  void onPreAccept();
-  void onPostAccept();
+  void TrackSource();
 
-  void BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex);
+public:
+signals:
 
-private slots:
+  void UpdateInformation();
+  void UpdateData();
+  void UpdateStatus(QString status);
 
 protected:
-  /// Load/Save settings from paraview ini/config file
-  void LoadSettings();
-  void SaveSettings();
-  //
-  void CreateXdmfPipeline();
-  void UpdateXdmfInformation();
-  void UpdateXdmfPipeline();
-  void UpdateXdmfTemplate();
-  //
-  void CreateH5PartPipeline();
-  void UpdateH5PartInformation();
-  void UpdateH5PartPipeline();
-  //
-  void CreateNetCDFPipeline();
-  void UpdateNetCDFPipeline();
-  void UpdateNetCDFInformation();
-  //
-  void CreateTablePipeline();
-  void UpdateTableInformation();
-  void UpdateTablePipeline();
-  //
-  void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
-  void GetPipelineTimeInformation(vtkSMSourceProxy *source);
-  void SetTimeAndRange(double range[2], double timenow, bool GUIupdate=false);
-  void GetViewsForPipeline(vtkSMSourceProxy *source, std::set<pqView*> &viewlist);
 
-  /// Generate objects for steering
-  void ParseXMLTemplate(const char *filepath);
-  void DeleteSteeringWidgets();
-
-  /// Control of blocks
-  void ChangeItemState(QTreeWidgetItem *item);
-
+  std::function<void()> initCallback;
   class pqInternals;
   pqInternals *Internals;
   QMutex DSMLocked;

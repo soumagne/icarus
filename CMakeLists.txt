@@ -42,7 +42,6 @@ ENDIF(ICARUS_ENABLE_TIMERS)
 
 option(ICARUS_USE_H5FDDSM "Build H5FDdsm support into plugin" OFF)
 
-add_definitions(-DICARUS_HAVE_H5FDFDM)
 #--------------------------------------------------
 # Find and Use System libs (only needed on WIN32)
 #--------------------------------------------------
@@ -61,6 +60,7 @@ add_definitions(-DICARUS_HAVE_H5FDFDM)
 
 if(ICARUS_USE_H5FDDSM)
 
+add_definitions(-DICARUS_HAVE_H5FDDSM)
 #--------------------------------------------------
 # DSM H5Part Reader needs pv-meshless
 #--------------------------------------------------
@@ -118,38 +118,9 @@ CONFIGURE_FILE(
   ${CMAKE_CURRENT_SOURCE_DIR}/IcarusConfig.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/IcarusConfig.h)
 
-#--------------------------------------------------
-# Setup GUI custom Qt panel sources and wrapping
-#--------------------------------------------------
-IF(PARAVIEW_BUILD_QT_GUI)
-  QT4_WRAP_CPP(
-    DSM_MOC_SRCS 
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.h
-      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.h
-  )
-
-  # invoke macro that adds the refinement and display controls panel
-  ADD_PARAVIEW_DOCK_WINDOW(
-    DSM_IFACE 
-    DSM_IFACE_SRCS 
-    CLASS_NAME
-      pqDsmOptions
-    DOCK_AREA 
-      Left Right Top Bottom
-  )
-  QT4_WRAP_UI(
-    DSM_UI_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.ui
-  )
-ENDIF(PARAVIEW_BUILD_QT_GUI)
-
-encode_files_as_strings(ENCODED_FILTERS
-  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
-)
-
 if(ICARUS_USE_H5FDDSM)
   set(ICARUS_H5FDDSM_SM_XML
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkAbstractDsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
@@ -164,7 +135,48 @@ if(ICARUS_USE_H5FDDSM)
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkSteeringWriter.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmTableReader.cxx
   )
+  set(ICARUS_H5FDDSM_QT_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqH5FDdsmPanel.cxx
+  )
+  set(ICARUS_H5FDDSM_UI_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqH5FDdsmPanel.ui
+  )
+  set(ICARUS_H5FDDSM_MOC_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqH5FDdsmPanel.h
+  )
 endif()
+
+#--------------------------------------------------
+# Setup GUI custom Qt panel sources and wrapping
+#--------------------------------------------------
+IF(PARAVIEW_BUILD_QT_GUI)
+  QT4_WRAP_CPP(
+    DSM_MOC_SRCS 
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.h
+      ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.h
+      ${ICARUS_H5FDDSM_MOC_SRCS}
+  )
+
+  # invoke macro that adds the refinement and display controls panel
+  ADD_PARAVIEW_DOCK_WINDOW(
+    DSM_IFACE 
+    DSM_IFACE_SRCS 
+    CLASS_NAME
+      pqDsmOptions
+    DOCK_AREA 
+      Left Right Top Bottom
+  )
+  QT4_WRAP_UI(
+    DSM_UI_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.ui
+    ${ICARUS_H5FDDSM_UI_SRCS}
+  )
+ENDIF(PARAVIEW_BUILD_QT_GUI)
+
+encode_files_as_strings(ENCODED_FILTERS
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_TransformBlock.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/CustomFilter_XdmfReaderBlock.xml
+)
 
 #--------------------------------------------------
 # XdmfGenerator
@@ -204,6 +216,7 @@ ADD_PARAVIEW_PLUGIN(
   GUI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmObjectInspector.cxx
+    ${ICARUS_H5FDDSM_QT_SRCS}
     ${DSM_IFACE_SRCS}
     ${DSM_MOC_SRCS}
     ${DSM_UI_SOURCES}
@@ -213,6 +226,7 @@ ADD_PARAVIEW_PLUGIN(
     ${CMAKE_CURRENT_SOURCE_DIR}/Icarus_Readers.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/Filters.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/pqDsmOptions.ui
+    ${ICARUS_H5FDDSM_UI_SRCS}
 )
 if(ICARUS_USE_H5FDDSM)
   TARGET_LINK_LIBRARIES(${PLUGIN_NAME}  XdmfGenerator ${ICARUS_NETCDF_LIBS})

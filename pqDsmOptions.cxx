@@ -74,6 +74,10 @@
 //
 #include <vtksys/SystemTools.hxx>
 //
+#ifdef ICARUS_HAVE_H5FDDSM
+ #include "pqH5FDdsmPanel.h"
+#endif
+//
 //----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
@@ -88,27 +92,24 @@ class pqDsmOptions::pqInternals : public QObject, public Ui::DsmOptions
 public:
   pqInternals(pqDsmOptions* p) : QObject(p)
   {
-    this->DsmInitialized      = false;
-    this->DsmListening        = false;
     this->PauseRequested      = false;
-    this->ActiveSourcePort    = 0;
     this->ActiveView          = NULL;
     this->pqObjectInspector   = NULL;
     this->pqDsmProxyPipeline  = NULL;
     this->SteeringParser      = NULL;
-    this->DsmInterCommType    = 0;
-    this->DsmDistributionType = 0;
     this->CreatePipelines     = true;
     this->PipelineTimeRange[0]= 0.0;
     this->PipelineTimeRange[1]= 1.0;
     this->PipelineTime        = 0.0;
     this->CurrentTimeStep     = 0;
+#ifdef ICARUS_HAVE_H5FDDSM
+    this->pqH5FDdsmWidget     = NULL;
+#endif
   };
 
   //
   virtual ~pqInternals() {
     this->DsmProxyHelper     = NULL;
-    this->SteeringWriter     = NULL;
     this->XdmfReader         = NULL;
     this->H5PartReader       = NULL;
     this->NetCDFReader       = NULL;
@@ -117,7 +118,6 @@ public:
     if (this->SteeringParser) {
       delete this->SteeringParser;
     }
-    this->ActiveSourceProxy  = NULL;
     if (this->DsmProxyCreated()) {
       this->DsmProxy->InvokeCommand("Destroy");
     }
@@ -132,36 +132,37 @@ public:
   }
   void CreateDsmProxy() {
     vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-    this->DsmProxy.TakeReference(pm->NewProxy("icarus_helpers", "DsmManager"));
-    this->DsmProxy->UpdatePropertyInformation();
+#ifdef ICARUS_HAVE_H5FDDSM
+    this->DsmProxy = this->pqH5FDdsmWidget->CreateDsmProxy();
+#elif ICARUS_HAVE_BONSAI
+#else
+//  #error At least one DSM type must be specified through cmake options / compiler #defines
+#endif
   }
   // 
   void CreateDsmHelperProxy() {
     if (!this->DsmProxyCreated()) {
+#ifdef ICARUS_HAVE_H5FDDSM
+    this->DsmProxy = this->pqH5FDdsmWidget->CreateDsmProxy();
       this->CreateDsmProxy();
     }
-    //
+    this->DsmProxyHelper = this->pqH5FDdsmWidget->CreateDsmHelperProxy();
+#elif ICARUS_HAVE_BONSAI
+    }
+#else
+    }
+//    #error At least one DSM type must be specified through cmake options / compiler #defines
+#endif
     vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
-    this->DsmProxyHelper.TakeReference(pm->NewProxy("icarus_helpers", "DsmProxyHelper"));
-    this->DsmProxyHelper->UpdatePropertyInformation();
-    this->DsmProxyHelper->UpdateVTKObjects();
-    
-    //
     // wrap the DsmProxyHelper object in a pqPipelineSource so that we can use it in our object inspector
     pm->RegisterProxy("layouts", "DsmProxyHelper", this->DsmProxyHelper);
     // this->DsmProxyHelper->FastDelete();
     this->pqDsmProxyPipeline = new pqPipelineSource("DSMProxyHelper", this->DsmProxyHelper, this->getActiveServer(), 0);
 
-    //
-    this->TransformProxy.TakeReference(pm->NewProxy("extended_sources", "Transform3"));
-//    pm->RegisterProxy("extended_sources", "Transform3", this->TransformProxy);
-    //
-    // Set our Transform object in the HelperProxy for later use
-//    pqSMAdaptor::setProxyProperty(this->DsmProxyHelper->GetProperty("Transform"), this->TransformProxy);
-    //
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DsmProxyHelper->GetProperty("DsmManager"), this->DsmProxy);
-    //
+
+#ifdef USE_STEERINGWRITER
     // We will also be needing a vtkSteeringWriter, so create that now
     this->SteeringWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "SteeringWriter")));
     pqSMAdaptor::setProxyProperty(this->SteeringWriter->GetProperty("DsmManager"), this->DsmProxy);
@@ -170,6 +171,8 @@ public:
 
     // Set the DSM manager it uses for communication, (warning: updates all properties)
     pqSMAdaptor::setProxyProperty(this->DsmProxyHelper->GetProperty("SteeringWriter"), this->SteeringWriter);
+#endif
+
     this->DsmProxyHelper->UpdateVTKObjects();
 
     //
@@ -186,16 +189,9 @@ public:
   // ---------------------------------------------------------------
   // Variables for DSM management
   // ---------------------------------------------------------------
-  int                                       DsmInitialized;
   vtkSmartPointer<vtkSMProxy>               DsmProxy;
   vtkSmartPointer<vtkSMProxy>               DsmProxyHelper;
-  bool                                      DsmListening;
   bool                                      PauseRequested;
-  int                                       DsmInterCommType;
-  int                                       DsmDistributionType;
-  QTcpServer*                               TcpNotificationServer;
-  QTcpSocket*                               TcpNotificationSocket;
-  vtkSmartPointer<vtkSMSourceProxy>         SteeringWriter;
   // ---------------------------------------------------------------
   // Principal pipeline of Xdmf[->ExtractBlock]
   // ---------------------------------------------------------------
@@ -224,19 +220,16 @@ public:
   // ---------------------------------------------------------------
   pqRenderView                             *ActiveView;
   // ---------------------------------------------------------------
-  // Experimental, writing to Xdmf 
-  // ---------------------------------------------------------------
-  vtkSmartPointer<vtkSMProxy>               ActiveSourceProxy;
-  int                                       ActiveSourcePort;
-  // ---------------------------------------------------------------
   // DataExport commands
   // ---------------------------------------------------------------
   vtkTimeStamp                              LastExportTime;
   //
   //
-  vtkSmartPointer<vtkSMSourceProxy>        TransformFilterProxy;
-  vtkSmartPointer<vtkSMProxy>              TransformProxy;
+#ifdef ICARUS_HAVE_H5FDDSM
+  pqH5FDdsmPanel                          *pqH5FDdsmWidget;
+#endif
 };
+
 //----------------------------------------------------------------------------
 pqDsmOptions::pqDsmOptions(QWidget* p) :
 QDockWidget("DSM Manager", p)
@@ -244,12 +237,10 @@ QDockWidget("DSM Manager", p)
   this->Internals = new pqInternals(this);
   this->Internals->setupUi(this);
 
-  // Create a new notification socket
-  this->Internals->TcpNotificationServer = new QTcpServer(this);
-  this->connect(this->Internals->TcpNotificationServer, 
-    SIGNAL(newConnection()), SLOT(onNewNotificationSocket()));
-  this->Internals->TcpNotificationServer->listen(QHostAddress::Any,
-      VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT);
+#ifdef ICARUS_HAVE_H5FDDSM
+    this->Internals->pqH5FDdsmWidget = new pqH5FDdsmPanel(this);
+    this->Internals->dsmLayout->addWidget(this->Internals->pqH5FDdsmWidget); 
+#endif
 
   //
   // Link GUI object events to callbacks
@@ -279,14 +270,19 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->play,
       SIGNAL(clicked()), this, SLOT(onPlay()));
 
-  this->connect(this->Internals->writeToDisk,
-      SIGNAL(clicked()), this, SLOT(onWriteDataToDisk()));
-
   this->connect(this->Internals->dsmArrayTreeWidget,
       SIGNAL(itemChanged(QTreeWidgetItem*, int)), this, SLOT(onArrayItemChanged(QTreeWidgetItem*, int)));
 
-  this->connect(this->Internals->writeToDSM,
-      SIGNAL(clicked()), this, SLOT(onWriteDataToDSM()));
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->connect(this->Internals->publish,
+    SIGNAL(clicked()), this->Internals->pqH5FDdsmWidget, SLOT(onPublish()));
+  this->connect(this->Internals->pqH5FDdsmWidget, SIGNAL(UpdateData()), 
+    this, SLOT(UpdateDsmPipeline()));
+  this->connect(this->Internals->pqH5FDdsmWidget, SIGNAL(UpdateInformation()), 
+    this, SLOT(UpdateDsmInformation()));
+  this->connect(this->Internals->pqH5FDdsmWidget, SIGNAL(UpdateStatus(QString)), 
+    this, SLOT(UpdateDsmStatus(QString)));
+#endif
 
   //
   // Link paraview events to callbacks
@@ -305,6 +301,7 @@ QDockWidget("DSM Manager", p)
   //
   ////////////
   //keep self up to date whenever a new source becomes the active one
+/*
   this->connect(&pqActiveObjects::instance(), 
     SIGNAL(sourceChanged(pqPipelineSource*)),
     this, SLOT(TrackSource()));
@@ -316,7 +313,7 @@ QDockWidget("DSM Manager", p)
   this->connect(smModel,
     SIGNAL(sourceRemoved(pqPipelineSource*)),
     this, SLOT(TrackSource()));
-
+*/
   // Track the active view so we can display contents in it
   QObject::connect(&pqActiveView::instance(),
     SIGNAL(changed(pqView*)),
@@ -325,36 +322,24 @@ QDockWidget("DSM Manager", p)
   //
   this->LoadSettings();
 }
+
 //----------------------------------------------------------------------------
 pqDsmOptions::~pqDsmOptions()
 {
   this->SaveSettings();
-
   this->DeleteSteeringWidgets();
-
-  // Close TCP notification socket
-  if (this->Internals->TcpNotificationServer) {
-    delete this->Internals->TcpNotificationServer;
-  }
-  this->Internals->TcpNotificationServer = NULL;
 }
+
 //----------------------------------------------------------------------------
 void pqDsmOptions::LoadSettings()
 {
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->LoadSettings();
+#endif
+
   pqSettings *settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("DsmManager");
-  int size = settings->beginReadArray("Servers");
-  if (size>0) {
-    for (int i=0; i<size; ++i) {
-      settings->setArrayIndex(i);
-      QString server = settings->value("server").toString();
-    }
-  }
-  settings->endArray();
-  // Client/Server/Standalone
-  this->Internals->dsmIsServer->setChecked(settings->value("dsmServer", 0).toBool());
-  this->Internals->dsmIsClient->setChecked(settings->value("dsmClient", 0).toBool());
-  this->Internals->dsmIsStandalone->setChecked(settings->value("dsmStandalone", 0).toBool());
+
   // Description file type
   this->Internals->xdmfFileTypeComboBox->setCurrentIndex(settings->value("DescriptionFileType", 0).toInt());
   // Description file path
@@ -375,16 +360,16 @@ void pqDsmOptions::LoadSettings()
   }
   settings->endGroup();
 }
+
 //----------------------------------------------------------------------------
 void pqDsmOptions::SaveSettings()
 {
   pqSettings *settings = pqApplicationCore::instance()->settings();
   settings->beginGroup("DsmManager");
   // servers
-  // Client/Server/Standalone
-  settings->setValue("dsmServer", this->Internals->dsmIsServer->isChecked());
-  settings->setValue("dsmClient", this->Internals->dsmIsClient->isChecked());
-  settings->setValue("dsmStandalone", this->Internals->dsmIsStandalone->isChecked());
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->SaveSettings();
+#endif
   // Description file type
   settings->setValue("DescriptionFileType", this->Internals->xdmfFileTypeComboBox->currentIndex());
   // Description file path
@@ -399,6 +384,7 @@ void pqDsmOptions::SaveSettings()
   //
   settings->endGroup();
 }
+
 //----------------------------------------------------------------------------
 void pqDsmOptions::DeleteSteeringWidgets()
 {
@@ -423,6 +409,7 @@ void pqDsmOptions::DeleteSteeringWidgets()
   this->Internals->pqObjectInspector  = NULL;
   this->Internals->pqDsmProxyPipeline = NULL;
 }
+
 //----------------------------------------------------------------------------
 void pqDsmOptions::ParseXMLTemplate(const char *filepath)
 {
@@ -430,6 +417,7 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
   // Clean up anything from a previous creation
   //
   this->DeleteSteeringWidgets();
+
   //
   // Parse XML template and create proxies, 
   // We must parse XML first, otherwise the DsmHelperProxy is empty
@@ -440,15 +428,13 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
 
   if (this->Internals->DsmProxyCreated()) {
     // Get the XML for our Helper proxy and send it to the DSM manager
-    // it will register the XML with the proxt manager on the server
+    // it will register the XML with the proxy manager on the server
     std::string HelperProxyXML = this->Internals->SteeringParser->GetHelperProxyString();
     if (HelperProxyXML.size()>0) {
       // register proxy on the server
       pqSMAdaptor::setElementProperty(
         this->Internals->DsmProxy->GetProperty("HelperProxyXMLString"), HelperProxyXML.c_str());
       this->Internals->DsmProxy->UpdateProperty("HelperProxyXMLString");
-
-  //    vtkSMProxyManager::GetProxyManager()->GetProxyDefinitionManager()->SynchronizeDefinitions();
 
       // and register on the client too 
       vtkAbstractDsmManager::RegisterHelperProxy(HelperProxyXML.c_str());
@@ -498,14 +484,6 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
     this->Internals->pqObjectInspector->updatePropertiesPanel(this->Internals->pqDsmProxyPipeline);
     this->Internals->generatedLayout->addWidget(this->Internals->pqObjectInspector); 
 
-    // before changes are accepted
-    this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(preaccept()), this, SLOT(onPreAccept()));
-
-    this->connect(this->Internals->pqObjectInspector,
-      SIGNAL(postaccept()), this, SLOT(onPostAccept()));
-
-
     //// before changes are accepted
     this->connect(this->Internals->pqObjectInspector,
       SIGNAL(preapplied()), this, SLOT(onPreAccept()));
@@ -551,25 +529,27 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
 void pqDsmOptions::onServerAdded(pqServer *server)
 {
 }
+
 //----------------------------------------------------------------------------
 void pqDsmOptions::onStartRemovingServer(pqServer *server)
 {
   if (this->Internals->DsmProxyCreated()) {
     this->Internals->DsmProxy->InvokeCommand("Destroy");
     this->Internals->DsmProxy = NULL;
-    this->Internals->DsmInitialized = 0;
   }
   delete this->Internals->pqObjectInspector;
   delete this->Internals->pqDsmProxyPipeline;
   this->Internals->pqObjectInspector = NULL;
   this->Internals->pqDsmProxyPipeline  = NULL;
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onActiveViewChanged(pqView* view)
 {
   pqRenderView* renView = qobject_cast<pqRenderView*>(view);
   this->Internals->ActiveView = renView;
 }
+
 //---------------------------------------------------------------------------
 bool pqDsmOptions::DsmProxyReady()
 {
@@ -579,81 +559,41 @@ bool pqDsmOptions::DsmProxyReady()
   }
   return true;
 }
+
 //---------------------------------------------------------------------------
 bool pqDsmOptions::DsmReady()
 {
   if (!this->DsmProxyReady()) return 0;
   //
-  if (!this->Internals->DsmInitialized) {
-    //
+  bool initialized = false;
 #ifdef ICARUS_HAVE_H5FDDSM
-    bool server = (this->Internals->dsmIsServer->isChecked() || this->Internals->dsmIsStandalone->isChecked());
-    bool client = (this->Internals->dsmIsClient->isChecked() || this->Internals->dsmIsStandalone->isChecked());
-    pqSMAdaptor::setElementProperty(
-      this->Internals->DsmProxy->GetProperty("IsServer"), server);
-    //
-    if (server) {
-      if (this->Internals->dsmInterCommType->currentText() == QString("MPI")) {
-        this->Internals->DsmInterCommType = H5FD_DSM_COMM_MPI;
-      }
-      else if (this->Internals->dsmInterCommType->currentText() == QString("Sockets")) {
-        this->Internals->DsmInterCommType = H5FD_DSM_COMM_SOCKET;
-      }
-      else if (this->Internals->dsmInterCommType->currentText() == QString("MPI_RMA")) {
-        this->Internals->DsmInterCommType = H5FD_DSM_COMM_MPI_RMA;
-      }
-      else if (this->Internals->dsmInterCommType->currentText() == QString("DMAPP")) {
-        this->Internals->DsmInterCommType = H5FD_DSM_COMM_DMAPP;
-      }
-      pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("InterCommType"),
-        this->Internals->DsmInterCommType);
-      //
-      pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("UseStaticInterComm"),
-        this->Internals->staticInterCommBox->isChecked());
-      //
-      if (this->Internals->dsmDistributionType->currentText() == QString("Contiguous")) {
-        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_UNIFORM;
-      }
-      else if (this->Internals->dsmDistributionType->currentText() == QString("Block Cyclic")) {
-        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_BLOCK_CYCLIC;
-      }
-      else if (this->Internals->dsmDistributionType->currentText() == QString("Random Block Cyclic")) {
-        this->Internals->DsmDistributionType = H5FD_DSM_TYPE_BLOCK_RANDOM;
-      }
-      pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("DistributionType"),
-        this->Internals->DsmDistributionType);
-      //
-      pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("BlockLength"),
-        this->Internals->dsmBlockLength->value());
-      //
-      pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("LocalBufferSizeMBytes"),
-        this->Internals->dsmSize->value());
-      //
-      this->Internals->DsmProxy->UpdateVTKObjects();
-      this->Internals->DsmProxy->InvokeCommand("Create");
-      this->Internals->DsmInitialized = 1;
-    }
-    else if (client) {
-      this->Internals->DsmProxy->InvokeCommand("ReadConfigFile");
-      this->Internals->DsmProxy->InvokeCommand("Create");
-      this->Internals->DsmProxy->InvokeCommand("Connect");
-      this->Internals->DsmInitialized = 1;
-    }
-#endif
-    //
-    // Create GUI controls from template
-    //
-    if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
-      this->ParseXMLTemplate(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
-    }
-  }
-  return this->Internals->DsmInitialized;
+  std::function<void()> func = std::bind(&pqDsmOptions::DsmInitFunction, this);
+  this->Internals->pqH5FDdsmWidget->setInitializationFunction(func);
+  initialized = this->Internals->pqH5FDdsmWidget->DsmReady();
+#endif  
+  return initialized;
 }
+
+//---------------------------------------------------------------------------
+void pqDsmOptions::DsmInitFunction()
+{
+  //
+  // Create GUI controls from template
+  //
+  if (!this->Internals->xdmfFilePathLineEdit->text().isEmpty()) {
+    this->ParseXMLTemplate(this->Internals->xdmfFilePathLineEdit->text().toLatin1().data());
+  }
+}
+
+//---------------------------------------------------------------------------
+bool pqDsmOptions::DsmListening()
+{
+#ifdef ICARUS_HAVE_H5FDDSM
+  return this->Internals->pqH5FDdsmWidget->DsmListening();
+#endif  
+  return false;
+}
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onLockSettings(int state)
 {
@@ -664,10 +604,12 @@ void pqDsmOptions::onLockSettings(int state)
   this->Internals->imageSaveBox->setEnabled(!locked);
   this->Internals->autoExport->setEnabled(!locked);
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onAddDsmServer()
 {
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onBrowseFile()
 {
@@ -685,6 +627,7 @@ void pqDsmOptions::onBrowseFile()
     this->ParseXMLTemplate(fileName.toLatin1().data());
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onBrowseFileImage()
 {
@@ -703,35 +646,21 @@ void pqDsmOptions::onBrowseFileImage()
     this->Internals->imageFilePath->insert(QString(fileName.c_str()));
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onPublish()
 {
-#ifdef ICARUS_HAVE_H5FDDSM
-  if (this->DsmReady() && !this->Internals->DsmListening) {
-    if (this->Internals->DsmInterCommType == H5FD_DSM_COMM_SOCKET) {
-      QString hostname = this->Internals->dsmServerName->currentText();
-      pqSMAdaptor::setElementProperty(
-          this->Internals->DsmProxy->GetProperty("ServerHostName"),
-          hostname.toLatin1().data());
-
-      pqSMAdaptor::setElementProperty(
-          this->Internals->DsmProxy->GetProperty("ServerPort"),
-          this->Internals->dsmInterCommPort->value());
-    }
-    this->Internals->DsmProxy->UpdateVTKObjects();
-    this->Internals->DsmProxy->InvokeCommand("Publish");
-    this->Internals->DsmListening = true;
-  }
-#endif
+  if (this->DsmReady()) {}
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onUnpublish()
 {
-  if (this->DsmReady() && this->Internals->DsmListening) {
+  if (this->DsmReady() && this->DsmListening()) {
     this->Internals->DsmProxy->InvokeCommand("Unpublish");
-    this->Internals->DsmListening = false;
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onArrayItemChanged(QTreeWidgetItem *item, int)
 {
@@ -756,6 +685,7 @@ void pqDsmOptions::onArrayItemChanged(QTreeWidgetItem *item, int)
     this->Internals->DsmProxy->UpdateVTKObjects();
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::ChangeItemState(QTreeWidgetItem *item)
 {
@@ -771,89 +701,25 @@ void pqDsmOptions::ChangeItemState(QTreeWidgetItem *item)
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onPause()
 {
-  if (this->DsmReady() && !this->Internals->PauseRequested &&
-      (this->Internals->infoCurrentSteeringCommand->text() != QString("paused"))) {
-    const char *steeringCmd = "pause";
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        steeringCmd);
-    this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert("pause requested");
-    this->Internals->PauseRequested = true;
-    this->Internals->DsmProxy->UpdateVTKObjects();
-  }
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->onPause();
+#endif
 }
 
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onPlay()
 {
-  if (this->DsmReady() &&
-      (this->Internals->infoCurrentSteeringCommand->text() == QString("paused"))) {
-    const char *steeringCmd = "play";
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        "Modified");
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        steeringCmd);
-    this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert("resumed");
-    this->Internals->DsmProxy->UpdateVTKObjects();
-  }
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->onPlay();
+#endif
 }
 
-//-----------------------------------------------------------------------------
-void pqDsmOptions::onWriteDataToDisk()
-{
-  if (this->DsmReady()) {
-    const char *steeringCmd = "disk";
-
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        "Modified");
-
-    pqSMAdaptor::setElementProperty(
-        this->Internals->DsmProxy->GetProperty("SteeringCommand"),
-        steeringCmd);
-    this->Internals->infoCurrentSteeringCommand->clear();
-    this->Internals->infoCurrentSteeringCommand->insert(steeringCmd);
-    this->Internals->DsmProxy->UpdateVTKObjects();
-  }
-}
-//-----------------------------------------------------------------------------
-void pqDsmOptions::onWriteDataToDSM()
-{
-  if (this->DsmReady()) {
-    if (!this->Internals->ActiveSourceProxy) {
-      vtkGenericWarningMacro(<<"Nothing to Write");
-      return;
-    }
-    //
-    vtkSMProxyManager* pm = vtkSMProxyManager::GetProxyManager();
-    vtkSmartPointer<vtkSMSourceProxy> XdmfWriter;
-    XdmfWriter.TakeReference(vtkSMSourceProxy::SafeDownCast(pm->NewProxy("icarus_helpers", "XdmfWriter4")));
-
-    pqSMAdaptor::setProxyProperty(
-      XdmfWriter->GetProperty("DsmManager"), this->Internals->DsmProxy);
-
-    pqSMAdaptor::setElementProperty(
-      XdmfWriter->GetProperty("FileName"), "stdin");
-
-    pqSMAdaptor::setInputProperty(
-      XdmfWriter->GetProperty("Input"),
-      this->Internals->ActiveSourceProxy,
-      this->Internals->ActiveSourcePort
-      );
-
-    XdmfWriter->UpdateVTKObjects();
-    XdmfWriter->UpdatePipeline();
-  }
-}
 //-----------------------------------------------------------------------------
 void pqDsmOptions::RunScript()
 {
   std::string scriptname = this->Internals->scriptPath->text().toLatin1().data();
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::SaveSnapshot() {
   std::string pngname = this->Internals->imageFilePath->text().toLatin1().data();
@@ -864,12 +730,14 @@ void pqDsmOptions::SaveSnapshot() {
   QSize size = pqActiveObjects::instance().activeView()->getSize();
   pqSaveScreenshotReaction::saveScreenshot(QString(buffer), size, -1, true);
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onautoSaveImageChecked(int checked) {
   if (checked) {
     SaveSnapshot();
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id)
 {
@@ -909,6 +777,7 @@ void pqDsmOptions::ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name,
   pqOutputPort *port = pqsource->getOutputPort(0);
   display_policy->setRepresentationVisibility(port, pqActiveObjects::instance().activeView(), 1);
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::SetTimeAndRange(double range[2], double timenow, bool GUIupdate)
 {
@@ -953,6 +822,7 @@ void pqDsmOptions::SetTimeAndRange(double range[2], double timenow, bool GUIupda
     }
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateDsmInformation()
 {  
@@ -969,6 +839,7 @@ void pqDsmOptions::UpdateDsmInformation()
   this->Internals->DsmProxy->InvokeCommand("CloseCollective");
   this->DSMLocked.unlock();
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::GetPipelineTimeInformation(vtkSMSourceProxy *source)
 {
@@ -992,6 +863,7 @@ void pqDsmOptions::GetPipelineTimeInformation(vtkSMSourceProxy *source)
     }
   }
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::CreateXdmfPipeline()
 {
@@ -1006,11 +878,13 @@ void pqDsmOptions::CreateXdmfPipeline()
     this->Internals->XdmfViewer->Pipeline);
   this->Internals->XdmfReader = vtkSMSourceProxy::SafeDownCast(pipeline1->GetProxy("XdmfReader1"));
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateXdmfInformation()
 {
   this->GetPipelineTimeInformation(this->Internals->XdmfReader);
 }
+
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateXdmfPipeline()
 {
@@ -1063,6 +937,7 @@ void pqDsmOptions::UpdateXdmfPipeline()
   //
   this->Internals->XdmfViewer->UpdateAll();
 }
+
 //-----------------------------------------------------------------------------
 // H5Part
 //-----------------------------------------------------------------------------
@@ -1368,6 +1243,15 @@ void pqDsmOptions::UpdateDsmPipeline()
     this->RunScript();
   }
 }
+
+//-----------------------------------------------------------------------------
+void pqDsmOptions::UpdateDsmStatus(QString status)
+{
+  this->Internals->infoCurrentSteeringCommand->clear();
+  this->Internals->infoCurrentSteeringCommand->insert(status);
+}
+/*
+Was used to track the active source and write it to DSM
 //-----------------------------------------------------------------------------
 void pqDsmOptions::TrackSource()
 {
@@ -1398,19 +1282,6 @@ void pqDsmOptions::TrackSource()
           this->Internals->ActiveSourcePort
         );
       }
-/*
-      // Obsolete : Steering Writer is now driven in pre-post Accept
-      // make sure the Steering Writer knows where to get data from
-      //
-      if (this->Internals->SteeringWriter) {
-        vtkSMProperty *ip = this->Internals->SteeringWriter->GetProperty("Input");
-        pqSMAdaptor::setInputProperty(
-          ip,
-          this->Internals->ActiveSourceProxy,
-          this->Internals->ActiveSourcePort
-        );
-      }
-*/
     }
     else {
       this->Internals->ActiveSourceProxy = NULL;
@@ -1422,83 +1293,8 @@ void pqDsmOptions::TrackSource()
     this->Internals->infoTextOutput->clear();
   }
 }
-//-----------------------------------------------------------------------------
-void pqDsmOptions::onNewNotificationSocket()
-{
-  this->Internals->TcpNotificationSocket =
-      this->Internals->TcpNotificationServer->nextPendingConnection();
+*/
 
-  if (this->Internals->TcpNotificationSocket) {
-    this->connect(this->Internals->TcpNotificationSocket, 
-      SIGNAL(readyRead()), SLOT(onNotified()), Qt::QueuedConnection);
-    this->Internals->TcpNotificationServer->close();
-  }
-}
-
-//-----------------------------------------------------------------------------
-void pqDsmOptions::onNotified()
-{
-  int error = 0;
-  unsigned int notificationCode;
-  int bytes = -1;
-  //
-  while (this->Internals->TcpNotificationSocket->size() > 0) {
-    bytes = this->Internals->TcpNotificationSocket->read(
-        reinterpret_cast<char*>(&notificationCode), sizeof(notificationCode));
-    if (bytes != sizeof(notificationCode)) {
-      error = 1;
-      std::cerr << "Error when reading from notification socket" << std::endl;
-      return;
-    }
-#ifdef ENABLE_TIMERS
-    double ts_notif, te_notif;
-    ts_notif = vtksys::SystemTools::GetTime ();
-#endif
-
-#ifdef ICARUS_HAVE_H5FDDSM
-    if (notificationCode == H5FD_DSM_NOTIFY_CONNECTED) {
-      std::cout << "New DSM connection established" << std::endl;
-    } else {
-      if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
-        std::cout << "Received notification ";
-        switch (notificationCode) {
-          case H5FD_DSM_NOTIFY_DATA:
-            std::cout << "\"New Data\"...";
-            this->UpdateDsmPipeline();
-            break;
-          case H5FD_DSM_NOTIFY_INFORMATION:
-            std::cout << "\"New Information\"...";
-            this->UpdateDsmInformation();
-            break;
-          case H5FD_DSM_NOTIFY_NONE:
-            std::cout << "\"NONE : ignoring unlock \"...";
-            break;
-          case H5FD_DSM_NOTIFY_WAIT:
-            std::cout << "\"Wait\"...";
-            this->onPause();
-            this->Internals->infoCurrentSteeringCommand->clear();
-            this->Internals->infoCurrentSteeringCommand->insert("paused");
-            this->Internals->PauseRequested = false;
-            break;
-          default:
-            error = 1;
-            std::cout << "Notification " << notificationCode <<
-                " not yet supported, please check simulation code " << std::endl;
-            break;
-        }
-        if (!error) std::cout << "Updated" << std::endl;
-        // TODO steered objects are not updated for now
-        // this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
-        this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
-      }
-    }
-#endif
-  }
-#ifdef ENABLE_TIMERS
-  te_notif = vtksys::SystemTools::GetTime ();
-  std::cout << "Notification processed in " << te_notif - ts_notif << " s" << std::endl;
-#endif
-}
 //-----------------------------------------------------------------------------
 void pqDsmOptions::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetInfo *info, int blockindex)
 {
@@ -1509,6 +1305,7 @@ void pqDsmOptions::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetI
   if (!this->Internals->XdmfViewer) {
     return;
   }
+
   //
   // Create a pipeline with XdmfReader+FlattenOneBlock+Transform filters inside it
   // [This can be extended to any number of internal filters]
@@ -1579,34 +1376,19 @@ void pqDsmOptions::BindWidgetToGrid(const char *propertyname, SteeringGUIWidgetI
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onPreAccept()
 {
-  // We must always open the DSM in parallel before doing reads or writes
-  this->DSMLocked.lock();
-  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
-
-  // But writing steering commands is only done on one process
-  // so switch to serial mode before 'accept' updates values
-  std::cout << " Setting Serial mode " << std::endl;
-  pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 1);
-  //
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->onPreAccept();
+#endif
 }
 //-----------------------------------------------------------------------------
 void pqDsmOptions::onPostAccept()
 {
-  // Steering data has been written, switch back to parallel mode
-  // for safety and before steering array exports are done in parallel
-  std::cout << " Clearing Serial mode " << std::endl;         
-  pqSMAdaptor::setElementProperty(this->Internals->DsmProxy->GetProperty("SerialMode"), 0);
-  //
-  // close before reopening if this code is ever used again
-//  this->Internals->DsmProxy->InvokeCommand("OpenCollectiveRW");
-//  this->ExportData(false);
-//  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
-  // 
+#ifdef ICARUS_HAVE_H5FDDSM
+  this->Internals->pqH5FDdsmWidget->onPostAccept();
+#endif
   if (this->Internals->acceptIsPlay->isChecked()) {
     this->onPlay();
   }
-  this->Internals->DsmProxy->InvokeCommand("CloseCollective");
-  this->DSMLocked.unlock();
 }
 //-----------------------------------------------------------------------------
 void pqDsmOptions::ExportData(bool force)
