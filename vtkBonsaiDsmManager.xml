@@ -1,0 +1,18 @@
+<ServerManagerConfiguration>
+
+  <!-- ================================================================ -->
+  <!-- DSM classes wrapped by server manager                            -->
+  <!-- ================================================================ -->
+
+  <ProxyGroup name="icarus_helpers">
+
+    <!-- ============================================================== -->
+    <!-- AbstractDsmManager                                                     -->
+    <!-- ============================================================== -->
+    <Proxy name="BonsaiDsmManager" class="vtkBonsaiDsmManager">
+    </Proxy>
+
+  </ProxyGroup>
+
+
+</ServerManagerConfiguration>

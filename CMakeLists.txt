@@ -51,6 +51,7 @@ IF(ICARUS_ENABLE_TIMERS)
 ENDIF(ICARUS_ENABLE_TIMERS)
 
 option(ICARUS_USE_H5FDDSM "Build H5FDdsm support into plugin" OFF)
+option(ICARUS_USE_BONSAI "Build Bonsai support into plugin" OFF)
 
 #--------------------------------------------------
 # Find and Use System libs (only needed on WIN32)
@@ -67,6 +68,31 @@ option(ICARUS_USE_H5FDDSM "Build H5FDdsm support into plugin" OFF)
   ENDIF (NOT TARGET "H5FDdsm")
 #--------------------------------------------------
 #ENDIF(WIN32 AND MSVC)
+
+if(ICARUS_USE_BONSAI)
+  add_definitions(-DICARUS_HAVE_BONSAI)
+  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/bonsai)
+  set(ICARUS_H5FDDSM_SM_XML
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiDsmManager.xml
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiSharedMemoryReader.xml
+  )
+  set(ICARUS_H5FDDSM_SM_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiDsmManager.cxx
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiSharedMemoryReader.cxx
+  )
+  set(ICARUS_SERVER_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp
+  )
+  set(ICARUS_H5FDDSM_QT_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqBonsaiDsmPanel.cxx
+  )
+  set(ICARUS_H5FDDSM_UI_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqBonsaiDsmPanel.ui
+  )
+  set(ICARUS_H5FDDSM_MOC_SRCS
+    ${CMAKE_CURRENT_SOURCE_DIR}/pqBonsaiDsmPanel.h
+  )
+endif()
 
 if(ICARUS_USE_H5FDDSM)
 
@@ -130,7 +156,6 @@ CONFIGURE_FILE(
 
 if(ICARUS_USE_H5FDDSM)
   set(ICARUS_H5FDDSM_SM_XML
-    ${CMAKE_CURRENT_SOURCE_DIR}/vtkAbstractDsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkHDF5DsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkXdmfReader4.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkFlattenOneBlock.xml
@@ -208,6 +233,7 @@ ADD_PARAVIEW_PLUGIN(
   "1.0" 
 
   SERVER_MANAGER_XML
+    ${CMAKE_CURRENT_SOURCE_DIR}/vtkAbstractDsmManager.xml
     ${ICARUS_H5FDDSM_SM_XML} 
     ${ICARUS_H5PART_XML}
     ${ICARUS_NETCDF_XML}
@@ -218,6 +244,7 @@ ADD_PARAVIEW_PLUGIN(
     ${ICARUS_NETCDF_SOURCES}
   SERVER_SOURCES
     ${ENCODED_FILTERS}
+    ${ICARUS_SERVER_SRCS}
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkDsmProxyHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkCustomPipelineHelper.cxx
     ${CMAKE_CURRENT_SOURCE_DIR}/XdmfSteeringParser.cxx
