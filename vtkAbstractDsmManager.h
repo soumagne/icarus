@@ -31,6 +31,22 @@
 
 #include "vtkObject.h"       // Base class
 
+//----------------------------------------------------------------------------
+#define DSM_NOTIFY_CONNECTED   0
+#define DSM_NOTIFY_DATA        1
+#define DSM_NOTIFY_INFORMATION 2
+#define DSM_NOTIFY_NONE        3
+#define DSM_NOTIFY_WAIT        4
+//----------------------------------------------------------------------------
+
+#ifdef DSM_CXX_STDLIB
+ #include <boost/function.hpp>
+ #define dsm_std boost
+#else
+ #include <functional>
+ #define dsm_std std
+#endif
+
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
 class vtkMultiProcessController;
@@ -52,6 +68,8 @@ public:
   // Wait for a notification - notifications are used to trigger user
   // defined tasks and are sent when the file has been unlocked
   virtual int  WaitForUnlock(unsigned int *flag);
+
+  virtual void *NotificationThread();
 
   // Description:
   // Signal/Wait for the pipeline update to be finished (only valid when
@@ -144,6 +162,8 @@ protected:
     vtkAbstractDsmManager();
     virtual ~vtkAbstractDsmManager();
 
+    dsm_std::function<bool(unsigned int *)> event_callback;
+
     //
     // Internal Variables
     //
@@ -158,8 +178,14 @@ protected:
 
     vtkMultiProcessController *Controller;
     //
-    char *HelperProxyXMLString;
+    char           *XdmfTemplateDescription;
+    char           *XdmfDescription;
+    char           *HelperProxyXMLString;
 
+    //BTX
+    struct vtkAbstractDsmManagerInternals;
+    vtkAbstractDsmManagerInternals *DsmManagerInternals;
+    //ETX
 private:
     vtkAbstractDsmManager(const vtkAbstractDsmManager&);  // Not implemented.
     void operator=(const vtkAbstractDsmManager&);  // Not implemented.

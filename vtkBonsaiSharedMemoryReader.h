@@ -30,6 +30,7 @@
 #include "vtkBoundingBox.h"
 #include <string>
 #include <vector>
+#include "RendererData.h"
 
 class vtkDataArraySelection;
 class vtkMultiProcessController;
@@ -43,6 +44,9 @@ public:
   static vtkBonsaiSharedMemoryReader *New();
   vtkTypeMacro(vtkBonsaiSharedMemoryReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);   
+
+  void SetRendererData(RendererData *bonsaidata)
+  { this->bonsaiData = bonsaidata; }
 
   // Description:
   // Specify file name.
@@ -135,7 +139,7 @@ protected:
 
   //
   virtual int  OpenFile();
-  virtual void CloseFile();
+  virtual void CloseFile() {};
 
   //
   // Internal Variables
@@ -169,6 +173,8 @@ protected:
   std::vector<vtkBoundingBox> PieceBoundsHalo;
   vtkBoundsExtentTranslator  *ExtentTranslator;
 //ETX
+
+  RendererData *bonsaiData;
 
   // To allow paraview gui to enable/disable scalar reading
   vtkDataArraySelection* PointDataArraySelection;

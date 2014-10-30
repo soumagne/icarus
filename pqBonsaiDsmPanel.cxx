@@ -77,12 +77,6 @@
 #define XML_USE_ORIGINAL 0
 #define XML_USE_SENT     2
 //----------------------------------------------------------------------------
-#define DSM_NOTIFY_DATA        1
-#define DSM_NOTIFY_INFORMATION 2
-#define DSM_NOTIFY_NONE        3
-#define DSM_NOTIFY_WAIT        4
-
-//----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
 #define XML_USE_SENT     2
@@ -282,14 +276,13 @@ void pqBonsaiDsmPanel::onNewNotificationSocket()
     this->Internals->TcpNotificationServer->close();
   }
 
-//  if (this->Internals->staticInterCommBox->isChecked()) {
-//    this->onPublish();
-//  }
+  this->onPublish();
 }
 
 //-----------------------------------------------------------------------------
 void pqBonsaiDsmPanel::onNotified()
 {
+  std::cout << "Received a notification " << std::endl;
   int error = 0;
   unsigned int notificationCode;
   int bytes = -1;
@@ -306,9 +299,9 @@ void pqBonsaiDsmPanel::onNotified()
     double ts_notif, te_notif;
     ts_notif = vtksys::SystemTools::GetTime ();
 #endif
-//    if (notificationCode == DSM_NOTIFY_CONNECTED) {
-//      std::cout << "New DSM connection established" << std::endl;
-//    } else {
+    if (notificationCode == DSM_NOTIFY_CONNECTED) {
+      std::cout << "New DSM connection established" << std::endl;
+    } else {
       if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
         std::cout << "Received notification ";
         switch (notificationCode) {
@@ -341,7 +334,7 @@ void pqBonsaiDsmPanel::onNotified()
         // this->Internals->DsmProxy->InvokeCommand("UpdateSteeredObjects");
         this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
       }
-//    }
+    }
   }
 #ifdef ENABLE_TIMERS
   te_notif = vtksys::SystemTools::GetTime ();

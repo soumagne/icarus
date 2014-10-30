@@ -38,6 +38,7 @@ ENDIF (ParaView_SOURCE_DIR)
 OPTION(ICARUS_NO_LIBCXX "Use boost instead of libc++" OFF)
 IF(ICARUS_NO_LIBCXX)
   add_definitions(-DICARUS_NO_LIBCXX)
+  add_definitions(-DDSM_CXX_STDLIB)
   find_package(Boost REQUIRED)
   include_directories(${Boost_INCLUDE_DIRS})
 ENDIF()
@@ -71,6 +72,8 @@ option(ICARUS_USE_BONSAI "Build Bonsai support into plugin" OFF)
 
 if(ICARUS_USE_BONSAI)
   add_definitions(-DICARUS_HAVE_BONSAI)
+  add_definitions(-DBONSAI_CATALYST_STDLIB)
+  add_definitions(-DBONSAI_CATALYST_CLANG)
   include_directories(${CMAKE_CURRENT_SOURCE_DIR}/bonsai)
   set(ICARUS_H5FDDSM_SM_XML
     ${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiDsmManager.xml
@@ -92,6 +95,8 @@ if(ICARUS_USE_BONSAI)
   set(ICARUS_H5FDDSM_MOC_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/pqBonsaiDsmPanel.h
   )
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
+  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/vtkBonsaiSharedMemoryReader.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
 endif()
 
 if(ICARUS_USE_H5FDDSM)

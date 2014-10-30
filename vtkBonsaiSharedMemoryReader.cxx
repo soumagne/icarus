@@ -18,6 +18,9 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 =========================================================================*/
+// Include this before MPI because when cxx11 is set, it tries to get <cstdint>
+// which is not present when we use -stdlib=libstdc++
+#include <stdint.h>
 // For PARAVIEW_USE_MPI 
 #include "vtkPVConfig.h"     
 #ifdef PARAVIEW_USE_MPI
@@ -73,13 +76,180 @@
 #include "vtkExtentTranslator.h"
 #include "vtkBoundingBox.h"
 #include "vtkIdListCollection.h"
+#include "vtkNew.h"
 //
 //#include <functional>
 #include <algorithm>
 #include <numeric>
 //----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkBonsaiSharedMemoryReader, Controller, vtkMultiProcessController);
+#include "BonsaiSharedData.h"
+#include "BonsaiIO.h"
+#include "SharedMemory.h"
 //----------------------------------------------------------------------------
+vtkCxxSetObjectMacro(vtkBonsaiSharedMemoryReader, Controller, vtkMultiProcessController);
+
+//----------------------------------------------------------------------------
+using ShmQHeader = SharedMemoryClient<BonsaiSharedQuickHeader>;
+using ShmQData   = SharedMemoryClient<BonsaiSharedQuickData>;
+static ShmQHeader *shmQHeader = NULL;
+static ShmQData   *shmQData   = NULL;
+static bool terminateRenderer = false;
+//----------------------------------------------------------------------------
+
+bool fetchSharedData(const bool quickSync, RendererData &rData,
+    const int rank, const int nrank, const MPI_Comm &comm,
+    const int reduceDM = 1, const int reduceS = 1)
+{
+  if (shmQHeader == NULL)
+  {
+    shmQHeader = new ShmQHeader(ShmQHeader::type::sharedFile(rank));
+    shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(rank));
+  }
+
+  auto &header = *shmQHeader;
+  auto &data   = *shmQData;
+
+  static bool first = true;
+  if (quickSync && first)
+  {
+    /* handshake */
+
+    header.acquireLock();
+    header[0].handshake = true;
+    header.releaseLock();
+
+    while (header[0].handshake)
+      usleep(1000);
+
+    header.acquireLock();
+    header[0].handshake = true;
+    header.releaseLock();
+
+    /* handshake complete */
+    first = false;
+  }
+
+
+  static float tLast = -1.0f;
+
+
+  if (rData.isNewData())
+    return false;
+
+
+#if 0
+  //  if (rank == 0)
+  fprintf(stderr, " rank= %d: attempting to fetch data \n",rank);
+#endif
+
+  // header
+  header.acquireLock();
+  const float tCurrent = header[0].tCurrent;
+
+  terminateRenderer = tCurrent == -1;
+
+  int sumL = quickSync ? !header[0].done_writing : tCurrent != tLast;
+  int sumG ;
+  MPI_Allreduce(&sumL, &sumG, 1, MPI_INT, MPI_SUM, comm);
+
+
+  bool completed = false;
+  if (sumG == nrank) //tCurrent != tLast)
+  {
+    tLast = tCurrent;
+    completed = true;
+
+    // data
+    const size_t nBodies = header[0].nBodies;
+    data.acquireLock();
+
+    const size_t size = data.size();
+    assert(size == nBodies);
+
+    /* skip particles that failed to get density, or with too big h */
+    bonsaistd::function<bool(const int i)> skipPtcl = [&](const int i)
+    {
+      return (data[i].rho == 0 || data[i].h == 0.0 || data[i].h > 100);
+    };
+
+    size_t nDM = 0, nS = 0;
+    constexpr int ntypecount = 10;
+    bonsaistd::array<size_t,ntypecount> ntypeloc, ntypeglb;
+    std::fill(ntypeloc.begin(), ntypeloc.end(), 0);
+    for (size_t i = 0; i < size; i++)
+    {
+      const int type = data[i].ID.getType();
+      if  (type < ntypecount)
+        ntypeloc[type]++;
+      if (skipPtcl(i))
+        continue;
+      switch (type)
+      {
+        case 0:
+          nDM++;
+          break;
+        default:
+          nS++;
+      }
+    }
+
+    MPI_Reduce(&ntypeloc, &ntypeglb, ntypecount, MPI_LONG_LONG, MPI_SUM, 0, comm);
+    if (rank == 0)
+    {
+      for (int type = 0; type < ntypecount; type++)
+        if (ntypeglb[type] > 0)
+          fprintf(stderr, " ptype= %d:  np= %zu \n",type, ntypeglb[type]);
+    }
+
+
+    rData.resize(nS);
+    size_t ip = 0;
+    float *coords = rData.coords->GetPointer(0);
+    float *mass   = rData.mass->GetPointer(0);
+    float *vel    = rData.vel->GetPointer(0);
+    float *rho    = rData.rho->GetPointer(0);
+    float *Hval   = rData.Hval->GetPointer(0);
+    vtkIdType *Id = rData.Id->GetPointer(0);
+
+    for (size_t i = 0; i < size; i++)
+    {
+      if (skipPtcl(i))
+        continue;
+      if (data[i].ID.getType() == 0 )  /* pick stars only */
+        continue;
+
+      coords[ip*3+0] = data[i].x;
+      coords[ip*3+1] = data[i].y;
+      coords[ip*3+2] = data[i].z;
+      mass[ip]       = data[i].mass;
+      vel[ip]        = std::sqrt(
+            data[i].vx*data[i].vx+
+            data[i].vy*data[i].vy+
+            data[i].vz*data[i].vz);
+
+      Id[ip]         = data[i].ID.get();
+      Hval[ip]       = data[i].h;
+      rho[ip]        = data[i].rho;
+
+      ip++;
+      assert(ip <= nS);
+    }
+    rData.resize(ip);
+
+    data.releaseLock();
+  }
+
+  header[0].done_writing = true;
+  header.releaseLock();
+
+#if 0
+  //  if (rank == 0)
+  fprintf(stderr, " rank= %d: done fetching data \n", rank);
+#endif
+
+  return completed;
+}
+
 //----------------------------------------------------------------------------
 //#define JB_DEBUG__
 #ifdef JB_DEBUG__
@@ -108,6 +278,7 @@ vtkBonsaiSharedMemoryReader::vtkBonsaiSharedMemoryReader()
 {
   this->SetNumberOfInputPorts(0);
   //
+  this->bonsaiData = NULL;
   this->NumberOfTimeSteps               = 0;
   this->TimeStep                        = 0;
   this->ActualTimeStep                  = 0;
@@ -126,6 +297,8 @@ vtkBonsaiSharedMemoryReader::vtkBonsaiSharedMemoryReader()
   if (this->Controller == NULL) {
     this->SetController(vtkSmartPointer<vtkDummyController>::New());
   }
+
+
 }
 //----------------------------------------------------------------------------
 vtkBonsaiSharedMemoryReader::~vtkBonsaiSharedMemoryReader()
@@ -200,56 +373,44 @@ int vtkBonsaiSharedMemoryReader::RequestInformation(
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime);
 
   if (NeedToReadInformation)
-    {
-    if (!this->OpenFile())
-      {
-      return 0;
-      }
-
+  {
     this->NumberOfTimeSteps = 1;
-    H5PartSetStep(this->H5FileId, 0);
-    int nds = H5PartGetNumDatasets(this->H5FileId);
-    char name[512];
-    for (int i=0; i<nds; i++)
-      {
-      // return 0 for no, 1,2,3,4,5 etc for index (1 based offset)
-      H5PartGetDatasetName(this->H5FileId, i, name, 512);
-      this->PointDataArraySelection->AddArray(name);
+    bool inSitu = true;
+    bool quickSync = false;
+
+    MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
+    if (!this->bonsaiData) {
+      if (inSitu) {
+        this->bonsaiData = new RendererData(this->UpdatePiece, this->UpdateNumPieces, *comm);
       }
+      else {
+              /*
+              if ((this->bonsaiData = readBonsai<BonsaiCatalystDataT>(rank, nranks, comm, fileName, reduceDM, reduceS)))
+              {}
+              else
+              {
+                if (rank == 0)
+                  fprintf(stderr, " I don't recognize the format ... please try again , or recompile to use with old tipsy if that is what you use ..\n");
+                MPI_Finalize();
+                ::exit(-1);
+              }
+              this->bonsaiData->computeMinMax();
+              this->bonsaiData->setNewData();
+              */
+      }
+    }
+
+    assert(this->bonsaiData != 0);
+
+    const char *names[] = { "Id", "coords", "mass", "vel", "rho", "Hval" };
+    int nds = sizeof(names);
+    for (auto name : names)
+    {
+      this->PointDataArraySelection->AddArray(name);
+    }
 
     this->TimeStepValues.assign(this->NumberOfTimeSteps, 0.0);
     int validTimes = 0;
-    for (int i=0; i<this->NumberOfTimeSteps; ++i)
-      {
-      H5PartSetStep(this->H5FileId, i);
-      // Get the time value if it exists
-      h5part_int64_t numAttribs = H5PartGetNumStepAttribs(this->H5FileId);
-      if (numAttribs>0)
-        {
-        char           attribName[128];
-        h5part_int64_t attribNameLength = 128;
-        h5part_int64_t attribType       = 0;
-        h5part_int64_t attribNelem      = 0;
-        for (h5part_int64_t a=0; a<numAttribs; a++)
-          {
-          h5part_int64_t status = H5PartGetStepAttribInfo (
-            this->H5FileId, a, attribName, attribNameLength,
-            &attribType, &attribNelem);
-          if (status==H5PART_SUCCESS && !strncmp("TimeValue",attribName,attribNameLength))
-            {
-            if (H5Tequal(attribType,H5T_NATIVE_DOUBLE) && attribNelem==1)
-              {
-              status=H5PartReadStepAttrib(this->H5FileId, attribName, &this->TimeStepValues[i]);
-              if (status==H5PART_SUCCESS)
-                {
-                validTimes++;
-                }
-              }
-            }
-          }
-        }
-      }
-    H5PartSetStep(this->H5FileId, 0);
 
     if (this->NumberOfTimeSteps==0)
       {
@@ -283,99 +444,12 @@ int vtkBonsaiSharedMemoryReader::RequestInformation(
       }
     outInfo->Set(vtkStreamingDemandDrivenPipeline::TIME_RANGE(), timeRange, 2);
 
-    //
-    // If the file has bounding box partition support
-    //
-    vtkIdType partitions = this->IgnorePartitionBoxes ? 0 : this->ReadBoundingBoxes();
-    if (partitions>0) 
-      {
-      outInfo->Set(vtkBoundsExtentTranslator::META_DATA(), this->ExtentTranslator);
-      }
-    else {
-      this->PartitionCount.clear();
-      this->PartitionOffset.clear();
-      this->PieceId.clear();
-      this->PartitionBoundsTable.clear();
-      this->PartitionBoundsTableHalo.clear();
     }
-  }
-
-  this->CloseFileIntermediate();
                                                        
   return 1;
 }
 
 //----------------------------------------------------------------------------
-template <class T1, class T2>
-void CopyIntoTuple(int offset, vtkDataArray *source, vtkDataArray *dest)
-{
-  vtkIdType N = source->GetNumberOfTuples();
-  T1 *sptr = static_cast<T1*>(source->GetVoidPointer(0));
-  T2 *dptr = static_cast<T2*>(dest->WriteVoidPointer(0,N)) + offset;
-  for (vtkIdType i=0; i<N; ++i) {
-    *dptr = *sptr++;
-    dptr += 3;
-  }
-}
-//----------------------------------------------------------------------------
-template <class T2>
-void vtkBonsaiSharedMemoryReader::CopyIntoVector(int offset, vtkDataArray *source, vtkDataArray *dest)
-{
-  switch (source->GetDataType())
-  {
-    case VTK_CHAR:
-    case VTK_SIGNED_CHAR:
-    case VTK_UNSIGNED_CHAR:
-      CopyIntoTuple<char,T2>(offset, source, dest);
-      break;
-    case VTK_SHORT:
-      CopyIntoTuple<short int,T2>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_SHORT:
-      CopyIntoTuple<unsigned short int,T2>(offset, source, dest);
-      break;
-    case VTK_INT:
-      CopyIntoTuple<int,T2>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_INT:
-      CopyIntoTuple<unsigned int,T2>(offset, source, dest);
-      break;
-    case VTK_LONG:
-      CopyIntoTuple<long int,T2>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_LONG:
-      CopyIntoTuple<unsigned long int,T2>(offset, source, dest);
-      break;
-    case VTK_LONG_LONG:
-      CopyIntoTuple<long long,T2>(offset, source, dest);
-      break;
-    case VTK_UNSIGNED_LONG_LONG:
-      CopyIntoTuple<unsigned long long,T2>(offset, source, dest);
-      break;
-    case VTK_FLOAT:
-      CopyIntoTuple<float,T2>(offset, source, dest);
-      break;
-    case VTK_DOUBLE:
-      CopyIntoTuple<double,T2>(offset, source, dest);
-      break;
-    case VTK_ID_TYPE:
-      CopyIntoTuple<vtkIdType,T2>(offset, source, dest);
-      break;
-    default:
-      break;
-      vtkErrorMacro(<<"Unexpected data type");
-  }
-}
-//----------------------------------------------------------------------------
-/*
-std::pair<double, double> GetClosest(std::vector<double> &sortedlist, const double& val) const
-{
-  std::vector<double>::const_iterator it = std::lower_bound(sortedlist.begin(), sortedlist.end(), val);
-  if (it == sortedlist.end())        return std::make_pair(sortedlist.back(), sortedlist.back());
-  else if (it == sortedlist.begin()) return std::make_pair(sortedlist.front(), sortedlist.front());
-  else return std::make_pair(*(it - 1), *(it));
-}
-*/
 class BonsaiToleranceCheck: public std::binary_function<double, double, bool>
 {
 public:
@@ -405,32 +479,31 @@ int vtkBonsaiSharedMemoryReader::RequestData(
   FieldMap scalarFields;
   //
   if (this->TimeStepValues.size()==0) return 0;
-  //
-  // Make sure that the user selected arrays for coordinates are represented
-  //
-  std::vector<std::string> coordarrays(3, "");
-  //
+
+
+    int rank = this->UpdatePiece;
+    int nranks = this->UpdateNumPieces;
+    int reduceDM = 10;
+    int reduceS = 1;
+    bool inSitu = true;
+    bool quickSync = false;
+    MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
+
+    if (inSitu) {
+        if (fetchSharedData(quickSync, *this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
+        {
+          this->bonsaiData->setNewData();
+        }
+    };
+
+
+  /*
   int N = this->PointDataArraySelection->GetNumberOfArrays();
   for (int i=0; i<N; i++)
     {
     const char *name = this->PointDataArraySelection->GetArrayName(i);
     // Do we want to load this array
     bool processarray = false;
-    if (!vtksys::SystemTools::Strucmp(name,this->Xarray))
-      {
-      processarray = true;
-      coordarrays[0] = name;
-      }
-    if (!vtksys::SystemTools::Strucmp(name,this->Yarray))
-      {
-      processarray = true;
-      coordarrays[1] = name;
-      }
-    if (!vtksys::SystemTools::Strucmp(name,this->Zarray))
-      {
-      processarray = true;
-      coordarrays[2] = name;
-      }
     if (this->PointDataArraySelection->ArrayIsEnabled(name))
       {
       processarray = true;
@@ -439,329 +512,17 @@ int vtkBonsaiSharedMemoryReader::RequestData(
       {
       continue;
       }
+*/
+  vtkNew<vtkPoints> points;
+  points->SetData(this->bonsaiData->coords);
 
-    // make sure we cater for multi-component vector fields
-    int vectorcomponent;
-    if ((vectorcomponent=this->IndexOfVectorComponent(name))>0)
-      {
-      std::string vectorname = this->NameOfVectorComponent(name) + "_v";
-      FieldMap::iterator pos = scalarFields.find(vectorname);
-      if (pos==scalarFields.end())
-        {
-        std::vector<std::string> arraylist(1, name);
-        FieldMap::value_type element(vectorname, arraylist);
-        scalarFields.insert(element);
-        }
-      else
-        {
-        pos->second.reserve(vectorcomponent);
-        pos->second.resize(std::max((int)(pos->second.size()), vectorcomponent));
-        pos->second[vectorcomponent-1] = name;
-        }
-      }
-    else
-      {
-      std::vector<std::string> arraylist(1, name);
-      FieldMap::value_type element(name, arraylist);
-      scalarFields.insert(element);
-      }
-    }
-  //
-  FieldMap::iterator coordvector=scalarFields.end();
-  for (FieldMap::iterator pos=scalarFields.begin(); pos!=scalarFields.end(); ++pos)
-    {
-    if (pos->second.size()==3 &&
-      (pos->second[0]==coordarrays[0]) &&
-      (pos->second[1]==coordarrays[1]) &&
-      (pos->second[2]==coordarrays[2]))
-      {
-      // change the keyname of this entry to "coords" to ensure we use it as such
-      FieldMap::value_type element("Coords", pos->second);
-      scalarFields.erase(pos);
-      coordvector = scalarFields.insert(element).first;
-      break;
-      }
-    }
+  output->GetPointData()->AddArray(this->bonsaiData->Id);
+  output->GetPointData()->AddArray(this->bonsaiData->mass);
+  output->GetPointData()->AddArray(this->bonsaiData->vel);
+  output->GetPointData()->AddArray(this->bonsaiData->rho);
+  output->GetPointData()->AddArray(this->bonsaiData->Hval);
 
-  if (coordvector==scalarFields.end())
-    {
-    FieldMap::value_type element("Coords", coordarrays);
-    scalarFields.insert(element);
-    }
-
-  if (!this->MultiComponentArraysAsFieldData) {
-    FieldMap::iterator posx=scalarFields.find(coordarrays[0]);
-    if (posx!=scalarFields.end()) scalarFields.erase(posx);
-    FieldMap::iterator posy=scalarFields.find(coordarrays[1]);
-    if (posy!=scalarFields.end()) scalarFields.erase(posy);
-    FieldMap::iterator posz=scalarFields.find(coordarrays[2]);
-    if (posz!=scalarFields.end()) scalarFields.erase(posz);
-  }
-  //
-  // Get the TimeStep Requested from the information if present
-  //
-  this->TimeOutOfRange = 0;
-  this->ActualTimeStep = this->TimeStep;
-  if (outInfo->Has(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP()))
-    {
-    double requestedTimeValue = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_TIME_STEP());
-    this->ActualTimeStep = std::find_if(
-      this->TimeStepValues.begin(), this->TimeStepValues.end(),
-      std::bind2nd( H5PartToleranceCheck( 
-          this->IntegerTimeStepValues ? 0.5 : this->TimeStepTolerance ), requestedTimeValue ))
-      - this->TimeStepValues.begin();
-    //
-    if (requestedTimeValue<this->TimeStepValues.front() || requestedTimeValue>this->TimeStepValues.back())
-      {
-      this->TimeOutOfRange = 1;
-      }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), requestedTimeValue);
-    }
-  else
-    {
-    double timevalue[1];
-    unsigned int index = this->ActualTimeStep;
-    if (index<this->TimeStepValues.size())
-      {
-      timevalue[0] = this->TimeStepValues[index];
-      }
-    else
-      {
-      timevalue[0] = this->TimeStepValues[0];
-      }
-    output->GetInformation()->Set(vtkDataObject::DATA_TIME_STEP(), timevalue[0]);
-    }
-
-  if (this->TimeOutOfRange && this->MaskOutOfTimeRangeOutput)
-    {
-    // don't do anything, just return success
-    return 1;
-    }
-
-  // open the file if not already done
-  if (!this->OpenFile())
-    {
-    return 0;
-    }
-
-  // Set the TimeStep on the H5 file
-  H5PartSetStep(this->H5FileId, this->ActualTimeStep);
-  //
-  // Get the number of particles for this timestep
-  //
-  vtkIdType Nparticles = H5PartGetNumParticles(this->H5FileId);
-
-  //
-  // Split particles up per process for parallel load
-  //
-  std::vector<vtkIdType> minIds, maxIds, Ids;
-  vtkIdType ParticleStart;
-  vtkIdType ParticleEnd;
-  //
-  if (this->PartitionCount.size()>0 && this->PartitionByBoundingBoxes(minIds,maxIds,this->PieceBounds,this->PieceBoundsHalo)) {
-    ParticleStart = minIds[this->UpdatePiece];
-    ParticleEnd   = maxIds[this->UpdatePiece];
-    this->ExtentTranslator->SetBoundsHalosEnabled(1);
-    this->ExtentTranslator->SetNumberOfPieces(this->PieceBounds.size());
-    for (int i=0; i<this->PieceBounds.size(); i++) {
-      double bounds[6];
-      this->PieceBounds[i].GetBounds(bounds);
-      this->ExtentTranslator->SetBoundsForPiece(i, bounds);
-      this->PieceBoundsHalo[i].GetBounds(bounds);
-      this->ExtentTranslator->SetBoundsHaloForPiece(i, bounds);
-    }
-    this->ExtentTranslator->InitWholeBounds();
-  }
-  else {
-    if (this->RandomizePartitionExtents) {
-      this->PartitionByExtentsRandomized(Nparticles, Ids);
-    }
-    else {
-      this->PartitionByExtents(Nparticles, Ids);
-    }
-    ParticleStart = Ids[0];
-    ParticleEnd   = Ids[1];
-  }
-  vtkIdType            Nt = ParticleEnd - ParticleStart + 1;
-  //
-
-  // Setup arrays for reading data
-  vtkSmartPointer<vtkPoints>    points = vtkSmartPointer<vtkPoints>::New();
-  vtkSmartPointer<vtkDataArray> coords = NULL;
-  for (FieldMap::iterator it=scalarFields.begin(); it!=scalarFields.end(); it++)
-    {
-    // use the type of the first array for all if it is a vector field
-    std::vector<std::string> &arraylist = (*it).second;
-    const char *array_name = arraylist[0].c_str();
-    std::string rootname = this->NameOfVectorComponent(array_name);
-    int Nc = static_cast<int>(arraylist.size());
-    //
-    vtkSmartPointer<vtkDataArray> dataarray = NULL;
-    hid_t datatype = H5PartGetNativeDatasetType(H5FileId,array_name);
-    int vtk_datatype = GetVTKDataType(datatype);
-
-    if (vtk_datatype == VTK_VOID)
-      {
-      H5Tclose(datatype);
-      vtkErrorMacro("An unexpected data type was encountered");
-      return 0;
-      }
-
-    dataarray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
-    dataarray->SetNumberOfComponents(Nc);
-    dataarray->SetNumberOfTuples(Nt);
-    dataarray->SetName(rootname.c_str());
-
-    // now read the data components.
-    herr_t r;
-    hsize_t count1_mem[] = { Nt*Nc };
-    hsize_t count2_mem[] = { Nt };
-    hsize_t offset_mem[] = { 0 };
-    hsize_t stride_mem[] = { Nc };
-    hsize_t     count1_dsk[] = { Nt };
-    hsize_t     offset_dsk[] = { ParticleStart };
-    hsize_t     stride_dsk[] = { 1 };
-    //
-    for (int c=0; c<Nc; c++)
-      {
-      const char *name = arraylist[c].c_str();
-      hid_t dataset   = H5Dopen(H5FileId->timegroup, name h_params);
-      hid_t diskshape = H5PartGetDiskShape(H5FileId,dataset);
-      /* parallel read needs hyperslab for disk */
-      r = H5Sselect_hyperslab(diskshape, H5S_SELECT_SET,
-        offset_dsk, stride_dsk, count1_dsk, NULL);
-      if (Nc==1 || this->UseStridedMultiComponentRead) 
-        {
-        hid_t memspace = H5Screate_simple(1, count1_mem, NULL);
-        hid_t component_datatype = H5PartGetNativeDatasetType(H5FileId, name);
-        /* read x/y/z arrays into strided mem - use hyperslab */
-        offset_mem[0] = c;
-        r = H5Sselect_hyperslab(
-          memspace, H5S_SELECT_SET,
-          offset_mem, stride_mem, count2_mem, NULL);
-        if (H5Tequal(component_datatype,datatype))
-          {
-          H5Dread(dataset, datatype, memspace,
-            diskshape, H5P_DEFAULT, dataarray->GetVoidPointer(0));
-          }
-        else
-          {
-          // read data into a temporary array of the right type and then copy it
-          // over to the "dataarray".
-          // This can be optimized to create a single component array. But I
-          // don't understand the stride/offset stuff too well to fix that.
-          vtkDataArray* temparray =
-            vtkDataArray::CreateDataArray(GetVTKDataType(component_datatype));
-          temparray->SetNumberOfComponents(Nc);
-          temparray->SetNumberOfTuples(Nt);
-          r = H5Sselect_hyperslab(
-            memspace, H5S_SELECT_SET,
-            offset_mem, stride_mem, count2_mem, NULL);
-          H5Dread(dataset, component_datatype, memspace,
-            diskshape, H5P_DEFAULT, temparray->GetVoidPointer(0));
-          dataarray->CopyComponent(c, temparray, c);
-          temparray->FastDelete();
-          }
-        H5Sclose(memspace);
-        H5Tclose(component_datatype);
-        }      
-      else 
-        {
-        vtkSmartPointer<vtkDataArray> onearray = NULL;
-        onearray.TakeReference(vtkDataArray::CreateDataArray(vtk_datatype));
-        onearray->SetNumberOfComponents(1);
-        onearray->SetNumberOfTuples(Nt);
-        onearray->SetName(name);
-        offset_mem[0] = 0;
-        count1_mem[0] = Nt;
-        stride_mem[0] = 1;
-        hid_t memspace = H5Screate_simple(1, count1_mem, NULL);
-        hid_t component_datatype = H5PartGetNativeDatasetType(H5FileId, name);
-        r = H5Sselect_hyperslab(
-          memspace, H5S_SELECT_SET,
-          offset_mem, stride_mem, count2_mem, NULL);
-        if (H5Tequal(component_datatype,datatype))
-          {
-          H5Dread(dataset, datatype, memspace,
-            diskshape, H5P_DEFAULT, onearray->GetVoidPointer(0));
-          }
-        else 
-          {
-          vtkErrorMacro("H5Part : Unhandled type change condition")
-          }
-        switch (dataarray->GetDataType()) 
-          {
-          case VTK_FLOAT:
-            this->CopyIntoVector<float>(c,onearray,dataarray);
-            break;
-          case VTK_DOUBLE:
-            this->CopyIntoVector<double>(c,onearray,dataarray);
-            break;
-          case VTK_CHAR:
-          case VTK_SIGNED_CHAR:
-          case VTK_UNSIGNED_CHAR:
-            this->CopyIntoVector<char>(c,onearray,dataarray);
-            break;
-          case VTK_SHORT:
-            CopyIntoVector<short int>(c,onearray,dataarray);
-            break;
-          case VTK_UNSIGNED_SHORT:
-            CopyIntoVector<unsigned short int>(c,onearray,dataarray);
-            break;
-          case VTK_INT:
-            CopyIntoVector<int>(c,onearray,dataarray);
-            break;
-          case VTK_UNSIGNED_INT:
-            CopyIntoVector<unsigned int>(c,onearray,dataarray);
-            break;
-          case VTK_LONG:
-            CopyIntoVector<long int>(c,onearray,dataarray);
-            break;
-          case VTK_UNSIGNED_LONG:
-            CopyIntoVector<unsigned long int>(c,onearray,dataarray);
-            break;
-          case VTK_LONG_LONG:
-            CopyIntoVector<long long>(c,onearray,dataarray);
-            break;
-          case VTK_UNSIGNED_LONG_LONG:
-            CopyIntoVector<unsigned long long>(c,onearray,dataarray);
-            break;
-          case VTK_ID_TYPE:
-            CopyIntoVector<vtkIdType>(c,onearray,dataarray);
-            break;
-          default:
-          vtkErrorMacro("H5Part : Unhandled vector type")
-          }
-        H5Sclose(memspace);
-        H5Tclose(component_datatype);
-        // if the array we read for the vector component is a field array
-        // then skip reading it twice.
-        if (this->MultiComponentArraysAsFieldData) {
-          output->GetPointData()->AddArray(onearray);
-          }
-        }
-      H5Sclose(diskshape);
-      H5Dclose(dataset);
-      }
-    H5Tclose(datatype);
-    //
-    if (dataarray)
-      {
-      if ((*it).first=="Coords") {
-        coords = dataarray;
-        coords->SetName("Coordinates");
-        }
-      else
-        {
-        output->GetPointData()->AddArray(dataarray);
-        if (!output->GetPointData()->GetScalars())
-          {
-          output->GetPointData()->SetActiveScalars(dataarray->GetName());
-          }
-        }
-      }
-    }
-
+  vtkIdType Nt = this->bonsaiData->coords->GetNumberOfTuples();
   //
   // generate cells
   //
@@ -779,99 +540,20 @@ int vtkBonsaiSharedMemoryReader::RequestData(
   //
   //
   //
-  if (!this->IgnorePartitionBoxes && (this->DisplayPartitionBoxes || this->DisplayPieceBoxes)) {
-    this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
-  }
+//  if (!this->IgnorePartitionBoxes && (this->DisplayPartitionBoxes || this->DisplayPieceBoxes)) {
+ //   this->DisplayBoundingBoxes(coords, output, ParticleStart, ParticleEnd);
+//  }
   //
   //
   //
-  points->SetData(coords);
-  output->SetPoints(points);
+  output->SetPoints(points.Get());
   //
-  //
-  // only subclasses actually close the file.
-  //
-  this->CloseFileIntermediate();
-
   return 1;
-}
-//----------------------------------------------------------------------------
-vtkIdType vtkBonsaiSharedMemoryReader::ReadBoundingBoxes()
-{
-  H5E_auto2_t  errfunc;
-  void        *errdata;
-  vtkIdType    partitions = 0;
-
-  // Prevent HDF5 printing errors if the bboxes dataset doesn't exist, save error handler
-  H5Eget_auto(H5E_DEFAULT, &errfunc, &errdata);
-  // Replace with NULL error handler
-  H5Eset_auto(H5E_DEFAULT, NULL, NULL);
-
-  // @TODO, use group/name string passed into reader ...
-#if (H5_VERS_MAJOR>1)||((H5_VERS_MAJOR==1)&&(H5_VERS_MINOR>=8))
-  hid_t partitiongroup = H5Gopen(H5FileId->file, "Partition#0", H5P_DEFAULT );
-	hid_t dataset_id = (partitiongroup>0) ? H5Dopen ( partitiongroup, "Box", H5P_DEFAULT ) : -1;
-#else
-  hid_t partitiongroup = H5Gopen(H5FileId->file, "Partition#0");
-	hid_t dataset_id = (partitiongroup>0) ? H5Dopen ( partitiongroup, "Box") : -1;
-#endif
-  // Replace normal error handler
-  H5Eset_auto(H5E_DEFAULT, errfunc, errdata); 
-
-  // if all was ok, go ahead and read the data
-  if (partitiongroup>0 && dataset_id>0) { 
-    hid_t diskshape = H5PartGetDiskShape(H5FileId, dataset_id);
-    hsize_t dims[2], maxdims[2];
-    herr_t err = H5Sget_simple_extent_dims(diskshape, dims, maxdims);
-    if (err!=1) vtkErrorMacro("Error in H5Part bounding box dimensions read");
-    partitions = dims[0]/13;
-    //
-    std::vector<double> data(dims[0], 0.0);
-    err = H5Dread(dataset_id, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, &data[0]);
-    if (err<0) vtkErrorMacro("Error in H5Part bounding box data read");
-    //
-    // generate boxes, 2 per partition (6*2+1 = 13 vals per partition)
-    // count, min{x,y,z}, max{x,y,z}, ghostmin{x,y,z}, ghostmax{x,y,z}
-    //
-    this->PartitionCount.resize(partitions);
-    this->PartitionOffset.resize(partitions+1,0);
-    this->PieceId.resize(partitions,0); // values set in repartitioning methods
-    this->PartitionBoundsTable.resize(partitions*6);
-    this->PartitionBoundsTableHalo.resize(partitions*6);
-    //
-    for (vtkIdType i=0; i<partitions; i++) {
-      vtkIdType offset1 = i*6;
-      vtkIdType offset2 = i*13;
-      this->PartitionCount[i]      = static_cast<vtkIdType>(data[0+offset2]);
-      this->PartitionBoundsTable[0+offset1] = data[1+offset2];
-      this->PartitionBoundsTable[1+offset1] = data[4+offset2];
-      this->PartitionBoundsTable[2+offset1] = data[2+offset2];
-      this->PartitionBoundsTable[3+offset1] = data[5+offset2];
-      this->PartitionBoundsTable[4+offset1] = data[3+offset2];
-      this->PartitionBoundsTable[5+offset1] = data[6+offset2];
-      //
-      this->PartitionBoundsTableHalo[0+offset1] = data[1+6+offset2];
-      this->PartitionBoundsTableHalo[1+offset1] = data[4+6+offset2];
-      this->PartitionBoundsTableHalo[2+offset1] = data[2+6+offset2];
-      this->PartitionBoundsTableHalo[3+offset1] = data[5+6+offset2];
-      this->PartitionBoundsTableHalo[4+offset1] = data[3+6+offset2];
-      this->PartitionBoundsTableHalo[5+offset1] = data[6+6+offset2];
-    }
-    std::partial_sum(this->PartitionCount.begin(), this->PartitionCount.end(), this->PartitionOffset.begin()+1);
-    //
-    // cleanup hdf5
-    //
-    H5Sclose(diskshape);
-  }
-  if (dataset_id>0) H5Dclose(dataset_id);
-  if (partitiongroup>0) H5Gclose(partitiongroup);
-  //
-  return partitions;
 }
 //----------------------------------------------------------------------------
 vtkIdType vtkBonsaiSharedMemoryReader::DisplayBoundingBoxes(vtkDataArray *coords, vtkPolyData *output, vtkIdType extent0, vtkIdType extent1)
 { 
-  vtkIdType partitions = this->DisplayPartitionBoxes ? this->PartitionCount.size() : 0;
+  vtkIdType partitions = 0; // this->DisplayPartitionBoxes ? this->PartitionCount.size() : 0;
   vtkIdType pieces = this->DisplayPieceBoxes ? this->PieceBounds.size() : 0;
   vtkIdType newBoxes = partitions + pieces;
   //

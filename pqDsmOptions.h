@@ -118,6 +118,10 @@ protected:
   void UpdateTableInformation();
   void UpdateTablePipeline();
   //
+  void CreateBonsaiPipeline();
+  void UpdateBonsaiInformation();
+  void UpdateBonsaiPipeline();
+  //
   void ShowPipelineInGUI(vtkSMSourceProxy *source, const char *name, int Id);
   void GetPipelineTimeInformation(vtkSMSourceProxy *source);
   void SetTimeAndRange(double range[2], double timenow, bool GUIupdate=false);

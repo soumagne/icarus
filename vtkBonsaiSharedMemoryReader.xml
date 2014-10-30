@@ -10,7 +10,7 @@
     <!-- H5Part                                                        -->
     <!-- ============================================================= -->
     <SourceProxy
-     name="Bonsai"
+     name="BonsaiReader"
      class="vtkBonsaiSharedMemoryReader">
       <Documentation>
         Reader for Bonsai in memory data.

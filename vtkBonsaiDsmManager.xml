@@ -9,7 +9,9 @@
     <!-- ============================================================== -->
     <!-- AbstractDsmManager                                                     -->
     <!-- ============================================================== -->
-    <Proxy name="BonsaiDsmManager" class="vtkBonsaiDsmManager">
+    <Proxy name="BonsaiDsmManager" class="vtkBonsaiDsmManager"
+        base_proxyname="AbstractDsmManager"
+        base_proxygroup="icarus_helpers">
     </Proxy>
 
   </ProxyGroup>

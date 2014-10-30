@@ -43,8 +43,6 @@ class VTK_EXPORT vtkBonsaiDsmManager : public vtkAbstractDsmManager
 public:
   static vtkBonsaiDsmManager *New();
   vtkTypeMacro(vtkBonsaiDsmManager,vtkAbstractDsmManager);
-  void PrintSelf(ostream& os, vtkIndent indent);
-
 
 protected:
     vtkBonsaiDsmManager();

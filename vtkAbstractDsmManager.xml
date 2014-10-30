@@ -39,11 +39,7 @@
                 command="OpenCollective">
       </Property>
 
-      <Property name="OpenCollectiveRW"
-                command="OpenCollectiveRW">
-      </Property>
-
-      <Property name="CloseCollective"
+     <Property name="CloseCollective"
                 command="CloseCollective">
       </Property>
 
@@ -55,47 +51,6 @@
                 command="GenerateXdmfDescription">
       </Property>
 
-      <IntVectorProperty
-        name="SerialMode"
-        command="SetSerialMode"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="IsServer"
-        command="SetIsServer"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="InterCommType"
-        command="SetInterCommType"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="UseStaticInterComm"
-        command="SetUseStaticInterComm"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="DistributionType"
-        command="SetDsmType"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
-
-      <IntVectorProperty
-        name="BlockLength"
-        command="SetBlockLength"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
 
       <IntVectorProperty
         name="LocalBufferSizeMBytes"
@@ -104,18 +59,6 @@
         default_values="0">
       </IntVectorProperty>
 
-      <StringVectorProperty
-        name="ServerHostName"
-        command="SetServerHostName"
-        number_of_elements="1">
-      </StringVectorProperty>
-
-      <IntVectorProperty
-        name="ServerPort"
-        command="SetServerPort"
-        number_of_elements="1"
-        default_values="0">
-      </IntVectorProperty>
 
       <StringVectorProperty
         name="XdmfDescription"
@@ -142,12 +85,6 @@
       <StringVectorProperty
         name="SteeringCommand"
         command="SetSteeringCommand"
-        number_of_elements="1">
-      </StringVectorProperty>
-
-      <StringVectorProperty
-        name="DisabledObject"
-        command="SetDisabledObject"
         number_of_elements="1">
       </StringVectorProperty>
 

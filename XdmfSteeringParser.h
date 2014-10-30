@@ -109,6 +109,7 @@ public:
   }
   //
   bool GetHasXdmf() { return this->HasXdmf; }  
+  bool GetHasBonsai() { return this->HasBonsai; }
   //
   bool GetHasH5Part() { return this->HasH5Part; }
   std::vector<std::string> GetH5PartStrings() {
@@ -133,6 +134,7 @@ protected:
   std::string          HelperProxyString;
   std::map<int, int>   GridTypeMap;
   //
+  bool                     HasBonsai;
   bool                     HasXdmf;
   bool                     HasH5Part;
   bool                     HasNetCDF;

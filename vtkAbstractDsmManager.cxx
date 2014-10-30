@@ -56,6 +56,68 @@ vtkStandardNewMacro(vtkAbstractDsmManager);
 vtkCxxSetObjectMacro(vtkAbstractDsmManager, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
+VTK_EXPORT VTK_THREAD_RETURN_TYPE vtkAbstractDsmManagerNotificationThread(void *arg)
+{
+  vtkAbstractDsmManager *dsmManager = static_cast<vtkAbstractDsmManager*>(
+      static_cast<vtkMultiThreader::ThreadInfo*>(arg)->UserData);
+  dsmManager->NotificationThread();
+  return(VTK_THREAD_RETURN_VALUE);
+}
+
+//----------------------------------------------------------------------------
+struct vtkAbstractDsmManager::vtkAbstractDsmManagerInternals
+{
+  vtkAbstractDsmManagerInternals() {
+    this->NotificationThread = vtkSmartPointer<vtkMultiThreader>::New();
+
+    // Updated event
+    this->IsUpdated = false;
+    this->UpdatedCond = vtkSmartPointer<vtkConditionVariable>::New();
+    this->UpdatedMutex = vtkSmartPointer<vtkMutexLock>::New();
+
+    // NotifThreadCreated event
+    this->IsNotifThreadCreated = false;
+    this->NotifThreadCreatedCond = vtkSmartPointer<vtkConditionVariable>::New();
+    this->NotifThreadCreatedMutex = vtkSmartPointer<vtkMutexLock>::New();
+  }
+
+  ~vtkAbstractDsmManagerInternals() {
+    if (this->NotificationThread->IsThreadActive(this->NotificationThreadID)) {
+      this->NotificationThread->TerminateThread(this->NotificationThreadID);
+    }
+  }
+
+  void SignalNotifThreadCreated() {
+    this->NotifThreadCreatedMutex->Lock();
+    this->IsNotifThreadCreated = true;
+    this->NotifThreadCreatedCond->Signal();
+    this->NotifThreadCreatedMutex->Unlock();
+  }
+
+  void WaitForNotifThreadCreated() {
+    this->NotifThreadCreatedMutex->Lock();
+    while (!this->IsNotifThreadCreated) {
+      this->NotifThreadCreatedCond->Wait(this->NotifThreadCreatedMutex);
+    }
+    this->NotifThreadCreatedMutex->Unlock();
+  }
+
+  vtkSmartPointer<vtkClientSocket>  NotificationSocket;
+  vtkSmartPointer<vtkMultiThreader> NotificationThread;
+  int NotificationThreadID;
+
+  // Updated event
+  bool                                  IsUpdated;
+  vtkSmartPointer<vtkMutexLock>         UpdatedMutex;
+  vtkSmartPointer<vtkConditionVariable> UpdatedCond;
+
+  // NotifThreadCreated event
+  bool                                  IsNotifThreadCreated;
+  vtkSmartPointer<vtkMutexLock>         NotifThreadCreatedMutex;
+  vtkSmartPointer<vtkConditionVariable> NotifThreadCreatedCond;
+};
+
+//----------------------------------------------------------------------------
 vtkAbstractDsmManager::vtkAbstractDsmManager()
 {
   this->UpdatePiece             = 0;
@@ -66,12 +128,15 @@ vtkAbstractDsmManager::vtkAbstractDsmManager()
   this->SetController(vtkMultiProcessController::GetGlobalController());
 #endif
   this->HelperProxyXMLString    = NULL;
+  this->DsmManagerInternals     = new vtkAbstractDsmManagerInternals;
 }
 
 //----------------------------------------------------------------------------
 vtkAbstractDsmManager::~vtkAbstractDsmManager()
 { 
   this->SetHelperProxyXMLString(NULL);
+  if (this->DsmManagerInternals) delete this->DsmManagerInternals;
+  this->DsmManagerInternals = NULL;
 #ifdef VTK_USE_MPI
   this->SetController(NULL);
 #endif
@@ -116,13 +181,52 @@ void vtkAbstractDsmManager::CheckMPIController()
 }
 
 //----------------------------------------------------------------------------
+void* vtkAbstractDsmManager::NotificationThread()
+{
+  unsigned int notification;
+
+  this->DsmManagerInternals->SignalNotifThreadCreated();
+//  this->WaitForConnection();
+  notification = DSM_NOTIFY_CONNECTED;
+  this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
+
+  while (this->event_callback(&notification) != 0) {
+    this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
+    this->WaitForUpdated();
+  }
+  // TODO
+  // good cleanup ??
+  return((void *)this);
+}
+
+//----------------------------------------------------------------------------
 void vtkAbstractDsmManager::SignalUpdated()
 {
+  this->DsmManagerInternals->UpdatedMutex->Lock();
+
+  this->DsmManagerInternals->IsUpdated = true;
+  this->DsmManagerInternals->UpdatedCond->Signal();
+  vtkDebugMacro("Sent updated condition signal");
+
+  this->DsmManagerInternals->UpdatedMutex->Unlock();
+
 }
 
 //----------------------------------------------------------------------------
 void vtkAbstractDsmManager::WaitForUpdated()
 {
+  this->DsmManagerInternals->UpdatedMutex->Lock();
+
+  if (!this->DsmManagerInternals->IsUpdated) {
+    vtkDebugMacro("Thread going into wait for pipeline updated...");
+    this->DsmManagerInternals->UpdatedCond->Wait(this->DsmManagerInternals->UpdatedMutex);
+    vtkDebugMacro("Thread received updated signal");
+  }
+  if (this->DsmManagerInternals->IsUpdated) {
+    this->DsmManagerInternals->IsUpdated = false;
+  }
+
+  this->DsmManagerInternals->UpdatedMutex->Unlock();
 }
 
 //----------------------------------------------------------------------------
@@ -135,12 +239,12 @@ int vtkAbstractDsmManager::Create()
   //
   vtkMPICommunicator *communicator
   = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator());
-//  this->DsmManager->SetMpiComm(*communicator->GetMPIComm()->GetHandle());
 
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
   this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
 #else
+
   this->UpdatePiece     = 0;
   this->UpdateNumPieces = 1;
   vtkErrorMacro(<<"No MPI");
@@ -149,11 +253,43 @@ int vtkAbstractDsmManager::Create()
 
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
 
+
   vtkPVOptions *pvOptions = pm->GetOptions();
   const char *pvClientHostName = pvOptions->GetHostName();
   int notificationPort = VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT;
   if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
+    int r, tryConnect = 0;
+    this->DsmManagerInternals->NotificationSocket = vtkSmartPointer<vtkClientSocket>::New();
+    do {
+      std::cout << "Creating notification socket to "
+          << pvClientHostName << " on port " << notificationPort << "...";
+      r = this->DsmManagerInternals->NotificationSocket->ConnectToServer(pvClientHostName,
+          notificationPort);
+      if (r == 0) {
+        std::cout << "Connected" << std::endl;
+      } else {
+        std::cout << "Failed to connect" << std::endl;
+        tryConnect++;
+#ifdef _WIN32
+        Sleep(1000);
+#else
+        sleep(1);
+#endif
+      }
+    } while (r < 0 && tryConnect < 5);
+    if (r < 0) {
+      this->DsmManagerInternals->NotificationSocket = NULL;
+      return(-1);
+    }
   }
+/*
+  if (this->DsmManager->Create()==H5FD_DSM_SUCCESS) {
+    // Set mode to Asynchronous so that we can open/close whenever we like
+    this->DsmManager->GetDsmBuffer()->SetSychronizationCount(0);
+    return H5FD_DSM_SUCCESS;
+  }
+  return H5FD_DSM_FAIL;
+*/
   return 1;
 }
 
@@ -165,9 +301,9 @@ int vtkAbstractDsmManager::Destroy()
 
 //----------------------------------------------------------------------------
 int vtkAbstractDsmManager::Publish()
-{
-  return 1;
-}
+{ return 1; }
+
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 void vtkAbstractDsmManager::SetHelperProxyXMLString(const char *xmlstring)

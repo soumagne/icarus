@@ -19,7 +19,7 @@
   implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
   This work has received funding from the European Community's Seventh
-  Framework Programme (FP7/2007-2013) under grant agreement 225967 “NextMuSE”
+  Framework Programme (FP7/2007-2013) under grant agreement 225967 ���NextMuSE���
 
 =========================================================================*/
 #include "vtkBonsaiDsmManager.h"
@@ -53,10 +53,12 @@
 
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkBonsaiDsmManager);
+//----------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------
 vtkBonsaiDsmManager::vtkBonsaiDsmManager()
 {
+//  std::cout << "Created a Bonsai DSM manager" << std::endl;
 }
 
 //----------------------------------------------------------------------------

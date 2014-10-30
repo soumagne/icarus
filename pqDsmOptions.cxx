@@ -77,6 +77,10 @@
 #ifdef ICARUS_HAVE_H5FDDSM
  #include "pqH5FDdsmPanel.h"
 #endif
+#ifdef ICARUS_HAVE_BONSAI
+ #include "pqBonsaiDsmPanel.h"
+#endif
+
 //----------------------------------------------------------------------------
 #define XML_USE_TEMPLATE 1
 #define XML_USE_ORIGINAL 0
@@ -104,6 +108,9 @@ public:
 #ifdef ICARUS_HAVE_H5FDDSM
     this->pqH5FDdsmWidget     = NULL;
 #endif
+#ifdef ICARUS_HAVE_BONSAI
+    this->pqBonsaiDsmWidget   = NULL;
+#endif
   };
 
   //
@@ -113,6 +120,7 @@ public:
     this->H5PartReader       = NULL;
     this->NetCDFReader       = NULL;
     this->TableReader        = NULL;
+    this->BonsaiReader       = NULL;
 
     if (this->SteeringParser) {
       delete this->SteeringParser;
@@ -134,6 +142,7 @@ public:
 #ifdef ICARUS_HAVE_H5FDDSM
     this->DsmProxy = this->pqH5FDdsmWidget->CreateDsmProxy();
 #elif ICARUS_HAVE_BONSAI
+    this->DsmProxy = this->pqBonsaiDsmWidget->CreateDsmProxy();
 #else
 //  #error At least one DSM type must be specified through cmake options / compiler #defines
 #endif
@@ -147,7 +156,10 @@ public:
     }
     this->DsmProxyHelper = this->pqH5FDdsmWidget->CreateDsmHelperProxy();
 #elif ICARUS_HAVE_BONSAI
+    this->DsmProxy = this->pqBonsaiDsmWidget->CreateDsmProxy();
+      this->CreateDsmProxy();
     }
+    this->DsmProxyHelper = this->pqBonsaiDsmWidget->CreateDsmHelperProxy();
 #else
     }
 //    #error At least one DSM type must be specified through cmake options / compiler #defines
@@ -199,6 +211,7 @@ public:
   vtkSmartPointer<vtkSMSourceProxy>         H5PartReader;
   vtkSmartPointer<vtkSMSourceProxy>         NetCDFReader;
   vtkSmartPointer<vtkSMSourceProxy>         TableReader;
+  vtkSmartPointer<vtkSMSourceProxy>         BonsaiReader;
   bool                                      CreatePipelines;
   int                                       CurrentTimeStep; // 0,1,2,3...
   double                                    PipelineTimeRange[2]; // declared at startup usually
@@ -227,6 +240,9 @@ public:
 #ifdef ICARUS_HAVE_H5FDDSM
   pqH5FDdsmPanel                          *pqH5FDdsmWidget;
 #endif
+#ifdef ICARUS_HAVE_BONSAI
+  pqBonsaiDsmPanel                        *pqBonsaiDsmWidget;
+#endif
 };
 
 //----------------------------------------------------------------------------
@@ -239,6 +255,10 @@ QDockWidget("DSM Manager", p)
 #ifdef ICARUS_HAVE_H5FDDSM
     this->Internals->pqH5FDdsmWidget = new pqH5FDdsmPanel(this);
     this->Internals->dsmLayout->addWidget(this->Internals->pqH5FDdsmWidget); 
+#endif
+#ifdef ICARUS_HAVE_BONSAI
+    this->Internals->pqBonsaiDsmWidget = new pqBonsaiDsmPanel(this);
+    this->Internals->dsmLayout->addWidget(this->Internals->pqBonsaiDsmWidget);
 #endif
 
   //
@@ -282,6 +302,16 @@ QDockWidget("DSM Manager", p)
   this->connect(this->Internals->pqH5FDdsmWidget, SIGNAL(UpdateStatus(QString)), 
     this, SLOT(UpdateDsmStatus(QString)));
 #endif
+#ifdef ICARUS_HAVE_BONSAI
+  this->connect(this->Internals->publish,
+    SIGNAL(clicked()), this->Internals->pqBonsaiDsmWidget, SLOT(onPublish()));
+  this->connect(this->Internals->pqBonsaiDsmWidget, SIGNAL(UpdateData()),
+    this, SLOT(UpdateDsmPipeline()));
+  this->connect(this->Internals->pqBonsaiDsmWidget, SIGNAL(UpdateInformation()),
+    this, SLOT(UpdateDsmInformation()));
+  this->connect(this->Internals->pqBonsaiDsmWidget, SIGNAL(UpdateStatus(QString)),
+    this, SLOT(UpdateDsmStatus(QString)));
+#endif
 
   //
   // Link paraview events to callbacks
@@ -296,24 +326,8 @@ QDockWidget("DSM Manager", p)
     this, SLOT(onServerAdded(pqServer *)));
 
   //
-  //
-  //
-  ////////////
-  //keep self up to date whenever a new source becomes the active one
-/*
-  this->connect(&pqActiveObjects::instance(), 
-    SIGNAL(sourceChanged(pqPipelineSource*)),
-    this, SLOT(TrackSource()));
-
-  this->connect(smModel,
-    SIGNAL(sourceAdded(pqPipelineSource*)),
-    this, SLOT(TrackSource()));
-
-  this->connect(smModel,
-    SIGNAL(sourceRemoved(pqPipelineSource*)),
-    this, SLOT(TrackSource()));
-*/
   // Track the active view so we can display contents in it
+  //
   QObject::connect(&pqActiveView::instance(),
     SIGNAL(changed(pqView*)),
     this, SLOT(onActiveViewChanged(pqView*)));
@@ -334,6 +348,9 @@ void pqDsmOptions::LoadSettings()
 {
 #ifdef ICARUS_HAVE_H5FDDSM
   this->Internals->pqH5FDdsmWidget->LoadSettings();
+#endif
+#ifdef ICARUS_HAVE_BONSAI
+  this->Internals->pqBonsaiDsmWidget->LoadSettings();
 #endif
 
   pqSettings *settings = pqApplicationCore::instance()->settings();
@@ -368,6 +385,9 @@ void pqDsmOptions::SaveSettings()
   // servers
 #ifdef ICARUS_HAVE_H5FDDSM
   this->Internals->pqH5FDdsmWidget->SaveSettings();
+#endif
+#ifdef ICARUS_HAVE_BONSAI
+  this->Internals->pqBonsaiDsmWidget->SaveSettings();
 #endif
   // Description file type
   settings->setValue("DescriptionFileType", this->Internals->xdmfFileTypeComboBox->currentIndex());
@@ -565,12 +585,16 @@ bool pqDsmOptions::DsmReady()
   if (!this->DsmProxyReady()) return 0;
   //
   bool initialized = false;
-#ifdef ICARUS_HAVE_H5FDDSM
   icarus_std::function<void()> func = icarus_std::bind(&pqDsmOptions::DsmInitFunction, this);
+#ifdef ICARUS_HAVE_H5FDDSM
   this->Internals->pqH5FDdsmWidget->setInitializationFunction(func);
   initialized = this->Internals->pqH5FDdsmWidget->DsmReady();
 #endif  
-  return initialized;
+#ifdef ICARUS_HAVE_BONSAI
+  this->Internals->pqBonsaiDsmWidget->setInitializationFunction(func);
+  initialized = this->Internals->pqBonsaiDsmWidget->DsmReady();
+#endif
+   return initialized;
 }
 
 //---------------------------------------------------------------------------
@@ -590,6 +614,9 @@ bool pqDsmOptions::DsmListening()
 #ifdef ICARUS_HAVE_H5FDDSM
   return this->Internals->pqH5FDdsmWidget->DsmListening();
 #endif  
+#ifdef ICARUS_HAVE_BONSAI
+  return true;
+#endif
   return false;
 }
 
@@ -703,6 +730,9 @@ void pqDsmOptions::onPause()
 #ifdef ICARUS_HAVE_H5FDDSM
   this->Internals->pqH5FDdsmWidget->onPause();
 #endif
+#ifdef ICARUS_HAVE_BONSAI
+  this->Internals->pqBonsaiDsmWidget->onPause();
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -710,6 +740,9 @@ void pqDsmOptions::onPlay()
 {
 #ifdef ICARUS_HAVE_H5FDDSM
   this->Internals->pqH5FDdsmWidget->onPlay();
+#endif
+#ifdef ICARUS_HAVE_BONSAI
+  this->Internals->pqBonsaiDsmWidget->onPlay();
 #endif
 }
 
@@ -798,6 +831,10 @@ void pqDsmOptions::SetTimeAndRange(double range[2], double timenow, bool GUIupda
       if (this->Internals->SteeringParser->GetHasXdmf() && this->Internals->XdmfReader) {
         vtkSMPropertyHelper(this->Internals->XdmfReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
         vtkSMPropertyHelper(this->Internals->XdmfReader, "TimestepValues").Set(this->Internals->PipelineTime);
+      }
+      if (this->Internals->SteeringParser->GetHasBonsai() && this->Internals->BonsaiReader) {
+        vtkSMPropertyHelper(this->Internals->BonsaiReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
+        vtkSMPropertyHelper(this->Internals->H5PartReader, "TimestepValues").Set(this->Internals->PipelineTime);
       }
       if (this->Internals->SteeringParser->GetHasH5Part() && this->Internals->H5PartReader) {
         vtkSMPropertyHelper(this->Internals->H5PartReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
@@ -937,6 +974,35 @@ void pqDsmOptions::UpdateXdmfPipeline()
   this->Internals->XdmfViewer->UpdateAll();
 }
 
+//-----------------------------------------------------------------------------
+// Bonsai
+//-----------------------------------------------------------------------------
+void pqDsmOptions::CreateBonsaiPipeline()
+{
+  vtkSMProxyManager *pm = vtkSMProxyManager::GetProxyManager();
+  this->Internals->BonsaiReader.TakeReference(
+    vtkSMSourceProxy::SafeDownCast(pm->NewProxy("sources", "BonsaiReader")));
+  // Connect our DSM manager to the reader (Xdmf)
+  pqSMAdaptor::setProxyProperty(
+    this->Internals->BonsaiReader->GetProperty("DsmManager"), this->Internals->DsmProxy
+  );
+  this->Internals->BonsaiReader->UpdateProperty("DsmManager");
+  //
+  pqSMAdaptor::setElementProperty(
+    this->Internals->BonsaiReader->GetProperty("GenerateVertexCells"), 1);
+  this->Internals->BonsaiReader->UpdateVTKObjects();
+}
+//-----------------------------------------------------------------------------
+void pqDsmOptions::UpdateBonsaiInformation()
+{
+  this->Internals->BonsaiReader->InvokeCommand("FileModified");
+  this->GetPipelineTimeInformation(this->Internals->H5PartReader);
+}
+//-----------------------------------------------------------------------------
+void pqDsmOptions::UpdateBonsaiPipeline()
+{
+  this->Internals->BonsaiReader->UpdatePipeline(this->Internals->PipelineTime);
+}
 //-----------------------------------------------------------------------------
 // H5Part
 //-----------------------------------------------------------------------------
@@ -1165,6 +1231,25 @@ void pqDsmOptions::UpdateDsmPipeline()
     }
     // we will need to update all views for this object
     this->GetViewsForPipeline(this->Internals->XdmfViewer->PipelineEnd, viewlist);
+  }
+
+  //
+  // If Bonsai present, update the pipeline
+  //
+  if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasBonsai()) {
+    // create pipeline if needed
+    if (this->Internals->CreatePipelines) {
+      this->CreateBonsaiPipeline();
+    }
+    // update information
+    this->UpdateBonsaiInformation();
+    // update data
+    this->UpdateBonsaiPipeline();
+    if (this->Internals->CreatePipelines) {
+      this->ShowPipelineInGUI(this->Internals->BonsaiReader, "Bonsai-Dsm", 0);
+    }
+    // we will need to update all views for this object
+    this->GetViewsForPipeline(this->Internals->BonsaiReader, viewlist);
   }
 
   //

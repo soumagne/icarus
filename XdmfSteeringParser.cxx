@@ -70,6 +70,7 @@ XdmfSteeringParser::XdmfSteeringParser()
 {
   this->ConfigDOM  = NULL;
   this->HasXdmf    = false;
+  this->HasBonsai  = false;
   this->HasH5Part  = false;
   this->HasNetCDF  = false;
   this->HasTable  = false;
@@ -173,6 +174,12 @@ int XdmfSteeringParser::Parse(const char *configFilePath)
     std::string     z = GetXMLString(this->ConfigDOM->GetAttribute(ZNode, "Name"));
     this->H5PartStrings.push_back(z);
   }
+
+  //////////////////////////////////////////////////////////////////////
+  // Bonsai
+  //////////////////////////////////////////////////////////////////////
+  XdmfXmlNode bonsaiNode = this->ConfigDOM->FindElement("Bonsai", 0, vizNode);
+  this->HasBonsai = (bonsaiNode!=NULL);
 
   //////////////////////////////////////////////////////////////////////
   // Xdmf
