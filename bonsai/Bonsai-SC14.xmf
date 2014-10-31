@@ -23,11 +23,6 @@
       </Grid>
     </Bonsai>
 
-    <Table Name="HeightPlot">
-      <Attribute Name="ExampleHeight"/>
-    </Table>
-
-
   </Visualization>
 
   <!--  ###########################################################################

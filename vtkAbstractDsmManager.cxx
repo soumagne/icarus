@@ -120,9 +120,10 @@ struct vtkAbstractDsmManager::vtkAbstractDsmManagerInternals
 //----------------------------------------------------------------------------
 vtkAbstractDsmManager::vtkAbstractDsmManager()
 {
-  this->UpdatePiece             = 0;
-  this->UpdateNumPieces         = 0;
-  //
+  this->UpdatePiece        = 0;
+  this->UpdateNumPieces    = 0;
+  this->DSMPollingFunction = nullptr;
+
 #ifdef VTK_USE_MPI
   this->Controller              = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
@@ -181,22 +182,36 @@ void vtkAbstractDsmManager::CheckMPIController()
 }
 
 //----------------------------------------------------------------------------
-void* vtkAbstractDsmManager::NotificationThread()
+void vtkAbstractDsmManager::NotificationThread()
 {
   unsigned int notification;
 
   this->DsmManagerInternals->SignalNotifThreadCreated();
-//  this->WaitForConnection();
+  this->WaitForConnection();
   notification = DSM_NOTIFY_CONNECTED;
   this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
-
-  while (this->event_callback(&notification) != 0) {
-    this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
     this->WaitForUpdated();
+
+//  sleep(10);
+
+  std::cout << "Done connection, entering DSM loop " << std::endl;
+  if (!DSMPollingFunction) {
+    std::cout << "Polling function has not been assigned, FATAL " << std::endl;
+    return;
   }
-  // TODO
-  // good cleanup ??
-  return((void *)this);
+  while (this->DSMPollingFunction(&notification) != 0) {
+    std::cout << "Inside DSM loop " << std::endl;
+    this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
+    std::cout << "Entering WaitForUpdated " << std::endl;
+    this->WaitForUpdated();
+    std::cout << "done WaitForUpdate " << std::endl;
+  }
+  return;
+}
+//----------------------------------------------------------------------------
+void vtkAbstractDsmManager::WaitForNotifThreadCreated()
+{
+  this->DsmManagerInternals->WaitForNotifThreadCreated();
 }
 
 //----------------------------------------------------------------------------
@@ -361,9 +376,6 @@ void vtkAbstractDsmManager::PrintSelf(ostream& os, vtkIndent indent)
 void vtkAbstractDsmManager::SetLocalBufferSizeMBytes(int size) {}
 //----------------------------------------------------------------------------
 int vtkAbstractDsmManager:: GetLocalBufferSizeMBytes() { return 1; }
-
-//----------------------------------------------------------------------------
-int vtkAbstractDsmManager:: WaitForUnlock(unsigned int *flag) { return 1; }
 
 //----------------------------------------------------------------------------
 int vtkAbstractDsmManager::Connect() { return 1; }

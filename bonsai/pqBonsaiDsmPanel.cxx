@@ -92,6 +92,7 @@ public:
   {
     this->DsmInitialized      = false;
     this->PauseRequested      = false;
+    this->DsmListening        = false;
   };
 
   //
@@ -135,6 +136,7 @@ public:
   // ---------------------------------------------------------------
   int                                       DsmInitialized;
   int                                       PauseRequested;
+  int                                       DsmListening;
   vtkSmartPointer<vtkSMProxy>               DsmProxy;
   vtkSmartPointer<vtkSMProxy>               DsmProxyHelper;
   QTcpServer*                               TcpNotificationServer;
@@ -251,9 +253,10 @@ bool pqBonsaiDsmPanel::DsmReady()
 //-----------------------------------------------------------------------------
 void pqBonsaiDsmPanel::onPublish()
 {
-  if (this->DsmReady() /*&& !this->Internals->DsmListening*/) {
+  if (this->DsmReady() && !this->Internals->DsmListening) {
     this->Internals->DsmProxy->UpdateVTKObjects();
     this->Internals->DsmProxy->InvokeCommand("Publish");
+    this->Internals->DsmListening = true;
   }
 }
 //-----------------------------------------------------------------------------
@@ -301,23 +304,24 @@ void pqBonsaiDsmPanel::onNotified()
 #endif
     if (notificationCode == DSM_NOTIFY_CONNECTED) {
       std::cout << "New DSM connection established" << std::endl;
+      this->Internals->DsmProxy->InvokeCommand("SignalUpdated");
     } else {
       if (this->Internals->DsmProxyCreated() && this->Internals->DsmInitialized) {
         std::cout << "Received notification ";
         switch (notificationCode) {
           case DSM_NOTIFY_DATA:
-            std::cout << "\"New Data\"...";
+            std::cout << "\"New Data\"..." << std::endl;
             emit this->UpdateData();
             break;
           case DSM_NOTIFY_INFORMATION:
-            std::cout << "\"New Information\"...";
+            std::cout << "\"New Information\"..." << std::endl;
             this->UpdateInformation();
             break;
           case DSM_NOTIFY_NONE:
-            std::cout << "\"NONE : ignoring unlock \"...";
+            std::cout << "\"NONE : ignoring unlock \"..." << std::endl;
             break;
           case DSM_NOTIFY_WAIT:
-            std::cout << "\"Wait\"...";
+            std::cout << "\"Wait\"..." << std::endl;
             this->onPause();
             this->Internals->PauseRequested = false;
             emit this->UpdateStatus("paused");

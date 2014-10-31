@@ -442,6 +442,8 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
   // We must parse XML first, otherwise the DsmHelperProxy is empty
   //
   if (this->Internals->SteeringParser) delete this->Internals->SteeringParser;
+  std::cout << "Setting Steering PArser " <<std::endl;
+
   this->Internals->SteeringParser = new XdmfSteeringParser();
   this->Internals->SteeringParser->Parse(filepath);
 
@@ -834,7 +836,7 @@ void pqDsmOptions::SetTimeAndRange(double range[2], double timenow, bool GUIupda
       }
       if (this->Internals->SteeringParser->GetHasBonsai() && this->Internals->BonsaiReader) {
         vtkSMPropertyHelper(this->Internals->BonsaiReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
-        vtkSMPropertyHelper(this->Internals->H5PartReader, "TimestepValues").Set(this->Internals->PipelineTime);
+        vtkSMPropertyHelper(this->Internals->BonsaiReader, "TimestepValues").Set(this->Internals->PipelineTime);
       }
       if (this->Internals->SteeringParser->GetHasH5Part() && this->Internals->H5PartReader) {
         vtkSMPropertyHelper(this->Internals->H5PartReader, "TimeRange").Set(this->Internals->PipelineTimeRange,2);
@@ -996,7 +998,7 @@ void pqDsmOptions::CreateBonsaiPipeline()
 void pqDsmOptions::UpdateBonsaiInformation()
 {
   this->Internals->BonsaiReader->InvokeCommand("FileModified");
-  this->GetPipelineTimeInformation(this->Internals->H5PartReader);
+  this->GetPipelineTimeInformation(this->Internals->BonsaiReader);
 }
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateBonsaiPipeline()
@@ -1236,14 +1238,18 @@ void pqDsmOptions::UpdateDsmPipeline()
   //
   // If Bonsai present, update the pipeline
   //
+  std::cout << "About to setup Bonsai pipeline " << std::endl;
   if (this->Internals->SteeringParser && this->Internals->SteeringParser->GetHasBonsai()) {
     // create pipeline if needed
+  std::cout << "About to CreatePipelines Bonsai pipeline " << std::endl;
     if (this->Internals->CreatePipelines) {
       this->CreateBonsaiPipeline();
     }
+  std::cout << "About to UpdateBonsaiInformation Bonsai pipeline " << std::endl;
     // update information
     this->UpdateBonsaiInformation();
     // update data
+  std::cout << "About to setup Bonsai pipeline " << std::endl;
     this->UpdateBonsaiPipeline();
     if (this->Internals->CreatePipelines) {
       this->ShowPipelineInGUI(this->Internals->BonsaiReader, "Bonsai-Dsm", 0);

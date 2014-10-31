@@ -78,177 +78,9 @@
 #include "vtkIdListCollection.h"
 #include "vtkNew.h"
 //
-//#include <functional>
+#include "vtkBonsaiDsmManager.h"
 #include <algorithm>
 #include <numeric>
-//----------------------------------------------------------------------------
-#include "BonsaiSharedData.h"
-#include "BonsaiIO.h"
-#include "SharedMemory.h"
-//----------------------------------------------------------------------------
-vtkCxxSetObjectMacro(vtkBonsaiSharedMemoryReader, Controller, vtkMultiProcessController);
-
-//----------------------------------------------------------------------------
-using ShmQHeader = SharedMemoryClient<BonsaiSharedQuickHeader>;
-using ShmQData   = SharedMemoryClient<BonsaiSharedQuickData>;
-static ShmQHeader *shmQHeader = NULL;
-static ShmQData   *shmQData   = NULL;
-static bool terminateRenderer = false;
-//----------------------------------------------------------------------------
-
-bool fetchSharedData(const bool quickSync, RendererData &rData,
-    const int rank, const int nrank, const MPI_Comm &comm,
-    const int reduceDM = 1, const int reduceS = 1)
-{
-  if (shmQHeader == NULL)
-  {
-    shmQHeader = new ShmQHeader(ShmQHeader::type::sharedFile(rank));
-    shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(rank));
-  }
-
-  auto &header = *shmQHeader;
-  auto &data   = *shmQData;
-
-  static bool first = true;
-  if (quickSync && first)
-  {
-    /* handshake */
-
-    header.acquireLock();
-    header[0].handshake = true;
-    header.releaseLock();
-
-    while (header[0].handshake)
-      usleep(1000);
-
-    header.acquireLock();
-    header[0].handshake = true;
-    header.releaseLock();
-
-    /* handshake complete */
-    first = false;
-  }
-
-
-  static float tLast = -1.0f;
-
-
-  if (rData.isNewData())
-    return false;
-
-
-#if 0
-  //  if (rank == 0)
-  fprintf(stderr, " rank= %d: attempting to fetch data \n",rank);
-#endif
-
-  // header
-  header.acquireLock();
-  const float tCurrent = header[0].tCurrent;
-
-  terminateRenderer = tCurrent == -1;
-
-  int sumL = quickSync ? !header[0].done_writing : tCurrent != tLast;
-  int sumG ;
-  MPI_Allreduce(&sumL, &sumG, 1, MPI_INT, MPI_SUM, comm);
-
-
-  bool completed = false;
-  if (sumG == nrank) //tCurrent != tLast)
-  {
-    tLast = tCurrent;
-    completed = true;
-
-    // data
-    const size_t nBodies = header[0].nBodies;
-    data.acquireLock();
-
-    const size_t size = data.size();
-    assert(size == nBodies);
-
-    /* skip particles that failed to get density, or with too big h */
-    bonsaistd::function<bool(const int i)> skipPtcl = [&](const int i)
-    {
-      return (data[i].rho == 0 || data[i].h == 0.0 || data[i].h > 100);
-    };
-
-    size_t nDM = 0, nS = 0;
-    constexpr int ntypecount = 10;
-    bonsaistd::array<size_t,ntypecount> ntypeloc, ntypeglb;
-    std::fill(ntypeloc.begin(), ntypeloc.end(), 0);
-    for (size_t i = 0; i < size; i++)
-    {
-      const int type = data[i].ID.getType();
-      if  (type < ntypecount)
-        ntypeloc[type]++;
-      if (skipPtcl(i))
-        continue;
-      switch (type)
-      {
-        case 0:
-          nDM++;
-          break;
-        default:
-          nS++;
-      }
-    }
-
-    MPI_Reduce(&ntypeloc, &ntypeglb, ntypecount, MPI_LONG_LONG, MPI_SUM, 0, comm);
-    if (rank == 0)
-    {
-      for (int type = 0; type < ntypecount; type++)
-        if (ntypeglb[type] > 0)
-          fprintf(stderr, " ptype= %d:  np= %zu \n",type, ntypeglb[type]);
-    }
-
-
-    rData.resize(nS);
-    size_t ip = 0;
-    float *coords = rData.coords->GetPointer(0);
-    float *mass   = rData.mass->GetPointer(0);
-    float *vel    = rData.vel->GetPointer(0);
-    float *rho    = rData.rho->GetPointer(0);
-    float *Hval   = rData.Hval->GetPointer(0);
-    vtkIdType *Id = rData.Id->GetPointer(0);
-
-    for (size_t i = 0; i < size; i++)
-    {
-      if (skipPtcl(i))
-        continue;
-      if (data[i].ID.getType() == 0 )  /* pick stars only */
-        continue;
-
-      coords[ip*3+0] = data[i].x;
-      coords[ip*3+1] = data[i].y;
-      coords[ip*3+2] = data[i].z;
-      mass[ip]       = data[i].mass;
-      vel[ip]        = std::sqrt(
-            data[i].vx*data[i].vx+
-            data[i].vy*data[i].vy+
-            data[i].vz*data[i].vz);
-
-      Id[ip]         = data[i].ID.get();
-      Hval[ip]       = data[i].h;
-      rho[ip]        = data[i].rho;
-
-      ip++;
-      assert(ip <= nS);
-    }
-    rData.resize(ip);
-
-    data.releaseLock();
-  }
-
-  header[0].done_writing = true;
-  header.releaseLock();
-
-#if 0
-  //  if (rank == 0)
-  fprintf(stderr, " rank= %d: done fetching data \n", rank);
-#endif
-
-  return completed;
-}
 
 //----------------------------------------------------------------------------
 //#define JB_DEBUG__
@@ -273,6 +105,8 @@ bool fetchSharedData(const bool quickSync, RendererData &rData,
 #endif
 //----------------------------------------------------------------------------
 vtkStandardNewMacro(vtkBonsaiSharedMemoryReader);
+vtkCxxSetObjectMacro(vtkBonsaiSharedMemoryReader, DsmManager, vtkBonsaiDsmManager);
+vtkCxxSetObjectMacro(vtkBonsaiSharedMemoryReader, Controller, vtkMultiProcessController);
 //----------------------------------------------------------------------------
 vtkBonsaiSharedMemoryReader::vtkBonsaiSharedMemoryReader()
 {
@@ -311,6 +145,7 @@ vtkBonsaiSharedMemoryReader::~vtkBonsaiSharedMemoryReader()
   this->PointDataArraySelection = 0;
 
   this->SetController(NULL);
+
 }
 
 //----------------------------------------------------------------------------
@@ -334,6 +169,7 @@ void vtkBonsaiSharedMemoryReader::SetFileName(char *filename)
     }
   this->Modified();
 }
+
 //----------------------------------------------------------------------------
 void vtkBonsaiSharedMemoryReader::SetFileModified()
 {
@@ -368,15 +204,19 @@ int vtkBonsaiSharedMemoryReader::RequestInformation(
   //
   this->UpdatePiece = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_PIECE_NUMBER());
   this->UpdateNumPieces = outInfo->Get(vtkStreamingDemandDrivenPipeline::UPDATE_NUMBER_OF_PIECES());
+  if (this->Controller) {
+    this->UpdatePiece = this->Controller->GetLocalProcessId();
+    this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+  }
   //
   outInfo->Set(CAN_HANDLE_PIECE_REQUEST(), 1);
   bool NeedToReadInformation = (FileModifiedTime>FileOpenedTime);
 
-  if (NeedToReadInformation)
+  if (1 || NeedToReadInformation)
   {
     this->NumberOfTimeSteps = 1;
     bool inSitu = true;
-    bool quickSync = false;
+    bool quickSync = true;
 
     MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
     if (!this->bonsaiData) {
@@ -486,11 +326,13 @@ int vtkBonsaiSharedMemoryReader::RequestData(
     int reduceDM = 10;
     int reduceS = 1;
     bool inSitu = true;
-    bool quickSync = false;
+    bool quickSync = true;
     MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
 
+    std::cout << " Calling vtkBonsaiDsmManager::FetchSharedData " << std::endl;
+
     if (inSitu) {
-        if (fetchSharedData(quickSync, *this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
+        if (vtkBonsaiDsmManager::fetchSharedData(quickSync, this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
         {
           this->bonsaiData->setNewData();
         }

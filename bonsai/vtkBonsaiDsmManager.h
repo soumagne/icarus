@@ -34,9 +34,18 @@
 
 #include "vtkAbstractDsmManager.h"       // Base class
 
+// For PARAVIEW_USE_MPI
+#include "vtkPVConfig.h"
+#ifdef PARAVIEW_USE_MPI
+ #include "vtkMPI.h"
+ #include "vtkMPIController.h"
+ #include "vtkMPICommunicator.h"
+#endif
+
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
 class vtkMultiProcessController;
+class RendererData;
 
 class VTK_EXPORT vtkBonsaiDsmManager : public vtkAbstractDsmManager
 {
@@ -44,9 +53,27 @@ public:
   static vtkBonsaiDsmManager *New();
   vtkTypeMacro(vtkBonsaiDsmManager,vtkAbstractDsmManager);
 
+  // Description:
+  // Make the DSM manager listen for new incoming connection (called by server).
+  virtual int Publish();
+
+  // Description:
+  // Wait for a notification - notifications are used to trigger user
+  // defined tasks and are sent when the dsm has been unlocked after new data is ready
+  virtual bool PollingBonsai(unsigned int *flag);
+
+  static bool WaitForNewData(const bool quickSync,
+    const int rank, const int nrank);
+
+  static bool fetchSharedData(const bool quickSync, RendererData *rData,
+    const int rank, const int nrank, const MPI_Comm &comm,
+    const int reduceDM = 1, const int reduceS = 1);
+
 protected:
     vtkBonsaiDsmManager();
     virtual ~vtkBonsaiDsmManager();
+
+    int ThreadActive;
 
 private:
     vtkBonsaiDsmManager(const vtkBonsaiDsmManager&);  // Not implemented.

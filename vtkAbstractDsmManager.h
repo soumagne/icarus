@@ -29,6 +29,22 @@
 #ifndef __vtkAbstractDsmManager_h
 #define __vtkAbstractDsmManager_h
 
+#ifdef DSM_CXX_STDLIB
+ #include <boost/function.hpp>
+ #include <boost/thread.hpp>
+ #include <boost/array.hpp>
+ #include <boost/bind.hpp>
+ #include <boost/chrono.hpp>
+ #define dsm_std boost
+ #define nullptr NULL
+#else
+ #include <functional>
+ #include <thread>
+ #include <chrono>
+ #define dsm_std std
+ using dsm_std::placeholders;
+#endif
+
 #include "vtkObject.h"       // Base class
 
 //----------------------------------------------------------------------------
@@ -38,14 +54,6 @@
 #define DSM_NOTIFY_NONE        3
 #define DSM_NOTIFY_WAIT        4
 //----------------------------------------------------------------------------
-
-#ifdef DSM_CXX_STDLIB
- #include <boost/function.hpp>
- #define dsm_std boost
-#else
- #include <functional>
- #define dsm_std std
-#endif
 
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
@@ -64,12 +72,7 @@ public:
   virtual void SetLocalBufferSizeMBytes(int size);
   virtual int  GetLocalBufferSizeMBytes();
 
-  // Description:
-  // Wait for a notification - notifications are used to trigger user
-  // defined tasks and are sent when the file has been unlocked
-  virtual int  WaitForUnlock(unsigned int *flag);
-
-  virtual void *NotificationThread();
+  virtual void NotificationThread();
 
   // Description:
   // Signal/Wait for the pipeline update to be finished (only valid when
@@ -162,8 +165,11 @@ protected:
     vtkAbstractDsmManager();
     virtual ~vtkAbstractDsmManager();
 
-    dsm_std::function<bool(unsigned int *)> event_callback;
+    dsm_std::function<bool(unsigned int *)> DSMPollingFunction;
+    dsm_std::thread                         DSMPollingThread;
 
+    void WaitForNotifThreadCreated();
+    virtual void WaitForConnection() {}
     //
     // Internal Variables
     //

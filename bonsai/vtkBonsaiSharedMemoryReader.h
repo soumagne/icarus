@@ -35,8 +35,8 @@
 class vtkDataArraySelection;
 class vtkMultiProcessController;
 class vtkBoundsExtentTranslator;
-
-struct H5PartFile;
+class vtkMultiProcessController;
+class vtkBonsaiDsmManager;
 
 class VTK_EXPORT vtkBonsaiSharedMemoryReader : public vtkPolyDataAlgorithm
 {
@@ -47,6 +47,14 @@ public:
 
   void SetRendererData(RendererData *bonsaidata)
   { this->bonsaiData = bonsaidata; }
+
+  // Description:
+  // Set/Get the controller use in parallel operations
+  // (set to the global controller by default)
+  // If not using the default, this must be set before any
+  // other methods.
+  virtual void SetDsmManager(vtkBonsaiDsmManager* dsmmanager);
+  vtkGetObjectMacro(DsmManager, vtkBonsaiDsmManager);
 
   // Description:
   // Specify file name.
@@ -175,6 +183,7 @@ protected:
 //ETX
 
   RendererData *bonsaiData;
+  vtkBonsaiDsmManager *DsmManager;
 
   // To allow paraview gui to enable/disable scalar reading
   vtkDataArraySelection* PointDataArraySelection;

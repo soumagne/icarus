@@ -39,7 +39,7 @@ OPTION(ICARUS_NO_LIBCXX "Use boost instead of libc++" OFF)
 IF(ICARUS_NO_LIBCXX)
   add_definitions(-DICARUS_NO_LIBCXX)
   add_definitions(-DDSM_CXX_STDLIB)
-  find_package(Boost REQUIRED)
+  find_package(Boost REQUIRED thread system)
   include_directories(${Boost_INCLUDE_DIRS})
 ENDIF()
 
@@ -84,7 +84,6 @@ if(ICARUS_USE_BONSAI)
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiSharedMemoryReader.cxx
   )
   set(ICARUS_SERVER_SRCS
-    ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp
   )
   set(ICARUS_H5FDDSM_QT_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/pqBonsaiDsmPanel.cxx
@@ -96,7 +95,10 @@ if(ICARUS_USE_BONSAI)
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/pqBonsaiDsmPanel.h
   )
   set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
-  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiSharedMemoryReader.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
+#  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiSharedMemoryReader.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
+#  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkAbstractDsmManager.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
+#  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiDsmManager.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
+  set(ICARUS_BOOST_LIBS ${Boost_THREAD_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 endif()
 
 if(ICARUS_USE_H5FDDSM)
@@ -280,7 +282,7 @@ IF(ICARUS_USE_H5PART)
 ENDIF(ICARUS_USE_H5PART)
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 pqApplicationComponents)
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkxdmf2 H5FDdsm hdf5)
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkxdmf2 H5FDdsm hdf5 ${ICARUS_BOOST_LIBS})
 
 #--------------------------------------------------
 # Converter

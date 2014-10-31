@@ -80,6 +80,12 @@ class RendererData
     coords->SetNumberOfComponents(3);
     // if we want a tuple for velocity, use this
     // vel->SetNumberOfComponents(3);
+    Id->SetName("Id");
+    coords->SetName("coords");
+    mass->SetName("mass");
+    vel->SetName("vel");
+    rho->SetName("rho");
+    Hval->SetName("Hval");
   }
 
     void setNewData() {new_data = true;}
