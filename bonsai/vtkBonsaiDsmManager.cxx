@@ -270,7 +270,7 @@ bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
   usleep(1000);
   std::cout << "Polling for new data " << std::endl;
-  bool temp = vtkBonsaiDsmManager::WaitForNewData(true, this->UpdatePiece, this->UpdateNumPieces);
+  bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "Got new data " << std::endl;
   *flag = DSM_NOTIFY_DATA;
   return 1;
