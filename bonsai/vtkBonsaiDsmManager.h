@@ -45,7 +45,7 @@
 #define VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT 11112
 
 class vtkMultiProcessController;
-class RendererData;
+class ParaViewData;
 
 class VTK_EXPORT vtkBonsaiDsmManager : public vtkAbstractDsmManager
 {
@@ -65,7 +65,7 @@ public:
   static bool WaitForNewData(const bool quickSync,
     const int rank, const int nrank);
 
-  static bool fetchSharedData(const bool quickSync, RendererData *rData,
+  static bool fetchSharedData(const bool quickSync, ParaViewData *rData,
     const int rank, const int nrank, const MPI_Comm &comm,
     const int reduceDM = 1, const int reduceS = 1);
 

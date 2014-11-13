@@ -30,7 +30,7 @@
 #include "vtkBoundingBox.h"
 #include <string>
 #include <vector>
-#include "RendererData.h"
+#include "ParaViewData.h"
 
 class vtkDataArraySelection;
 class vtkMultiProcessController;
@@ -45,7 +45,7 @@ public:
   vtkTypeMacro(vtkBonsaiSharedMemoryReader,vtkPolyDataAlgorithm);
   void PrintSelf(ostream& os, vtkIndent indent);   
 
-  void SetRendererData(RendererData *bonsaidata)
+  void SetParaViewData(ParaViewData *bonsaidata)
   { this->bonsaiData = bonsaidata; }
 
   // Description:
@@ -182,7 +182,7 @@ protected:
   vtkBoundsExtentTranslator  *ExtentTranslator;
 //ETX
 
-  RendererData *bonsaiData;
+  ParaViewData *bonsaiData;
   vtkBonsaiDsmManager *DsmManager;
 
   // To allow paraview gui to enable/disable scalar reading

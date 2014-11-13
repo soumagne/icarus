@@ -24,7 +24,7 @@
 #include "vtkFloatArray.h"
 #include "vtkIdTypeArray.h"
 
-class RendererData
+class ParaViewData
 {
   public:
     typedef unsigned long long long_t;
@@ -66,7 +66,7 @@ class RendererData
     }
 
   public:
-    RendererData(const int rank, const int nrank, const MPI_Comm &comm) : 
+    ParaViewData(const int rank, const int nrank, const MPI_Comm &comm) :
       rank(rank), nrank(nrank), comm(comm)
   {
     assert(rank < nrank);
@@ -93,7 +93,7 @@ class RendererData
     bool isNewData() const {return new_data;}
 
     int n() const { return coords->GetNumberOfTuples(); }
-    ~RendererData() {}
+    ~ParaViewData() {}
 
     // virtual methods
 

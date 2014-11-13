@@ -55,7 +55,7 @@
 #include "BonsaiSharedData.h"
 #include "BonsaiIO.h"
 #include "SharedMemory.h"
-#include "RendererData.h"
+#include "ParaViewData.h"
 //----------------------------------------------------------------------------
 using ShmQHeader = SharedMemoryClient<BonsaiSharedQuickHeader>;
 using ShmQData   = SharedMemoryClient<BonsaiSharedQuickData>;
@@ -116,7 +116,7 @@ bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
 }
 
 //----------------------------------------------------------------------------
-bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, RendererData *rData,
+bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rData,
     const int rank, const int nrank, const MPI_Comm &comm,
     const int reduceDM, const int reduceS)
 {

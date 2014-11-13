@@ -221,7 +221,7 @@ int vtkBonsaiSharedMemoryReader::RequestInformation(
     MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
     if (!this->bonsaiData) {
       if (inSitu) {
-        this->bonsaiData = new RendererData(this->UpdatePiece, this->UpdateNumPieces, *comm);
+        this->bonsaiData = new ParaViewData(this->UpdatePiece, this->UpdateNumPieces, *comm);
       }
       else {
               /*

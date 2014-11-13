@@ -74,7 +74,11 @@ if(ICARUS_USE_BONSAI)
   add_definitions(-DICARUS_HAVE_BONSAI)
   add_definitions(-DBONSAI_CATALYST_STDLIB)
   add_definitions(-DBONSAI_CATALYST_CLANG)
-  include_directories(${CMAKE_CURRENT_SOURCE_DIR}/bonsai)
+  find_path(BONSAI_INCLUDE_DIR SharedMemory.h)
+  include_directories(
+    ${CMAKE_CURRENT_SOURCE_DIR}/bonsai
+    ${BONSAI_INCLUDE_DIR}
+  )
   set(ICARUS_H5FDDSM_SM_XML
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiDsmManager.xml
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiSharedMemoryReader.xml
@@ -94,7 +98,7 @@ if(ICARUS_USE_BONSAI)
   set(ICARUS_H5FDDSM_MOC_SRCS
     ${CMAKE_CURRENT_SOURCE_DIR}/bonsai/pqBonsaiDsmPanel.h
   )
-  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
+#  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/RendererData.cpp PROPERTIES COMPILE_FLAGS "-std=c++11")
 #  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiSharedMemoryReader.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
 #  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkAbstractDsmManager.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
 #  set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/bonsai/vtkBonsaiDsmManager.cxx PROPERTIES COMPILE_FLAGS "-std=c++11")
