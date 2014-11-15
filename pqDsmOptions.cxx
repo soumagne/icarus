@@ -442,7 +442,7 @@ void pqDsmOptions::ParseXMLTemplate(const char *filepath)
   // We must parse XML first, otherwise the DsmHelperProxy is empty
   //
   if (this->Internals->SteeringParser) delete this->Internals->SteeringParser;
-  std::cout << "Setting Steering PArser " <<std::endl;
+  std::cout << "Setting Steering Parser " <<std::endl;
 
   this->Internals->SteeringParser = new XdmfSteeringParser();
   this->Internals->SteeringParser->Parse(filepath);
@@ -1249,7 +1249,7 @@ void pqDsmOptions::UpdateDsmPipeline()
     // update information
     this->UpdateBonsaiInformation();
     // update data
-  std::cout << "About to setup Bonsai pipeline " << std::endl;
+  std::cout << "About to setup Bonsai pipeline 2 " << std::endl;
     this->UpdateBonsaiPipeline();
     if (this->Internals->CreatePipelines) {
       this->ShowPipelineInGUI(this->Internals->BonsaiReader, "Bonsai-Dsm", 0);
