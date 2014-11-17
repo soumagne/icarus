@@ -281,9 +281,11 @@ int vtkBonsaiDsmManager::Publish()
     = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
   communicator->Barrier();
   //
-  std::cout << "Sending Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
-  std::cout << "Sent Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+  if (this->UpdatePiece==0) {
+    std::cout << "Sending Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+    this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
+    std::cout << "Sent Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+  }
   return 1;
 }
 
