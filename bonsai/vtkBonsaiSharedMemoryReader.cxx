@@ -321,7 +321,6 @@ int vtkBonsaiSharedMemoryReader::RequestData(
   //
   if (this->TimeStepValues.size()==0) return 0;
 
-
     int rank = this->UpdatePiece;
     int nranks = this->UpdateNumPieces;
     int reduceDM = 10;

@@ -84,6 +84,7 @@ bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
   auto &data   = *shmQData;
 
   header.acquireLock();
+  header.releaseLock();
 
   return true;
 }
@@ -99,11 +100,11 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << std::endl;
   // rank 0 acquires lock in notification thread polling for new data
   // other ranks get the lock once rank 0 signals the gui to go ahead.
-  if (rank>0) {
+//  if (rank>0) {
     // header
     header.acquireLock();
-  }
-  std::cout << "Fetched lock on rank " << rank << " of " << nrank << std::endl;
+//  }
+//  std::cout << "Fetched lock on rank " << rank << " of " << nrank << std::endl;
 
 #if 0
   //  if (rank == 0)
