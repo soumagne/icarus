@@ -268,7 +268,7 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures(int quickSync)
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
 {
-  this->CreateSharedMemStructures(false);
+  this->CreateSharedMemStructures(true);
   //
   if (this->UpdatePiece == 0) {
     this->DSMPollingFunction = dsm_std::bind(&vtkBonsaiDsmManager::PollingBonsai, this, _1);
@@ -291,7 +291,7 @@ bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
   usleep(1000);
   std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
+  bool temp = vtkBonsaiDsmManager::WaitForNewData(true, this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "Got new data " << std::endl;
   *flag = DSM_NOTIFY_DATA;
   return 1;
