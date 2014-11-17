@@ -42,7 +42,7 @@
  #include <thread>
  #include <chrono>
  #define dsm_std std
- using dsm_std::placeholders;
+ using namespace dsm_std::placeholders;
 #endif
 
 #include "vtkObject.h"       // Base class
