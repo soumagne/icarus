@@ -83,25 +83,6 @@ bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
-  if (quickSync && first)
-  {
-    /* handshake */
-
-    header.acquireLock();
-    header[0].handshake = true;
-    header.releaseLock();
-
-    while (header[0].handshake)
-      usleep(1000);
-
-    header.acquireLock();
-    header[0].handshake = true;
-    header.releaseLock();
-
-    /* handshake complete */
-    first = false;
-  }
-
   header.acquireLock();
 
   return true;
@@ -116,7 +97,7 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   auto &data   = *shmQData;
 
   std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << std::endl;
-  // rank 0 acquires lock n notification thread polling for new data
+  // rank 0 acquires lock in notification thread polling for new data
   // other ranks get the lock once rank 0 signals the gui to go ahead.
   if (rank>0) {
     // header
@@ -260,8 +241,29 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
     shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(this->UpdatePiece));
   }
   std::cout << "Created shared mem on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
-  std::cout << "AcquiredLock on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+
+  auto &header = *shmQHeader;
+  auto &data   = *shmQData;
+
+  if (/*quickSync && */first)
+  {
+    /* handshake */
+
+    header.acquireLock();
+    header[0].handshake = true;
+    header.releaseLock();
+
+    while (header[0].handshake)
+      usleep(1000);
+
+    header.acquireLock();
+    header[0].handshake = true;
+    header.releaseLock();
+
+    /* handshake complete */
+    first = false;
+  }
+  std::cout << "initialized handshake on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
 }
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
@@ -281,11 +283,6 @@ int vtkBonsaiDsmManager::Publish()
     = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
   communicator->Barrier();
   //
-  if (this->UpdatePiece==0) {
-    std::cout << "Sending Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-    this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
-    std::cout << "Sent Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  }
   return 1;
 }
 
