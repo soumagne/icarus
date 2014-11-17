@@ -57,12 +57,14 @@ public:
   // Make the DSM manager listen for new incoming connection (called by server).
   virtual int Publish();
 
+  virtual int CreateSharedMemStructures();
+
   // Description:
   // Wait for a notification - notifications are used to trigger user
   // defined tasks and are sent when the dsm has been unlocked after new data is ready
   virtual bool PollingBonsai(unsigned int *flag);
 
-  static bool WaitForNewData(const bool quickSync,
+  bool WaitForNewData(const bool quickSync,
     const int rank, const int nrank);
 
   static bool fetchSharedData(const bool quickSync, ParaViewData *rData,

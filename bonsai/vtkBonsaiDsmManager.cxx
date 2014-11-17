@@ -80,12 +80,6 @@ bool skipPtcl(ShmQData &data, const int i)
 bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
     const int rank, const int nrank)
 {
-  if (shmQHeader == NULL)
-  {
-    shmQHeader = new ShmQHeader(ShmQHeader::type::sharedFile(rank));
-    shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(rank));
-  }
-
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
@@ -108,8 +102,6 @@ bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
     first = false;
   }
 
-
-
   header.acquireLock();
 
   return true;
@@ -123,13 +115,18 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
+  // rank 0 acquires lock n notification thread polling for new data
+  // other ranks get the lock once rank 0 signals the gui to go ahead.
+  if (rank>0) {
+    // header
+    header.acquireLock();
+  }
+
 #if 0
   //  if (rank == 0)
   fprintf(stderr, " rank= %d: attempting to fetch data \n",rank);
 #endif
 
-  // header
-  //  header.acquireLock();
   const float tCurrent = header[0].tCurrent;
 
   terminateRenderer = tCurrent == -1;
@@ -253,6 +250,17 @@ vtkBonsaiDsmManager::~vtkBonsaiDsmManager()
 }
 
 //----------------------------------------------------------------------------
+int vtkBonsaiDsmManager::CreateSharedMemStructures()
+{
+  if (shmQHeader == NULL)
+  {
+    shmQHeader = new ShmQHeader(ShmQHeader::type::sharedFile(this->UpdatePiece));
+    shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(this->UpdatePiece));
+  }
+
+  bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
+}
+//----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
 {
   if (this->UpdatePiece == 0) {
@@ -261,8 +269,10 @@ int vtkBonsaiDsmManager::Publish()
     this->DSMPollingThread = dsm_std::thread(&vtkAbstractDsmManager::NotificationThread, this);
     this->WaitForNotifThreadCreated();
   }
-///  this->DsmManager->Publish();
-  return(1);
+
+  this->CreateSharedMemStructures();
+
+  return 1;
 }
 
 //----------------------------------------------------------------------------
@@ -275,7 +285,3 @@ bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
   *flag = DSM_NOTIFY_DATA;
   return 1;
 }
-
-
-
-

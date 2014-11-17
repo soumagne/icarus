@@ -329,11 +329,12 @@ int vtkBonsaiSharedMemoryReader::RequestData(
     bool quickSync = true;
     MPI_Comm *comm = vtkMPICommunicator::SafeDownCast(this->Controller->GetCommunicator())->GetMPIComm()->GetHandle();
 
-    std::cout << " Calling vtkBonsaiDsmManager::FetchSharedData " << std::endl;
+    std::cout << " Calling vtkBonsaiDsmManager::fetchSharedData " << std::endl;
 
     if (inSitu) {
         if (vtkBonsaiDsmManager::fetchSharedData(quickSync, this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
         {
+          std::cout << "fetchSharedData returned, setting new data flag" << std::endl;
           this->bonsaiData->setNewData();
         }
     };
