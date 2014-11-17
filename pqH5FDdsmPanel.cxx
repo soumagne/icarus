@@ -447,16 +447,16 @@ void pqH5FDdsmPanel::onPublish()
           this->Internals->dsmInterCommPort->value());
     }
     this->Internals->DsmProxy->UpdateVTKObjects();
-    this->Internals->DsmProxy->InvokeCommand("Publish");
     this->Internals->DsmListening = true;
+    this->Internals->DsmProxy->InvokeCommand("Publish");
   }
 }
 //-----------------------------------------------------------------------------
 void pqH5FDdsmPanel::onUnpublish()
 {
   if (this->DsmReady() && this->Internals->DsmListening) {
-    this->Internals->DsmProxy->InvokeCommand("Unpublish");
     this->Internals->DsmListening = false;
+    this->Internals->DsmProxy->InvokeCommand("Unpublish");
   }
 }
 

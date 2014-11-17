@@ -262,11 +262,6 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
   std::cout << "Created shared mem on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "AcquiredLock on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  vtkMPICommunicator *communicator
-  = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
-  communicator->Barrier();
-  this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
-  std::cout << "SendNotification on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
 }
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
@@ -279,7 +274,16 @@ int vtkBonsaiDsmManager::Publish()
     this->DSMPollingThread = dsm_std::thread(&vtkAbstractDsmManager::NotificationThread, this);
     this->WaitForNotifThreadCreated();
   }
-
+  //
+  // make sure all ranks are initialized safely before going into main operation
+  //
+  vtkMPICommunicator *communicator
+    = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
+  communicator->Barrier();
+  //
+  std::cout << "Sending Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+  this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
+  std::cout << "Sent Notification DSM_NOTIFY_DATA on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   return 1;
 }
 
