@@ -262,7 +262,11 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
   std::cout << "Created shared mem on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "AcquiredLock on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+  vtkMPICommunicator *communicator
+  = vtkMPICommunicator::SafeDownCast(this->GetController()->GetCommunicator());
+  communicator->Barrier();
   this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
+  std::cout << "SendNotification on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
 }
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()

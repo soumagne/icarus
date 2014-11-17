@@ -309,6 +309,7 @@ int vtkBonsaiSharedMemoryReader::RequestData(
   vtkInformationVector **vtkNotUsed(inputVector),
   vtkInformationVector *outputVector)
 {
+  std::cout << "RequestData on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   vtkInformation *outInfo = outputVector->GetInformationObject(0);
   vtkPolyData     *output = vtkPolyData::SafeDownCast(outInfo->Get(vtkDataObject::DATA_OBJECT()));
   //
