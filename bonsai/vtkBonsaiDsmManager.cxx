@@ -233,7 +233,7 @@ vtkBonsaiDsmManager::~vtkBonsaiDsmManager()
 }
 
 //----------------------------------------------------------------------------
-int vtkBonsaiDsmManager::CreateSharedMemStructures()
+int vtkBonsaiDsmManager::CreateSharedMemStructures(int quickSync)
 {
   if (shmQHeader == NULL)
   {
@@ -245,7 +245,7 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
-  if (/*quickSync && */first)
+  if (quickSync && first)
   {
     /* handshake */
 
@@ -268,7 +268,7 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
 {
-  this->CreateSharedMemStructures();
+  this->CreateSharedMemStructures(false);
   //
   if (this->UpdatePiece == 0) {
     this->DSMPollingFunction = dsm_std::bind(&vtkBonsaiDsmManager::PollingBonsai, this, _1);

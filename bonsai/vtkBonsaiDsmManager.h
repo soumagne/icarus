@@ -57,7 +57,7 @@ public:
   // Make the DSM manager listen for new incoming connection (called by server).
   virtual int Publish();
 
-  virtual int CreateSharedMemStructures();
+  virtual int CreateSharedMemStructures(int quickSync);
 
   // Description:
   // Wait for a notification - notifications are used to trigger user
