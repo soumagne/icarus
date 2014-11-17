@@ -45,7 +45,7 @@
 #include "vtkMultiProcessController.h"
 //
 #include "vtkDsmProxyHelper.h"
-#include "vtkPVOptions.h"
+#include "vtkPVServerOptions.h"
 #include "vtkClientSocket.h"
 
 #include "vtkMultiThreader.h"
@@ -258,6 +258,7 @@ int vtkAbstractDsmManager::Create()
 #ifdef VTK_USE_MPI
   this->UpdatePiece     = this->Controller->GetLocalProcessId();
   this->UpdateNumPieces = this->Controller->GetNumberOfProcesses();
+  std::cout << "Create in DSM manager rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
 #else
 
   this->UpdatePiece     = 0;
@@ -269,8 +270,9 @@ int vtkAbstractDsmManager::Create()
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
 
 
-  vtkPVOptions *pvOptions = pm->GetOptions();
-  const char *pvClientHostName = pvOptions->GetHostName();
+  vtkPVServerOptions *pvOptions = vtkPVServerOptions::SafeDownCast(pm->GetOptions());
+
+  const char *pvClientHostName = pvOptions->GetClientHostName();
   int notificationPort = VTK_DSM_MANAGER_DEFAULT_NOTIFICATION_PORT;
   if ((this->UpdatePiece == 0) && pvClientHostName && pvClientHostName[0]) {
     int r, tryConnect = 0;
