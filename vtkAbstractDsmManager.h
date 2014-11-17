@@ -170,6 +170,7 @@ protected:
 
     void WaitForNotifThreadCreated();
     virtual void WaitForConnection() {}
+    void SendNotification(int notification, int size);
     //
     // Internal Variables
     //

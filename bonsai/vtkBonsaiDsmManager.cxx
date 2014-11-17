@@ -115,12 +115,14 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
+  std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << std::endl;
   // rank 0 acquires lock n notification thread polling for new data
   // other ranks get the lock once rank 0 signals the gui to go ahead.
   if (rank>0) {
     // header
     header.acquireLock();
   }
+  std::cout << "Fetched lock on rank " << rank << " of " << nrank << std::endl;
 
 #if 0
   //  if (rank == 0)
@@ -257,20 +259,22 @@ int vtkBonsaiDsmManager::CreateSharedMemStructures()
     shmQHeader = new ShmQHeader(ShmQHeader::type::sharedFile(this->UpdatePiece));
     shmQData   = new ShmQData  (ShmQData  ::type::sharedFile(this->UpdatePiece));
   }
-
+  std::cout << "Created shared mem on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
+  std::cout << "AcquiredLock on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
+  this->SendNotification(DSM_NOTIFY_DATA, sizeof(int));
 }
 //----------------------------------------------------------------------------
 int vtkBonsaiDsmManager::Publish()
 {
+  this->CreateSharedMemStructures();
+  //
   if (this->UpdatePiece == 0) {
     this->DSMPollingFunction = dsm_std::bind(&vtkBonsaiDsmManager::PollingBonsai, this, _1);
 
     this->DSMPollingThread = dsm_std::thread(&vtkAbstractDsmManager::NotificationThread, this);
     this->WaitForNotifThreadCreated();
   }
-
-  this->CreateSharedMemStructures();
 
   return 1;
 }
@@ -279,7 +283,7 @@ int vtkBonsaiDsmManager::Publish()
 bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
   usleep(1000);
-  std::cout << "Polling for new data " << std::endl;
+  std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   bool temp = vtkBonsaiDsmManager::WaitForNewData(false, this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "Got new data " << std::endl;
   *flag = DSM_NOTIFY_DATA;

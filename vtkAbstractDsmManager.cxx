@@ -201,7 +201,7 @@ void vtkAbstractDsmManager::NotificationThread()
   }
   while (this->DSMPollingFunction(&notification) != 0) {
     std::cout << "Inside DSM loop " << std::endl;
-    this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
+    this->SendNotification(notification, sizeof(notification));
     std::cout << "Entering WaitForUpdated " << std::endl;
     this->WaitForUpdated();
     std::cout << "done WaitForUpdate " << std::endl;
@@ -212,6 +212,12 @@ void vtkAbstractDsmManager::NotificationThread()
 void vtkAbstractDsmManager::WaitForNotifThreadCreated()
 {
   this->DsmManagerInternals->WaitForNotifThreadCreated();
+}
+
+//----------------------------------------------------------------------------
+void vtkAbstractDsmManager::SendNotification(int notification, int size)
+{
+  this->DsmManagerInternals->NotificationSocket->Send(&notification, size);
 }
 
 //----------------------------------------------------------------------------
