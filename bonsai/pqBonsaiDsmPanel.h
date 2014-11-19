@@ -97,6 +97,7 @@ signals:
   void UpdateInformation();
   void UpdateData();
   void UpdateStatus(QString status);
+  void onQuickSync(bool b);
 
 protected:
 

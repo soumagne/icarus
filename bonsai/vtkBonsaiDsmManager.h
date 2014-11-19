@@ -60,11 +60,17 @@ public:
   virtual int CreateSharedMemStructures(int quickSync);
 
   // Description:
+  // Set/Get the quicksync flag
+  vtkSetMacro(QuickSync,int);
+  vtkGetMacro(QuickSync,int);
+  vtkBooleanMacro(QuickSync,int);
+
+  // Description:
   // Wait for a notification - notifications are used to trigger user
   // defined tasks and are sent when the dsm has been unlocked after new data is ready
   virtual bool PollingBonsai(unsigned int *flag);
 
-  bool WaitForNewData(const bool quickSync,
+  bool WaitForNewData(
     const int rank, const int nrank);
 
   static bool fetchSharedData(const bool quickSync, ParaViewData *rData,
@@ -76,6 +82,7 @@ protected:
     virtual ~vtkBonsaiDsmManager();
 
     int ThreadActive;
+    int QuickSync;
 
 private:
     vtkBonsaiDsmManager(const vtkBonsaiDsmManager&);  // Not implemented.

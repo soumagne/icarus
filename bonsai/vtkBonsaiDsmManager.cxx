@@ -77,7 +77,7 @@ bool skipPtcl(ShmQData &data, const int i)
   return (data[i].rho == 0 || data[i].h == 0.0 || data[i].h > 100);
 };
 //----------------------------------------------------------------------------
-bool vtkBonsaiDsmManager::WaitForNewData(const bool quickSync,
+bool vtkBonsaiDsmManager::WaitForNewData(
     const int rank, const int nrank)
 {
   auto &header = *shmQHeader;
@@ -97,7 +97,7 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
-  std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << std::endl;
+  std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << " quicksync " << quickSync << std::endl;
   // rank 0 acquires lock in notification thread polling for new data
   // other ranks get the lock once rank 0 signals the gui to go ahead.
 //  if (rank>0) {

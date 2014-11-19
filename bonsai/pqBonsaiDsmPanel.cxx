@@ -169,7 +169,16 @@ pqBonsaiDsmPanel::pqBonsaiDsmPanel(QWidget* p) : QWidget(p)
   this->connect(smModel, SIGNAL(serverAdded(pqServer *)),
     this, SLOT(onServerAdded(pqServer *)));
 
+  this->connect(this->Internals->quicksync,
+    SIGNAL(toggled(bool)), this, SIGNAL(onQuickSync(bool)));
 }
+
+//----------------------------------------------------------------------------
+//void pqBonsaiDsmPanel::onQuickSync(bool b)
+//{
+//  if
+//}
+
 //----------------------------------------------------------------------------
 pqBonsaiDsmPanel::~pqBonsaiDsmPanel()
 {

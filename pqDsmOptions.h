@@ -133,6 +133,7 @@ protected:
 
   /// Control of blocks
   void ChangeItemState(QTreeWidgetItem *item);
+  void onQuickSync(bool b);
 
   class pqInternals;
   pqInternals *Internals;

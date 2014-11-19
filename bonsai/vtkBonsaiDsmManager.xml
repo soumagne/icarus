@@ -13,6 +13,13 @@
         base_proxyname="AbstractDsmManager"
         base_proxygroup="icarus_helpers">
     </Proxy>
+      <IntVectorProperty
+        name="QuickSync"
+        command="SetQuickSync"
+        number_of_elements="1"
+        default_values="1">
+      </IntVectorProperty>
+
 
   </ProxyGroup>
 
