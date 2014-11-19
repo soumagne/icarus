@@ -281,12 +281,14 @@ if(ICARUS_USE_H5FDDSM)
   TARGET_LINK_LIBRARIES(${PLUGIN_NAME} H5FDdsmTools H5FDdsm hdf5)
 endif()
 
+set_target_properties(ICARUS PROPERTIES COMPILE_FLAGS "-std=c++11")
 IF(ICARUS_USE_H5PART)
   TARGET_LINK_LIBRARIES(${PLUGIN_NAME} pv_meshless )
 ENDIF(ICARUS_USE_H5PART)
 
-TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 pqApplicationComponents)
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkxdmf2 vtksys H5FDdsm hdf5 ${ICARUS_BOOST_LIBS})
+TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 )
+>>>>>>> Daint build fix
 
 #--------------------------------------------------
 # Converter
