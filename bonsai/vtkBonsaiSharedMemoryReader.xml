@@ -16,7 +16,22 @@
         Reader for Bonsai in memory data.
       </Documentation>
 
-      <StringVectorProperty
+      <ProxyProperty
+         name="DsmManager"
+         command="SetDsmManager">
+        <ProxyGroupDomain name="groups">
+          <Group name="icarus_helpers"/>
+        </ProxyGroupDomain>
+        <ProxyListDomain name="proxy_list">
+          <Proxy group="icarus_helpers"
+                 name="DsmManager" />
+        </ProxyListDomain>
+        <Documentation>
+          The DSM Manager
+        </Documentation>
+      </ProxyProperty>
+
+       <StringVectorProperty
        name="FileName"
        command="SetFileName"
        number_of_elements="1">

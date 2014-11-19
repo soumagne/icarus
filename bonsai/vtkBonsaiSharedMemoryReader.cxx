@@ -125,6 +125,7 @@ vtkBonsaiSharedMemoryReader::vtkBonsaiSharedMemoryReader()
   this->MaskOutOfTimeRangeOutput        = 0;
   this->IntegerTimeStepValues           = 0;
   this->DisplayPieceBoxes               = 0;
+  this->DsmManager                      = NULL;
   this->PointDataArraySelection         = vtkDataArraySelection::New();
   this->Controller = NULL;
   this->SetController(vtkMultiProcessController::GetGlobalController());
