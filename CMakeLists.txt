@@ -288,7 +288,6 @@ ENDIF(ICARUS_USE_H5PART)
 
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkxdmf2 vtksys H5FDdsm hdf5 ${ICARUS_BOOST_LIBS})
 TARGET_LINK_LIBRARIES(${PLUGIN_NAME} vtkIOXdmf2 )
->>>>>>> Daint build fix
 
 #--------------------------------------------------
 # Converter
