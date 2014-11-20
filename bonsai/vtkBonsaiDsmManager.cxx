@@ -300,11 +300,21 @@ int vtkBonsaiDsmManager::Publish()
 //----------------------------------------------------------------------------
 bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
+  auto &header = *shmQHeader;
+  auto &data   = *shmQData;
+
   std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << " SampleRate is " << this->SampleRate << std::endl;
   bool ok =false;
   while (!ok) {
     bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
-    if (SampleCounter%SampleRate==0) ok = true;
+    if (SampleCounter%SampleRate==0) {
+      ok = true;
+    }
+    else {
+      header.acquireLock();
+      header[0].done_writing = true;
+      header.releaseLock();
+    }
     SampleCounter ++;
   }
   std::cout << "Got new data " << std::endl;
