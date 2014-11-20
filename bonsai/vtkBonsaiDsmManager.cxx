@@ -300,7 +300,7 @@ int vtkBonsaiDsmManager::Publish()
 //----------------------------------------------------------------------------
 bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
-  std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << >" SampleRate is " << this->SampleRate std::endl;
+  std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << " SampleRate is " << this->SampleRate std::endl;
   bool ok =false;
   while (!ok) {
     bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
