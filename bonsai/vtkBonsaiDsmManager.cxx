@@ -230,6 +230,7 @@ vtkBonsaiDsmManager::vtkBonsaiDsmManager()
 {
 //  std::cout << "Created a Bonsai DSM manager" << std::endl;
     this->ThreadActive = 0;
+    this->QuickSync = 1;
 }
 
 //----------------------------------------------------------------------------
