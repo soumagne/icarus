@@ -198,32 +198,8 @@ vtkSmartPointer<vtkSMProxy> pqBonsaiDsmPanel::CreateDsmProxy() {
   this->Internals->Links.setUseUncheckedProperties(false);
   this->Internals->Links.setAutoUpdateVTKObjects(true);
 
-  QObject::connect(&this->Internals->Links,
-    SIGNAL(qtWidgetChanged()), this, SLOT(setModified()));
-
-  this->Internals->Links.addPropertyLink(
-      this->Internals->samplerate,
-      "value",
-      SIGNAL(valueChanged(int)),
-      this->Internals->DsmProxy,
-      this->Internals->DsmProxy->GetProperty("SampleRate"),
-      0);
-
-  this->Internals->Links.addPropertyLink(
-      this->Internals->quicksync,
-      "checked",
-      SIGNAL(toggled(bool)),
-      this->Internals->DsmProxy,
-      this->Internals->DsmProxy->GetProperty("QuickSync"),
-      0);
-
-  this->Internals->Links.addPropertyLink(
-      this->Internals->listening,
-      "checked",
-      SIGNAL(toggled(int)),
-      this->Internals->DsmProxy,
-      this->Internals->DsmProxy->GetProperty("Listening"),
-      0);
+//  QObject::connect(&this->Internals->Links,
+//    SIGNAL(qtWidgetChanged()), this, SLOT(setModified()));
 
   return this->Internals->DsmProxy;
 }
@@ -289,6 +265,28 @@ bool pqBonsaiDsmPanel::DsmReady()
     this->Internals->DsmProxy->InvokeCommand("Create");
     this->Internals->DsmInitialized = 1;
     if (this->initCallback) this->initCallback();
+
+    this->Internals->Links.addPropertyLink(
+        this->Internals->samplerate,
+        "value",
+        SIGNAL(valueChanged(int)),
+        this->Internals->DsmProxy,
+        this->Internals->DsmProxy->GetProperty("SampleRate"));
+
+    this->Internals->Links.addPropertyLink(
+        this->Internals->quicksync,
+        "checked",
+        SIGNAL(toggled(bool)),
+        this->Internals->DsmProxy,
+        this->Internals->DsmProxy->GetProperty("QuickSync"));
+
+    this->Internals->Links.addPropertyLink(
+        this->Internals->listening,
+        "checked",
+        SIGNAL(toggled(bool)),
+        this->Internals->DsmProxy,
+        this->Internals->DsmProxy->GetProperty("Listening"));
+
   }
   return this->Internals->DsmInitialized;
 }

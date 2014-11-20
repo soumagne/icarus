@@ -112,6 +112,7 @@ vtkBonsaiSharedMemoryReader::vtkBonsaiSharedMemoryReader()
 {
   this->SetNumberOfInputPorts(0);
   //
+  this->DebugOn();
   this->bonsaiData = NULL;
   this->NumberOfTimeSteps               = 0;
   this->TimeStep                        = 0;
@@ -333,7 +334,7 @@ int vtkBonsaiSharedMemoryReader::RequestData(
     std::cout << " Calling vtkBonsaiDsmManager::fetchSharedData " << std::endl;
 
     if (inSitu) {
-        if (vtkBonsaiDsmManager::fetchSharedData(
+        if (this->DsmManager->fetchSharedData(
             this->DsmManager->GetQuickSync(), this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
         {
           std::cout << "fetchSharedData returned, setting new data flag" << std::endl;

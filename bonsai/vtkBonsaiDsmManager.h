@@ -84,7 +84,7 @@ public:
   bool WaitForNewData(
     const int rank, const int nrank);
 
-  static bool fetchSharedData(const bool quickSync, ParaViewData *rData,
+   bool fetchSharedData(const bool quickSync, ParaViewData *rData,
     const int rank, const int nrank, const MPI_Comm &comm,
     const int reduceDM = 1, const int reduceS = 1);
 

@@ -1008,8 +1008,8 @@ void pqDsmOptions::CreateBonsaiPipeline()
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateBonsaiInformation()
 {
-  this->Internals->BonsaiReader->InvokeCommand("FileModified");
-  this->GetPipelineTimeInformation(this->Internals->BonsaiReader);
+//  this->Internals->BonsaiReader->InvokeCommand("FileModified");
+//  this->GetPipelineTimeInformation(this->Internals->BonsaiReader);
 }
 //-----------------------------------------------------------------------------
 void pqDsmOptions::UpdateBonsaiPipeline()
