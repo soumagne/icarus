@@ -315,7 +315,7 @@ bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
       ok = true;
     }
     else {
-      header.acquireLock();
+//      header.acquireLock();
       header[0].done_writing = true;
       header.releaseLock();
       std::cout << "Skipped a dataset with SampleCounter " << SampleCounter << std::endl;
