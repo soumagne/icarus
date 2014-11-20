@@ -59,6 +59,7 @@
 #include "pqAnimationViewWidget.h"
 #include "pqSaveScreenshotReaction.h"
 #include "pqPipelineSource.h"
+#include "pqPropertyLinks.h"
 //
 #include "pqCoreUtilities.h"
 #include "pq3DWidget.h"
@@ -141,6 +142,7 @@ public:
   vtkSmartPointer<vtkSMProxy>               DsmProxyHelper;
   QTcpServer*                               TcpNotificationServer;
   QTcpSocket*                               TcpNotificationSocket;
+  pqPropertyLinks Links;
 };
 //----------------------------------------------------------------------------
 pqBonsaiDsmPanel::pqBonsaiDsmPanel(QWidget* p) : QWidget(p)
@@ -192,6 +194,26 @@ pqBonsaiDsmPanel::~pqBonsaiDsmPanel()
 //----------------------------------------------------------------------------
 vtkSmartPointer<vtkSMProxy> pqBonsaiDsmPanel::CreateDsmProxy() {
   this->Internals->CreateDsmProxy();
+
+  QObject::connect(&this->Internals->Links,
+    SIGNAL(qtWidgetChanged()), this, SLOT(setModified()));
+
+  this->Internals->Links.addPropertyLink(
+      this->Internals->samplerate,
+      "value",
+      SIGNAL(valueChanged(int)),
+      this->Internals->DsmProxy,
+      this->Internals->DsmProxy->GetProperty("SampleRate"),
+      0);
+
+  this->Internals->Links.addPropertyLink(
+      this->Internals->quicksync,
+      "checked",
+      SIGNAL(toggled(bool)),
+      this->Internals->DsmProxy,
+      this->Internals->DsmProxy->GetProperty("QuickSync"),
+      0);
+
   return this->Internals->DsmProxy;
 }
 

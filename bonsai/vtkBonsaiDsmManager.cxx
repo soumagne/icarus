@@ -231,6 +231,8 @@ vtkBonsaiDsmManager::vtkBonsaiDsmManager()
 //  std::cout << "Created a Bonsai DSM manager" << std::endl;
     this->ThreadActive = 0;
     this->QuickSync = 1;
+    this->SampleRate = 100;
+    this->SampleCounter = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -299,7 +301,12 @@ int vtkBonsaiDsmManager::Publish()
 bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
   std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
-  bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
+  bool ok =false;
+  while (!ok) {
+    bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
+    if (SampleCounter%SampleRate==0) ok = true;
+    SampleCounter ++;
+  }
   std::cout << "Got new data " << std::endl;
   *flag = DSM_NOTIFY_DATA;
   return 1;

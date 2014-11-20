@@ -311,9 +311,6 @@ QDockWidget("DSM Manager", p)
     this, SLOT(UpdateDsmInformation()));
   this->connect(this->Internals->pqBonsaiDsmWidget, SIGNAL(UpdateStatus(QString)),
     this, SLOT(UpdateDsmStatus(QString)));
-  this->connect(this->Internals->pqBonsaiDsmWidget,
-    SIGNAL(onQuickSync(bool)), this, SLOT(onQuickSync(bool)));
-
 #endif
 
   //

@@ -20,7 +20,13 @@
         default_values="1">
       </IntVectorProperty>
 
-
+      <IntVectorProperty
+        name="SampleRate"
+        command="SetSampleRate"
+        number_of_elements="1"
+        default_values="100">
+      </IntVectorProperty>
+      
   </ProxyGroup>
 
 

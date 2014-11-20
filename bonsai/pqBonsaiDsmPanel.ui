@@ -23,7 +23,7 @@
       <property name="horizontalSpacing">
        <number>6</number>
       </property>
-      <item row="1" column="0">
+      <item row="3" column="0">
        <widget class="QCheckBox" name="checkBox_2">
         <property name="text">
          <string>CheckBox</string>
@@ -37,12 +37,36 @@
         </property>
        </widget>
       </item>
-      <item row="2" column="0">
+      <item row="4" column="0">
        <widget class="QCheckBox" name="checkBox_3">
         <property name="text">
          <string>CheckBox</string>
         </property>
        </widget>
+      </item>
+      <item row="2" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QSlider" name="samplerate">
+          <property name="minimum">
+           <number>1</number>
+          </property>
+          <property name="maximum">
+           <number>100</number>
+          </property>
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>Sample Rate</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
       </item>
      </layout>
     </widget>

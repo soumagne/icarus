@@ -59,6 +59,13 @@ public:
 
   virtual int CreateSharedMemStructures(int quickSync);
 
+
+  // Description:
+  // Set/Get the quicksync flag
+  vtkSetMacro(SampleRate,int);
+  vtkGetMacro(SampleRate,int);
+
+
   // Description:
   // Set/Get the quicksync flag
   vtkSetMacro(QuickSync,int);
@@ -83,6 +90,8 @@ protected:
 
     int ThreadActive;
     int QuickSync;
+    int SampleRate;
+    int SampleCounter;
 
 private:
     vtkBonsaiDsmManager(const vtkBonsaiDsmManager&);  // Not implemented.
