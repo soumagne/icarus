@@ -83,8 +83,27 @@ bool vtkBonsaiDsmManager::WaitForNewData(
   auto &header = *shmQHeader;
   auto &data   = *shmQData;
 
-  header.acquireLock();
-  header.releaseLock();
+  int sumL, sumG ;
+  if (QuickSync)
+  {
+    while(1)
+    {
+      header.acquireLock();
+      sumL = !header[0].done_writing;
+      this->Controller->AllReduce(&sumL, &sumG, 1, MPI_SUM);
+      if (sumG == nrank)
+        break;
+      header.releaseLock();
+      usleep(1000);
+    }
+  }
+  else
+  {
+    header.acquireLock();
+    const float tCurrent = header[0].tCurrent;
+    sumL = tCurrent != tLast;
+    this->Controller->AllReduce(&sumL, &sumG, 1, MPI_SUM);
+  }
 
   return true;
 }
@@ -98,13 +117,8 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
   auto &data   = *shmQData;
 
   std::cout << "Entering fetchSharedData on rank " << rank << " of " << nrank << " quicksync " << quickSync << std::endl;
-  // rank 0 acquires lock in notification thread polling for new data
-  // other ranks get the lock once rank 0 signals the gui to go ahead.
-//  if (rank>0) {
-    // header
-    header.acquireLock();
-//  }
-//  std::cout << "Fetched lock on rank " << rank << " of " << nrank << std::endl;
+  // warning, header lock was alreasy acquired in WaitForNewData
+  // header.acquireLock();
 
 #if 0
   //  if (rank == 0)
@@ -112,16 +126,9 @@ bool vtkBonsaiDsmManager::fetchSharedData(const bool quickSync, ParaViewData *rD
 #endif
 
   const float tCurrent = header[0].tCurrent;
-
   terminateRenderer = tCurrent == -1;
 
-  int sumL = quickSync ? !header[0].done_writing : tCurrent != tLast;
-  int sumG ;
-  MPI_Allreduce(&sumL, &sumG, 1, MPI_INT, MPI_SUM, comm);
-
-
   bool completed = false;
-  if (sumG == nrank) //tCurrent != tLast)
   {
     tLast = tCurrent;
     completed = true;
@@ -271,12 +278,12 @@ int vtkBonsaiDsmManager::Publish()
 {
   this->CreateSharedMemStructures(true);
   //
-  if (this->UpdatePiece == 0) {
-    this->DSMPollingFunction = dsm_std::bind(&vtkBonsaiDsmManager::PollingBonsai, this, _1);
+  this->DSMPollingFunction = dsm_std::bind(&vtkBonsaiDsmManager::PollingBonsai, this, _1);
 
+//  if (this->UpdatePiece == 0) {
     this->DSMPollingThread = dsm_std::thread(&vtkAbstractDsmManager::NotificationThread, this);
     this->WaitForNotifThreadCreated();
-  }
+//  }
   //
   // make sure all ranks are initialized safely before going into main operation
   //

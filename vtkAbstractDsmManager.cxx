@@ -56,15 +56,6 @@ vtkStandardNewMacro(vtkAbstractDsmManager);
 vtkCxxSetObjectMacro(vtkAbstractDsmManager, Controller, vtkMultiProcessController);
 
 //----------------------------------------------------------------------------
-VTK_EXPORT VTK_THREAD_RETURN_TYPE vtkAbstractDsmManagerNotificationThread(void *arg)
-{
-  vtkAbstractDsmManager *dsmManager = static_cast<vtkAbstractDsmManager*>(
-      static_cast<vtkMultiThreader::ThreadInfo*>(arg)->UserData);
-  dsmManager->NotificationThread();
-  return(VTK_THREAD_RETURN_VALUE);
-}
-
-//----------------------------------------------------------------------------
 struct vtkAbstractDsmManager::vtkAbstractDsmManagerInternals
 {
   vtkAbstractDsmManagerInternals() {
@@ -188,19 +179,17 @@ void vtkAbstractDsmManager::NotificationThread()
 
   this->DsmManagerInternals->SignalNotifThreadCreated();
   this->WaitForConnection();
-  notification = DSM_NOTIFY_CONNECTED;
-  this->DsmManagerInternals->NotificationSocket->Send(&notification, sizeof(notification));
-    this->WaitForUpdated();
+  if (this->UpdatePiece==0) {
+    notification = DSM_NOTIFY_CONNECTED;
+    this->SendNotification(notification, sizeof(notification));
+  }
+  this->WaitForUpdated();
 
-//  sleep(10);
-
-  std::cout << "Done connection, entering DSM loop " << std::endl;
   if (!DSMPollingFunction) {
     std::cout << "Polling function has not been assigned, FATAL " << std::endl;
     return;
   }
   while (this->DSMPollingFunction(&notification) != 0) {
-    std::cout << "Inside DSM loop " << std::endl;
     this->SendNotification(notification, sizeof(notification));
     std::cout << "Entering WaitForUpdated " << std::endl;
     this->WaitForUpdated();
@@ -217,7 +206,10 @@ void vtkAbstractDsmManager::WaitForNotifThreadCreated()
 //----------------------------------------------------------------------------
 void vtkAbstractDsmManager::SendNotification(int notification, int size)
 {
-  this->DsmManagerInternals->NotificationSocket->Send(&notification, size);
+  if (this->UpdatePiece==0) {
+    std::cout << "Sending notification " << notification << " from rank " << this->UpdatePiece << std::endl;
+    this->DsmManagerInternals->NotificationSocket->Send(&notification, size);
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -227,7 +219,7 @@ void vtkAbstractDsmManager::SignalUpdated()
 
   this->DsmManagerInternals->IsUpdated = true;
   this->DsmManagerInternals->UpdatedCond->Signal();
-  vtkDebugMacro("Sent updated condition signal");
+  vtkDebugMacro("Sent updated condition signal on rank " << this->UpdatePiece);
 
   this->DsmManagerInternals->UpdatedMutex->Unlock();
 
@@ -236,6 +228,7 @@ void vtkAbstractDsmManager::SignalUpdated()
 //----------------------------------------------------------------------------
 void vtkAbstractDsmManager::WaitForUpdated()
 {
+  std::cout << "Entering WaitForUpdated on rank " << this->UpdatePiece << std::endl;
   this->DsmManagerInternals->UpdatedMutex->Lock();
 
   if (!this->DsmManagerInternals->IsUpdated) {
@@ -248,6 +241,7 @@ void vtkAbstractDsmManager::WaitForUpdated()
   }
 
   this->DsmManagerInternals->UpdatedMutex->Unlock();
+  std::cout << "done WaitForUpdate on rank " << this->UpdatePiece << std::endl;
 }
 
 //----------------------------------------------------------------------------
@@ -274,7 +268,6 @@ int vtkAbstractDsmManager::Create()
 #endif
 
   vtkProcessModule* pm = vtkProcessModule::GetProcessModule();
-
 
   vtkPVServerOptions *pvOptions = vtkPVServerOptions::SafeDownCast(pm->GetOptions());
 
