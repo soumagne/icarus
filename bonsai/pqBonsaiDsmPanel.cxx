@@ -195,6 +195,9 @@ pqBonsaiDsmPanel::~pqBonsaiDsmPanel()
 vtkSmartPointer<vtkSMProxy> pqBonsaiDsmPanel::CreateDsmProxy() {
   this->Internals->CreateDsmProxy();
 
+  this->Internals->Links.setUseUncheckedProperties(false);
+  this->Internals->Links.setAutoUpdateVTKObjects(true);
+
   QObject::connect(&this->Internals->Links,
     SIGNAL(qtWidgetChanged()), this, SLOT(setModified()));
 
@@ -212,6 +215,14 @@ vtkSmartPointer<vtkSMProxy> pqBonsaiDsmPanel::CreateDsmProxy() {
       SIGNAL(toggled(bool)),
       this->Internals->DsmProxy,
       this->Internals->DsmProxy->GetProperty("QuickSync"),
+      0);
+
+  this->Internals->Links.addPropertyLink(
+      this->Internals->listening,
+      "checked",
+      SIGNAL(toggled(int)),
+      this->Internals->DsmProxy,
+      this->Internals->DsmProxy->GetProperty("Listening"),
       0);
 
   return this->Internals->DsmProxy;

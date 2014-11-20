@@ -27,7 +27,14 @@
         default_values="100">
       </IntVectorProperty>
       
-  </ProxyGroup>
+      <IntVectorProperty
+        name="Listening"
+        command="SetListening"
+        number_of_elements="1"
+        default_values="0">
+      </IntVectorProperty>
+      
+      </ProxyGroup>
 
 
 </ServerManagerConfiguration>

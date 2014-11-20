@@ -233,6 +233,7 @@ vtkBonsaiDsmManager::vtkBonsaiDsmManager()
     this->QuickSync = 1;
     this->SampleRate = 100;
     this->SampleCounter = 0;
+    this->Listening = 0;
 }
 
 //----------------------------------------------------------------------------
@@ -307,7 +308,10 @@ bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
   bool ok =false;
   while (!ok) {
     bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
-    if (SampleCounter%SampleRate==0) {
+    if (SampleCounter==0) {
+      ok = true;
+    }
+    else if (Listening && SampleCounter%SampleRate==0) {
       ok = true;
     }
     else {

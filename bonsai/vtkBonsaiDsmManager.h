@@ -59,18 +59,22 @@ public:
 
   virtual int CreateSharedMemStructures(int quickSync);
 
-
   // Description:
   // Set/Get the quicksync flag
   vtkSetMacro(SampleRate,int);
   vtkGetMacro(SampleRate,int);
-
 
   // Description:
   // Set/Get the quicksync flag
   vtkSetMacro(QuickSync,int);
   vtkGetMacro(QuickSync,int);
   vtkBooleanMacro(QuickSync,int);
+
+  // Description:
+  // Set/Get the quicksync flag
+  vtkSetMacro(Listening,int);
+  vtkGetMacro(Listening,int);
+  vtkBooleanMacro(Listening,int);
 
   // Description:
   // Wait for a notification - notifications are used to trigger user
@@ -92,6 +96,7 @@ protected:
     int QuickSync;
     int SampleRate;
     int SampleCounter;
+    int Listening;
 
 private:
     vtkBonsaiDsmManager(const vtkBonsaiDsmManager&);  // Not implemented.
