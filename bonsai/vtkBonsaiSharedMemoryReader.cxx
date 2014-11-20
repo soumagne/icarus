@@ -333,7 +333,7 @@ int vtkBonsaiSharedMemoryReader::RequestData(
 
     std::cout << " Calling vtkBonsaiDsmManager::fetchSharedData " << std::endl;
 
-    if (inSitu) {
+    if (inSitu && this->DsmManager) {
         if (this->DsmManager->fetchSharedData(
             this->DsmManager->GetQuickSync(), this->bonsaiData, rank, nranks, *comm, reduceDM, reduceS))
         {
