@@ -90,7 +90,7 @@ bool vtkBonsaiDsmManager::WaitForNewData(
     {
       header.acquireLock();
       sumL = !header[0].done_writing;
-      this->Controller->AllReduce(&sumL, &sumG, 1, MPI_SUM);
+      this->Controller->AllReduce(&sumL, &sumG, 1, vtkCommunicator::SUM_OP);
       if (sumG == nrank)
         break;
       header.releaseLock();
@@ -102,7 +102,7 @@ bool vtkBonsaiDsmManager::WaitForNewData(
     header.acquireLock();
     const float tCurrent = header[0].tCurrent;
     sumL = tCurrent != tLast;
-    this->Controller->AllReduce(&sumL, &sumG, 1, MPI_SUM);
+    this->Controller->AllReduce(&sumL, &sumG, 1, vtkCommunicator::SUM_OP);
   }
 
   return true;
@@ -297,7 +297,6 @@ int vtkBonsaiDsmManager::Publish()
 //----------------------------------------------------------------------------
 bool vtkBonsaiDsmManager::PollingBonsai(unsigned int *flag)
 {
-  usleep(1000);
   std::cout << "Polling for new data on rank " << this->UpdatePiece << " of " << this->UpdateNumPieces << std::endl;
   bool temp = vtkBonsaiDsmManager::WaitForNewData(this->UpdatePiece, this->UpdateNumPieces);
   std::cout << "Got new data " << std::endl;
